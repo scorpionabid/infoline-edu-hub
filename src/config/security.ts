@@ -89,6 +89,12 @@ export const generateCSRFToken = (): string => {
   return crypto.getRandomValues(new Uint32Array(4)).join('-');
 };
 
+// Vite environment variable interface
+interface ViteEnv {
+  VITE_SUPABASE_URL?: string;
+  VITE_SUPABASE_ANON_KEY?: string;
+}
+
 // Environment validation
 export const validateEnvironment = (): { valid: boolean; errors: string[] } => {
   const errors: string[] = [];
@@ -97,12 +103,13 @@ export const validateEnvironment = (): { valid: boolean; errors: string[] } => {
   let hasSupabaseUrl = false;
   let hasSupabaseKey = false;
   
-  if (typeof import.meta !== 'undefined' && import.meta.env) {
-    hasSupabaseUrl = !!import.meta.env.VITE_SUPABASE_URL;
-    hasSupabaseKey = !!import.meta.env.VITE_SUPABASE_ANON_KEY;
+  if (typeof import.meta !== 'undefined' && (import.meta as any).env) {
+    const env = (import.meta as any).env as ViteEnv;
+    hasSupabaseUrl = !!env.VITE_SUPABASE_URL;
+    hasSupabaseKey = !!env.VITE_SUPABASE_ANON_KEY;
     
     // Validate Supabase URL format if present
-    if (hasSupabaseUrl && !import.meta.env.VITE_SUPABASE_URL.startsWith('https://')) {
+    if (hasSupabaseUrl && !env.VITE_SUPABASE_URL!.startsWith('https://')) {
       errors.push('VITE_SUPABASE_URL must use HTTPS');
     }
   } else {
@@ -123,4 +130,21 @@ export const validateEnvironment = (): { valid: boolean; errors: string[] } => {
     valid: errors.length === 0,
     errors,
   };
+};
+
+// Production debug cleanup utility
+export const isDebugMode = (): boolean => {
+  if (typeof import.meta !== 'undefined' && (import.meta as any).env) {
+    const env = (import.meta as any).env as ViteEnv & { PROD?: boolean };
+    return !env.PROD;
+  }
+  return true; // Default to debug mode if can't determine
+};
+
+// Secure logging for production
+export const secureLog = (message: string, data?: any): void => {
+  if (isDebugMode()) {
+    console.log(message, data);
+  }
+  // In production, only log errors or send to monitoring service
 };

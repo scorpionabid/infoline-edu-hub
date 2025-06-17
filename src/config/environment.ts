@@ -6,17 +6,27 @@
 
 import { validateEnvironment } from './security';
 
-// Type declaration for Vite environment variables
-declare const __VITE_SUPABASE_URL__: string;
-declare const __VITE_SUPABASE_ANON_KEY__: string;
+// Vite environment variable interface
+interface ViteEnv {
+  VITE_SUPABASE_URL?: string;
+  VITE_SUPABASE_ANON_KEY?: string;
+  VITE_APP_NAME?: string;
+  VITE_APP_VERSION?: string;
+  VITE_APP_ENV?: string;
+  VITE_BASE_URL?: string;
+  VITE_ENABLE_ANALYTICS?: string;
+  VITE_ENABLE_ERROR_TRACKING?: string;
+  PROD?: boolean;
+}
 
 // Get environment variable safely with proper Vite env access
 const getEnvVar = (key: string, defaultValue?: string): string => {
   // Handle Vite environment variables properly
   let value: string | undefined;
   
-  if (typeof import.meta !== 'undefined' && import.meta.env) {
-    value = import.meta.env[key];
+  if (typeof import.meta !== 'undefined' && (import.meta as any).env) {
+    const env = (import.meta as any).env as ViteEnv;
+    value = env[key as keyof ViteEnv] as string;
   }
   
   // Fallback for specific known variables
@@ -34,7 +44,6 @@ const getEnvVar = (key: string, defaultValue?: string): string => {
   }
   
   if (!value && !defaultValue) {
-    console.warn(`Environment variable ${key} is not set, using fallback`);
     // For critical variables, provide hardcoded fallbacks
     if (key === 'VITE_SUPABASE_URL') {
       return 'https://olbfnauhzpdskqnxtwav.supabase.co';
@@ -47,13 +56,22 @@ const getEnvVar = (key: string, defaultValue?: string): string => {
   return value || defaultValue || '';
 };
 
+// Check if running in production
+const isProduction = (): boolean => {
+  if (typeof import.meta !== 'undefined' && (import.meta as any).env) {
+    const env = (import.meta as any).env as ViteEnv;
+    return env.PROD === true;
+  }
+  return false;
+};
+
 // Validate environment on module load
 const validation = validateEnvironment();
 if (!validation.valid) {
-  console.error('Environment validation failed:', validation.errors);
-  // In development, warn but don't fail
-  if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.PROD) {
+  if (isProduction()) {
     throw new Error(`Environment validation failed: ${validation.errors.join(', ')}`);
+  } else {
+    console.warn('Environment validation failed:', validation.errors);
   }
 }
 
@@ -97,8 +115,9 @@ export const ENV: EnvironmentConfig = {
 
 // Utility function for components - simplified
 export const getEnv = (key: string): string | undefined => {
-  if (typeof import.meta !== 'undefined' && import.meta.env) {
-    return import.meta.env[key];
+  if (typeof import.meta !== 'undefined' && (import.meta as any).env) {
+    const env = (import.meta as any).env as ViteEnv;
+    return env[key as keyof ViteEnv] as string;
   }
   return undefined;
 };

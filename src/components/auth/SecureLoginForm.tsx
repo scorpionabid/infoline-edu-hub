@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { validateInput, sanitizeInput, generateCSRFToken } from '@/config/security';
+import { secureConsole } from '@/utils/productionUtils';
 import { Shield, Lock, AlertTriangle } from 'lucide-react';
 
 interface SecureLoginFormProps {
@@ -93,13 +94,13 @@ const SecureLoginForm: React.FC<SecureLoginFormProps> = ({ error, clearError }) 
       const sanitizedEmail = sanitizeInput(formData.email.toLowerCase());
       const sanitizedPassword = formData.password; // Don't sanitize password, just validate
       
-      console.log('[SecureLoginForm] Starting secure login process...');
+      secureConsole.log('[SecureLoginForm] Starting secure login process...');
       await signIn(sanitizedEmail, sanitizedPassword);
-      console.log('[SecureLoginForm] Login successful, navigating...');
+      secureConsole.log('[SecureLoginForm] Login successful, navigating...');
       navigate('/dashboard');
       toast.success(t?.('auth.login.success') || 'Login successful');
     } catch (error: any) {
-      console.error('[SecureLoginForm] Login error:', error);
+      secureConsole.error('[SecureLoginForm] Login error:', error);
       
       // Record failed attempt
       await recordAttempt();

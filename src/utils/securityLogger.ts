@@ -1,7 +1,9 @@
 /**
- * Security-focused logging utility
+ * Enhanced security-focused logging utility
  * Removes sensitive information and provides safe error reporting
  */
+
+import { ENV } from '@/config/environment';
 
 interface LogContext {
   userId?: string;
@@ -12,7 +14,7 @@ interface LogContext {
 }
 
 class SecurityLogger {
-  private isDevelopment = !import.meta.env.PROD;
+  private isDevelopment = ENV.features.enableDebugMode;
 
   // Sanitize data before logging to prevent log injection
   private sanitizeLogData(data: any): any {
@@ -67,7 +69,7 @@ class SecurityLogger {
       console.log('[SECURITY]', logEntry);
     }
 
-    // In production, this would send to your security monitoring system
+    // In production, send to monitoring system
     this.sendToMonitoring(logEntry);
   }
 
@@ -98,7 +100,7 @@ class SecurityLogger {
   // Log error without sensitive data
   logError(error: Error | string, context: LogContext) {
     const errorData = error instanceof Error 
-      ? { message: error.message, stack: error.stack }
+      ? { message: error.message, stack: ENV.features.enableDebugMode ? error.stack : undefined }
       : { message: error };
 
     const logEntry = {
@@ -116,16 +118,29 @@ class SecurityLogger {
   }
 
   private sendToMonitoring(logEntry: any) {
-    // In a real application, you would send this to your monitoring service
-    // For now, we'll just store it in sessionStorage for debugging
-    try {
-      const logs = JSON.parse(sessionStorage.getItem('security_logs') || '[]');
-      logs.push(logEntry);
-      // Keep only last 100 logs
-      const trimmedLogs = logs.slice(-100);
-      sessionStorage.setItem('security_logs', JSON.stringify(trimmedLogs));
-    } catch (error) {
-      console.warn('Failed to store security log:', error);
+    // In production, send to monitoring service
+    if (ENV.app.environment === 'production') {
+      // TODO: Implement actual monitoring service integration
+      // For now, store in sessionStorage for debugging
+      try {
+        const logs = JSON.parse(sessionStorage.getItem('security_logs') || '[]');
+        logs.push(logEntry);
+        // Keep only last 50 logs in production
+        const trimmedLogs = logs.slice(-50);
+        sessionStorage.setItem('security_logs', JSON.stringify(trimmedLogs));
+      } catch (error) {
+        // Fail silently in production
+      }
+    } else {
+      // Development: store more logs
+      try {
+        const logs = JSON.parse(sessionStorage.getItem('security_logs') || '[]');
+        logs.push(logEntry);
+        const trimmedLogs = logs.slice(-100);
+        sessionStorage.setItem('security_logs', JSON.stringify(trimmedLogs));
+      } catch (error) {
+        console.warn('Failed to store security log:', error);
+      }
     }
   }
 }
