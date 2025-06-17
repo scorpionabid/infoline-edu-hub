@@ -1,7 +1,10 @@
+/**
+ * İnfoLine Notification System - Legacy Hook Compatibility Layer
+ * DEPRECATED: Use unified useNotifications from @/notifications instead
+ * Bu fayl backward compatibility üçün saxlanılır
+ */
 
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { useNotifications as newUseNotifications, notificationManager } from '@/notifications';
 
 export interface Notification {
   id: string;
@@ -16,45 +19,55 @@ export interface Notification {
   created_at: string;
 }
 
-export const useNotifications = () => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(false);
+/**
+ * @deprecated Use useNotifications from @/notifications instead
+ */
+export const useNotifications = (userId?: string) => {
+  console.warn(`
+[MIGRATION NOTICE] 
+/src/hooks/useNotifications.ts is deprecated.
 
-  const fetchNotifications = async () => {
-    setLoading(true);
-    try {
-      const { data, error: dbError } = await supabase
-        .from('notifications')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(50);
+Please migrate to the new unified notification system:
+- Import: import { useNotifications } from '@/notifications'
+- Usage: const { notifications, unreadCount, markAsRead, ... } = useNotifications(userId)
 
-      if (dbError) throw dbError;
-      setNotifications(data || []);
-    } catch (err) {
-      console.error('Error fetching notifications:', err);
-      toast.error('Bildirişlər yüklənərkən xəta baş verdi');
-    } finally {
-      setLoading(false);
-    }
-  };
+New features available:
+- Better TypeScript support
+- Real-time updates with Supabase
+- Improved caching with React Query
+- Multiple notification types and priorities
+- Built-in loading and error states
+
+See /src/notifications/hooks/index.ts for full API documentation.
+  `);
+
+  const {
+    notifications: newNotifications,
+    unreadCount: newUnreadCount,
+    isLoading: loading,
+    markAsRead: newMarkAsRead,
+    markAllAsRead: newMarkAllAsRead,
+    clearAll: newClearAll,
+    refetch
+  } = newUseNotifications(userId);
+
+  // Map new notifications to old interface for backward compatibility
+  const notifications: Notification[] = newNotifications.map(notification => ({
+    id: notification.id,
+    user_id: notification.user_id,
+    type: notification.type,
+    title: notification.title,
+    message: notification.message,
+    is_read: notification.is_read,
+    priority: notification.priority,
+    related_entity_id: notification.related_entity_id,
+    related_entity_type: notification.related_entity_type,
+    created_at: notification.created_at
+  }));
 
   const markAsRead = async (notificationId: string) => {
     try {
-      const { error: dbError } = await supabase
-        .from('notifications')
-        .update({ is_read: true })
-        .eq('id', notificationId);
-
-      if (dbError) throw dbError;
-      
-      setNotifications(prev => 
-        prev.map(notif => 
-          notif.id === notificationId 
-            ? { ...notif, is_read: true }
-            : notif
-        )
-      );
+      newMarkAsRead(notificationId);
     } catch (err) {
       console.error('Error marking notification as read:', err);
     }
@@ -62,16 +75,7 @@ export const useNotifications = () => {
 
   const markAllAsRead = async () => {
     try {
-      const { error: dbError } = await supabase
-        .from('notifications')
-        .update({ is_read: true })
-        .eq('is_read', false);
-
-      if (dbError) throw dbError;
-      
-      setNotifications(prev => 
-        prev.map(notif => ({ ...notif, is_read: true }))
-      );
+      newMarkAllAsRead();
     } catch (err) {
       console.error('Error marking all notifications as read:', err);
     }
@@ -79,24 +83,13 @@ export const useNotifications = () => {
 
   const clearAll = async () => {
     try {
-      const { error: dbError } = await supabase
-        .from('notifications')
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
-
-      if (dbError) throw dbError;
-      
-      setNotifications([]);
+      newClearAll();
     } catch (err) {
       console.error('Error clearing all notifications:', err);
     }
   };
 
-  const unreadCount = notifications.filter(n => !n.is_read).length;
-
-  useEffect(() => {
-    fetchNotifications();
-  }, []);
+  const unreadCount = newUnreadCount;
 
   return {
     notifications,
@@ -105,7 +98,7 @@ export const useNotifications = () => {
     markAsRead,
     markAllAsRead,
     clearAll,
-    refetch: fetchNotifications
+    refetch
   };
 };
 

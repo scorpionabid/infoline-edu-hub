@@ -1,25 +1,28 @@
 /**
- * Vahid keşləmə mexanizmi
- * Bütün tətbiq üçün standartlaşdırılmış keşləmə funksiyaları
+ * İnfoLine Cache System - Legacy Compatibility Layer
+ * DEPRECATED: Use /src/cache/index.ts for new implementations
+ * Bu fayl backward compatibility üçün saxlanılır
  */
 
-// Keş açarları
+import { cacheManager, CACHE_TTL } from '@/cache';
+
+// Legacy cache keys - yeni sistem istifadə edir
 export const CACHE_KEYS = {
   USER_PROFILE: 'info_line_user_profile',
-  USER_SESSION: 'info_line_user_session',
+  USER_SESSION: 'info_line_user_session', 
   REGIONS: 'info_line_regions',
   SECTORS: 'info_line_sectors',
   SCHOOLS: 'info_line_schools',
 };
 
-// Keş vaxtı (millisaniyə ilə)
+// Legacy cache expiry - yeni sistem TTL istifadə edir
 export const CACHE_EXPIRY = {
-  SHORT: 5 * 60 * 1000, // 5 dəqiqə
-  MEDIUM: 30 * 60 * 1000, // 30 dəqiqə
-  LONG: 24 * 60 * 60 * 1000, // 1 gün
+  SHORT: CACHE_TTL.SHORT, // 5 dəqiqə
+  MEDIUM: CACHE_TTL.MEDIUM, // 10 dəqiqə  
+  LONG: CACHE_TTL.LONG, // 1 saat
 };
 
-// Keş tipləri
+// Legacy cache storage type
 export type CacheStorage = 'local' | 'session';
 
 interface CacheItem<T> {
@@ -28,40 +31,20 @@ interface CacheItem<T> {
 }
 
 /**
+ * @deprecated Use cacheManager.get() instead
  * Keşdən məlumat əldə etmək
- * @param key Keş açarı
- * @param storage Keş saxlama tipi (local/session)
- * @returns Keşlənmiş məlumat və ya null
  */
 export function getCache<T>(key: string, storage: CacheStorage = 'local'): T | null {
-  try {
-    const storageObj = storage === 'local' ? localStorage : sessionStorage;
-    const cachedStr = storageObj.getItem(key);
-    
-    if (!cachedStr) return null;
-    
-    const cached = JSON.parse(cachedStr) as CacheItem<T>;
-    const now = Date.now();
-    
-    if (cached.expiry && cached.expiry > now) {
-      return cached.data;
-    }
-    
-    // Vaxtı keçmiş keşi təmizləyirik
-    storageObj.removeItem(key);
-    return null;
-  } catch (e) {
-    console.warn(`Cache reading error for key ${key}:`, e);
-    return null;
-  }
+  console.warn(`[DEPRECATED] getCache() is deprecated. Use cacheManager.get() instead.`);
+  
+  // Convert legacy storage type to new system
+  const storageType = storage === 'local' ? 'localStorage' : 'sessionStorage';
+  return cacheManager.get<T>(key, storageType);
 }
 
 /**
+ * @deprecated Use cacheManager.set() instead
  * Məlumatı keşdə saxlamaq
- * @param key Keş açarı
- * @param data Saxlanılacaq məlumat
- * @param expiryMs Keş vaxtı (millisaniyə ilə)
- * @param storage Keş saxlama tipi (local/session)
  */
 export function setCache<T>(
   key: string, 
@@ -69,44 +52,56 @@ export function setCache<T>(
   expiryMs: number = CACHE_EXPIRY.MEDIUM,
   storage: CacheStorage = 'local'
 ): void {
-  try {
-    const storageObj = storage === 'local' ? localStorage : sessionStorage;
-    
-    if (data === null) {
-      storageObj.removeItem(key);
-      return;
-    }
-    
-    const expiry = Date.now() + expiryMs;
-    storageObj.setItem(
-      key,
-      JSON.stringify({ data, expiry })
-    );
-  } catch (e) {
-    console.warn(`Cache writing error for key ${key}:`, e);
+  console.warn(`[DEPRECATED] setCache() is deprecated. Use cacheManager.set() instead.`);
+  
+  if (data === null) {
+    cacheManager.delete(key);
+    return;
   }
+  
+  // Convert legacy storage type to new system
+  const storageType = storage === 'local' ? 'localStorage' : 'sessionStorage';
+  
+  cacheManager.set(key, data, {
+    storage: storageType,
+    ttl: expiryMs
+  });
 }
 
 /**
+ * @deprecated Use cacheManager.delete() or cacheManager.clear() instead
  * Keşi təmizləmək
- * @param key Keş açarı (təyin edilməzsə bütün keşlər təmizlənir)
- * @param storage Keş saxlama tipi (local/session)
  */
 export function clearCache(key?: string, storage: CacheStorage = 'local'): void {
-  try {
-    const storageObj = storage === 'local' ? localStorage : sessionStorage;
-    
-    if (key) {
-      storageObj.removeItem(key);
-    } else {
-      // Bütün info_line_ prefiksli keşləri təmizləyirik
-      Object.keys(storageObj).forEach(k => {
-        if (k.startsWith('info_line_')) {
-          storageObj.removeItem(k);
-        }
-      });
-    }
-  } catch (e) {
-    console.warn(`Cache clearing error:`, e);
+  console.warn(`[DEPRECATED] clearCache() is deprecated. Use cacheManager.delete() or cacheManager.clear() instead.`);
+  
+  if (key) {
+    cacheManager.delete(key);
+  } else {
+    // Convert legacy storage type to new system
+    const storageType = storage === 'local' ? 'localStorage' : 'sessionStorage';
+    cacheManager.clearStorage(storageType);
   }
 }
+
+// Migration notice
+console.warn(`
+[MIGRATION NOTICE] 
+/src/lib/cache.ts is deprecated and will be removed in future versions.
+
+Please migrate to the new unified cache system:
+- Import: import { cacheManager } from '@/cache'
+- Get: cacheManager.get(key)
+- Set: cacheManager.set(key, value, options)
+- Delete: cacheManager.delete(key)
+
+See /src/cache/index.ts for full API documentation.
+`);
+
+export default {
+  getCache,
+  setCache,
+  clearCache,
+  CACHE_KEYS,
+  CACHE_EXPIRY
+};
