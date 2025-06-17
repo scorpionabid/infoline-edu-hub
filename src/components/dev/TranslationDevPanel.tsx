@@ -1,278 +1,378 @@
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
+
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  BarChart3, 
-  Bug, 
-  CheckCircle, 
-  AlertTriangle, 
-  XCircle,
-  Download,
-  RefreshCw,
-  Globe,
-  Eye,
-  EyeOff
-} from 'lucide-react';
-import { useTranslation } from '@/contexts/TranslationContext';
+import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
+import { useSmartTranslation } from '@/hooks/translation/useSmartTranslation';
+import { useTranslationValidation } from '@/hooks/translation/useTranslationValidation';
+import { translationCache } from '@/services/translationCache';
 import { TranslationValidator } from '@/utils/translationValidator';
-import type { TranslationCoverage, SupportedLanguage } from '@/types/translation';
+import { 
+  Code, 
+  CheckCircle, 
+  XCircle, 
+  Search, 
+  FileText,
+  Globe,
+  Activity,
+  RefreshCw
+} from 'lucide-react';
+import type { SupportedLanguage } from '@/types/translation';
 
-interface TranslationDevPanelProps {
-  enabled?: boolean;
-  position?: 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
-}
+export const TranslationDevPanel: React.FC = () => {
+  const [testKey, setTestKey] = useState('dashboard.title');
+  const [testParams, setTestParams] = useState('{}');
+  const [selectedLanguage, setSelectedLanguage] = useState<SupportedLanguage>('az');
+  const [validationResults, setValidationResults] = useState<any>(null);
 
-const TranslationDevPanel: React.FC<TranslationDevPanelProps> = ({
-  enabled = process.env.NODE_ENV === 'development',
-  position = 'bottom-right'
-}) => {
-  const { language, setLanguage } = useTranslation();
-  const [isOpen, setIsOpen] = useState(false);
-  const [coverage, setCoverage] = useState<TranslationCoverage>({});
-  const [isLoading, setIsLoading] = useState(false);
-  const [showMissingOnly, setShowMissingOnly] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState<SupportedLanguage>(language);
+  const { t, tSafe, tContext, language, setLanguage, isLoading, error } = useSmartTranslation();
+  const { tModule, tValidation, tComponent } = useTranslationValidation();
 
-  // Panel-i göstər/gizlə
-  if (!enabled) return null;
-
-  const positionClasses = {
-    'bottom-right': 'bottom-4 right-4',
-    'bottom-left': 'bottom-4 left-4',
-    'top-right': 'top-4 right-4',
-    'top-left': 'top-4 left-4'
+  const testTranslation = () => {
+    try {
+      const params = JSON.parse(testParams || '{}');
+      const result = {
+        t: t(testKey, params),
+        tSafe: tSafe(testKey, 'FALLBACK', { interpolation: params }),
+        tContext: tContext(testKey, params)
+      };
+      console.log('Translation Test Results:', result);
+    } catch (error) {
+      console.error('Translation test failed:', error);
+    }
   };
 
-  useEffect(() => {
-    if (isOpen) {
-      loadCoverage();
-    }
-  }, [isOpen, selectedLanguage]);
-
-  const loadCoverage = async () => {
-    setIsLoading(true);
+  const runValidation = async () => {
     try {
-      const result = await TranslationValidator.validateAllModules(selectedLanguage);
-      setCoverage(result);
+      const result = await TranslationValidator.validateModule('dashboard', selectedLanguage);
+      setValidationResults(result);
     } catch (error) {
-      console.error('Coverage yükləmə xətası:', error);
-    } finally {
-      setIsLoading(false);
+      console.error('Validation failed:', error);
     }
+  };
+
+  const clearCache = () => {
+    translationCache.clear();
+    console.log('Translation cache cleared');
   };
 
   const generateReport = async () => {
     try {
       await TranslationValidator.generateConsoleReport(selectedLanguage);
-      
-      // HTML report yaradıb download et
-      const htmlReport = await TranslationValidator.generateHTMLReport(selectedLanguage);
-      const blob = new Blob([htmlReport], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `infoline-translation-report-${selectedLanguage}-${new Date().toISOString().split('T')[0]}.html`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Report yaratma xətası:', error);
+      console.error('Report generation failed:', error);
     }
   };
 
-  const handleLanguageChange = async (newLang: SupportedLanguage) => {
-    setSelectedLanguage(newLang);
-    if (newLang !== language) {
-      await setLanguage(newLang);
-    }
+  const getCacheInfo = () => {
+    return translationCache.getInfo();
   };
 
-  const getModuleStatus = (moduleData: any) => {
-    if (moduleData.percentage >= 90) return { color: 'green', icon: CheckCircle };
-    if (moduleData.percentage >= 70) return { color: 'yellow', icon: AlertTriangle };
-    return { color: 'red', icon: XCircle };
-  };
-
-  const filteredModules = showMissingOnly 
-    ? Object.entries(coverage).filter(([, data]) => !data.completed)
-    : Object.entries(coverage);
-
-  const overallStats = {
-    totalModules: Object.keys(coverage).length,
-    completedModules: Object.values(coverage).filter(m => m.completed).length,
-    averageCoverage: Object.values(coverage).length > 0 
-      ? Math.round(Object.values(coverage).reduce((acc, m) => acc + m.percentage, 0) / Object.keys(coverage).length)
-      : 0
-  };
+  const languages: SupportedLanguage[] = ['az', 'en', 'ru', 'tr'];
 
   return (
-    <div className={`fixed ${positionClasses[position]} z-50`}>
-      {!isOpen ? (
-        <Button
-          onClick={() => setIsOpen(true)}
-          className="rounded-full w-12 h-12 shadow-lg bg-primary hover:bg-primary/90"
-          size="icon"
-        >
-          <Globe className="h-5 w-5" />
-        </Button>
-      ) : (
-        <Card className="w-96 max-h-[80vh] overflow-hidden shadow-xl">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg flex items-center gap-2">
-                🌐 Translation Dev Panel
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Translation Dev Panel</h2>
+          <p className="text-muted-foreground">
+            Development alətləri translation sisteminin test edilməsi üçün
+          </p>
+        </div>
+        <Badge variant={isLoading ? "secondary" : error ? "destructive" : "default"}>
+          {isLoading ? 'Loading' : error ? 'Error' : 'Ready'}
+        </Badge>
+      </div>
+
+      {/* Current Status */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Activity className="h-5 w-5" />
+            Current Status
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+              <Label className="text-sm font-medium">Active Language</Label>
+              <div className="text-lg font-bold">{language.toUpperCase()}</div>
+            </div>
+            <div>
+              <Label className="text-sm font-medium">Loading State</Label>
+              <div className={`text-lg font-bold ${isLoading ? 'text-yellow-600' : 'text-green-600'}`}>
+                {isLoading ? 'Loading' : 'Ready'}
+              </div>
+            </div>
+            <div>
+              <Label className="text-sm font-medium">Error State</Label>
+              <div className={`text-lg font-bold ${error ? 'text-red-600' : 'text-green-600'}`}>
+                {error ? 'Error' : 'OK'}
+              </div>
+            </div>
+            <div>
+              <Label className="text-sm font-medium">Cache Status</Label>
+              <div className="text-lg font-bold text-blue-600">
+                {getCacheInfo().languages.length} Languages
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Tabs defaultValue="test" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="test">Test Translations</TabsTrigger>
+          <TabsTrigger value="validation">Validation</TabsTrigger>
+          <TabsTrigger value="cache">Cache Management</TabsTrigger>
+          <TabsTrigger value="tools">Dev Tools</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="test" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Code className="h-5 w-5" />
+                Translation Tester
               </CardTitle>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsOpen(false)}
-                className="h-6 w-6"
-              >
-                ×
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="testKey">Translation Key</Label>
+                  <Input
+                    id="testKey"
+                    value={testKey}
+                    onChange={(e) => setTestKey(e.target.value)}
+                    placeholder="dashboard.title"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="testParams">Parameters (JSON)</Label>
+                  <Input
+                    id="testParams"
+                    value={testParams}
+                    onChange={(e) => setTestParams(e.target.value)}
+                    placeholder='{"name": "John"}'
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Live Translation Result</Label>
+                  <div className="p-3 bg-gray-50 border rounded-md">
+                    <code className="text-sm">
+                      {(() => {
+                        try {
+                          const params = JSON.parse(testParams || '{}');
+                          return t(testKey, params);
+                        } catch {
+                          return 'Invalid JSON parameters';
+                        }
+                      })()}
+                    </code>
+                  </div>
+                </div>
+                <div>
+                  <Label>Safe Translation Result</Label>
+                  <div className="p-3 bg-blue-50 border rounded-md">
+                    <code className="text-sm">
+                      {(() => {
+                        try {
+                          const params = JSON.parse(testParams || '{}');
+                          return tSafe(testKey, 'FALLBACK', { interpolation: params });
+                        } catch {
+                          return 'Invalid JSON parameters';
+                        }
+                      })()}
+                    </code>
+                  </div>
+                </div>
+              </div>
+
+              <Button onClick={testTranslation} className="w-full">
+                <Search className="mr-2 h-4 w-4" />
+                Test Translation (Check Console)
               </Button>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Badge variant="secondary">
-                {language.toUpperCase()}
-              </Badge>
-              <span>•</span>
-              <span>{overallStats.averageCoverage}% coverage</span>
-            </div>
-          </CardHeader>
 
-          <CardContent className="p-4 overflow-y-auto max-h-[60vh]">
-            <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="modules">Modules</TabsTrigger>
-                <TabsTrigger value="tools">Tools</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="overview" className="space-y-4">
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div className="text-center p-2 bg-muted rounded">
-                    <div className="font-semibold">{overallStats.totalModules}</div>
-                    <div className="text-muted-foreground">Total</div>
-                  </div>
-                  <div className="text-center p-2 bg-muted rounded">
-                    <div className="font-semibold">{overallStats.completedModules}</div>
-                    <div className="text-muted-foreground">Complete</div>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span>Language:</span>
-                    <select 
-                      value={selectedLanguage} 
-                      onChange={(e) => handleLanguageChange(e.target.value as SupportedLanguage)}
-                      className="text-xs border rounded px-2 py-1"
+              {/* Quick Tests */}
+              <div className="space-y-2">
+                <Label>Quick Tests</Label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {[
+                    'dashboard.title',
+                    'navigation.dashboard', 
+                    'ui.save',
+                    'validation.required',
+                    'auth.login',
+                    'general.welcome'
+                  ].map((key) => (
+                    <Button 
+                      key={key}
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setTestKey(key)}
                     >
-                      <option value="az">🇦🇿 Azərbaycan</option>
-                      <option value="en">🇺🇸 English</option>
-                      <option value="ru">🇷🇺 Русский</option>
-                      <option value="tr">🇹🇷 Türkçe</option>
-                    </select>
+                      {key}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="validation" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5" />
+                Translation Validation
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="flex-1">
+                  <Label>Select Language</Label>
+                  <select 
+                    value={selectedLanguage}
+                    onChange={(e) => setSelectedLanguage(e.target.value as SupportedLanguage)}
+                    className="w-full p-2 border rounded-md"
+                  >
+                    {languages.map(lang => (
+                      <option key={lang} value={lang}>{lang.toUpperCase()}</option>
+                    ))}
+                  </select>
+                </div>
+                <Button onClick={runValidation}>
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  Run Validation
+                </Button>
+              </div>
+
+              {validationResults && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    {validationResults.valid ? (
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                    ) : (
+                      <XCircle className="h-5 w-5 text-red-600" />
+                    )}
+                    <span className="font-medium">
+                      Validation {validationResults.valid ? 'Passed' : 'Failed'}
+                    </span>
+                    <Badge variant="secondary">
+                      {validationResults.coverage}% Coverage
+                    </Badge>
                   </div>
 
-                  <div className="flex items-center justify-between text-sm">
-                    <span>Show missing only:</span>
-                    <Switch 
-                      checked={showMissingOnly}
-                      onCheckedChange={setShowMissingOnly}
-                    />
+                  {validationResults.missingKeys?.length > 0 && (
+                    <div>
+                      <Label>Missing Keys ({validationResults.missingKeys.length})</Label>
+                      <Textarea 
+                        value={validationResults.missingKeys.join('\n')}
+                        readOnly
+                        className="h-32"
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="cache" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="h-5 w-5" />
+                Cache Management
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Cache Information</Label>
+                  <div className="p-3 bg-gray-50 border rounded-md">
+                    <pre className="text-xs">
+                      {JSON.stringify(getCacheInfo(), null, 2)}
+                    </pre>
                   </div>
                 </div>
-              </TabsContent>
-
-              <TabsContent value="modules" className="space-y-2">
-                {isLoading ? (
-                  <div className="text-center py-4">Loading...</div>
-                ) : (
-                  <div className="space-y-2 max-h-64 overflow-y-auto">
-                    {filteredModules
-                      .sort(([,a], [,b]) => b.percentage - a.percentage)
-                      .map(([module, data]) => {
-                        const status = getModuleStatus(data);
-                        const StatusIcon = status.icon;
-                        
-                        return (
-                          <div 
-                            key={module}
-                            className="flex items-center justify-between p-2 bg-muted/50 rounded text-sm"
-                          >
-                            <div className="flex items-center gap-2">
-                              <StatusIcon 
-                                className={`h-3 w-3 ${
-                                  status.color === 'green' ? 'text-green-500' :
-                                  status.color === 'yellow' ? 'text-yellow-500' :
-                                  'text-red-500'
-                                }`} 
-                              />
-                              <span className="font-medium">{module}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-mono">{data.percentage}%</span>
-                              {data.missingKeys && data.missingKeys.length > 0 && (
-                                <Badge variant="destructive" className="text-xs">
-                                  {data.missingKeys.length}
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })
-                    }
-                  </div>
-                )}
-              </TabsContent>
-
-              <TabsContent value="tools" className="space-y-3">
-                <div className="grid grid-cols-1 gap-2">
-                  <Button 
-                    onClick={loadCoverage}
-                    disabled={isLoading}
-                    className="w-full text-xs"
-                    variant="outline"
-                  >
-                    <RefreshCw className="h-3 w-3 mr-2" />
-                    Refresh Coverage
+                <div className="space-y-2">
+                  <Button onClick={clearCache} variant="destructive" className="w-full">
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Clear Translation Cache
                   </Button>
                   
-                  <Button 
-                    onClick={generateReport}
-                    className="w-full text-xs"
-                    variant="outline"
-                  >
-                    <Download className="h-3 w-3 mr-2" />
-                    Download Report
-                  </Button>
-                  
-                  <Button 
-                    onClick={() => TranslationValidator.clearCache()}
-                    className="w-full text-xs"
-                    variant="outline"
-                  >
-                    <Bug className="h-3 w-3 mr-2" />
-                    Clear Cache
-                  </Button>
-                </div>
-
-                <div className="text-xs text-muted-foreground border-t pt-2">
-                  <div>Console commands:</div>
-                  <div className="font-mono bg-muted p-1 rounded mt-1">
-                    TranslationValidator.generateConsoleReport()
+                  <div className="grid grid-cols-2 gap-2">
+                    {languages.map(lang => (
+                      <Button 
+                        key={lang}
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setLanguage(lang)}
+                      >
+                        Load {lang.toUpperCase()}
+                      </Button>
+                    ))}
                   </div>
                 </div>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
-      )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="tools" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Development Tools
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Button onClick={generateReport} className="w-full">
+                <Globe className="mr-2 h-4 w-4" />
+                Generate Coverage Report (Console)
+              </Button>
+              
+              <div className="space-y-2">
+                <Label>Helper Functions</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => console.log('tModule test:', tModule('dashboard', 'title'))}
+                  >
+                    Test tModule
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => console.log('tValidation test:', tValidation('name', 'required'))}
+                  >
+                    Test tValidation
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => console.log('tComponent test:', tComponent('button', 'save'))}
+                  >
+                    Test tComponent
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
