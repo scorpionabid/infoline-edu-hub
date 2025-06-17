@@ -12,7 +12,7 @@ const VALIDATION_PATTERNS = {
   phone: /^[\+]?[0-9\s\-\(\)]{10,15}$/,
   url: /^https?:\/\/.+/,
   uuid: /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
-  sqlInjection: /('|(\\')|(;)|(\s*(union|select|insert|update|delete|drop|create|alter|exec|script)\s*)/i,
+  sqlInjection: /('|\\')|(;)|(\s*(union|select|insert|update|delete|drop|create|alter|exec|script)\s*)/i,
   xss: /<[^>]*script[^>]*>|javascript:|on\w+\s*=/i,
   path: /^[a-zA-Z0-9\-_\/\.]+$/,
 } as const;
