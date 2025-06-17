@@ -56,16 +56,27 @@ type TranslationContextType = {
 
 const TranslationContext = createContext<TranslationContextType | undefined>(undefined);
 
-// Enhanced nested value getter with Azerbaijani fallback
+// FIXED: Enhanced nested value getter with proper recursion handling
 const getNestedValue = <T extends Record<string, any>>(
   obj: T | undefined | null, 
   path: string,
-  params?: TranslationInterpolationOptions & { defaultValue?: string }
+  params?: TranslationInterpolationOptions & { defaultValue?: string },
+  visited = new Set<string>()
 ): string => {
+  // Prevent infinite recursion
+  if (visited.has(path)) {
+    return path.split('.').pop() || path;
+  }
+  visited.add(path);
+
   if (!obj) {
-    // Try immediate fallback first
-    const fallbackResult = getNestedValue(IMMEDIATE_AZ_FALLBACK as any, path);
-    if (fallbackResult !== path) return fallbackResult;
+    // Try immediate fallback first but avoid recursion
+    if (path in (IMMEDIATE_AZ_FALLBACK as any)) {
+      const fallbackValue = (IMMEDIATE_AZ_FALLBACK as any)[path];
+      if (typeof fallbackValue === 'string') {
+        return fallbackValue;
+      }
+    }
     
     const fallback = params?.defaultValue || path.split('.').pop() || path;
     return fallback.replace(/([A-Z])/g, ' $1').trim();
@@ -77,9 +88,15 @@ const getNestedValue = <T extends Record<string, any>>(
   }, obj);
 
   if (result === undefined) {
-    // Try immediate fallback for Azerbaijani
-    const fallbackResult = getNestedValue(IMMEDIATE_AZ_FALLBACK as any, path);
-    if (fallbackResult !== path) return fallbackResult;
+    // Try immediate fallback for specific nested paths
+    const pathParts = path.split('.');
+    if (pathParts.length === 2) {
+      const [module, key] = pathParts;
+      const fallbackModule = (IMMEDIATE_AZ_FALLBACK as any)[module];
+      if (fallbackModule && typeof fallbackModule[key] === 'string') {
+        return fallbackModule[key];
+      }
+    }
     
     const lastPart = path.split('.').pop() || path;
     const readableText = lastPart

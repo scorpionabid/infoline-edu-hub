@@ -1,21 +1,5 @@
 
-import { DataEntryStatus } from './dataEntry';
-
-export interface ApprovalEntry {
-  id: string;
-  school_id: string;
-  category_id: string;
-  column_id: string;
-  value: string;
-  status: DataEntryStatus;
-  created_at: string;
-  updated_at: string;
-  created_by?: string;
-  approved_by?: string;
-  approved_at?: string;
-  rejected_by?: string;
-  rejection_reason?: string;
-}
+import { DataEntryStatus, DataEntryValue } from './dataEntry';
 
 export interface ApprovalItem {
   id: string;
@@ -23,9 +7,44 @@ export interface ApprovalItem {
   categoryName: string;
   schoolId: string;
   schoolName: string;
-  submittedAt: string;
   submittedBy: string;
+  submittedAt: string;
   status: DataEntryStatus;
-  entries: ApprovalEntry[];
+  entries: DataEntryValue[];
   completionRate: number;
+}
+
+export interface ApprovalManagerProps {
+  pendingApprovals: ApprovalItem[];
+  approvedItems: ApprovalItem[];
+  rejectedItems: ApprovalItem[];
+  onApprove: (id: string, comment?: string) => void;
+  onReject: (id: string, reason: string) => void;
+  onView: (item: ApprovalItem) => void;
+  isLoading: boolean;
+}
+
+export interface ApprovalAction {
+  type: 'approve' | 'reject';
+  itemId: string;
+  comment?: string;
+  reason?: string;
+}
+
+export interface ApprovalFilters {
+  status?: DataEntryStatus;
+  schoolId?: string;
+  categoryId?: string;
+  dateRange?: {
+    start: Date;
+    end: Date;
+  };
+}
+
+export interface ApprovalStats {
+  total: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+  approvalRate: number;
 }
