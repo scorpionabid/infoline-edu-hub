@@ -56,9 +56,9 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
             isSidebarOpen={sidebarOpen}
           />
           
-          {/* Page content with responsive padding */}
+          {/* Page content with responsive padding and animation */}
           <main className="flex-1 overflow-auto p-2 sm:p-4 lg:p-6 w-full">
-            <div className="w-full max-w-full mx-auto">
+            <div className="w-full max-w-full mx-auto animate-fade-in-up">
               {children || <Outlet />}
             </div>
           </main>
@@ -68,7 +68,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
       {/* Mobile sidebar overlay - only show on smaller screens */}
       {sidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden animate-fade-in"
           onClick={() => setSidebarOpen(false)}
         />
       )}

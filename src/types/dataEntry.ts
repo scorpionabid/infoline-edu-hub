@@ -1,4 +1,3 @@
-
 export type DataEntryStatus = 'draft' | 'pending' | 'approved' | 'rejected' | 'requires_revision';
 
 export interface ApprovalItem {
@@ -142,4 +141,19 @@ export interface DataEntrySaveBarProps {
   readOnly?: boolean;
   errors?: boolean;
   isPendingApproval?: boolean;
+}
+
+export interface ProxyDataEntryOptions {
+  categoryId: string;
+  schoolId: string;
+  userId?: string;
+  status?: 'draft' | 'pending' | 'approved' | 'rejected';
+}
+
+export interface SaveResult {
+  success: boolean;
+  error?: string;
+  savedCount?: number;
+  autoApproved?: boolean;
+  proxyInfo?: any;
 }

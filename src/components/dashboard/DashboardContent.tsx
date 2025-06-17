@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -12,12 +13,6 @@ import SuperAdminDashboard from "./SuperAdminDashboard";
 import RegionAdminDashboard from "./region-admin/RegionAdminDashboard";
 import SectorAdminDashboard from "./sector-admin/SectorAdminDashboard";
 import SchoolAdminDashboard from "./school-admin/SchoolAdminDashboard";
-import { LinksCard } from "./school-admin/LinksCard";
-import { FilesCard } from "./school-admin/FilesCard";
-import { RegionLinksCard } from "./region-admin/RegionLinksCard";
-import { RegionFilesCard } from "./region-admin/RegionFilesCard";
-import SectorLinksCard from "./sector-admin/SectorLinksCard";
-import { SectorFilesCard } from "./sector-admin/SectorFilesCard";
 import { toast } from "sonner";
 
 const DashboardContent: React.FC = () => {
@@ -65,7 +60,7 @@ const DashboardContent: React.FC = () => {
         return <SectorAdminDashboard dashboardData={dashboardData} />;
 
       case "schooladmin":
-        return <SchoolAdminDashboard data={dashboardData} />;
+        return <SchoolAdminDashboard dashboardData={dashboardData} />;
 
       default:
         return (
@@ -84,7 +79,7 @@ const DashboardContent: React.FC = () => {
   };
 
   return (
-    <div className="p-4 space-y-6">
+    <div className="p-4 space-y-6 animate-fade-in-up">
       <div className="grid grid-cols-1 gap-6">
         {renderRoleSpecificContent()}
       </div>
