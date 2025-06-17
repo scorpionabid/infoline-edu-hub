@@ -134,7 +134,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         throw error;
       }
 
-      console.log('[AuthStore] SignIn successful');
+      console.log('[AuthStore] SignIn successful - session will be handled by auth state change listener');
+      // CRITICAL FIX: Do not set isLoading: false here
+      // Let the auth state change listener handle the loading state
       
     } catch (error: any) {
       console.error('[AuthStore] SignIn failed:', error);

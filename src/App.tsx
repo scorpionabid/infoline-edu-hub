@@ -3,11 +3,13 @@ import { Suspense } from "react";
 import { Toaster } from "sonner";
 import AppRoutes from "./routes/AppRoutes";
 import ErrorBoundary from "./components/ErrorBoundary";
+import AuthDebugger from "./components/debug/AuthDebugger";
 import "./App.css";
 
 function App() {
   return (
     <ErrorBoundary>
+      <AuthDebugger />
       <Suspense 
         fallback={
           <div className="min-h-screen flex items-center justify-center">

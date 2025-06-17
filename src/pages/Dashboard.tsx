@@ -5,6 +5,7 @@ import { useAuthStore, selectIsAuthenticated, selectIsLoading, selectUser, selec
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardContent from '@/components/dashboard/DashboardContent';
 import SchoolAdminSetupCheck from '@/components/setup/SchoolAdminSetupCheck';
+import AuthDebugger from '@/components/debug/AuthDebugger';
 import { toast } from 'sonner';
 import LoadingScreen from '@/components/auth/LoadingScreen';
 import { UserRole } from '@/types/auth';
@@ -52,9 +53,10 @@ const Dashboard: React.FC = () => {
     loading: isLoading, 
     initialCheck, 
     isAuthenticated, 
-    user,
+    user: user ? { id: user.id, role: user.role, email: user.email } : null,
     rawUserRole,
-    normalizedRole: userRole
+    normalizedRole: userRole,
+    authStoreState: useAuthStore.getState()
   });
 
   // Initialize auth if not already done
@@ -117,6 +119,7 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-3">
+      <AuthDebugger />
       <DashboardHeader />
       
       {isSchoolAdmin && (

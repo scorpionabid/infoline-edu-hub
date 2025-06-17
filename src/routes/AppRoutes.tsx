@@ -50,13 +50,24 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const { hasRole } = usePermissions();
   const location = useLocation();
   
-  console.log('[ProtectedRoute] State:', { isAuthenticated, isLoading, pathname: location.pathname });
+  console.log('[ProtectedRoute] State:', { 
+    isAuthenticated, 
+    isLoading, 
+    pathname: location.pathname,
+    allowedRoles,
+    authStoreState: {
+      user: useAuthStore.getState().user ? 'exists' : 'null',
+      session: useAuthStore.getState().session ? 'exists' : 'null',
+      initialized: useAuthStore.getState().initialized
+    }
+  });
   
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [location.pathname]);
   
   if (isLoading) {
+    console.log('[ProtectedRoute] Showing loading screen - isLoading is true');
     return <LoadingScreen message="Zəhmət olmasa gözləyin..." />;
   }
   
@@ -66,9 +77,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
   
   if (allowedRoles && !hasRole(allowedRoles)) {
+    console.log('[ProtectedRoute] Access denied - insufficient role');
     return <AccessDenied />;
   }
   
+  console.log('[ProtectedRoute] Access granted, rendering children');
   return <>{children}</>;
 };
 
