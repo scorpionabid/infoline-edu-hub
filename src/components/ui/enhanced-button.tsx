@@ -3,7 +3,7 @@ import React from 'react';
 import { Button, ButtonProps } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
-import { EnhancedButton } from '@/types/enhanced-design';
+import type { EnhancedButton } from '@/types/enhanced-design';
 
 export interface EnhancedButtonProps extends Omit<ButtonProps, 'variant' | 'size'>, EnhancedButton {
   leftIcon?: React.ReactNode;

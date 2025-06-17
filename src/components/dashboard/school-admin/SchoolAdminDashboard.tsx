@@ -1,13 +1,10 @@
 
 import React from "react";
 import { useTranslation } from "@/contexts/TranslationContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Clock,
   CheckCircle,
-  AlertTriangle,
   FileText,
   TrendingUp,
   Calendar,
@@ -15,7 +12,7 @@ import {
 } from "lucide-react";
 import { FilesCard } from "./FilesCard";
 import { LinksCard } from "./LinksCard";
-import { FormStatusSection } from "./FormStatusSection";
+import FormStatusSection from "./FormStatusSection";
 import { NotificationList } from "./NotificationList";
 import EnhancedCard from "@/components/ui/enhanced-card";
 import { EnhancedStatsGrid } from "../enhanced/EnhancedStatsGrid";
@@ -136,7 +133,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
         title={t('dashboard.recent_notifications')}
         variant="outlined"
       >
-        <NotificationList data={dashboardData?.notifications || []} />
+        <NotificationList notifications={dashboardData?.notifications || []} />
       </EnhancedCard>
     </div>
   );

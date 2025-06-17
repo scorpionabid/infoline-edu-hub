@@ -3,6 +3,7 @@ import React from 'react';
 import { ResponsiveGrid } from '@/components/ui/mobile-optimized-layout';
 import { EnhancedDashboardCard } from './EnhancedDashboardCard';
 import { LucideIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface StatItem {
   id: string;

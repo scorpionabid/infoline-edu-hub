@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { EnhancedCard } from '@/types/enhanced-design';
+import type { EnhancedCard } from '@/types/enhanced-design';
 
 export interface EnhancedCardProps extends EnhancedCard {
   title?: string;
