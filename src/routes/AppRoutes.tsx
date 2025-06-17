@@ -23,8 +23,8 @@ import Reports from "@/pages/Reports";
 import Settings from "@/pages/Settings";
 import NotFound from "@/pages/NotFound";
 import DataEntry from "@/pages/DataEntry";
-import SectorDataEntry from "@/pages/SectorDataEntry"; // ✅ YENİ: Sektor məlumat daxil etmə
-import SchoolAdminDataEntry from "@/components/dataEntry/SchoolAdminDataEntry"; // ✅ YENİ: Məktəb admini məlumat daxil etmə
+import SectorDataEntry from "@/pages/SectorDataEntry";
+import SchoolAdminDataEntry from "@/components/dataEntry/SchoolAdminDataEntry";
 import Profile from "@/pages/Profile";
 import ApprovalPage from "@/pages/Approval";
 import Statistics from "@/pages/Statistics";
@@ -33,7 +33,6 @@ import Performance from "@/pages/Performance";
 import UserManagement from "@/pages/UserManagement";
 
 import { UserRole } from "@/types/supabase";
-import TranslationTest from "@/components/TranslationTest";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -241,3 +240,4 @@ const AppRoutes = () => (
 );
 
 export { AppRoutes, ProtectedRoute, PublicRoute };
+export default AppRoutes;
