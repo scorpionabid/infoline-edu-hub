@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Settings } from "lucide-react";
 import UserProfile from './UserProfile';
 import LanguageSwitcher from './LanguageSwitcher';
 import NavigationMenu from './NavigationMenu';
@@ -35,7 +36,7 @@ const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }) => {
                 <Menu className="h-5 w-5" />
               )}
               <span className="sr-only">
-                {isSidebarOpen ? t('navigation.close_menu') : t('navigation.open_menu')}
+                {isSidebarOpen ? 'Menyunu bağla' : 'Menyunu aç'}
               </span>
             </Button>
           )}
@@ -51,16 +52,16 @@ const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }) => {
           {isMobile && (
             <div className="flex items-center">
               <span className="font-semibold text-sm sm:text-base text-primary">
-                {t('app.name') || 'InfoLine'}
+                InfoLine
               </span>
             </div>
           )}
         </div>
         
-        {/* Right side controls - responsive sizing */}
+        {/* Right side controls - using icons primarily */}
         <div className="flex items-center gap-2 flex-shrink-0">
           {!isMobile && (
-            <LanguageSwitcher />
+            <LanguageSwitcher showLabels={false} />
           )}
           <ThemeToggle />
           <UserProfile />

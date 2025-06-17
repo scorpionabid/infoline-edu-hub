@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useTranslation } from "@/contexts/TranslationContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,7 +18,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
 
   if (!dashboardData) {
     return (
-      <div className="p-8 text-center">{t("loading") || "Yüklənir..."}</div>
+      <div className="p-8 text-center">{t("dashboard.loading")}</div>
     );
   }
 
@@ -31,7 +32,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     approved: dashboardData.formsByStatus?.approved || 0,
     pending: dashboardData.formsByStatus?.pending || 0,
     rejected: dashboardData.formsByStatus?.rejected || 0,
-    dueSoon: 0, // Could be calculated based on deadlines
+    dueSoon: 0,
     overdue: 0,
     draft: 0,
     percentage: dashboardData.completionRate || 0,
@@ -41,28 +42,28 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
 
   const statsGridData: StatsGridItem[] = [
     {
-      title: t("totalApproved") || "Təsdiqlənmiş",
+      title: t("status.approved"),
       value: formStats.approved || 0,
       color: "text-green-600",
-      description: t("approved") || "Təsdiqləndi",
+      description: t("status.approved"),
     },
     {
-      title: t("totalPending") || "Gözləyən",
+      title: t("status.pending"),
       value: formStats.pending || 0,
       color: "text-yellow-600",
-      description: t("pending") || "Gözləyir",
+      description: t("status.pending"),
     },
     {
-      title: t("totalRejected") || "Rədd edilmiş",
+      title: t("status.rejected"),
       value: formStats.rejected || 0,
       color: "text-red-600",
-      description: t("rejected") || "Rədd edildi",
+      description: t("status.rejected"),
     },
     {
-      title: t("completion") || "Tamamlanma",
+      title: t("dashboard.stats.completion_rate"),
       value: `${Math.round(formStats.percentage || 0)}%`,
       color: "text-blue-600",
-      description: t("completionRate") || "Tamamlanma dərəcəsi",
+      description: t("dashboard.stats.completion_rate"),
     },
   ];
 
@@ -72,7 +73,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              {t("totalUsers") || "İstifadəçilər"}
+              {t("dashboard.superadmin.total_users")}
             </CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -81,7 +82,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
               {dashboardData.totalUsers || 0}
             </div>
             <p className="text-xs text-muted-foreground">
-              Sistem istifadəçiləri
+              {t("dashboard.superadmin.system_users")}
             </p>
           </CardContent>
         </Card>
@@ -89,7 +90,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              {t("totalSchools") || "Məktəblər"}
+              {t("dashboard.superadmin.total_schools")}
             </CardTitle>
             <School className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -98,7 +99,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
               {dashboardData.totalSchools || 0}
             </div>
             <p className="text-xs text-muted-foreground">
-              Qeydiyyatlı məktəblər
+              {t("dashboard.superadmin.registered_schools")}
             </p>
           </CardContent>
         </Card>
@@ -106,7 +107,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              {t("totalRegions") || "Regionlar"}
+              {t("dashboard.superadmin.total_regions")}
             </CardTitle>
             <MapPin className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -114,14 +115,16 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
             <div className="text-2xl font-bold">
               {dashboardData.totalRegions || 0}
             </div>
-            <p className="text-xs text-muted-foreground">İdarə regionları</p>
+            <p className="text-xs text-muted-foreground">
+              {t("dashboard.superadmin.management_regions")}
+            </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              {t("completion") || "Tamamlanma"}
+              {t("dashboard.superadmin.completion")}
             </CardTitle>
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -129,7 +132,9 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
             <div className="text-2xl font-bold">
               {Math.round(dashboardData.completionRate || 0)}%
             </div>
-            <p className="text-xs text-muted-foreground">Ortalama tamamlanma</p>
+            <p className="text-xs text-muted-foreground">
+              {t("dashboard.superadmin.average_completion")}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -159,7 +164,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                     </p>
                     <p className="text-sm text-muted-foreground">
                       {region.sectorCount} sektor •{" "}
-                      {region.adminEmail || "Admin təyin edilməyib"}
+                      {region.adminEmail || t("user.admin_not_assigned")}
                     </p>
                   </div>
                 </div>
@@ -168,7 +173,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
               {(!dashboardData.regions ||
                 dashboardData.regions.length === 0) && (
                 <p className="text-sm text-muted-foreground text-center py-4">
-                  Hələ heç bir fəaliyyət yoxdur
+                  {t("dashboard.superadmin.no_activity_yet")}
                 </p>
               )}
             </div>

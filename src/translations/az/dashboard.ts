@@ -1,8 +1,10 @@
+
 // Dashboard translation module
 export const dashboard = {
   title: 'İdarə Paneli',
   subtitle: 'Sistem məlumatlarına ümumi baxış',
   welcome: 'Xoş gəlmisiniz',
+  loading: 'Yüklənir...',
   
   // Naviqasiya
   navigation: {
@@ -24,6 +26,7 @@ export const dashboard = {
     total_users: 'Ümumi İstifadəçilər',
     active_users: 'Aktiv İstifadəçilər',
     online_users: 'Onlayn İstifadəçilər',
+    total_regions: 'Ümumi Regionlar',
     
     // Region statistikaları
     region_schools: 'Region Məktəbləri',
@@ -42,6 +45,7 @@ export const dashboard = {
     overdue_forms: 'Vaxtı keçən Formlar',
     total_forms: 'Ümumi Formlar',
     total_forms_description: 'Ümumi form sayı',
+    due_soon: 'Tezliklə bitəcək',
     
     // Performans göstəriciləri
     completion_rate: 'Tamamlanma Faizi',
@@ -50,6 +54,19 @@ export const dashboard = {
     user_engagement: 'İstifadəçi Fəallığı',
     data_quality: 'Məlumat Keyfiyyəti',
     system_uptime: 'Sistem İşləmə Vaxtı'
+  },
+
+  // SuperAdmin üçün xüsusi tərcümələr
+  superadmin: {
+    total_users: 'İstifadəçilər',
+    total_schools: 'Məktəblər',
+    total_regions: 'Regionlar',
+    completion: 'Tamamlanma',
+    system_users: 'Sistem istifadəçiləri',
+    registered_schools: 'Qeydiyyatlı məktəblər',
+    management_regions: 'İdarə regionları',
+    average_completion: 'Ortalama tamamlanma',
+    no_activity_yet: 'Hələ heç bir fəaliyyət yoxdur'
   },
 
   // Kartlar və widgetlər

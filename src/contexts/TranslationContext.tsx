@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, ReactNode, useMemo, useEffect, useState, useCallback } from 'react';
 import { 
   SupportedLanguage, 
@@ -14,7 +15,7 @@ type NestedKeyOf<ObjectType extends object> = {
 }[keyof ObjectType & (string | number)];
 import { getTranslations, preloadTranslations } from '../translations';
 
-// Default language (can be loaded from user preferences or browser settings)
+// Default language is now explicitly Azerbaijani
 const DEFAULT_LANGUAGE: SupportedLanguage = 'az';
 
 type TranslationContextType = {
@@ -37,8 +38,11 @@ const getNestedValue = <T extends Record<string, any>>(
   path: string,
   params?: TranslationInterpolationOptions & { defaultValue?: string }
 ): string => {
-  // If no object is provided, return the default value or the path in brackets
-  if (!obj) return params?.defaultValue || `[${path}]`;
+  // If no object is provided, return the default value or a readable fallback
+  if (!obj) {
+    const fallback = params?.defaultValue || path.split('.').pop() || path;
+    return fallback.replace(/([A-Z])/g, ' $1').trim();
+  }
   
   // Try to get the nested value
   const result = path.split('.').reduce<any>((current, key) => {
@@ -46,11 +50,9 @@ const getNestedValue = <T extends Record<string, any>>(
     return current[key];
   }, obj);
 
-  // If value is not found, return the default value or the last part of the path
+  // If value is not found, return a readable fallback
   if (result === undefined) {
-    // Try to get the last part of the path as a fallback
     const lastPart = path.split('.').pop() || path;
-    // Convert camelCase to space-separated words for better readability
     const readableText = lastPart
       .replace(/([a-z])([A-Z])/g, '$1 $2')
       .replace(/\./g, ' ')
@@ -63,11 +65,10 @@ const getNestedValue = <T extends Record<string, any>>(
   if (typeof result === 'string') {
     let finalString = result;
     
-    // Only process interpolation if we have params
     if (params) {
       finalString = Object.entries(params).reduce(
         (str, [key, value]) => {
-          if (key === 'defaultValue') return str; // Skip defaultValue for interpolation
+          if (key === 'defaultValue') return str;
           return str.replace(new RegExp(`{{${key}}}`, 'g'), String(value));
         },
         finalString
@@ -77,7 +78,6 @@ const getNestedValue = <T extends Record<string, any>>(
     return finalString;
   }
 
-  // For non-string values, convert to string
   return String(result);
 };
 
@@ -98,7 +98,6 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
       const loadedTranslations = await getTranslations(lang);
       setTranslations(loadedTranslations);
       setLanguageState(lang);
-      // Optionally save to localStorage or user preferences
       localStorage.setItem('preferredLanguage', lang);
     } catch (err) {
       console.error('Failed to load translations:', err);
@@ -108,77 +107,65 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
     }
   }, [language, translations]);
 
-  // Load initial translations
+  // Load initial translations with priority to Azerbaijani
   useEffect(() => {
-    // Try to get language from localStorage or use browser language
-    const savedLanguage = localStorage.getItem('preferredLanguage') as SupportedLanguage || 
-                         (navigator.language.split('-')[0] as SupportedLanguage) || 
-                         DEFAULT_LANGUAGE;
+    // Priority order: localStorage -> Azerbaijani (default)
+    const savedLanguage = localStorage.getItem('preferredLanguage') as SupportedLanguage;
+    const initialLanguage = savedLanguage && ['az', 'en', 'ru', 'tr'].includes(savedLanguage) 
+      ? savedLanguage 
+      : DEFAULT_LANGUAGE;
     
-    changeLanguage(savedLanguage);
+    changeLanguage(initialLanguage);
     
     // Preload other languages in the background
     (['az', 'en', 'ru', 'tr'] as SupportedLanguage[])
-      .filter(lang => lang !== savedLanguage)
+      .filter(lang => lang !== initialLanguage)
       .forEach(lang => preloadTranslations(lang));
   }, [changeLanguage]);
 
   // Type guard to check if a string is a valid module name
   const isModuleName = (name: string): name is keyof LanguageTranslations => {
-    return name in translations;
+    return translations && name in translations;
   };
 
-  // Translation function with type safety and module support
+  // Enhanced translation function with better fallback
   const t = useCallback(<T extends keyof TranslationModules>(
     key: T | NestedKeyOf<TranslationModules[T]> | string,
     params?: TranslationInterpolationOptions
   ): string => {
     if (isLoading) return '...';
-    if (error) return `[${String(key)}]`;
-    if (!translations) return `[${String(key)}]`;
+    if (error) {
+      const fallback = String(key).split('.').pop() || String(key);
+      return fallback.replace(/([A-Z])/g, ' $1').trim();
+    }
+    if (!translations) return String(key);
     
     const keyStr = String(key);
     
-    // Handle direct module access (e.g., t('auth'))
+    // Handle direct module access
     if (keyStr in translations) {
       const module = translations[keyStr as keyof LanguageTranslations];
-      return typeof module === 'string' ? module : `[${keyStr}]`;
+      return typeof module === 'string' ? module : String(keyStr);
     }
     
-    // Handle nested keys (e.g., t('auth.login.title'))
+    // Handle nested keys
     const [moduleName, ...path] = keyStr.split('.');
     
     if (!moduleName || !isModuleName(moduleName) || !translations[moduleName]) {
-      // Try to find the key in the default language as fallback
-      if (language !== DEFAULT_LANGUAGE) {
-        console.warn(`Translation not found for key "${keyStr}" in language "${language}"`);
-      }
-      return `[${keyStr}]`;
+      console.warn(`Translation module "${moduleName}" not found for key "${keyStr}"`);
+      const fallback = path.length > 0 ? path[path.length - 1] : moduleName;
+      return fallback.replace(/([A-Z])/g, ' $1').trim();
     }
     
     const module = translations[moduleName];
     const nestedKey = path.join('.');
     
-    // Handle cases where the module might be a string or object
     if (typeof module === 'string') {
       return module;
     }
     
-    // Get the nested value with proper type handling
-    const value = getNestedValue(module, nestedKey, params);
-    
-    // If the value is still not found and we're not using the default language,
-    // try to get it from the default language as a fallback
-    if (value === `[${nestedKey}]` && language !== DEFAULT_LANGUAGE) {
-      console.warn(`Using fallback translation for key "${keyStr}" from default language`);
-      const defaultValue = getNestedValue(translations, keyStr, params);
-      if (defaultValue !== `[${keyStr}]`) {
-        return defaultValue;
-      }
-    }
-    
-    return value;
-  }, [translations, isLoading, error, language]);
+    return getNestedValue(module, nestedKey, params);
+  }, [translations, isLoading, error]);
 
   const value = useMemo(() => ({
     language,
@@ -196,13 +183,6 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
   );
 };
 
-/**
- * Hook to access the translation context
- * @returns Translation context with t() function and language state
- * @example
- * const { t, language, setLanguage } = useTranslation();
- * <div>{t('auth.login.title')}</div>
- */
 export const useTranslation = (): TranslationContextType => {
   const context = useContext(TranslationContext);
   if (context === undefined) {
