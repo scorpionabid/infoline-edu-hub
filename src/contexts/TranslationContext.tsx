@@ -230,9 +230,12 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
         (['en', 'ru', 'tr'] as SupportedLanguage[])
           .filter(lang => lang !== initialLanguage && lang !== PRIORITY_LANGUAGE)
           .forEach(lang => {
-            preloadTranslations(lang).catch(err => 
-              console.warn(`Background preload failed for ${lang}:`, err)
-            );
+            // FIXED: Properly handle async preload
+            preloadTranslations(lang).then(() => {
+              console.log(`Background preload completed for ${lang}`);
+            }).catch(err => {
+              console.warn(`Background preload failed for ${lang}:`, err);
+            });
           });
       }, 2000);
     };

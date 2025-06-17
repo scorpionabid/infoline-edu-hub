@@ -1,3 +1,4 @@
+
 import React from "react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -12,11 +13,11 @@ import {
   Columns,
   Building,
   Building2,
-  Database, // ✅ YENİ: Sektor məlumatları üçün ikon
-  TrendingUp, // ✅ YENİ: Statistika üçün ikon
-  Activity, // ✅ YENİ: Proqres izləmə və performans üçün ikon
-  BarChart3, // ✅ YENİ: Əlavə statistika ikonu
-  FileBarChart, // ✅ YENİ: Reports üçün ikon
+  Database,
+  TrendingUp,
+  Activity,
+  BarChart3,
+  FileBarChart,
 } from "lucide-react";
 import { useTranslation } from "@/contexts/TranslationContext";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -115,7 +116,6 @@ const Sidebar: React.FC<SidebarProps> = ({
       icon: Users,
       visible: isAdmin,
     },
-    // Sektor məlumatları - yalnız sektor adminləri üçün
     {
       id: "sector-data-entry",
       label: t("navigation.sectorDataEntry"),
@@ -123,7 +123,6 @@ const Sidebar: React.FC<SidebarProps> = ({
       icon: Database,
       visible: isSectorAdmin,
     },
-    // Statistika - Region və Sektor adminləri üçün
     {
       id: "statistics",
       label: t("navigation.statistics"),
@@ -131,7 +130,6 @@ const Sidebar: React.FC<SidebarProps> = ({
       icon: TrendingUp,
       visible: isRegionAdmin || isSectorAdmin,
     },
-    // Proqres İzləmə - Region və Sektor adminləri üçün
     {
       id: "progress",
       label: t("navigation.progress"),
@@ -139,7 +137,6 @@ const Sidebar: React.FC<SidebarProps> = ({
       icon: Activity,
       visible: isRegionAdmin || isSectorAdmin,
     },
-    // Performans - SuperAdmin üçün
     {
       id: "performance",
       label: t("navigation.performance"),
@@ -147,7 +144,6 @@ const Sidebar: React.FC<SidebarProps> = ({
       icon: BarChart3,
       visible: isSuperAdmin,
     },
-    // İstifadəçi İdarəetməsi - SuperAdmin üçün
     {
       id: "user-management",
       label: t("navigation.userManagement"),
@@ -169,7 +165,6 @@ const Sidebar: React.FC<SidebarProps> = ({
       icon: CheckSquare,
       visible: isAdmin,
     },
-    // Reports mənyusu - adminlər üçün
     {
       id: "reports",
       label: t("navigation.reports"),
@@ -186,7 +181,6 @@ const Sidebar: React.FC<SidebarProps> = ({
     },
   ];
 
-  // Remove duplicate items by unique id
   const uniqueItems = navItems.filter(
     (item, index, self) => index === self.findIndex((i) => i.id === item.id),
   );
@@ -207,15 +201,18 @@ const Sidebar: React.FC<SidebarProps> = ({
                 cn(
                   "flex items-center gap-2 sm:gap-3 rounded-lg px-2 sm:px-3 py-2 sm:py-2.5 text-sm transition-colors",
                   "hover:bg-accent/30 hover:text-accent-foreground",
-                  "min-h-[44px] touch-manipulation", // Ensure minimum touch target size
+                  "min-h-[44px] touch-manipulation group",
                   isActive
                     ? "bg-accent/50 text-accent-foreground font-medium"
                     : "text-muted-foreground",
                 )
               }
+              title={item.label}
             >
               <Icon className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-              <span className="truncate text-xs sm:text-sm">{item.label}</span>
+              <span className="truncate text-xs sm:text-sm group-hover:text-foreground">
+                {item.label}
+              </span>
             </NavLink>
           );
         })}

@@ -46,9 +46,9 @@ const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }) => {
           )}
         </div>
         
-        {/* Right side controls - using icons primarily */}
-        <div className="flex items-center gap-2 flex-shrink-0 animate-fade-in-right">
-          <LanguageSwitcher showLabels={false} />
+        {/* Right side controls - Icon-only design */}
+        <div className="flex items-center gap-1 flex-shrink-0 animate-fade-in-right">
+          <LanguageSwitcher variant="sm" />
           <ThemeToggle />
           <UserProfile />
         </div>

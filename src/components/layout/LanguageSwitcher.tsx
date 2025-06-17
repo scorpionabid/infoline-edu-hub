@@ -12,10 +12,10 @@ import {
 
 // Supported languages with their display names and flags
 const LANGUAGES = {
-  az: { nativeName: 'Azərbaycan', flag: '🇦🇿' },
-  en: { nativeName: 'English', flag: '🇬🇧' },
-  ru: { nativeName: 'Русский', flag: '🇷🇺' },
-  tr: { nativeName: 'Türkçe', flag: '🇹🇷' },
+  az: { nativeName: 'AZ', flag: '🇦🇿' },
+  en: { nativeName: 'EN', flag: '🇬🇧' },
+  ru: { nativeName: 'RU', flag: '🇷🇺' },
+  tr: { nativeName: 'TR', flag: '🇹🇷' },
 } as const;
 
 type LanguageCode = keyof typeof LANGUAGES;
@@ -55,7 +55,7 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
 }) => {
   try {
     const translationContext = useTranslation?.();
-    const { t, language = DEFAULT_LANGUAGE, setLanguage } = translationContext || {};
+    const { language = DEFAULT_LANGUAGE, setLanguage } = translationContext || {};
     
     const availableLanguages = Object.keys(LANGUAGES) as LanguageCode[];
     const currentLanguage = availableLanguages.includes(language as LanguageCode) 
@@ -78,32 +78,27 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
     }
 
     const sizeClasses = {
-      sm: 'h-8 text-sm',
-      default: 'h-10 text-base',
-      lg: 'h-12 text-lg'
+      sm: 'h-8 text-sm min-w-[80px]',
+      default: 'h-10 text-sm min-w-[90px]',
+      lg: 'h-12 text-base min-w-[100px]'
     };
 
     return (
       <div className={`flex items-center gap-2 ${className}`}>
-        {showLabels && (
-          <span className="text-sm text-muted-foreground hidden sm:inline">
-            {t?.('ui.language') || 'Dil'}
-          </span>
-        )}
         <Select
           value={currentLanguage}
           onValueChange={handleLanguageChange}
           aria-label="Dil seçin"
         >
           <SelectTrigger 
-            className={`w-auto min-w-[120px] border-border ${sizeClasses[variant]}`}
+            className={`border-border ${sizeClasses[variant]}`}
           >
-            <div className="flex items-center gap-2 w-full">
+            <div className="flex items-center gap-2 w-full justify-center">
               <Globe className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <SelectValue />
+              <span className="font-medium">{LANGUAGES[currentLanguage].nativeName}</span>
             </div>
           </SelectTrigger>
-          <SelectContent className="min-w-[180px]">
+          <SelectContent className="min-w-[120px]" align="end">
             {availableLanguages.map((lang) => {
               const langInfo = LANGUAGES[lang];
               return (
@@ -114,9 +109,7 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
                 >
                   <div className="flex items-center gap-3">
                     <span className="text-lg">{langInfo.flag}</span>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{langInfo.nativeName}</span>
-                    </div>
+                    <span className="font-medium">{langInfo.nativeName}</span>
                   </div>
                 </SelectItem>
               );
@@ -138,7 +131,7 @@ const SafeLanguageSwitcher: React.FC<LanguageSwitcherProps> = (props) => {
       aria-hidden="true"
     >
       <Globe className="h-4 w-4" />
-      <span className="text-sm">Dil</span>
+      <span className="text-sm font-medium">AZ</span>
     </div>
   );
 
