@@ -86,14 +86,14 @@ const getNestedValue = <T extends Record<string, any>>(
 export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<SupportedLanguage>(DEFAULT_LANGUAGE);
   const [translations, setTranslations] = useState<LanguageTranslations | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
   const [isReady, setIsReady] = useState<boolean>(false);
 
   // Enhanced changeLanguage with better error handling
   const changeLanguage = useCallback(async (lang: SupportedLanguage) => {
     // Early return if already loaded
-    if (lang === language && translations && isReady && !isLoading) {
+    if (lang === language && translations && isReady) {
       console.log(`[TranslationContext] Language ${lang} already loaded and ready`);
       return;
     }
@@ -117,8 +117,6 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
       setLanguageState(lang);
       localStorage.setItem('preferredLanguage', lang);
       setIsReady(true);
-      setIsLoading(false);
-      
       console.log(`[TranslationContext] Successfully loaded language: ${lang}`);
     } catch (err) {
       console.error(`[TranslationContext] Failed to load language ${lang}:`, err);
@@ -134,9 +132,10 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
           setIsReady(true);
         }
       }
+    } finally {
       setIsLoading(false);
     }
-  }, [language, translations, isReady, isLoading]);
+  }, [language, translations, isReady]);
 
   // Initialize with Azerbaijani translations
   useEffect(() => {
@@ -152,7 +151,7 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
     };
 
     initializeTranslations();
-  }, []);
+  }, [changeLanguage]);
 
   // Type guard check
   const isModuleName = (name: string): name is keyof LanguageTranslations => {

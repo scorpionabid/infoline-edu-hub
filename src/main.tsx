@@ -14,6 +14,18 @@ if (!rootElement) {
   throw new Error("Root element not found");
 }
 
+// Preload Azerbaijani translations
+const preloadAzerbaijaniTranslations = async () => {
+  try {
+    console.log('[Main] Preloading Azerbaijani translations...');
+    // This will be handled by TranslationProvider
+  } catch (error) {
+    console.error('[Main] Failed to preload translations:', error);
+  }
+};
+
+preloadAzerbaijaniTranslations();
+
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
     <BrowserRouter>

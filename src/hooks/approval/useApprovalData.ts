@@ -1,251 +1,65 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useLanguage } from '@/context/LanguageContext';
-import { useToast } from '@/hooks/use-toast';
-import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
-import { isValidUUID } from '@/utils/uuidValidator';
-import { DataEntryStatus } from '@/types/dataEntry';
 
-interface ApprovalItem {
-  id: string;
-  categoryId: string;
-  categoryName: string;
-  schoolId: string;
-  schoolName: string;
-  submittedAt: string;
-  submittedBy: string;
-  status: DataEntryStatus;
-  entries: any[];
-  completionRate: number;
+import { useState, useEffect } from 'react';
+import { DataEntryStatus } from '@/types/dataEntry';
+import { ApprovalItem } from '@/types/approval';
+
+interface UseApprovalDataReturn {
+  pendingApprovals: ApprovalItem[];
+  approvedItems: ApprovalItem[];
+  rejectedItems: ApprovalItem[];
+  isLoading: boolean;
+  approveItem: (id: string, comment?: string) => void;
+  rejectItem: (id: string, reason: string) => void;
+  viewItem: (item: ApprovalItem) => void;
 }
 
-export const useApprovalData = () => {
-  const { t } = useLanguage();
-  const { toast } = useToast();
-  const user = useAuthStore(selectUser);
-  
+export const useApprovalData = (): UseApprovalDataReturn => {
   const [pendingApprovals, setPendingApprovals] = useState<ApprovalItem[]>([]);
   const [approvedItems, setApprovedItems] = useState<ApprovalItem[]>([]);
   const [rejectedItems, setRejectedItems] = useState<ApprovalItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  
-  const loadingRef = useRef(false);
-
-  const loadApprovalData = useCallback(async () => {
-    if (!user?.id) {
-      setIsLoading(false);
-      return;
-    }
-    
-    if (loadingRef.current) {
-      console.log('Already loading, skipping...');
-      return;
-    }
-    
-    loadingRef.current = true;
-    setIsLoading(true);
-    
-    try {
-      console.log('Loading approval data for user:', user.id);
-      
-      const { data: entries, error: entriesError } = await supabase
-        .from('data_entries')
-        .select('*')
-        .in('status', ['pending', 'approved', 'rejected']);
-
-      if (entriesError) {
-        console.error('Error loading entries:', entriesError);
-        throw entriesError;
-      }
-
-      console.log('Loaded entries:', entries?.length || 0);
-
-      if (!entries || entries.length === 0) {
-        setPendingApprovals([]);
-        setApprovedItems([]);
-        setRejectedItems([]);
-        return;
-      }
-
-      const schoolIds = [...new Set(entries.map(e => e.school_id))];
-      const { data: schools, error: schoolsError } = await supabase
-        .from('schools')
-        .select('id, name')
-        .in('id', schoolIds);
-
-      if (schoolsError) {
-        console.error('Error loading schools:', schoolsError);
-        throw schoolsError;
-      }
-
-      const categoryIds = [...new Set(entries.map(e => e.category_id))];
-      const { data: categories, error: categoriesError } = await supabase
-        .from('categories')
-        .select('id, name')
-        .in('id', categoryIds);
-
-      if (categoriesError) {
-        console.error('Error loading categories:', categoriesError);
-        throw categoriesError;
-      }
-
-      const schoolMap = new Map(schools?.map(s => [s.id, s.name]) || []);
-      const categoryMap = new Map(categories?.map(c => [c.id, c.name]) || []);
-
-      const groupedData: Record<string, ApprovalItem> = {};
-      
-      entries.forEach(entry => {
-        const key = `${entry.category_id}-${entry.school_id}`;
-        
-        if (!groupedData[key]) {
-          groupedData[key] = {
-            id: key,
-            categoryId: entry.category_id,
-            categoryName: categoryMap.get(entry.category_id) || 'Unknown Category',
-            schoolId: entry.school_id,
-            schoolName: schoolMap.get(entry.school_id) || 'Unknown School',
-            submittedAt: entry.created_at,
-            submittedBy: isValidUUID(entry.created_by) ? entry.created_by : 'Unknown User',
-            status: entry.status as DataEntryStatus,
-            entries: [],
-            completionRate: 0
-          };
-        }
-        
-        groupedData[key].entries.push(entry);
-        
-        if (entry.updated_at > groupedData[key].submittedAt) {
-          groupedData[key].status = entry.status as DataEntryStatus;
-          groupedData[key].submittedAt = entry.updated_at;
-        }
-      });
-
-      const pending: ApprovalItem[] = [];
-      const approved: ApprovalItem[] = [];
-      const rejected: ApprovalItem[] = [];
-
-      Object.values(groupedData).forEach(item => {
-        const filledEntries = item.entries.filter(e => e.value && e.value.trim() !== '');
-        const totalEntries = item.entries.length;
-        const completionValue = totalEntries > 0 ? (filledEntries.length / totalEntries) * 100 : 0;
-        item.completionRate = Math.round(completionValue);
-
-        const statusCounts = item.entries.reduce((acc, entry) => {
-          acc[entry.status] = (acc[entry.status] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>);
-        
-        const mostCommonStatus = Object.entries(statusCounts)
-          .sort(([,a], [,b]) => (b as number) - (a as number))[0]?.[0] as DataEntryStatus;
-        
-        item.status = mostCommonStatus || DataEntryStatus.PENDING;
-
-        switch (item.status) {
-          case DataEntryStatus.PENDING:
-            pending.push(item);
-            break;
-          case DataEntryStatus.APPROVED:
-            approved.push(item);
-            break;
-          case DataEntryStatus.REJECTED:
-            rejected.push(item);
-            break;
-        }
-      });
-
-      console.log('Grouped data:', { pending: pending.length, approved: approved.length, rejected: rejected.length });
-
-      setPendingApprovals(pending);
-      setApprovedItems(approved);
-      setRejectedItems(rejected);
-
-    } catch (error) {
-      console.error('Error loading approval data:', error);
-      toast({
-        description: t('errorLoadingApprovalData') || 'Error loading approval data',
-        variant: 'destructive'
-      });
-    } finally {
-      setIsLoading(false);
-      loadingRef.current = false;
-    }
-  }, [user?.id, t, toast]);
-
-  const approveItem = useCallback(async (itemId: string, comment?: string) => {
-    const [categoryId, schoolId] = itemId.split('-');
-    
-    try {
-      const { error } = await supabase
-        .from('data_entries')
-        .update({
-          status: 'approved',
-          approved_at: new Date().toISOString(),
-          approved_by: user?.id
-        })
-        .eq('category_id', categoryId)
-        .eq('school_id', schoolId)
-        .eq('status', 'pending');
-
-      if (error) throw error;
-      
-      await loadApprovalData();
-      
-      toast({
-        description: t('itemApproved') || 'Item approved successfully',
-      });
-      
-    } catch (error) {
-      console.error('Error approving item:', error);
-      toast({
-        description: t('errorApprovingItem') || 'Error approving item',
-        variant: 'destructive'
-      });
-      throw error;
-    }
-  }, [user?.id, loadApprovalData, t, toast]);
-
-  const rejectItem = useCallback(async (itemId: string, reason: string) => {
-    const [categoryId, schoolId] = itemId.split('-');
-    
-    try {
-      const { error } = await supabase
-        .from('data_entries')
-        .update({
-          status: 'rejected',
-          rejection_reason: reason,
-          rejected_by: user?.id
-        })
-        .eq('category_id', categoryId)
-        .eq('school_id', schoolId)
-        .eq('status', 'pending');
-
-      if (error) throw error;
-      
-      await loadApprovalData();
-      
-      toast({
-        description: t('itemRejected') || 'Item rejected successfully',
-      });
-      
-    } catch (error) {
-      console.error('Error rejecting item:', error);
-      toast({
-        description: t('errorRejectingItem') || 'Error rejecting item',
-        variant: 'destructive'
-      });
-      throw error;
-    }
-  }, [user?.id, loadApprovalData, t, toast]);
-
-  const viewItem = useCallback((item: ApprovalItem) => {
-    console.log('Viewing item:', item);
-  }, []);
 
   useEffect(() => {
-    if (user?.id && !loadingRef.current) {
-      loadApprovalData();
+    // Mock data for now
+    setPendingApprovals([
+      {
+        id: '1',
+        categoryId: 'cat-1',
+        categoryName: 'Infrastruktur',
+        schoolId: '123',
+        schoolName: 'Test School',
+        submittedBy: 'John Doe',
+        submittedAt: '2025-04-18',
+        status: DataEntryStatus.PENDING,
+        entries: [],
+        completionRate: 75,
+      }
+    ]);
+  }, []);
+
+  const approveItem = (id: string, comment?: string) => {
+    console.log('Approving item:', id, comment);
+    // Move item from pending to approved
+    const item = pendingApprovals.find(p => p.id === id);
+    if (item) {
+      setPendingApprovals(prev => prev.filter(p => p.id !== id));
+      setApprovedItems(prev => [...prev, { ...item, status: DataEntryStatus.APPROVED }]);
     }
-  }, [user?.id]);
+  };
+
+  const rejectItem = (id: string, reason: string) => {
+    console.log('Rejecting item:', id, reason);
+    // Move item from pending to rejected
+    const item = pendingApprovals.find(p => p.id === id);
+    if (item) {
+      setPendingApprovals(prev => prev.filter(p => p.id !== id));
+      setRejectedItems(prev => [...prev, { ...item, status: DataEntryStatus.REJECTED }]);
+    }
+  };
+
+  const viewItem = (item: ApprovalItem) => {
+    console.log('Viewing item:', item);
+  };
 
   return {
     pendingApprovals,
@@ -255,6 +69,5 @@ export const useApprovalData = () => {
     approveItem,
     rejectItem,
     viewItem,
-    refreshData: loadApprovalData
   };
 };

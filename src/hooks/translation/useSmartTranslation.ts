@@ -1,28 +1,43 @@
 
-import { useCallback } from 'react';
-import { useOptimizedTranslation } from '@/context/LanguageContext';
+import { useTranslation } from '@/contexts/TranslationContext';
+import { SmartTranslationOptions } from '@/types/translation';
 
 export const useSmartTranslation = () => {
-  const { t, tSafe, tContext } = useOptimizedTranslation();
+  const { t: baseT, language, setLanguage, isLoading, error, isReady } = useTranslation();
 
-  const tModule = useCallback((module: string, key: string, params?: Record<string, any>) => {
-    return tSafe(`${module}.${key}`, undefined, { interpolation: params });
-  }, [tSafe]);
+  const tSafe = (
+    key: string, 
+    fallback?: string | null, 
+    options?: SmartTranslationOptions
+  ): string => {
+    try {
+      const result = baseT(key, options?.interpolation);
+      
+      if (result === key || result === '...') {
+        if (fallback !== null) {
+          return fallback || key.split('.').pop() || key;
+        }
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('Translation error:', error);
+      return fallback || key.split('.').pop() || key;
+    }
+  };
 
-  const tValidation = useCallback((rule: string, field: string, params?: Record<string, any>) => {
-    return tSafe(`validation.${rule}`, undefined, { interpolation: { field, ...params } });
-  }, [tSafe]);
-
-  const tComponent = useCallback((component: string, key: string, params?: Record<string, any>) => {
-    return tSafe(`components.${component}.${key}`, undefined, { interpolation: params });
-  }, [tSafe]);
+  const tContext = (key: string, context: Record<string, any>): string => {
+    return baseT(key, context);
+  };
 
   return {
-    t,
+    t: baseT,
     tSafe,
     tContext,
-    tModule,
-    tValidation,
-    tComponent
+    language,
+    setLanguage,
+    isLoading,
+    error,
+    isReady
   };
 };
