@@ -51,7 +51,7 @@ export interface DataEntry {
   school_id: string;
   category_id: string;
   values: DataEntryValue[];
-  status: 'draft' | 'pending' | 'approved' | 'rejected';
+  status: DataEntryStatus;
   created_at: Date;
   updated_at: Date;
 }
@@ -77,10 +77,9 @@ export interface ProxyDataEntryOptions {
   readonly: boolean;
   showValidation: boolean;
   autoSave: boolean;
-  status?: string;
+  status?: DataEntryStatus;
 }
 
-// Add missing exports
 export interface DataEntryFormData {
   [columnId: string]: any;
 }

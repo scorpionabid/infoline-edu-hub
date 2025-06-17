@@ -38,20 +38,17 @@ export const ApprovalManager: React.FC<ApprovalManagerProps> = ({
   const [rejectedCount, setRejectedCount] = useState(0);
 
   useEffect(() => {
-    // Calculate initial counts
     setApprovedCount(approvedItems.length);
     setRejectedCount(rejectedItems.length);
   }, [approvedItems, rejectedItems]);
 
   const handleApprove = (approval: ApprovalItem) => {
     onApprove(approval.id);
-    // Optimistically update the UI
     setApprovedCount((prev) => prev + 1);
   };
 
   const handleReject = (approval: ApprovalItem) => {
-    onReject(approval.id, 'Rejected by admin');
-    // Optimistically update the UI
+    onReject(approval.id, 'Rədd edildi');
     setRejectedCount((prev) => prev + 1);
   };
 
@@ -118,30 +115,10 @@ export const ApprovalManager: React.FC<ApprovalManagerProps> = ({
                       </Tooltip>
                     </TooltipProvider>
                   )}
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleApprove(approval)}
-                        >
-                          <CheckCircle className="h-4 w-4 text-green-600" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Təsdiq et</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
-              <p>
-                Məktəb: {approval.schoolName}
-              </p>
-              <p>
-                Kateqoriya: {approval.categoryName}
-              </p>
               <div className="flex gap-2 mt-4">
                 <TooltipProvider>
                   <Tooltip>

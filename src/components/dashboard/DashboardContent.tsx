@@ -13,25 +13,27 @@ import SuperAdminDashboard from "./SuperAdminDashboard";
 import RegionAdminDashboard from "./region-admin/RegionAdminDashboard";
 import SectorAdminDashboard from "./sector-admin/SectorAdminDashboard";
 import SchoolAdminDashboard from "./school-admin/SchoolAdminDashboard";
-import { TranslationWrapper } from "@/components/translation/TranslationWrapper";
 import { toast } from "sonner";
 
 const DashboardContent: React.FC = () => {
   const user = useAuthStore(selectUser);
   const userRole = useAuthStore(selectUserRole);
-  const { t } = useTranslation();
+  const { t, isLoading: translationLoading, isReady } = useTranslation();
 
   const { loading, error, dashboardData } = useRealDashboardData();
 
-  console.log("[DashboardContent] Real Dashboard Data:", {
+  console.log("[DashboardContent] Dashboard state:", {
     dashboardData,
     loading,
     error,
     userRole,
+    translationLoading,
+    isReady
   });
 
-  if (loading) {
-    return <LoadingScreen message="Dashboard yüklənir..." />;
+  // Show loading only if both translation and dashboard are loading
+  if ((loading || translationLoading) && !isReady) {
+    return <LoadingScreen message="İdarə paneli yüklənir..." />;
   }
 
   if (error) {
@@ -68,7 +70,7 @@ const DashboardContent: React.FC = () => {
           <div className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>{t("dashboard.welcome")}</CardTitle>
+                <CardTitle>{t("dashboard.title")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <p>{t("dashboard.subtitle")}</p>
@@ -80,13 +82,11 @@ const DashboardContent: React.FC = () => {
   };
 
   return (
-    <TranslationWrapper>
-      <div className="p-4 space-y-6 animate-fade-in-up">
-        <div className="grid grid-cols-1 gap-6">
-          {renderRoleSpecificContent()}
-        </div>
+    <div className="p-4 space-y-6 animate-fade-in-up">
+      <div className="grid grid-cols-1 gap-6">
+        {renderRoleSpecificContent()}
       </div>
-    </TranslationWrapper>
+    </div>
   );
 };
 

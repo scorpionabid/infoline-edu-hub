@@ -5,11 +5,9 @@ import App from "./App.tsx";
 import "./index.css";
 import { BrowserRouter } from "react-router-dom";
 import { TranslationProvider } from "./contexts/TranslationContext";
-import { translationCache } from "./services/translationCache";
 
-// CRITICAL: Initialize translation cache before app starts
-console.log('[Main] Initializing translation system...');
-translationCache.preloadPriority();
+// CRITICAL: Initialize for Azerbaijani language priority
+console.log('[Main] Initializing translation system with Azerbaijani priority...');
 
 const rootElement = document.getElementById("root");
 if (!rootElement) {

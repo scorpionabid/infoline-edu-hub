@@ -22,12 +22,12 @@ const DashboardHeader: React.FC = () => {
     setIsRefreshing(true);
     setTimeout(() => {
       setIsRefreshing(false);
-      toast.success(t('dashboard.refresh.refresh_data'));
+      toast.success("Məlumatlar yeniləndi");
     }, 1000);
   };
   
   const handlePeriodChange = (period: string) => {
-    toast.info(t('ui.success'));
+    toast.info("Dövr dəyişdirildi");
   };
   
   return (
@@ -35,7 +35,7 @@ const DashboardHeader: React.FC = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <LayoutDashboard className="h-6 w-6 text-primary" />
-          <h1 className="text-2xl font-semibold">{t('dashboard.title')}</h1>
+          <h1 className="text-2xl font-semibold">İdarə Paneli</h1>
         </div>
         
         <div className="flex items-center space-x-2">
@@ -46,28 +46,28 @@ const DashboardHeader: React.FC = () => {
             disabled={isRefreshing}
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-            {isRefreshing ? t('ui.loading') : t('dashboard.refresh.refresh_data')}
+            {isRefreshing ? "Yüklənir..." : "Yenilə"}
           </Button>
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
-                {t('dashboard.time_period.this_month')}
+                Bu ay
                 <ChevronDown className="h-4 w-4 ml-2" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handlePeriodChange(t('dashboard.time_period.today'))}>
-                {t('dashboard.time_period.today')}
+              <DropdownMenuItem onClick={() => handlePeriodChange("Bu gün")}>
+                Bu gün
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handlePeriodChange(t('dashboard.time_period.this_week'))}>
-                {t('dashboard.time_period.this_week')}
+              <DropdownMenuItem onClick={() => handlePeriodChange("Bu həftə")}>
+                Bu həftə
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handlePeriodChange(t('dashboard.time_period.this_month'))}>
-                {t('dashboard.time_period.this_month')}
+              <DropdownMenuItem onClick={() => handlePeriodChange("Bu ay")}>
+                Bu ay
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handlePeriodChange(t('dashboard.time_period.this_year'))}>
-                {t('dashboard.time_period.this_year')}
+              <DropdownMenuItem onClick={() => handlePeriodChange("Bu il")}>
+                Bu il
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -79,7 +79,7 @@ const DashboardHeader: React.FC = () => {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 
-              placeholder={t('dashboard.filters.search_dashboard')} 
+              placeholder="Dashboard-da axtar" 
               className="pl-10"
             />
           </div>
@@ -88,26 +88,26 @@ const DashboardHeader: React.FC = () => {
         <div className="text-sm text-muted-foreground">
           {user?.role === 'superadmin' && (
             <p>
-              {t('dashboard.stats.total_schools')}: <span className="font-medium">634</span> | {' '}
-              {t('dashboard.stats.active_users')}: <span className="font-medium">912</span>
+              Ümumi məktəblər: <span className="font-medium">634</span> | {' '}
+              Aktiv istifadəçilər: <span className="font-medium">912</span>
             </p>
           )}
           {user?.role === 'regionadmin' && (
             <p>
-              {t('dashboard.stats.region_schools')}: <span className="font-medium">126</span> | {' '}
-              {t('dashboard.stats.active_users')}: <span className="font-medium">158</span>
+              Region məktəbləri: <span className="font-medium">126</span> | {' '}
+              Aktiv istifadəçilər: <span className="font-medium">158</span>
             </p>
           )}
           {user?.role === 'sectoradmin' && (
             <p>
-              {t('dashboard.stats.sector_schools')}: <span className="font-medium">24</span> | {' '}
-              {t('dashboard.stats.completion_rate')}: <span className="font-medium">68%</span>
+              Sektor məktəbləri: <span className="font-medium">24</span> | {' '}
+              Tamamlanma faizi: <span className="font-medium">68%</span>
             </p>
           )}
           {user?.role === 'schooladmin' && (
             <p>
-              {t('dashboard.stats.pending_forms')}: <span className="font-medium">3</span> | {' '}
-              {t('dashboard.stats.completion_rate')}: <span className="font-medium">85%</span>
+              Gözləyən formlar: <span className="font-medium">3</span> | {' '}
+              Tamamlanma faizi: <span className="font-medium">85%</span>
             </p>
           )}
         </div>

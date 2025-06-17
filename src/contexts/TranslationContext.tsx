@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, ReactNode, useMemo, useEffect, useState, useCallback } from 'react';
 import { 
   SupportedLanguage, 
@@ -12,13 +13,15 @@ type NestedKeyOf<ObjectType extends object> = {
     ? `${Key}` | `${Key}.${NestedKeyOf<ObjectType[Key]>}`
     : Key;
 }[keyof ObjectType & (string | number)];
-import { getTranslations, preloadTranslations, clearTranslationCache } from '../translations';
-import { translationCache } from '../services/translationCache';
-import { useMemoryOptimization } from '../hooks/performance/useMemoryOptimization';
 
-// CRITICAL FIX: Azerbaijani dili default və priority
+import { getTranslations } from '../translations';
+
+// CRITICAL FIX: Azərbaycan dili default və priority
 const DEFAULT_LANGUAGE: SupportedLanguage = 'az';
 const PRIORITY_LANGUAGE: SupportedLanguage = 'az';
+
+// In-memory cache for instant access
+const translationMemoryCache = new Map<SupportedLanguage, LanguageTranslations>();
 
 type TranslationContextType = {
   language: SupportedLanguage;
@@ -35,7 +38,7 @@ type TranslationContextType = {
 
 const TranslationContext = createContext<TranslationContextType | undefined>(undefined);
 
-// ENHANCED: Nested value getter with robust fallback
+// Enhanced nested value getter with robust fallback
 const getNestedValue = <T extends Record<string, any>>(
   obj: T | undefined | null, 
   path: string,
@@ -80,84 +83,16 @@ const getNestedValue = <T extends Record<string, any>>(
   return String(result);
 };
 
-// ENHANCED: Dual-layer cache with memory priority
-const TRANSLATION_CACHE_KEY = 'infoline_translation_cache';
-const CACHE_VERSION = '2.0'; // Version bump for cache reset
-
-// Memory cache for instant access
-const memoryCache = new Map<SupportedLanguage, LanguageTranslations>();
-
-const saveToCache = (lang: SupportedLanguage, translations: LanguageTranslations) => {
-  try {
-    // Save to memory first (priority)
-    memoryCache.set(lang, translations);
-    
-    // Then save to localStorage
-    const cacheData = {
-      version: CACHE_VERSION,
-      language: lang,
-      translations,
-      timestamp: Date.now()
-    };
-    localStorage.setItem(`${TRANSLATION_CACHE_KEY}_${lang}`, JSON.stringify(cacheData));
-    
-    console.log(`[TranslationCache] Saved ${lang} to both memory and localStorage`);
-  } catch (error) {
-    console.warn('Failed to save translations to cache:', error);
-  }
-};
-
-const loadFromCache = (lang: SupportedLanguage): LanguageTranslations | null => {
-  try {
-    // Try memory cache first (instant)
-    const memoryResult = memoryCache.get(lang);
-    if (memoryResult) {
-      console.log(`[TranslationCache] Loaded ${lang} from memory cache`);
-      return memoryResult;
-    }
-    
-    // Try localStorage
-    const cached = localStorage.getItem(`${TRANSLATION_CACHE_KEY}_${lang}`);
-    if (!cached) return null;
-    
-    const cacheData = JSON.parse(cached);
-    
-    // Check cache version and age (24 hours)
-    if (cacheData.version !== CACHE_VERSION || 
-        Date.now() - cacheData.timestamp > 24 * 60 * 60 * 1000) {
-      localStorage.removeItem(`${TRANSLATION_CACHE_KEY}_${lang}`);
-      return null;
-    }
-    
-    // Add to memory cache for next time
-    memoryCache.set(lang, cacheData.translations);
-    console.log(`[TranslationCache] Loaded ${lang} from localStorage and cached in memory`);
-    
-    return cacheData.translations;
-  } catch (error) {
-    console.warn('Failed to load translations from cache:', error);
-    return null;
-  }
-};
-
 export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<SupportedLanguage>(DEFAULT_LANGUAGE);
   const [translations, setTranslations] = useState<LanguageTranslations | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
   const [isReady, setIsReady] = useState<boolean>(false);
 
-  // Initialize memory optimization
-  const { forceCleanup } = useMemoryOptimization({
-    onMemoryPressure: () => {
-      console.log('[TranslationContext] Memory pressure detected, clearing non-priority cache');
-      translationCache.clear(true); // Preserve priority language
-    }
-  });
-
-  // ENHANCED: Race condition önleme with enhanced cache
+  // Enhanced changeLanguage with better error handling
   const changeLanguage = useCallback(async (lang: SupportedLanguage) => {
-    // Aynı dil və hazır state-də early return
+    // Early return if already loaded
     if (lang === language && translations && isReady && !isLoading) {
       console.log(`[TranslationContext] Language ${lang} already loaded and ready`);
       return;
@@ -168,16 +103,16 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
     setError(null);
     
     try {
-      // Try enhanced cache first
-      let loadedTranslations = translationCache.get(lang);
+      // Try memory cache first
+      let loadedTranslations = translationMemoryCache.get(lang);
       
       if (!loadedTranslations) {
         console.log(`[TranslationContext] Loading ${lang} from network...`);
         loadedTranslations = await getTranslations(lang);
-        translationCache.set(lang, loadedTranslations);
+        translationMemoryCache.set(lang, loadedTranslations);
       }
       
-      // CRITICAL: Update state in correct order
+      // Update state in correct order
       setTranslations(loadedTranslations);
       setLanguageState(lang);
       localStorage.setItem('preferredLanguage', lang);
@@ -189,10 +124,10 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
       console.error(`[TranslationContext] Failed to load language ${lang}:`, err);
       setError(err instanceof Error ? err : new Error('Failed to load translations'));
       
-      // CRITICAL FIX: Priority fallback to Azerbaijani
+      // Fallback to Azerbaijani if available
       if (lang !== PRIORITY_LANGUAGE) {
         console.log(`[TranslationContext] Falling back to priority language: ${PRIORITY_LANGUAGE}`);
-        const fallbackTranslations = translationCache.get(PRIORITY_LANGUAGE);
+        const fallbackTranslations = translationMemoryCache.get(PRIORITY_LANGUAGE);
         if (fallbackTranslations) {
           setTranslations(fallbackTranslations);
           setLanguageState(PRIORITY_LANGUAGE);
@@ -203,69 +138,33 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
     }
   }, [language, translations, isReady, isLoading]);
 
-  // ENHANCED: Initialization with enhanced cache
+  // Initialize with Azerbaijani translations
   useEffect(() => {
     const initializeTranslations = async () => {
-      console.log('[TranslationContext] Initializing enhanced translation system...');
+      console.log('[TranslationContext] Initializing translation system...');
       
-      // CRITICAL: Always prioritize Azerbaijani
       const savedLanguage = localStorage.getItem('preferredLanguage') as SupportedLanguage;
       const initialLanguage = (savedLanguage && ['az', 'en', 'ru', 'tr'].includes(savedLanguage)) 
         ? savedLanguage 
         : PRIORITY_LANGUAGE;
       
-      console.log(`[TranslationContext] Initial language: ${initialLanguage}`);
-      
-      // Ensure Azerbaijani is loaded first in background
-      if (initialLanguage !== PRIORITY_LANGUAGE) {
-        try {
-          let azTranslations = translationCache.get(PRIORITY_LANGUAGE);
-          if (!azTranslations) {
-            azTranslations = await getTranslations(PRIORITY_LANGUAGE);
-            translationCache.set(PRIORITY_LANGUAGE, azTranslations);
-          }
-          console.log('[TranslationContext] Azerbaijani preloaded successfully');
-        } catch (error) {
-          console.warn('[TranslationContext] Failed to preload Azerbaijani:', error);
-        }
-      }
-      
-      // Load the target language
       await changeLanguage(initialLanguage);
-      
-      // ENHANCED: Background preload with enhanced cache
-      setTimeout(async () => {
-        const otherLanguages = (['en', 'ru', 'tr'] as SupportedLanguage[])
-          .filter(lang => lang !== initialLanguage && lang !== PRIORITY_LANGUAGE);
-        
-        for (const lang of otherLanguages) {
-          try {
-            if (!translationCache.has(lang)) {
-              const langTranslations = await getTranslations(lang);
-              translationCache.set(lang, langTranslations);
-              console.log(`Background preload completed for ${lang}`);
-            }
-          } catch (err) {
-            console.warn(`Background preload failed for ${lang}:`, err);
-          }
-        }
-      }, 2000);
     };
 
     initializeTranslations();
-  }, []); // Empty dependency - only run once
+  }, []);
 
   // Type guard check
   const isModuleName = (name: string): name is keyof LanguageTranslations => {
     return translations && name in translations;
   };
 
-  // ENHANCED: Translation function with better fallback
+  // Enhanced translation function with better fallback
   const t = useCallback(<T extends keyof TranslationModules>(
     key: T | NestedKeyOf<TranslationModules[T]> | string,
     params?: TranslationInterpolationOptions
   ): string => {
-    // CRITICAL: Show loading only briefly
+    // Show minimal loading indicator
     if (isLoading && !translations) {
       return '...';
     }
