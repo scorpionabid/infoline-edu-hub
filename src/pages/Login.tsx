@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore, selectIsAuthenticated, selectIsLoading, selectUser } from '@/hooks/auth/useAuthStore';
-import LoginForm from '@/components/auth/LoginForm';
+import SecureLoginForm from '@/components/auth/SecureLoginForm';
 import LoginContainer from '@/components/auth/LoginContainer';
 import LoginHeader from '@/components/auth/LoginHeader';
 import LoadingScreen from '@/components/auth/LoadingScreen';
@@ -37,14 +37,13 @@ const Login = () => {
     return <LoadingScreen message="Yönləndiriliyor..." />;
   }
 
-  // Login formu
-  // Error-u string-ə çeviririk
+  // Secure login formu
   const errorMessage = error instanceof Error ? error.message : error;
 
   return (
     <LoginContainer>
       <LoginHeader />
-      <LoginForm error={errorMessage} clearError={clearError} />
+      <SecureLoginForm error={errorMessage} clearError={clearError} />
     </LoginContainer>
   );
 };
