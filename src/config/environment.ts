@@ -63,8 +63,8 @@ export const ENV: EnvironmentConfig = {
   },
 };
 
-// Utility function for components
-export const getEnv = (key: keyof typeof import.meta.env): string | undefined => {
+// Utility function for components - simplified type
+export const getEnv = (key: string): string | undefined => {
   return import.meta.env[key];
 };
 
