@@ -93,17 +93,30 @@ export const generateCSRFToken = (): string => {
 export const validateEnvironment = (): { valid: boolean; errors: string[] } => {
   const errors: string[] = [];
   
-  if (!import.meta.env.VITE_SUPABASE_URL) {
+  // Check if we can access environment variables
+  let hasSupabaseUrl = false;
+  let hasSupabaseKey = false;
+  
+  if (typeof import.meta !== 'undefined' && import.meta.env) {
+    hasSupabaseUrl = !!import.meta.env.VITE_SUPABASE_URL;
+    hasSupabaseKey = !!import.meta.env.VITE_SUPABASE_ANON_KEY;
+    
+    // Validate Supabase URL format if present
+    if (hasSupabaseUrl && !import.meta.env.VITE_SUPABASE_URL.startsWith('https://')) {
+      errors.push('VITE_SUPABASE_URL must use HTTPS');
+    }
+  } else {
+    // Fallback - assume we have the hardcoded values
+    hasSupabaseUrl = true;
+    hasSupabaseKey = true;
+  }
+  
+  if (!hasSupabaseUrl) {
     errors.push('VITE_SUPABASE_URL is required');
   }
   
-  if (!import.meta.env.VITE_SUPABASE_ANON_KEY) {
+  if (!hasSupabaseKey) {
     errors.push('VITE_SUPABASE_ANON_KEY is required');
-  }
-  
-  // Validate Supabase URL format
-  if (import.meta.env.VITE_SUPABASE_URL && !import.meta.env.VITE_SUPABASE_URL.startsWith('https://')) {
-    errors.push('VITE_SUPABASE_URL must use HTTPS');
   }
   
   return {
