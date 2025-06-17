@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -12,12 +13,7 @@ import SuperAdminDashboard from "./SuperAdminDashboard";
 import RegionAdminDashboard from "./region-admin/RegionAdminDashboard";
 import SectorAdminDashboard from "./sector-admin/SectorAdminDashboard";
 import SchoolAdminDashboard from "./school-admin/SchoolAdminDashboard";
-import { LinksCard } from "./school-admin/LinksCard";
-import { FilesCard } from "./school-admin/FilesCard";
-import { RegionLinksCard } from "./region-admin/RegionLinksCard";
-import { RegionFilesCard } from "./region-admin/RegionFilesCard";
-import SectorLinksCard from "./sector-admin/SectorLinksCard";
-import { SectorFilesCard } from "./sector-admin/SectorFilesCard";
+import { TranslationWrapper } from "@/components/translation/TranslationWrapper";
 import { toast } from "sonner";
 
 const DashboardContent: React.FC = () => {
@@ -65,17 +61,17 @@ const DashboardContent: React.FC = () => {
         return <SectorAdminDashboard dashboardData={dashboardData} />;
 
       case "schooladmin":
-        return <SchoolAdminDashboard data={dashboardData} />;
+        return <SchoolAdminDashboard dashboardData={dashboardData} />;
 
       default:
         return (
           <div className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle>{t("welcome")}</CardTitle>
+                <CardTitle>{t("dashboard.welcome")}</CardTitle>
               </CardHeader>
               <CardContent>
-                <p>{t("dashboardDescription")}</p>
+                <p>{t("dashboard.subtitle")}</p>
               </CardContent>
             </Card>
           </div>
@@ -84,11 +80,13 @@ const DashboardContent: React.FC = () => {
   };
 
   return (
-    <div className="p-4 space-y-6">
-      <div className="grid grid-cols-1 gap-6">
-        {renderRoleSpecificContent()}
+    <TranslationWrapper>
+      <div className="p-4 space-y-6 animate-fade-in-up">
+        <div className="grid grid-cols-1 gap-6">
+          {renderRoleSpecificContent()}
+        </div>
       </div>
-    </div>
+    </TranslationWrapper>
   );
 };
 

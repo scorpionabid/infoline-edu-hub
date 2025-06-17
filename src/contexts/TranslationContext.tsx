@@ -13,7 +13,7 @@ type NestedKeyOf<ObjectType extends object> = {
     ? `${Key}` | `${Key}.${NestedKeyOf<ObjectType[Key]>}`
     : Key;
 }[keyof ObjectType & (string | number)];
-import { getTranslations, preloadTranslations } from '../translations';
+import { getTranslations, preloadTranslations, clearTranslationCache } from '../translations';
 
 // Default language is now explicitly Azerbaijani
 const DEFAULT_LANGUAGE: SupportedLanguage = 'az';
@@ -28,6 +28,7 @@ type TranslationContextType = {
   isLoading: boolean;
   error: Error | null;
   changeLanguage: (lang: SupportedLanguage) => Promise<void>;
+  isReady: boolean;
 };
 
 const TranslationContext = createContext<TranslationContextType | undefined>(undefined);
@@ -81,46 +82,111 @@ const getNestedValue = <T extends Record<string, any>>(
   return String(result);
 };
 
+// Enhanced cache management with better error handling
+const TRANSLATION_CACHE_KEY = 'infoline_translation_cache';
+const CACHE_VERSION = '1.0';
+
+const saveToCache = (lang: SupportedLanguage, translations: LanguageTranslations) => {
+  try {
+    const cacheData = {
+      version: CACHE_VERSION,
+      language: lang,
+      translations,
+      timestamp: Date.now()
+    };
+    localStorage.setItem(`${TRANSLATION_CACHE_KEY}_${lang}`, JSON.stringify(cacheData));
+  } catch (error) {
+    console.warn('Failed to save translations to cache:', error);
+  }
+};
+
+const loadFromCache = (lang: SupportedLanguage): LanguageTranslations | null => {
+  try {
+    const cached = localStorage.getItem(`${TRANSLATION_CACHE_KEY}_${lang}`);
+    if (!cached) return null;
+    
+    const cacheData = JSON.parse(cached);
+    
+    // Check cache version and age (24 hours)
+    if (cacheData.version !== CACHE_VERSION || 
+        Date.now() - cacheData.timestamp > 24 * 60 * 60 * 1000) {
+      localStorage.removeItem(`${TRANSLATION_CACHE_KEY}_${lang}`);
+      return null;
+    }
+    
+    return cacheData.translations;
+  } catch (error) {
+    console.warn('Failed to load translations from cache:', error);
+    return null;
+  }
+};
+
 export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<SupportedLanguage>(DEFAULT_LANGUAGE);
   const [translations, setTranslations] = useState<LanguageTranslations | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
+  const [isReady, setIsReady] = useState<boolean>(false);
 
-  // Change language handler
+  // Enhanced change language handler with better error recovery
   const changeLanguage = useCallback(async (lang: SupportedLanguage) => {
-    if (lang === language && translations) return;
+    if (lang === language && translations && isReady) return;
     
     setIsLoading(true);
     setError(null);
+    setIsReady(false);
     
     try {
-      const loadedTranslations = await getTranslations(lang);
+      // Try cache first
+      let loadedTranslations = loadFromCache(lang);
+      
+      if (!loadedTranslations) {
+        // Load from network
+        loadedTranslations = await getTranslations(lang);
+        // Save to cache
+        saveToCache(lang, loadedTranslations);
+      }
+      
       setTranslations(loadedTranslations);
       setLanguageState(lang);
       localStorage.setItem('preferredLanguage', lang);
+      setIsReady(true);
     } catch (err) {
       console.error('Failed to load translations:', err);
       setError(err instanceof Error ? err : new Error('Failed to load translations'));
+      
+      // Try to use cached fallback or default
+      const fallbackTranslations = loadFromCache(DEFAULT_LANGUAGE);
+      if (fallbackTranslations) {
+        setTranslations(fallbackTranslations);
+        setLanguageState(DEFAULT_LANGUAGE);
+        setIsReady(true);
+      }
     } finally {
       setIsLoading(false);
     }
-  }, [language, translations]);
+  }, [language, translations, isReady]);
 
-  // Load initial translations with priority to Azerbaijani
+  // Initialize translations with better error handling
   useEffect(() => {
-    // Priority order: localStorage -> Azerbaijani (default)
-    const savedLanguage = localStorage.getItem('preferredLanguage') as SupportedLanguage;
-    const initialLanguage = savedLanguage && ['az', 'en', 'ru', 'tr'].includes(savedLanguage) 
-      ? savedLanguage 
-      : DEFAULT_LANGUAGE;
-    
-    changeLanguage(initialLanguage);
-    
-    // Preload other languages in the background
-    (['az', 'en', 'ru', 'tr'] as SupportedLanguage[])
-      .filter(lang => lang !== initialLanguage)
-      .forEach(lang => preloadTranslations(lang));
+    const initializeTranslations = async () => {
+      // Priority order: localStorage -> Azerbaijani (default)
+      const savedLanguage = localStorage.getItem('preferredLanguage') as SupportedLanguage;
+      const initialLanguage = savedLanguage && ['az', 'en', 'ru', 'tr'].includes(savedLanguage) 
+        ? savedLanguage 
+        : DEFAULT_LANGUAGE;
+      
+      await changeLanguage(initialLanguage);
+      
+      // Preload other languages in the background after main language is loaded
+      setTimeout(() => {
+        (['az', 'en', 'ru', 'tr'] as SupportedLanguage[])
+          .filter(lang => lang !== initialLanguage)
+          .forEach(lang => preloadTranslations(lang));
+      }, 1000);
+    };
+
+    initializeTranslations();
   }, [changeLanguage]);
 
   // Type guard to check if a string is a valid module name
@@ -128,17 +194,25 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
     return translations && name in translations;
   };
 
-  // Enhanced translation function with better fallback
+  // Enhanced translation function with better fallback and no bracket notation
   const t = useCallback(<T extends keyof TranslationModules>(
     key: T | NestedKeyOf<TranslationModules[T]> | string,
     params?: TranslationInterpolationOptions
   ): string => {
-    if (isLoading) return '...';
-    if (error) {
+    // Show loading state
+    if (isLoading && !translations) return '...';
+    
+    // Handle error state with meaningful fallback
+    if (error && !translations) {
       const fallback = String(key).split('.').pop() || String(key);
       return fallback.replace(/([A-Z])/g, ' $1').trim();
     }
-    if (!translations) return String(key);
+    
+    // No translations loaded yet
+    if (!translations) {
+      const fallback = String(key).split('.').pop() || String(key);
+      return fallback.replace(/([A-Z])/g, ' $1').trim();
+    }
     
     const keyStr = String(key);
     
@@ -152,7 +226,7 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
     const [moduleName, ...path] = keyStr.split('.');
     
     if (!moduleName || !isModuleName(moduleName) || !translations[moduleName]) {
-      console.warn(`Translation module "${moduleName}" not found for key "${keyStr}"`);
+      // Don't warn for missing modules, just return readable fallback
       const fallback = path.length > 0 ? path[path.length - 1] : moduleName;
       return fallback.replace(/([A-Z])/g, ' $1').trim();
     }
@@ -174,7 +248,8 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
     isLoading,
     error,
     changeLanguage,
-  }), [language, t, isLoading, error, changeLanguage]);
+    isReady,
+  }), [language, t, isLoading, error, changeLanguage, isReady]);
 
   return (
     <TranslationContext.Provider value={value}>

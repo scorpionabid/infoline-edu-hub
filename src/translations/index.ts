@@ -4,9 +4,7 @@ import type {
   LanguageTranslations,
   TranslationModules as TranslationModulesType 
 } from '../types/translation';
-
-// Cache for loaded translations
-const translationCache: Partial<Record<SupportedLanguage, LanguageTranslations>> = {};
+import { translationCache } from '@/services/translationCache';
 
 // List of all available modules with type safety
 const MODULE_NAMES = [
@@ -36,23 +34,16 @@ const MODULE_NAMES = [
 
 type ModuleName = typeof MODULE_NAMES[number];
 
-/**
- * Load translations for a specific language
- * @param lang The language code to load translations for
- * @returns A promise that resolves to the loaded translations
- */
-const loadTranslations = async (lang: SupportedLanguage): Promise<LanguageTranslations> => {
-  // Return from cache if available
-  if (translationCache[lang]) {
-    return translationCache[lang]!;
-  }
-
+// Enhanced loading with retry mechanism
+const loadTranslations = async (
+  lang: SupportedLanguage, 
+  retryCount: number = 0
+): Promise<LanguageTranslations> => {
   try {
     // Import all modules in parallel with better error handling
-    const moduleImports = await Promise.all(
+    const moduleImports = await Promise.allSettled(
       MODULE_NAMES.map(async (moduleName) => {
         try {
-          // Try to import the module
           const module = await import(`./${lang}/${moduleName}.ts`);
           return { [moduleName]: module.default || {} };
         } catch (error) {
@@ -62,9 +53,12 @@ const loadTranslations = async (lang: SupportedLanguage): Promise<LanguageTransl
       })
     );
 
-    // Combine all modules into a single object with proper typing
-    const translations = moduleImports.reduce<Partial<LanguageTranslations>>((acc, module) => {
-      return { ...acc, ...module };
+    // Process results
+    const translations = moduleImports.reduce<Partial<LanguageTranslations>>((acc, result) => {
+      if (result.status === 'fulfilled') {
+        return { ...acc, ...result.value };
+      }
+      return acc;
     }, {});
     
     // Ensure all required modules are present with proper typing
@@ -93,56 +87,69 @@ const loadTranslations = async (lang: SupportedLanguage): Promise<LanguageTransl
       validation: translations.validation || {}
     };
 
-    // Store in cache
-    translationCache[lang] = completeTranslations;
+    // Cache the loaded translations
+    translationCache.set(lang, completeTranslations);
     
     return completeTranslations;
   } catch (error) {
-    console.error(`Failed to load translations for ${lang}:`, error);
+    console.error(`Failed to load translations for ${lang} (attempt ${retryCount + 1}):`, error);
+    
+    // Retry logic for network failures
+    if (retryCount < 2) {
+      await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
+      return loadTranslations(lang, retryCount + 1);
+    }
+    
     throw error;
   }
 };
 
 /**
- * Get translations for a specific language
- * @param lang The language code to get translations for
- * @returns A promise that resolves to the translations for the specified language
+ * Get translations for a specific language with enhanced caching
  */
 export const getTranslations = async (lang: SupportedLanguage): Promise<LanguageTranslations> => {
-  if (!translationCache[lang]) {
-    translationCache[lang] = await loadTranslations(lang);
+  // Try cache first
+  const cached = translationCache.get(lang);
+  if (cached) {
+    return cached;
   }
-  return translationCache[lang]!;
+
+  // Load from network
+  return await loadTranslations(lang);
 };
 
 /**
  * Preload translations for a language in the background
- * @param lang The language code to preload
  */
 export const preloadTranslations = (lang: SupportedLanguage): void => {
-  if (!translationCache[lang]) {
-    loadTranslations(lang).catch(error => {
-      console.error(`Failed to preload translations for ${lang}:`, error);
-    });
+  // Don't preload if already cached
+  if (translationCache.has(lang)) {
+    return;
+  }
+
+  loadTranslations(lang).catch(error => {
+    console.error(`Failed to preload translations for ${lang}:`, error);
+  });
+};
+
+/**
+ * Clear the translation cache
+ */
+export const clearTranslationCache = (lang?: SupportedLanguage): void => {
+  if (lang) {
+    translationCache.delete(lang);
+  } else {
+    translationCache.clear();
   }
 };
 
 /**
- * Clear the translation cache for a specific language or all languages
- * @param lang Optional language code to clear cache for (clears all if not provided)
+ * Get cache information for debugging
  */
-export const clearTranslationCache = (lang?: SupportedLanguage): void => {
-  if (lang) {
-    delete translationCache[lang];
-  } else {
-    Object.keys(translationCache).forEach(key => {
-      delete translationCache[key as SupportedLanguage];
-    });
-  }
+export const getCacheInfo = () => {
+  return translationCache.getInfo();
 };
 
 // Re-export types for backward compatibility
 export type { LanguageTranslations, SupportedLanguage };
-
-// Export the TranslationModules type from our types file
 export type TranslationModules = TranslationModulesType;

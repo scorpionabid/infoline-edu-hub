@@ -10,6 +10,8 @@ export interface SaveDataEntryOptions {
 export interface SaveResult {
   success: boolean;
   error?: string;
+  savedCount?: number;
+  autoApproved?: boolean;
 }
 
 export interface SubmitResult {
@@ -28,7 +30,7 @@ export class DataEntryService {
         .insert({
           category_id: options.categoryId,
           school_id: options.schoolId,
-          user_id: options.userId,
+          created_by: options.userId,
           data: formData,
           status: 'draft'
         });
@@ -38,7 +40,7 @@ export class DataEntryService {
         return { success: false, error: error.message };
       }
 
-      return { success: true };
+      return { success: true, savedCount: 1 };
     } catch (error) {
       console.error('Error in saveFormData:', error);
       return { success: false, error: 'Bilinməyən xəta' };
@@ -55,7 +57,7 @@ export class DataEntryService {
         .insert({
           category_id: options.categoryId,
           school_id: options.schoolId,
-          user_id: options.userId,
+          created_by: options.userId,
           data: formData,
           status: 'submitted'
         });

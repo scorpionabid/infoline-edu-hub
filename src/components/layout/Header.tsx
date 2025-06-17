@@ -24,7 +24,7 @@ const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }) => {
             <Button
               variant="ghost"
               size="icon"
-              className="mr-3 flex-shrink-0 min-h-[44px] min-w-[44px] touch-manipulation"
+              className="mr-3 flex-shrink-0 min-h-[44px] min-w-[44px] touch-manipulation hover-lift"
               onClick={onSidebarToggle}
               aria-label={isSidebarOpen ? 'Menyunu bağla' : 'Menyunu aç'}
             >
@@ -38,8 +38,8 @@ const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }) => {
           
           {/* Mobile: Show logo/title when sidebar is closed */}
           {isMobile && (
-            <div className="flex items-center">
-              <span className="font-semibold text-sm sm:text-base text-primary">
+            <div className="flex items-center animate-fade-in-left">
+              <span className="font-semibold text-sm sm:text-base text-primary gradient-text">
                 InfoLine
               </span>
             </div>
@@ -47,7 +47,7 @@ const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }) => {
         </div>
         
         {/* Right side controls - using icons primarily */}
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-2 flex-shrink-0 animate-fade-in-right">
           <LanguageSwitcher showLabels={false} />
           <ThemeToggle />
           <UserProfile />
