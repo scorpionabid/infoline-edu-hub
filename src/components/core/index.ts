@@ -1,6 +1,7 @@
+
 // Core universal dialog system exports
 export { UniversalDialog } from './UniversalDialog';
-export { getDialogConfig, DeleteConfigs, CreateConfigs, EditConfigs, ConfirmConfigs } from './dialogConfigs';
+export { getDialogConfig, dialogConfigs } from './dialogConfigs';
 export type { DialogConfig, DialogType, EntityType, DangerLevel } from './types';
 export { EntityMetadata } from './types';
 

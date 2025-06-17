@@ -1,50 +1,29 @@
-// Navigation translation module - All navigation related translations
+
+// Navigation translation module
 export const navigation = {
-  // Main navigation items
-  dashboard: 'İdarə paneli',
-  regions: 'Regionlar',
-  sectors: 'Sektorlar', 
-  schools: 'Məktəblər',
+  // Main navigation
+  dashboard: 'İdarə Paneli',
+  dataEntry: 'Məlumat Daxil Etmə',
   categories: 'Kateqoriyalar',
   columns: 'Sütunlar',
   users: 'İstifadəçilər',
-  performance: 'Performans',
-  userManagement: 'İstifadəçi İdarəetməsi',
-  dataEntry: 'Məlumat daxil etmə',
-  sectorDataEntry: 'Sektor məlumat daxil etmə',
-  approvals: 'Təsdiq gözləyənlər',
+  schools: 'Məktəblər',
+  sectors: 'Sektorlar',
+  regions: 'Regionlar',
   reports: 'Hesabatlar',
-  settings: 'Parametrlər',
   statistics: 'Statistika',
-  progress: 'Proqres izləmə',
-  
-  // Page titles and headers
-  manage_data_columns: 'Sütunları İdarə Et',
-  system_settings: 'Sistem Parametrləri',
-  user_profile: 'İstifadəçi Profili',
-  
-  // Navigation actions
-  home: 'Ana səhifə',
-  back: 'Geri',
-  logout: 'Çıxış',
+  settings: 'Parametrlər',
   profile: 'Profil',
+  notifications: 'Bildirişlər',
   
   // Breadcrumb navigation
-  breadcrumb: {
-    home: 'Ana səhifə',
-    dashboard: 'İdarə paneli',
-    settings: 'Parametrlər',
-    profile: 'Profil',
-    users: 'İstifadəçilər',
-    schools: 'Məktəblər'
-  },
+  home: 'Ana səhifə',
+  back: 'Geri',
   
-  // Menu categories
-  main_menu: 'Əsas Menyu',
-  administration: 'Administrasiya',
-  data_management: 'Məlumat İdarəetməsi',
-  system: 'Sistem',
-  help: 'Kömək'
+  // Menu items
+  menu: 'Menyu',
+  close_menu: 'Menyunu bağla',
+  open_menu: 'Menyunu aç'
 } as const;
 
 export type Navigation = typeof navigation;

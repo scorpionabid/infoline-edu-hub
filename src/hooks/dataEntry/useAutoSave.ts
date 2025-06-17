@@ -1,95 +1,64 @@
 
-import { useState, useEffect, useCallback } from 'react';
-import { DataEntryService } from '@/services/dataEntry';
+import { useEffect, useRef } from 'react';
+import { saveDataEntry } from '@/services/dataEntry';
+import { DataEntryFormData } from '@/types/dataEntry';
 
-interface UseAutoSaveOptions {
-  categoryId: string;
+interface UseAutoSaveProps {
+  data: DataEntryFormData;
   schoolId: string;
-  userId?: string; // Add userId for proper tracking
-  formData: Record<string, any>;
-  isDataModified: boolean;
+  categoryId: string;
+  interval?: number;
   enabled?: boolean;
-  intervalMs?: number;
-  onSaveSuccess?: (savedAt: Date) => void;
-  onSaveError?: (error: string) => void;
 }
 
 export const useAutoSave = ({
-  categoryId,
+  data,
   schoolId,
-  userId,
-  formData,
-  isDataModified,
-  enabled = true,
-  intervalMs = 30000, // 30 seconds
-  onSaveSuccess,
-  onSaveError
-}: UseAutoSaveOptions) => {
-  const [isSaving, setIsSaving] = useState(false);
-  const [lastSaveTime, setLastSaveTime] = useState<Date | null>(null);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [saveAttempts, setSaveAttempts] = useState(0);
+  categoryId,
+  interval = 30000,
+  enabled = true
+}: UseAutoSaveProps) => {
+  const intervalRef = useRef<NodeJS.Timeout>();
 
-  const saveNow = useCallback(async () => {
-    if (!categoryId || !schoolId || !isDataModified || isSaving) {
-      return;
-    }
-
-    try {
-      setIsSaving(true);
-      setSaveError(null);
-      setSaveAttempts(prev => prev + 1);
-
-      const result = await DataEntryService.saveFormData(formData, {
-        categoryId,
-        schoolId,
-        userId, // Pass userId to the service
-        status: 'draft'
-      });
-
-      if (result.success) {
-        const now = new Date();
-        setLastSaveTime(now);
-        setSaveAttempts(0);
-        onSaveSuccess?.(now);
-      } else {
-        throw new Error(result.error || 'Save failed');
-      }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Auto-save failed';
-      setSaveError(errorMessage);
-      onSaveError?.(errorMessage);
-    } finally {
-      setIsSaving(false);
-    }
-  }, [categoryId, schoolId, userId, formData, isDataModified, isSaving, onSaveSuccess, onSaveError]);
-
-  // Auto-save interval
   useEffect(() => {
-    if (!enabled || !isDataModified) {
+    if (!enabled || !data || Object.keys(data).length === 0) {
       return;
     }
 
-    const interval = setInterval(() => {
-      saveNow();
-    }, intervalMs);
+    const autoSave = async () => {
+      try {
+        await saveDataEntry({
+          schoolId,
+          categoryId,
+          data
+        });
+      } catch (error) {
+        console.error('Auto-save failed:', error);
+      }
+    };
 
-    return () => clearInterval(interval);
-  }, [enabled, isDataModified, saveNow, intervalMs]);
+    intervalRef.current = setInterval(autoSave, interval);
 
-  const resetError = useCallback(() => {
-    setSaveError(null);
-    setSaveAttempts(0);
-  }, []);
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [data, schoolId, categoryId, interval, enabled]);
 
-  return {
-    isSaving,
-    lastSaveTime,
-    saveError,
-    saveAttempts,
-    autoSaveEnabled: enabled,
-    hasUnsavedChanges: isDataModified,
-    saveNow,
-    resetError
+  const saveNow = async () => {
+    try {
+      await saveDataEntry({
+        schoolId,
+        categoryId,
+        data
+      });
+      return true;
+    } catch (error) {
+      console.error('Manual save failed:', error);
+      return false;
+    }
   };
+
+  return { saveNow };
 };
