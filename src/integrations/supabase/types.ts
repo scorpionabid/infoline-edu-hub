@@ -951,12 +951,18 @@ export type Database = {
         Args: { school_id_param: string }
         Returns: number
       }
+      calculate_percentage: {
+        Args: { part_value: number; total_value: number }
+        Returns: number
+      }
       calculate_sector_completion_rate: {
         Args: { sector_id_param: string }
         Returns: number
       }
       can_access_category: {
-        Args: { user_id_param: string; category_id_param: string }
+        Args:
+          | { category_id: string; operation_type?: string }
+          | { user_id_param: string; category_id_param: string }
         Returns: boolean
       }
       can_access_data_entry: {
@@ -972,12 +978,24 @@ export type Database = {
         Returns: boolean
       }
       can_view_own_role: {
-        Args: { role_user_id: string }
+        Args: Record<PropertyKey, never> | { role_user_id: string }
+        Returns: boolean
+      }
+      check_approval_permissions: {
+        Args: { target_school_id: string; data_type?: string }
         Returns: boolean
       }
       check_proxy_data_entry_permission: {
         Args: { user_id: string; user_role: string; target_school_id: string }
         Returns: boolean
+      }
+      check_region_name_uniqueness: {
+        Args: { region_name: string; exclude_id?: string }
+        Returns: boolean
+      }
+      clean_text: {
+        Args: { input_text: string }
+        Returns: string
       }
       create_audit_log: {
         Args: {
@@ -994,6 +1012,10 @@ export type Database = {
         Args: { user_id: string }
         Returns: undefined
       }
+      generate_random_string: {
+        Args: { string_length?: number }
+        Returns: string
+      }
       get_accessible_regions: {
         Args: { user_id_param: string }
         Returns: string[]
@@ -1006,7 +1028,7 @@ export type Database = {
         Args: { user_id_param: string }
         Returns: string[]
       }
-      get_auth_user_info: {
+      get_auth_user_info_simple: {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
@@ -1024,7 +1046,7 @@ export type Database = {
       }
       get_current_user_profile: {
         Args: Record<PropertyKey, never>
-        Returns: string
+        Returns: Json
       }
       get_current_user_region_id: {
         Args: Record<PropertyKey, never>
@@ -1198,7 +1220,9 @@ export type Database = {
         Returns: string
       }
       has_access_to_region: {
-        Args: { _user_id: string; _region_id: string }
+        Args:
+          | { _user_id: string; _region_id: string }
+          | { target_region_id: string }
         Returns: boolean
       }
       has_access_to_school: {
@@ -1226,10 +1250,9 @@ export type Database = {
         Returns: boolean
       }
       has_role: {
-        Args: {
-          _user_id: string
-          _role: Database["public"]["Enums"]["app_role"]
-        }
+        Args:
+          | { _user_id: string; _role: Database["public"]["Enums"]["app_role"] }
+          | { check_role: string }
         Returns: boolean
       }
       has_role_safe: {
@@ -1268,6 +1291,10 @@ export type Database = {
         Args: { user_id_param: string }
         Returns: boolean
       }
+      is_date_in_range: {
+        Args: { check_date: string; start_date: string; end_date: string }
+        Returns: boolean
+      }
       is_in_same_sector: {
         Args: { target_user_id: string }
         Returns: boolean
@@ -1302,6 +1329,10 @@ export type Database = {
       }
       is_superadmin_secure: {
         Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_valid_json: {
+        Args: { input_text: string }
         Returns: boolean
       }
       safe_get_user_by_email: {
@@ -1349,6 +1380,10 @@ export type Database = {
       sectoradmin_can_see_school_user: {
         Args: { user_id_param: string }
         Returns: boolean
+      }
+      test_search_path_fix: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
       update_admin_emails: {
         Args: Record<PropertyKey, never>
@@ -1402,8 +1437,8 @@ export type Database = {
         }
         Returns: undefined
       }
-      user_has_role: {
-        Args: { role_param: string }
+      user_has_role_new: {
+        Args: { check_role: string }
         Returns: boolean
       }
       uuid_generate_v4: {
@@ -1411,7 +1446,13 @@ export type Database = {
         Returns: string
       }
       validate_column_value: {
-        Args: { p_column_id: string; p_value: string }
+        Args:
+          | { column_type: string; value_text: string }
+          | { p_column_id: string; p_value: string }
+        Returns: boolean
+      }
+      validate_status_transition: {
+        Args: { current_status: string; new_status: string }
         Returns: boolean
       }
     }
