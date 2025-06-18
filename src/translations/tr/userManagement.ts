@@ -92,6 +92,17 @@ export const userManagement = {
   },
 
   // Messages
+  // Page sections
+  tabs: {
+    overview: 'Genel Bakış',
+    users: 'Kullanıcılar',
+    roles: 'Roller',
+    permissions: 'İzinler',
+    activity: 'Aktivite',
+    settings: 'Ayarlar',
+    audit_log: 'Denetim Kaydı'
+  },
+
   messages: {
     user_created: 'Kullanıcı başarıyla oluşturuldu',
     user_updated: 'Kullanıcı bilgileri güncellendi',

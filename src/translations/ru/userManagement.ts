@@ -92,6 +92,17 @@ export const userManagement = {
   },
 
   // Messages
+  // Page sections
+  tabs: {
+    overview: 'Обзор',
+    users: 'Пользователи',
+    roles: 'Роли',
+    permissions: 'Разрешения',
+    activity: 'Активность',
+    settings: 'Настройки',
+    audit_log: 'Журнал аудита'
+  },
+
   messages: {
     user_created: 'Пользователь успешно создан',
     user_updated: 'Информация пользователя обновлена',
