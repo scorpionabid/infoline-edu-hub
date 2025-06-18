@@ -142,4 +142,94 @@ export class ProxyDataEntryService {
     
     return data?.role || 'user';
   }
+
+  static async bulkSaveProxyFormData(
+    schoolIds: string[],
+    categoryId: string,
+    columnId: string,
+    value: string
+  ): Promise<ProxyDataEntryResult> {
+    try {
+      const results = [];
+      let successCount = 0;
+      let failCount = 0;
+      
+      for (const schoolId of schoolIds) {
+        const result = await this.createProxyDataEntry(columnId, value, {
+          schoolId,
+          categoryId,
+          autoApprove: false,
+          reason: 'Bulk data entry by sector admin'
+        });
+        
+        if (result.success) {
+          successCount++;
+        } else {
+          failCount++;
+        }
+        
+        results.push(result);
+      }
+      
+      const allSuccessful = failCount === 0;
+      
+      return {
+        success: successCount > 0, // Ən azı bir məktəb üçün uğurlu olmalıdır
+        message: allSuccessful
+          ? `Bütün ${schoolIds.length} məktəb üçün məlumatlar uğurla yadda saxlanıldı`
+          : `${successCount} məktəb üçün yadda saxlama uğurlu, ${failCount} məktəb üçün uğursuz oldu`
+      };
+    } catch (error: any) {
+      console.error('Error in bulk save proxy data:', error);
+      return {
+        success: false,
+        message: error.message || 'Toplu məlumat daxil etmə zamanı xəta baş verdi'
+      };
+    }
+  }
+  
+  static async bulkSubmitProxyData(
+    schoolIds: string[],
+    categoryId: string,
+    columnId: string,
+    value: string
+  ): Promise<ProxyDataEntryResult> {
+    try {
+      const results = [];
+      let successCount = 0;
+      let failCount = 0;
+      
+      for (const schoolId of schoolIds) {
+        const result = await this.createProxyDataEntry(columnId, value, {
+          schoolId,
+          categoryId,
+          autoApprove: true,
+          reason: 'Bulk data entry and submit by sector admin'
+        });
+        
+        if (result.success) {
+          successCount++;
+        } else {
+          failCount++;
+        }
+        
+        results.push(result);
+      }
+      
+      const allSuccessful = failCount === 0;
+      
+      return {
+        success: successCount > 0, // Ən azı bir məktəb üçün uğurlu olmalıdır
+        message: allSuccessful
+          ? `Bütün ${schoolIds.length} məktəb üçün məlumatlar uğurla təqdim edildi və təsdiqləndi`
+          : `${successCount} məktəb üçün təqdim etmə uğurlu, ${failCount} məktəb üçün uğursuz oldu`
+      };
+    } catch (error: any) {
+      console.error('Error in bulk submit proxy data:', error);
+      return {
+        success: false,
+        message: error.message || 'Toplu məlumat təqdim etmə zamanı xəta baş verdi'
+      };
+    }
+  }
 }
