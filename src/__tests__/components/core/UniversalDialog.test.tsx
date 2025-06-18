@@ -18,18 +18,14 @@ vi.mock('@/contexts/TranslationContext', () => ({
 }));
 
 describe('UniversalDialog Component', () => {
-  it('should render the dialog with config', () => {
-    const config = {
-      title: 'Test Title',
-      content: 'Test Content',
-      confirmText: 'Confirm',
-      cancelText: 'Cancel'
-    };
-
+  it('should render the dialog when isOpen is true', () => {
     render(
       <UniversalDialog
         isOpen={true}
-        config={config}
+        title="Test Title"
+        content="Test Content"
+        confirmText="Confirm"
+        cancelText="Cancel"
         onClose={() => {}}
         onConfirm={() => {}}
       />
@@ -40,17 +36,13 @@ describe('UniversalDialog Component', () => {
   });
 
   it('should render confirm and cancel buttons', () => {
-    const config = {
-      title: 'Test Title',
-      content: 'Test Content',
-      confirmText: 'Confirm',
-      cancelText: 'Cancel'
-    };
-
     render(
       <UniversalDialog
         isOpen={true}
-        config={config}
+        title="Test Title"
+        content="Test Content"
+        confirmText="Confirm"
+        cancelText="Cancel"
         onClose={() => {}}
         onConfirm={() => {}}
       />
@@ -61,17 +53,13 @@ describe('UniversalDialog Component', () => {
   });
 
   it('should not render the dialog when isOpen is false', () => {
-    const config = {
-      title: 'Test Title',
-      content: 'Test Content',
-      confirmText: 'Confirm',
-      cancelText: 'Cancel'
-    };
-
     render(
       <UniversalDialog
         isOpen={false}
-        config={config}
+        title="Test Title"
+        content="Test Content"
+        confirmText="Confirm"
+        cancelText="Cancel"
         onClose={() => {}}
         onConfirm={() => {}}
       />

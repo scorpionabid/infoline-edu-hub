@@ -27,20 +27,23 @@ const isValidUrl = (url: string): boolean => {
   }
 };
 
-// Check if running in production
+// Check if running in production - make this more lenient for Lovable
 const isProduction = (): boolean => {
   if (typeof import.meta !== 'undefined' && (import.meta as any).env) {
     const env = (import.meta as any).env as ViteEnv;
-    return env.PROD === true;
+    const mode = env.VITE_APP_ENV || 'development';
+    // Only consider truly production environments, not Lovable previews
+    return mode === 'production' && typeof window !== 'undefined' && 
+           !window.location.hostname.includes('lovable.app');
   }
   return false;
 };
 
-// FIXED: More lenient environment validation for development
+// More lenient environment validation - only for true production
 const validateEnvironment = (): { valid: boolean; errors: string[] } => {
   const errors: string[] = [];
   
-  // Get environment variables directly here to avoid circular dependency
+  // Get environment variables
   let supabaseUrl: string | undefined;
   let supabaseAnonKey: string | undefined;
   
@@ -50,8 +53,10 @@ const validateEnvironment = (): { valid: boolean; errors: string[] } => {
     supabaseAnonKey = env.VITE_SUPABASE_ANON_KEY;
   }
   
-  // FIXED: Only require env vars in production, use fallbacks in development
-  if (isProduction()) {
+  // Only require strict validation in true production environments
+  const strictProduction = isProduction();
+  
+  if (strictProduction) {
     if (!supabaseUrl) {
       errors.push('VITE_SUPABASE_URL is required in production');
     }
@@ -70,7 +75,7 @@ const validateEnvironment = (): { valid: boolean; errors: string[] } => {
       errors.push('Development Supabase URL detected in production');
     }
   } else {
-    // Development mode - only warn, don't block
+    // Development/preview mode - only warn, don't block
     if (!supabaseUrl) {
       console.warn('[ENV] Using development fallback for VITE_SUPABASE_URL');
     }
@@ -85,7 +90,7 @@ const validateEnvironment = (): { valid: boolean; errors: string[] } => {
   };
 };
 
-// FIXED: Enhanced secure environment variable getter with better fallbacks
+// Secure environment variable getter with better fallbacks
 const getEnvVar = (key: string, defaultValue?: string): string => {
   // Handle Vite environment variables properly
   let value: string | undefined;
@@ -105,7 +110,7 @@ const getEnvVar = (key: string, defaultValue?: string): string => {
     return defaultValue;
   }
   
-  // FIXED: Enhanced fallbacks for development with better error handling
+  // Enhanced fallbacks for development with better error handling
   if (!isProduction()) {
     console.warn(`[ENV] Using development fallback for ${key}`);
     
@@ -132,7 +137,7 @@ const getEnvVar = (key: string, defaultValue?: string): string => {
   throw new Error(`Missing required environment variable: ${key}`);
 };
 
-// FIXED: Validate environment but don't block in development
+// Validate environment but don't block in development/preview
 const validation = validateEnvironment();
 if (!validation.valid) {
   if (isProduction()) {
