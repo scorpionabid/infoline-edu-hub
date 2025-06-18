@@ -4,6 +4,7 @@ import app from './app';
 import { auth } from './auth'; 
 import categories from './categories';
 import columns from './columns';
+import common from './common';
 import core from './core';
 import dashboard from './dashboard';
 import dataEntry from './dataEntry';
@@ -22,6 +23,8 @@ import ui from './ui';
 import user from './user';
 import userManagement from './userManagement';
 import validation from './validation';
+import statistics from './statistics';
+import settings from './settings';
 
 export default {
   app,
@@ -46,4 +49,6 @@ export default {
   user,
   userManagement,
   validation,
+  statistics,
+  settings,
 };
