@@ -122,6 +122,8 @@ export default {
   dataExportSuccess: 'Tüm veriler başarıyla dışa aktarıldı',
   dataExportFailed: 'Veri Dışa Aktarma Başarısız',
   dataExportFailedDesc: 'Verileri dışa aktarma sırasında bir hata oluştu. Lütfen tekrar deneyin.',
+  schoolCreated: 'Okul Oluşturuldu',
+  schoolCreationFailed: 'Okul Oluşturma Başarısız',
   schoolUpdated: 'Okul Güncellendi',
   schoolUpdateFailed: 'Okul Güncelleme Başarısız',
   schoolDeleted: 'Okul Silindi',

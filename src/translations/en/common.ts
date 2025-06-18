@@ -123,6 +123,8 @@ export default {
   dataExportSuccess: 'All data has been successfully exported',
   dataExportFailed: 'Data Export Failed',
   dataExportFailedDesc: 'An error occurred while exporting data. Please try again.',
+  schoolCreated: 'School Created',
+  schoolCreationFailed: 'School Creation Failed',
   schoolUpdated: 'School Updated',
   schoolUpdateFailed: 'School Update Failed',
   schoolDeleted: 'School Deleted',

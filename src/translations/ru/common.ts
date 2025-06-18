@@ -122,6 +122,8 @@ export default {
   dataExportSuccess: 'Все данные были успешно экспортированы',
   dataExportFailed: 'Ошибка экспорта данных',
   dataExportFailedDesc: 'Произошла ошибка при экспорте данных. Пожалуйста, попробуйте снова.',
+  schoolCreated: 'Школа создана',
+  schoolCreationFailed: 'Ошибка создания школы',
   schoolUpdated: 'Школа обновлена',
   schoolUpdateFailed: 'Ошибка обновления школы',
   schoolDeleted: 'Школа удалена',

@@ -51,7 +51,6 @@ export const auth = {
     passwordMismatch: 'Şifrələr uyğun gəlmir',
     backToLogin: 'Girişə qayıt',
     sendLink: 'Sıfırlama linki göndər',
-    backToLogin: 'Giriş səhifəsinə qayıt',
     error: {
       title: 'Şifrə sıfırlama uğursuz oldu',
       invalidToken: 'Keçərsiz və ya müddəti bitmiş token',

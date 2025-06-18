@@ -246,6 +246,8 @@ export const common = {
   dataExportSuccess: 'Bütün məlumatlar uğurla ixrac edildi',
   dataExportFailed: 'Məlumatların ixracı uğursuz oldu',
   dataExportFailedDesc: 'Məlumatların ixracı zamanı xəta baş verdi. Zəhmət olmasa yenidən cəhd edin.',
+  schoolCreated: 'Məktəb yaradıldı',
+  schoolCreationFailed: 'Məktəbin yaradılması uğursuz oldu',
   schoolUpdated: 'Məktəb yeniləndi',
   schoolUpdateFailed: 'Məktəbin yenilənməsi uğursuz oldu',
   schoolDeleted: 'Məktəb silindi',
