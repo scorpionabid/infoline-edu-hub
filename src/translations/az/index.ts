@@ -31,7 +31,7 @@ export default {
   auth,
   categories,
   columns,
-  common,
+  ...common, // Spread common keys at root level
   core,
   dashboard,
   dataEntry,
@@ -52,4 +52,6 @@ export default {
   validation,
   statistics,
   settings,
+  // Keep common module accessible as well
+  common,
 };

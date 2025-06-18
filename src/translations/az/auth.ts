@@ -48,6 +48,8 @@ export const auth = {
     submit: 'Şifrəni sıfırla',
     submitting: 'Göndərilir...',
     success: 'Şifrə uğurla sıfırlandı',
+    passwordMismatch: 'Şifrələr uyğun gəlmir',
+    backToLogin: 'Girişə qayıt',
     sendLink: 'Sıfırlama linki göndər',
     backToLogin: 'Giriş səhifəsinə qayıt',
     error: {

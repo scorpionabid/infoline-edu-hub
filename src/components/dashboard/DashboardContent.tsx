@@ -15,6 +15,7 @@ import SectorAdminDashboard from "./sector-admin/SectorAdminDashboard";
 import SchoolAdminDashboard from "./school-admin/SchoolAdminDashboard";
 import TranslationWrapper from "@/components/translation/TranslationWrapper";
 import { toast } from "sonner";
+import { logger } from "@/utils/logger";
 
 const DashboardContent: React.FC = () => {
   const user = useAuthStore(selectUser);
@@ -23,14 +24,28 @@ const DashboardContent: React.FC = () => {
 
   const { loading, error, dashboardData } = useRealDashboardData();
 
-  console.log("[DashboardContent] Dashboard state:", {
-    dashboardData,
+  logger.dashboard("Dashboard state loaded", {
+    hasData: !!dashboardData,
     loading,
-    error,
+    hasError: !!error,
     userRole,
-    translationLoading,
-    isReady
+    dataKeys: dashboardData ? Object.keys(dashboardData) : []
   });
+
+  // Clear any stale cached values on mount
+  React.useEffect(() => {
+    if (dashboardData && typeof window !== 'undefined') {
+      // Remove any cached dashboard data that might conflict
+      try {
+        ['dashboard-cache', 'user-stats', 'school-stats'].forEach(key => {
+          localStorage.removeItem(key);
+          sessionStorage.removeItem(key);
+        });
+      } catch (error) {
+        console.warn('Could not clear dashboard cache:', error);
+      }
+    }
+  }, [dashboardData]);
 
   // Show loading only if dashboard data is loading and no fallback ready
   if (loading && !dashboardData) {
@@ -38,7 +53,7 @@ const DashboardContent: React.FC = () => {
   }
 
   if (error) {
-    console.error("[DashboardContent] Dashboard data error:", error);
+    logger.error("Dashboard data fetch failed", error.message);
     toast.error("Dashboard məlumatları yüklənərkən xəta baş verdi");
     return (
       <div className="text-center py-8">

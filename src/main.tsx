@@ -6,8 +6,10 @@ import "./index.css";
 import { BrowserRouter } from "react-router-dom";
 import { TranslationProvider } from "./contexts/TranslationContext";
 import { AppQueryProvider } from "./contexts/QueryClientProvider";
+import "./utils/cleanupUtils";
 
 console.log('[Main] Starting InfoLine application...');
+console.log('🛠️ Cache cleanup tools loaded. Use InfoLineDebug in console.');
 
 const rootElement = document.getElementById("root");
 if (!rootElement) {
