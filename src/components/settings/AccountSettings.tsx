@@ -16,7 +16,7 @@ import {
   selectUser,
   selectUpdateProfile,
 } from "@/hooks/auth/useAuthStore";
-import { useOptimizedTranslation } from "@/contexts/LanguageContext";
+import { useSmartTranslation } from "@/hooks/translation/useSmartTranslation";
 import {
   Select,
   SelectContent,
@@ -42,7 +42,7 @@ const languages: Language[] = [
 export const AccountSettings = () => {
   const user = useAuthStore(selectUser);
   const updateProfile = useAuthStore(selectUpdateProfile);
-  const { t, language } = useOptimizedTranslation();
+  const { t, language } = useSmartTranslation();
   const [fullName, setFullName] = useState(user?.full_name || "");
   const [email] = useState(user?.email || "");
   const [phone, setPhone] = useState(user?.phone || "");

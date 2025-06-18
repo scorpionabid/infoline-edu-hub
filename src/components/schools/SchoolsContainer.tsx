@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useLanguageSafe } from '@/contexts/LanguageContext';
+import { useSmartTranslation } from '@/hooks/translation/useSmartTranslation';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { useSchoolsStore } from '@/hooks/schools/useSchoolsStore';
 import { supabase } from '@/integrations/supabase/client';
@@ -41,7 +41,7 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
   regionNames,
   sectorNames
 }) => {
-  const { t } = useLanguageSafe();
+  const { tSafe: t } = useSmartTranslation();
   const user = useAuthStore(selectUser);
   
   // Dialog states

@@ -4,8 +4,8 @@
  */
 
 // Core components
-import { UnifiedCacheManager, cacheManager } from './CacheManager';
-export { UnifiedCacheManager, cacheManager };
+import { CacheManager, cacheManager } from './CacheManager';
+export { CacheManager as UnifiedCacheManager, cacheManager };
 export { BaseCacheAdapter } from './core/BaseCacheAdapter';
 
 // Strategies
