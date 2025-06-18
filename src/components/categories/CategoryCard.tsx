@@ -13,6 +13,7 @@ import { useTranslation } from "@/contexts/TranslationContext";
 import { CalendarIcon, PenIcon, Trash2Icon, EyeIcon } from "lucide-react";
 import { format } from "date-fns";
 import { Progress } from "@/components/ui/progress";
+import { usePermissions } from '@/hooks/auth/permissions/usePermissions';
 
 interface CategoryCardProps {
   category: Category;
@@ -28,6 +29,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
   onView,
 }) => {
   const { t } = useTranslation();
+  const { canEditCategory, canDeleteCategory } = usePermissions();
 
   const getBadgeVariant = (status: string) => {
     switch (status) {
@@ -103,23 +105,31 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
           </Button>
 
           <div className="flex gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onEdit && onEdit(category)}
-            >
-              <PenIcon className="h-4 w-4" />
-              <span className="sr-only">{t("edit")}</span>
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onDelete && onDelete(category.id)}
-              className="text-destructive hover:text-destructive"
-            >
-              <Trash2Icon className="h-4 w-4" />
-              <span className="sr-only">{t("delete")}</span>
-            </Button>
+            {canEditCategory && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground hover:text-primary"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit && onEdit(category);
+                }}
+              >
+                <PenIcon className="h-4 w-4 mr-1" />
+                {t('edit')}
+              </Button>
+            )}
+            {canDeleteCategory && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onDelete && onDelete(category.id)}
+                className="text-destructive hover:text-destructive"
+              >
+                <Trash2Icon className="h-4 w-4" />
+                <span className="sr-only">{t("delete")}</span>
+              </Button>
+            )}
           </div>
         </div>
       </CardFooter>

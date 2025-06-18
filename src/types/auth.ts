@@ -156,8 +156,17 @@ export interface UsePermissionsResult {
   sectorId: string | undefined;
   schoolId: string | undefined;
   canManageCategories: boolean;
+  canManageColumns: boolean;
+  canManageSchools: boolean;
+  canManageSectors: boolean;
+  canManageRegions: boolean;
+  canManageUsers: boolean;
   canApproveData: boolean;
   canEditData: boolean;
+  canViewReports: boolean;
+  canEditCategory: boolean;
+  canDeleteCategory: boolean;
+  canAddCategory: boolean;
   hasSubmitPermission: boolean;
 }
 
@@ -339,20 +348,7 @@ export type { UserRole as Role };
 export type { FullUserData as UserData };
 export type { AuthState as AuthStoreState };
 
-// Default export for main auth types
-export default {
-  UserRole,
-  UserStatus,
-  FullUserData,
-  AuthState,
-  UsePermissionsResult,
-  PermissionLevel,
-  PermissionResult,
-  DataAccessConfig,
-  DataAccessResult,
-  ProtectedRouteProps,
-  PublicRouteProps,
-  AuthApiResponse,
-  AuthError,
-  AuthErrorCode
-} as const;
+// Export all types for convenience
+// TypeScript-də tipler dəyər kimi istifadə edilə bilməz
+// Buna görə də boş bir namespace ixrac edirik
+export const AuthTypes = {};

@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useCategoryOperations } from "@/hooks/categories/useCategoryOperations";
 import { useTranslation } from "@/contexts/TranslationContext";
 import { Button } from "@/components/ui/button";
+import { usePermissions } from '@/hooks/auth/permissions/usePermissions';
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -30,11 +31,13 @@ import useCategoryActions from "@/hooks/categories/useCategoryActions";
 
 const Categories = () => {
   const { t } = useTranslation();
+  const { fetchCategories, addCategory, deleteCategory } = useCategoryOperations();
+  const { canAddCategory } = usePermissions();
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
-  const { fetchCategories, addCategory, deleteCategory, error } = useCategoryOperations();
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState({
     status: "",
@@ -122,12 +125,14 @@ const Categories = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">{t("categories")}</h1>
-        <Button onClick={() => setIsDialogOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          {t("add_category")}
-        </Button>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">{t('categories.title')}</h1>
+        {canAddCategory && (
+          <Button onClick={() => setIsDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            {t('categories.add_category')}
+          </Button>
+        )}
       </div>
 
       <Card>

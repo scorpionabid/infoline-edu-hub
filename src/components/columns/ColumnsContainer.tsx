@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Plus, Filter, Search, CheckSquare, Square } from "lucide-react";
 import { useTranslation } from "@/contexts/TranslationContext";
 import { Input } from "@/components/ui/input";
+import { usePermissions } from '@/hooks/auth/permissions/usePermissions';
 import {
   Select,
   SelectContent,
@@ -67,6 +68,7 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
   editFormProps = {},
 }) => {
   const { t } = useTranslation();
+  const { canManageColumns } = usePermissions();
 
   // Enhanced column mutations - with all required methods
   const {
@@ -346,10 +348,12 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
           </div>
         </div>
 
-        <Button onClick={() => onCreate && onCreate()}>
-          <Plus className="h-4 w-4 mr-2" />
-          {t("createColumn")}
-        </Button>
+        {canManageColumns && (
+          <Button onClick={onCreate}>
+            <Plus className="h-4 w-4 mr-2" />
+            {t("createColumn")}
+          </Button>
+        )}
       </div>
 
       {/* Filters and Search */}

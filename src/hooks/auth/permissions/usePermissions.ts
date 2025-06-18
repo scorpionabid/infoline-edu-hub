@@ -99,10 +99,21 @@ export const usePermissions = (): UsePermissionsResult => {
   const isTeacher = hasRole('teacher');
   const isUser = hasRole('user');
   
-  // ========== Permission Levels ==========
+  // ========== Permission Flags ==========
   
-  const canManageCategories = isSuperAdmin || isRegionAdmin;
-  const canApproveData = isSuperAdmin || isRegionAdmin || isSectorAdmin;
+  const canManageCategories = hasRoleAtLeast('regionadmin');
+  const canManageColumns = hasRoleAtLeast('sectoradmin');
+  const canManageSchools = hasRoleAtLeast('regionadmin');
+  const canManageSectors = hasRoleAtLeast('regionadmin');
+  const canManageRegions = hasRoleAtLeast('superadmin');
+  const canManageUsers = hasRoleAtLeast('regionadmin');
+  const canApproveData = hasRoleAtLeast('sectoradmin');
+  const canViewReports = hasRoleAtLeast('sectoradmin');
+  
+  // Specific category permissions for sectoradmin
+  const canEditCategory = !isSectorAdmin;
+  const canDeleteCategory = !isSectorAdmin;
+  const canAddCategory = !isSectorAdmin;
   const canEditData = isSuperAdmin || isRegionAdmin || isSectorAdmin || isSchoolAdmin;
   const hasSubmitPermission = isSuperAdmin || isRegionAdmin || isSectorAdmin || isSchoolAdmin || isTeacher || isUser;
   
@@ -124,8 +135,17 @@ export const usePermissions = (): UsePermissionsResult => {
     sectorId: userSectorId,
     schoolId: userSchoolId,
     canManageCategories,
+    canManageColumns,
+    canManageSchools,
+    canManageSectors,
+    canManageRegions,
+    canManageUsers,
     canApproveData,
     canEditData,
+    canViewReports,
+    canEditCategory,
+    canDeleteCategory,
+    canAddCategory,
     hasSubmitPermission
   };
 };

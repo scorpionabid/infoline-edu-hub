@@ -2,6 +2,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Column } from '@/types/column';
 import { Category } from '@/types/category';
+import { useAuthStore, selectUserRole } from '@/hooks/auth/useAuthStore';
 import { 
   Edit, 
   Trash2, 
@@ -245,6 +246,12 @@ const EnhancedColumnList: React.FC<EnhancedColumnListProps> = ({
   enableDragDrop = false, // Temporarily disabled
   showBulkActions = true
 }) => {
+  // Get user role to check if user is sectoradmin
+  const role = selectUserRole(useAuthStore());
+  const isSectorAdmin = role?.toLowerCase() === 'sectoradmin';
+  
+  // Override canManageColumns if user is sectoradmin
+  const effectiveCanManageColumns = isSectorAdmin ? false : canManageColumns;
   // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
   // Memoize columns to prevent unnecessary re-renders
   const memoizedColumns = useMemo(() => columns, [columns]);
@@ -266,7 +273,7 @@ const EnhancedColumnList: React.FC<EnhancedColumnListProps> = ({
         onDuplicate={onDuplicateColumn}
         onToggleStatus={onToggleColumnStatus}
         onSelection={onColumnSelection}
-        canManage={canManageColumns}
+        canManage={effectiveCanManageColumns}
         showSelection={showBulkActions}
       />
     ));
