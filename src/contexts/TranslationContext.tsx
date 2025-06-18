@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, ReactNode, useMemo, useEffect, useState, useCallback } from 'react';
 import { 
   SupportedLanguage, 
@@ -23,21 +22,56 @@ const PRIORITY_LANGUAGE: SupportedLanguage = 'az';
 // Enhanced in-memory cache with immediate Azerbaijani fallback
 const translationMemoryCache = new Map<SupportedLanguage, LanguageTranslations>();
 
-// Immediate Azerbaijani fallback content
-const IMMEDIATE_AZ_FALLBACK = {
+// Comprehensive Azerbaijani fallback content
+const COMPREHENSIVE_AZ_FALLBACK = {
   dashboard: {
     title: 'İdarə Paneli',
+    welcome: 'İdarə Panelinə Xoş Gəlmisiniz',
     loading: 'Yüklənir...',
-    error: 'Xəta baş verdi'
+    error: 'Xəta baş verdi',
+    overview: 'Ümumi Baxış',
+    quickActions: 'Sürətli Əməliyyatlar',
+    recentActivity: 'Son Fəaliyyətlər',
+    notifications: 'Bildirişlər',
+    home: 'Ana Səhifə',
+    profile: 'Profil',
+    settings: 'Ayarlar',
+    logout: 'Çıxış'
   },
   auth: {
     login: 'Daxil ol',
-    logout: 'Çıxış'
+    logout: 'Çıxış',
+    email: 'E-poçt',
+    password: 'Şifrə',
+    register: 'Qeydiyyat',
+    forgot_password: 'Şifrəni unutdum'
   },
   navigation: {
     dashboard: 'İdarə Paneli',
     categories: 'Kateqoriyalar',
-    schools: 'Məktəblər'
+    schools: 'Məktəblər',
+    regions: 'Bölgələr',
+    sectors: 'Sektorlar',
+    reports: 'Hesabatlar',
+    users: 'İstifadəçilər',
+    settings: 'Ayarlar'
+  },
+  general: {
+    save: 'Saxla',
+    cancel: 'Ləğv et',
+    delete: 'Sil',
+    edit: 'Redaktə et',
+    add: 'Əlavə et',
+    search: 'Axtarış',
+    loading: 'Yüklənir...',
+    error: 'Xəta',
+    success: 'Uğurlu'
+  },
+  ui: {
+    search: 'Axtarış...',
+    no_data: 'Məlumat yoxdur',
+    loading: 'Yüklənir...',
+    error: 'Xəta baş verdi'
   }
 };
 
@@ -56,7 +90,7 @@ type TranslationContextType = {
 
 const TranslationContext = createContext<TranslationContextType | undefined>(undefined);
 
-// FIXED: Enhanced nested value getter with proper recursion handling
+// Enhanced nested value getter with comprehensive fallback
 const getNestedValue = <T extends Record<string, any>>(
   obj: T | undefined | null, 
   path: string,
@@ -70,12 +104,10 @@ const getNestedValue = <T extends Record<string, any>>(
   visited.add(path);
 
   if (!obj) {
-    // Try immediate fallback first but avoid recursion
-    if (path in (IMMEDIATE_AZ_FALLBACK as any)) {
-      const fallbackValue = (IMMEDIATE_AZ_FALLBACK as any)[path];
-      if (typeof fallbackValue === 'string') {
-        return fallbackValue;
-      }
+    // Try comprehensive fallback first
+    const fallbackValue = getNestedValue(COMPREHENSIVE_AZ_FALLBACK as any, path, params, visited);
+    if (fallbackValue !== path) {
+      return fallbackValue;
     }
     
     const fallback = params?.defaultValue || path.split('.').pop() || path;
@@ -88,14 +120,10 @@ const getNestedValue = <T extends Record<string, any>>(
   }, obj);
 
   if (result === undefined) {
-    // Try immediate fallback for specific nested paths
-    const pathParts = path.split('.');
-    if (pathParts.length === 2) {
-      const [module, key] = pathParts;
-      const fallbackModule = (IMMEDIATE_AZ_FALLBACK as any)[module];
-      if (fallbackModule && typeof fallbackModule[key] === 'string') {
-        return fallbackModule[key];
-      }
+    // Try comprehensive fallback for specific nested paths
+    const fallbackValue = getNestedValue(COMPREHENSIVE_AZ_FALLBACK as any, path, params, visited);
+    if (fallbackValue !== path) {
+      return fallbackValue;
     }
     
     const lastPart = path.split('.').pop() || path;
@@ -131,17 +159,18 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
   const [translations, setTranslations] = useState<LanguageTranslations | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
-  const [isReady, setIsReady] = useState<boolean>(true); // Start ready with fallback
+  const [isReady, setIsReady] = useState<boolean>(true); // Always ready with fallback
 
-  // Enhanced changeLanguage with immediate readiness
+  // Enhanced changeLanguage with better error handling
   const changeLanguage = useCallback(async (lang: SupportedLanguage) => {
-    // Early return if already loaded
+    console.log(`[TranslationContext] Changing language to: ${lang}`);
+    
+    // If already the same language and we have translations, skip
     if (lang === language && translations && isReady) {
-      console.log(`[TranslationContext] Language ${lang} already loaded and ready`);
+      console.log(`[TranslationContext] Language ${lang} already loaded`);
       return;
     }
     
-    console.log(`[TranslationContext] Changing language to: ${lang}`);
     setIsLoading(true);
     setError(null);
     
@@ -153,103 +182,94 @@ export const TranslationProvider: React.FC<{ children: ReactNode }> = ({ childre
         console.log(`[TranslationContext] Loading ${lang} from network...`);
         loadedTranslations = await getTranslations(lang);
         translationMemoryCache.set(lang, loadedTranslations);
+        console.log(`[TranslationContext] Successfully loaded and cached ${lang}`);
+      } else {
+        console.log(`[TranslationContext] Using cached ${lang}`);
       }
       
-      // Update state in correct order
       setTranslations(loadedTranslations);
       setLanguageState(lang);
       localStorage.setItem('preferredLanguage', lang);
       setIsReady(true);
-      console.log(`[TranslationContext] Successfully loaded language: ${lang}`);
+      
     } catch (err) {
       console.error(`[TranslationContext] Failed to load language ${lang}:`, err);
-      setError(err instanceof Error ? err : new Error('Failed to load translations'));
+      setError(err instanceof Error ? err : new Error('Translation load failed'));
       
-      // Maintain readiness with fallback
-      if (lang === PRIORITY_LANGUAGE) {
-        setLanguageState(PRIORITY_LANGUAGE);
-        setIsReady(true);
-      }
+      // Keep system ready with fallback
+      setLanguageState(lang);
+      setIsReady(true);
     } finally {
       setIsLoading(false);
     }
   }, [language, translations, isReady]);
 
-  // Initialize with immediate Azerbaijani readiness
+  // Initialize with saved language or default
   useEffect(() => {
     const initializeTranslations = async () => {
-      console.log('[TranslationContext] Initializing translation system...');
+      console.log('[TranslationContext] Initializing...');
       
       const savedLanguage = localStorage.getItem('preferredLanguage') as SupportedLanguage;
       const initialLanguage = (savedLanguage && ['az', 'en', 'ru', 'tr'].includes(savedLanguage)) 
         ? savedLanguage 
         : PRIORITY_LANGUAGE;
       
-      // Start ready immediately for Azerbaijani
-      if (initialLanguage === 'az') {
-        setLanguageState('az');
-        setIsReady(true);
-      }
+      setLanguageState(initialLanguage);
+      setIsReady(true); // Always ready
       
-      await changeLanguage(initialLanguage);
+      // Load translations in background
+      try {
+        await changeLanguage(initialLanguage);
+      } catch (error) {
+        console.warn('[TranslationContext] Background loading failed, using fallback');
+      }
     };
 
     initializeTranslations();
-  }, [changeLanguage]);
+  }, []);
 
   // Type guard check
   const isModuleName = (name: string): name is keyof LanguageTranslations => {
     return translations && name in translations;
   };
 
-  // Enhanced translation function with immediate fallback
+  // Enhanced translation function with comprehensive fallback
   const t = useCallback(<T extends keyof TranslationModules>(
     key: T | NestedKeyOf<TranslationModules[T]> | string,
     params?: TranslationInterpolationOptions
   ): string => {
     const keyStr = String(key);
     
-    // Always try fallback first for Azerbaijani
-    if (language === 'az' || !translations) {
-      const fallbackResult = getNestedValue(IMMEDIATE_AZ_FALLBACK as any, keyStr);
-      if (fallbackResult !== keyStr && translations) {
-        // If we have both fallback and full translations, prefer full
-        const fullResult = getNestedValue(translations, keyStr, params);
-        return fullResult !== keyStr ? fullResult : fallbackResult;
-      } else if (fallbackResult !== keyStr) {
-        return fallbackResult;
+    // Always try comprehensive fallback first
+    const fallbackResult = getNestedValue(COMPREHENSIVE_AZ_FALLBACK as any, keyStr, params);
+    
+    // If we have translations, try to get the actual translation
+    if (translations) {
+      // Handle direct module access
+      if (keyStr in translations) {
+        const module = translations[keyStr as keyof LanguageTranslations];
+        return typeof module === 'string' ? module : fallbackResult;
+      }
+      
+      // Handle nested keys
+      const [moduleName, ...path] = keyStr.split('.');
+      
+      if (moduleName && isModuleName(moduleName) && translations[moduleName]) {
+        const module = translations[moduleName];
+        const nestedKey = path.join('.');
+        
+        if (typeof module === 'string') {
+          return module;
+        }
+        
+        const result = getNestedValue(module, nestedKey, params);
+        return result !== keyStr ? result : fallbackResult;
       }
     }
     
-    // No translations available, use fallback
-    if (!translations) {
-      const fallback = keyStr.split('.').pop() || keyStr;
-      return fallback.replace(/([A-Z])/g, ' $1').trim();
-    }
-    
-    // Handle direct module access
-    if (keyStr in translations) {
-      const module = translations[keyStr as keyof LanguageTranslations];
-      return typeof module === 'string' ? module : String(keyStr);
-    }
-    
-    // Handle nested keys
-    const [moduleName, ...path] = keyStr.split('.');
-    
-    if (!moduleName || !isModuleName(moduleName) || !translations[moduleName]) {
-      const fallback = path.length > 0 ? path[path.length - 1] : moduleName;
-      return fallback.replace(/([A-Z])/g, ' $1').trim();
-    }
-    
-    const module = translations[moduleName];
-    const nestedKey = path.join('.');
-    
-    if (typeof module === 'string') {
-      return module;
-    }
-    
-    return getNestedValue(module, nestedKey, params);
-  }, [translations, language]);
+    // Return fallback if no translation found
+    return fallbackResult !== keyStr ? fallbackResult : keyStr.split('.').pop() || keyStr;
+  }, [translations]);
 
   const value = useMemo(() => ({
     language,

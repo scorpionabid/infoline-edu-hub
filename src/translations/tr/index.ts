@@ -1,3 +1,4 @@
+
 // Auto-generated index file for tr translations
 import { auth } from './auth.js';
 import { categories } from './categories.js';
@@ -15,6 +16,7 @@ import { ui } from './ui.js';
 import { user } from './user.js';
 import { validation } from './validation.js';
 import { default as dashboard } from './dashboard.js';
+import { userManagement, language_switcher, languages } from './userManagement.js';
 
 export {
   auth,
@@ -33,4 +35,7 @@ export {
   user,
   validation,
   dashboard,
+  userManagement,
+  language_switcher,
+  languages,
 };

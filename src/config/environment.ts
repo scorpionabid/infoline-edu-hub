@@ -36,7 +36,7 @@ const isProduction = (): boolean => {
   return false;
 };
 
-// Environment validation function (moved from security.ts to break circular dependency)
+// FIXED: More lenient environment validation for development
 const validateEnvironment = (): { valid: boolean; errors: string[] } => {
   const errors: string[] = [];
   
@@ -50,24 +50,32 @@ const validateEnvironment = (): { valid: boolean; errors: string[] } => {
     supabaseAnonKey = env.VITE_SUPABASE_ANON_KEY;
   }
   
-  // Check required environment variables
-  if (!supabaseUrl) {
-    errors.push('VITE_SUPABASE_URL is required');
-  }
-  
-  if (!supabaseAnonKey) {
-    errors.push('VITE_SUPABASE_ANON_KEY is required');
-  }
-  
-  // Validate URL format
-  if (supabaseUrl && !isValidUrl(supabaseUrl)) {
-    errors.push('VITE_SUPABASE_URL has invalid format');
-  }
-  
-  // Check for development credentials in production
+  // FIXED: Only require env vars in production, use fallbacks in development
   if (isProduction()) {
+    if (!supabaseUrl) {
+      errors.push('VITE_SUPABASE_URL is required in production');
+    }
+    
+    if (!supabaseAnonKey) {
+      errors.push('VITE_SUPABASE_ANON_KEY is required in production');
+    }
+    
+    // Validate URL format in production
+    if (supabaseUrl && !isValidUrl(supabaseUrl)) {
+      errors.push('VITE_SUPABASE_URL has invalid format');
+    }
+    
+    // Check for development credentials in production
     if (supabaseUrl && (supabaseUrl.includes('localhost') || supabaseUrl.includes('127.0.0.1'))) {
       errors.push('Development Supabase URL detected in production');
+    }
+  } else {
+    // Development mode - only warn, don't block
+    if (!supabaseUrl) {
+      console.warn('[ENV] Using development fallback for VITE_SUPABASE_URL');
+    }
+    if (!supabaseAnonKey) {
+      console.warn('[ENV] Using development fallback for VITE_SUPABASE_ANON_KEY');
     }
   }
   
@@ -77,7 +85,7 @@ const validateEnvironment = (): { valid: boolean; errors: string[] } => {
   };
 };
 
-// Secure environment variable getter
+// FIXED: Enhanced secure environment variable getter with better fallbacks
 const getEnvVar = (key: string, defaultValue?: string): string => {
   // Handle Vite environment variables properly
   let value: string | undefined;
@@ -87,35 +95,50 @@ const getEnvVar = (key: string, defaultValue?: string): string => {
     value = env[key as keyof ViteEnv] as string;
   }
   
-  // SECURITY: Remove hardcoded fallbacks for production
-  if (!value && !defaultValue) {
-    if (isProduction()) {
-      throw new Error(`Missing required environment variable: ${key}`);
-    }
-    
-    // Development-only fallbacks with clear warnings
-    console.warn(`[SECURITY WARNING] Using development fallback for ${key}`);
+  // If we have a value, return it
+  if (value) {
+    return value;
+  }
+  
+  // Use default value if provided
+  if (defaultValue) {
+    return defaultValue;
+  }
+  
+  // FIXED: Enhanced fallbacks for development with better error handling
+  if (!isProduction()) {
+    console.warn(`[ENV] Using development fallback for ${key}`);
     
     switch (key) {
       case 'VITE_SUPABASE_URL':
         return 'https://olbfnauhzpdskqnxtwav.supabase.co';
       case 'VITE_SUPABASE_ANON_KEY':
         return 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9sYmZuYXVoenBkc2txbnh0d2F2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI3ODQwNzksImV4cCI6MjA1ODM2MDA3OX0.OfoO5lPaFGPm0jMqAQzYCcCamSaSr6E1dF8i4rLcXj4';
+      case 'VITE_APP_NAME':
+        return 'İnfoLine';
+      case 'VITE_APP_VERSION':
+        return '1.0.0';
+      case 'VITE_APP_ENV':
+        return 'development';
+      case 'VITE_BASE_URL':
+        return typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
       default:
-        throw new Error(`No fallback available for ${key}`);
+        console.warn(`[ENV] No fallback available for ${key}, using empty string`);
+        return '';
     }
   }
   
-  return value || defaultValue || '';
+  // Production mode - throw error for missing required vars
+  throw new Error(`Missing required environment variable: ${key}`);
 };
 
-// Validate environment on module load
+// FIXED: Validate environment but don't block in development
 const validation = validateEnvironment();
 if (!validation.valid) {
   if (isProduction()) {
     throw new Error(`Environment validation failed: ${validation.errors.join(', ')}`);
   } else {
-    console.warn('Environment validation failed:', validation.errors);
+    console.warn('[ENV] Environment validation warnings:', validation.errors);
   }
 }
 

@@ -1,3 +1,4 @@
+
 // User management translation module
 export const userManagement = {
   title: 'Управление пользователями',
@@ -145,6 +146,21 @@ export const userManagement = {
     never_logged: 'Никогда не входили'
   }
 } as const;
+
+// ADDED: Missing translation keys for language switcher
+export const language_switcher = {
+  label: 'Выберите язык',
+  current_language: 'Текущий язык',
+  change_language: 'Изменить язык'
+};
+
+// ADDED: Language names
+export const languages = {
+  az: 'Azərbaycan',
+  en: 'English', 
+  ru: 'Русский',
+  tr: 'Türkçe'
+};
 
 export type UserManagement = typeof userManagement;
 export default userManagement;

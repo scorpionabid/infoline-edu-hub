@@ -1,3 +1,4 @@
+
 // User management translation module
 export const userManagement = {
   title: 'Kullanıcı Yönetimi',
@@ -145,6 +146,21 @@ export const userManagement = {
     never_logged: 'Hiç giriş yapmamış'
   }
 } as const;
+
+// ADDED: Missing translation keys for language switcher
+export const language_switcher = {
+  label: 'Dil Seçin',
+  current_language: 'Güncel Dil',
+  change_language: 'Dil Değiştir'
+};
+
+// ADDED: Language names
+export const languages = {
+  az: 'Azərbaycan',
+  en: 'English', 
+  ru: 'Русский',
+  tr: 'Türkçe'
+};
 
 export type UserManagement = typeof userManagement;
 export default userManagement;
