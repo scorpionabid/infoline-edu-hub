@@ -22,10 +22,12 @@ describe('UniversalDialog Component', () => {
     render(
       <UniversalDialog
         isOpen={true}
-        title="Test Title"
-        content="Test Content"
-        confirmText="Confirm"
-        cancelText="Cancel"
+        config={{
+          title: 'Test Title',
+          description: 'Test Content',
+          confirmText: 'Confirm',
+          cancelText: 'Cancel'
+        }}
         onClose={() => {}}
         onConfirm={() => {}}
       />
@@ -39,10 +41,12 @@ describe('UniversalDialog Component', () => {
     render(
       <UniversalDialog
         isOpen={true}
-        title="Test Title"
-        content="Test Content"
-        confirmText="Confirm"
-        cancelText="Cancel"
+        config={{
+          title: 'Test Title',
+          description: 'Test Content',
+          confirmText: 'Confirm',
+          cancelText: 'Cancel'
+        }}
         onClose={() => {}}
         onConfirm={() => {}}
       />
@@ -56,10 +60,12 @@ describe('UniversalDialog Component', () => {
     render(
       <UniversalDialog
         isOpen={false}
-        title="Test Title"
-        content="Test Content"
-        confirmText="Confirm"
-        cancelText="Cancel"
+        config={{
+          title: 'Test Title',
+          description: 'Test Content',
+          confirmText: 'Confirm',
+          cancelText: 'Cancel'
+        }}
         onClose={() => {}}
         onConfirm={() => {}}
       />

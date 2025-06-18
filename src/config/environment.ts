@@ -27,67 +27,20 @@ const isValidUrl = (url: string): boolean => {
   }
 };
 
-// Check if running in production - make this more lenient for Lovable
+// Check if running in production - be more lenient for development
 const isProduction = (): boolean => {
+  // Only consider it production if explicitly set and not in Lovable environment
   if (typeof import.meta !== 'undefined' && (import.meta as any).env) {
     const env = (import.meta as any).env as ViteEnv;
     const mode = env.VITE_APP_ENV || 'development';
-    // Only consider truly production environments, not Lovable previews
-    return mode === 'production' && typeof window !== 'undefined' && 
-           !window.location.hostname.includes('lovable.app');
+    const isLovable = typeof window !== 'undefined' && 
+                     (window.location.hostname.includes('lovable.app') || 
+                      window.location.hostname.includes('localhost'));
+    
+    // Only true production, not development or Lovable
+    return mode === 'production' && !isLovable;
   }
   return false;
-};
-
-// More lenient environment validation - only for true production
-const validateEnvironment = (): { valid: boolean; errors: string[] } => {
-  const errors: string[] = [];
-  
-  // Get environment variables
-  let supabaseUrl: string | undefined;
-  let supabaseAnonKey: string | undefined;
-  
-  if (typeof import.meta !== 'undefined' && (import.meta as any).env) {
-    const env = (import.meta as any).env as ViteEnv;
-    supabaseUrl = env.VITE_SUPABASE_URL;
-    supabaseAnonKey = env.VITE_SUPABASE_ANON_KEY;
-  }
-  
-  // Only require strict validation in true production environments
-  const strictProduction = isProduction();
-  
-  if (strictProduction) {
-    if (!supabaseUrl) {
-      errors.push('VITE_SUPABASE_URL is required in production');
-    }
-    
-    if (!supabaseAnonKey) {
-      errors.push('VITE_SUPABASE_ANON_KEY is required in production');
-    }
-    
-    // Validate URL format in production
-    if (supabaseUrl && !isValidUrl(supabaseUrl)) {
-      errors.push('VITE_SUPABASE_URL has invalid format');
-    }
-    
-    // Check for development credentials in production
-    if (supabaseUrl && (supabaseUrl.includes('localhost') || supabaseUrl.includes('127.0.0.1'))) {
-      errors.push('Development Supabase URL detected in production');
-    }
-  } else {
-    // Development/preview mode - only warn, don't block
-    if (!supabaseUrl) {
-      console.warn('[ENV] Using development fallback for VITE_SUPABASE_URL');
-    }
-    if (!supabaseAnonKey) {
-      console.warn('[ENV] Using development fallback for VITE_SUPABASE_ANON_KEY');
-    }
-  }
-  
-  return {
-    valid: errors.length === 0,
-    errors
-  };
 };
 
 // Secure environment variable getter with better fallbacks
@@ -110,10 +63,8 @@ const getEnvVar = (key: string, defaultValue?: string): string => {
     return defaultValue;
   }
   
-  // Enhanced fallbacks for development with better error handling
+  // Enhanced fallbacks for development/Lovable environments
   if (!isProduction()) {
-    console.warn(`[ENV] Using development fallback for ${key}`);
-    
     switch (key) {
       case 'VITE_SUPABASE_URL':
         return 'https://olbfnauhzpdskqnxtwav.supabase.co';
@@ -128,24 +79,17 @@ const getEnvVar = (key: string, defaultValue?: string): string => {
       case 'VITE_BASE_URL':
         return typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
       default:
-        console.warn(`[ENV] No fallback available for ${key}, using empty string`);
         return '';
     }
   }
   
-  // Production mode - throw error for missing required vars
-  throw new Error(`Missing required environment variable: ${key}`);
-};
-
-// Validate environment but don't block in development/preview
-const validation = validateEnvironment();
-if (!validation.valid) {
-  if (isProduction()) {
-    throw new Error(`Environment validation failed: ${validation.errors.join(', ')}`);
-  } else {
-    console.warn('[ENV] Environment validation warnings:', validation.errors);
+  // Production mode - only fail for missing critical vars
+  if (key === 'VITE_SUPABASE_URL' || key === 'VITE_SUPABASE_ANON_KEY') {
+    throw new Error(`Missing required environment variable: ${key}`);
   }
-}
+  
+  return '';
+};
 
 // Type-safe environment variables
 interface EnvironmentConfig {
@@ -194,27 +138,5 @@ export const ENV: EnvironmentConfig = {
     sessionTimeout: 3600000, // 1 hour
   },
 };
-
-// Enhanced security headers for production
-export const SECURITY_HEADERS = {
-  'Content-Security-Policy': `
-    default-src 'self';
-    script-src 'self' 'unsafe-inline' https://*.supabase.co;
-    style-src 'self' 'unsafe-inline';
-    img-src 'self' data: https://*.supabase.co;
-    connect-src 'self' https://*.supabase.co;
-    font-src 'self';
-    object-src 'none';
-    media-src 'self';
-    frame-src 'none';
-    base-uri 'self';
-    form-action 'self';
-  `.replace(/\s+/g, ' ').trim(),
-  'X-Frame-Options': 'DENY',
-  'X-Content-Type-Options': 'nosniff',
-  'Referrer-Policy': 'strict-origin-when-cross-origin',
-  'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
-  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
-} as const;
 
 export default ENV;

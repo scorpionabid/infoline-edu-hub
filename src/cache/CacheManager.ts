@@ -1,18 +1,15 @@
 
 import { MemoryCacheAdapter } from './strategies/MemoryCacheAdapter';
 import { StorageCacheAdapter } from './strategies/StorageCacheAdapter';
-import { CrossTabSyncStrategy } from './strategies/CrossTabSyncStrategy';
 import { CacheAdapter, CacheOptions, CacheStats } from './core/types';
 
 export class CacheManager<T = any> {
   private adapters: Map<string, CacheAdapter<T>>;
   private primaryAdapter: CacheAdapter<T>;
-  private crossTabSync: CrossTabSyncStrategy<T>;
   private isEnabled: boolean = true;
 
   constructor() {
     this.adapters = new Map();
-    this.crossTabSync = new CrossTabSyncStrategy();
     
     // Initialize adapters
     const memoryAdapter = new MemoryCacheAdapter<T>();
@@ -23,9 +20,6 @@ export class CacheManager<T = any> {
     
     // Set memory as primary adapter
     this.primaryAdapter = memoryAdapter;
-    
-    // Setup cross-tab sync
-    this.crossTabSync.initialize(this.adapters);
   }
 
   get(key: string): T | null {
@@ -44,8 +38,6 @@ export class CacheManager<T = any> {
     
     try {
       this.primaryAdapter.set(key, value, options);
-      // Sync across tabs
-      this.crossTabSync.broadcast(key, value, options);
     } catch (error) {
       console.warn('Cache set error:', error);
     }
@@ -56,7 +48,6 @@ export class CacheManager<T = any> {
     
     try {
       this.primaryAdapter.delete(key);
-      this.crossTabSync.broadcastDelete(key);
     } catch (error) {
       console.warn('Cache delete error:', error);
     }
@@ -67,7 +58,6 @@ export class CacheManager<T = any> {
     
     try {
       this.adapters.forEach(adapter => adapter.clear());
-      this.crossTabSync.broadcastClear();
     } catch (error) {
       console.warn('Cache clear error:', error);
     }
@@ -110,22 +100,6 @@ export class CacheManager<T = any> {
 
   enable(): void {
     this.isEnabled = true;
-  }
-
-  getHealth(): { healthy: boolean; issues: string[] } {
-    const issues: string[] = [];
-    
-    try {
-      // Test primary adapter
-      this.primaryAdapter.getStats();
-    } catch (error) {
-      issues.push('Primary adapter error');
-    }
-    
-    return {
-      healthy: issues.length === 0,
-      issues
-    };
   }
 }
 

@@ -1,12 +1,13 @@
+
 /**
  * İnfoLine Unified Cache System - React Hooks
  * React Query və cache manager-in inteqrasiyası
  */
 
 import { useQuery, useMutation, useQueryClient, UseQueryOptions } from '@tanstack/react-query';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect } from 'react';
 import { cacheManager } from '../CacheManager';
-import type { CacheOptions, CacheStorageType } from '../core/types';
+import type { CacheOptions } from '../core/types';
 
 /**
  * Universal cache hook for any data type
@@ -14,27 +15,22 @@ import type { CacheOptions, CacheStorageType } from '../core/types';
 export function useCache<T>(
   key: string,
   options?: {
-    storage?: CacheStorageType;
     fallback?: T;
     enableRealTime?: boolean;
   }
 ) {
-  const { storage, fallback, enableRealTime = false } = options || {};
+  const { fallback, enableRealTime = false } = options || {};
 
   const get = useCallback((): T | null => {
-    return cacheManager.get<T>(key, storage);
-  }, [key, storage]);
+    return cacheManager.get<T>(key);
+  }, [key]);
 
   const set = useCallback((value: T, cacheOptions?: CacheOptions) => {
-    cacheManager.set(key, value, { storage, ...cacheOptions });
-  }, [key, storage]);
+    cacheManager.set(key, value, cacheOptions);
+  }, [key]);
 
   const remove = useCallback(() => {
     cacheManager.delete(key);
-  }, [key]);
-
-  const exists = useCallback((): boolean => {
-    return cacheManager.has(key);
   }, [key]);
 
   // Real-time updates (optional)
@@ -43,7 +39,6 @@ export function useCache<T>(
 
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key?.includes(key)) {
-        // Trigger re-render by updating a ref
         window.dispatchEvent(new CustomEvent(`cache_update_${key}`));
       }
     };
@@ -59,7 +54,6 @@ export function useCache<T>(
     get,
     set,
     remove,
-    exists,
     value: get() || fallback
   };
 }
@@ -147,46 +141,21 @@ export function useCacheMutation<TData, TVariables>(
  * Preload hook - preloads data in background
  */
 export function usePreload() {
-  const preloadRef = useRef<Set<string>>(new Set());
-
   const preload = useCallback(async (
     key: string,
     fetcher: () => Promise<any>,
     options?: CacheOptions
   ) => {
-    // Avoid duplicate preloads
-    if (preloadRef.current.has(key)) {
-      return;
-    }
-
-    preloadRef.current.add(key);
-
     try {
-      // Check if already cached
-      if (cacheManager.has(key)) {
-        console.log(`[usePreload] ${key} already cached`);
-        return;
-      }
-
-      // Fetch and cache
       const data = await fetcher();
-      cacheManager.set(key, data, { priority: true, ...options });
+      cacheManager.set(key, data, { priority: 'high', ...options });
       console.log(`[usePreload] Preloaded ${key}`);
     } catch (error) {
       console.warn(`[usePreload] Failed to preload ${key}:`, error);
-    } finally {
-      preloadRef.current.delete(key);
     }
   }, []);
 
-  const preloadBatch = useCallback(async (
-    loaders: Record<string, () => Promise<any>>,
-    options?: CacheOptions
-  ) => {
-    await cacheManager.preload(loaders);
-  }, []);
-
-  return { preload, preloadBatch };
+  return { preload };
 }
 
 /**
@@ -197,30 +166,16 @@ export function useCacheStats() {
     return cacheManager.getStats();
   }, []);
 
-  const getHealth = useCallback(() => {
-    return cacheManager.healthCheck();
-  }, []);
-
-  const exportCache = useCallback(() => {
-    return cacheManager.export();
-  }, []);
-
   const cleanup = useCallback(() => {
-    cacheManager.cleanup();
+    cacheManager.evict();
   }, []);
 
-  const clear = useCallback((storageType?: CacheStorageType) => {
-    if (storageType) {
-      cacheManager.clearStorage(storageType);
-    } else {
-      cacheManager.clear();
-    }
+  const clear = useCallback(() => {
+    cacheManager.clear();
   }, []);
 
   return {
     getStats,
-    getHealth,
-    export: exportCache,
     cleanup,
     clear
   };
@@ -233,22 +188,20 @@ export function useTranslationCache() {
   const setTranslations = useCallback((language: string, translations: any) => {
     const key = `translations_${language}`;
     cacheManager.set(key, translations, {
-      storage: 'localStorage',
-      priority: language === 'az', // Azerbaijani is priority
-      ttl: language === 'az' ? 24 * 60 * 60 * 1000 : 60 * 60 * 1000 // 24h for AZ, 1h for others
+      priority: language === 'az' ? 'high' : 'normal',
+      ttl: language === 'az' ? 24 * 60 * 60 * 1000 : 60 * 60 * 1000
     });
   }, []);
 
   const getTranslations = useCallback((language: string) => {
     const key = `translations_${language}`;
-    return cacheManager.get(key, 'localStorage');
+    return cacheManager.get(key);
   }, []);
 
   const clearTranslations = useCallback((language?: string) => {
     if (language) {
       cacheManager.delete(`translations_${language}`);
     } else {
-      // Clear all translation caches
       ['az', 'en', 'ru', 'tr'].forEach(lang => {
         cacheManager.delete(`translations_${lang}`);
       });
@@ -268,20 +221,19 @@ export function useTranslationCache() {
 export function useSessionCache() {
   const setUserSession = useCallback((userId: string, sessionData: any) => {
     cacheManager.set(`user_session_${userId}`, sessionData, {
-      storage: 'sessionStorage',
-      priority: true
+      priority: 'high'
     });
   }, []);
 
   const getUserSession = useCallback((userId: string) => {
-    return cacheManager.get(`user_session_${userId}`, 'sessionStorage');
+    return cacheManager.get(`user_session_${userId}`);
   }, []);
 
   const clearUserSession = useCallback((userId?: string) => {
     if (userId) {
       cacheManager.delete(`user_session_${userId}`);
     } else {
-      cacheManager.clearStorage('sessionStorage');
+      cacheManager.clear();
     }
   }, []);
 
