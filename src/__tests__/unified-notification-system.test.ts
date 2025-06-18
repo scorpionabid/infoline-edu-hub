@@ -1,265 +1,125 @@
 
 /**
  * Unified Notification System Tests
- * Tests for the new notification system components and functionality
+ * Tests for the integrated notification system with security
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import React from 'react';
 
-// Mock the entire notifications module
-const mockUseNotifications = vi.fn();
-const mockNotificationManager = {
-  createNotification: vi.fn(),
-  markAsRead: vi.fn(),
-  deleteNotification: vi.fn()
+// Mock the security logger
+const mockSecurityLogger = {
+  logSecurityEvent: vi.fn(),
+  logRateLimit: vi.fn(),
+  logError: vi.fn(),
+  logValidationFailure: vi.fn(),
+  logSuspiciousActivity: vi.fn()
 };
 
-vi.mock('@/notifications', () => ({
-  useNotifications: mockUseNotifications,
-  notificationManager: mockNotificationManager
+vi.mock('@/utils/securityLogger', () => ({
+  securityLogger: mockSecurityLogger,
+  getClientContext: vi.fn(() => ({
+    userAgent: 'test-agent',
+    timestamp: new Date().toISOString(),
+    clientId: 'test-client'
+  }))
 }));
 
 // Mock Supabase client
-vi.mock('@/integrations/supabase/client', () => ({
-  supabase: {
-    from: vi.fn(() => ({
+const mockSupabase = {
+  from: vi.fn(() => ({
+    insert: vi.fn(() => ({
       select: vi.fn(() => ({
-        eq: vi.fn(() => ({
-          order: vi.fn(() => ({
-            data: [],
-            error: null
-          }))
-        }))
-      })),
-      insert: vi.fn(() => ({
-        data: [],
-        error: null
-      })),
-      update: vi.fn(() => ({
-        eq: vi.fn(() => ({
-          data: [],
-          error: null
+        single: vi.fn(() => Promise.resolve({ data: { id: '1', title: 'Test' }, error: null }))
+      }))
+    })),
+    select: vi.fn(() => ({
+      eq: vi.fn(() => ({
+        order: vi.fn(() => ({
+          limit: vi.fn(() => Promise.resolve({ data: [], error: null }))
         }))
       }))
+    })),
+    update: vi.fn(() => ({
+      eq: vi.fn(() => Promise.resolve({ error: null }))
     }))
-  }
+  }))
+};
+
+vi.mock('@/integrations/supabase/client', () => ({
+  supabase: mockSupabase
 }));
 
-const TestWrapper = ({ children }: { children: React.ReactNode }) => {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: { retry: false },
-      mutations: { retry: false }
-    }
-  });
-
-  return (
-    <QueryClientProvider client={queryClient}>
-      {children}
-    </QueryClientProvider>
-  );
+// Mock localStorage
+const mockLocalStorage = {
+  getItem: vi.fn(),
+  setItem: vi.fn(),
+  removeItem: vi.fn()
 };
+
+Object.defineProperty(window, 'localStorage', {
+  value: mockLocalStorage
+});
 
 describe('Unified Notification System', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockLocalStorage.getItem.mockReturnValue(null);
   });
 
-  describe('useNotifications Hook', () => {
-    it('should return notification data and functions', () => {
-      const mockNotifications = [
-        {
-          id: '1',
-          user_id: 'user1',
-          type: 'info' as const,
-          title: 'Test Notification',
-          message: 'Test message',
-          is_read: false,
-          priority: 'normal' as const,
-          created_at: new Date().toISOString()
-        }
-      ];
-
-      mockUseNotifications.mockReturnValue({
-        notifications: mockNotifications,
-        unreadCount: 1,
-        isLoading: false,
-        markAsRead: vi.fn(),
-        markAllAsRead: vi.fn(),
-        deleteNotification: vi.fn()
-      });
-
-      const result = mockUseNotifications('user1');
-
-      expect(result.notifications).toEqual(mockNotifications);
-      expect(result.unreadCount).toBe(1);
-      expect(result.isLoading).toBe(false);
-      expect(typeof result.markAsRead).toBe('function');
-      expect(typeof result.markAllAsRead).toBe('function');
-      expect(typeof result.deleteNotification).toBe('function');
-    });
-
-    it('should handle loading state', () => {
-      mockUseNotifications.mockReturnValue({
-        notifications: [],
-        unreadCount: 0,
-        isLoading: true,
-        markAsRead: vi.fn(),
-        markAllAsRead: vi.fn(),
-        deleteNotification: vi.fn()
-      });
-
-      const result = mockUseNotifications('user1');
-
-      expect(result.isLoading).toBe(true);
-      expect(result.notifications).toEqual([]);
-    });
+  it('should initialize correctly', () => {
+    expect(mockSecurityLogger).toBeDefined();
+    expect(mockSupabase).toBeDefined();
   });
 
-  describe('Notification Manager', () => {
-    it('should create notifications', async () => {
-      const mockNotification = {
-        user_id: 'user1',
-        type: 'info' as const,
-        title: 'Test',
-        message: 'Test message',
-        priority: 'normal' as const
-      };
+  it('should handle notification creation', async () => {
+    const { SecureNotificationService } = await import('@/services/secureNotificationService');
+    
+    const notification = {
+      user_id: 'test-user',
+      title: 'Test Notification',
+      message: 'Test message',
+      type: 'info' as const
+    };
 
-      mockNotificationManager.createNotification(mockNotification);
-
-      expect(mockNotificationManager.createNotification).toHaveBeenCalledWith(mockNotification);
-    });
-
-    it('should mark notifications as read', async () => {
-      const notificationId = 'notification1';
-
-      mockNotificationManager.markAsRead(notificationId);
-
-      expect(mockNotificationManager.markAsRead).toHaveBeenCalledWith(notificationId);
-    });
-
-    it('should delete notifications', async () => {
-      const notificationId = 'notification1';
-
-      mockNotificationManager.deleteNotification(notificationId);
-
-      expect(mockNotificationManager.deleteNotification).toHaveBeenCalledWith(notificationId);
-    });
+    const result = await SecureNotificationService.createNotification(notification);
+    
+    expect(result.success).toBe(true);
+    expect(mockSupabase.from).toHaveBeenCalledWith('notifications');
   });
 
-  describe('Error Handling', () => {
-    it('should handle API errors gracefully', () => {
-      mockUseNotifications.mockReturnValue({
-        notifications: [],
-        unreadCount: 0,
-        isLoading: false,
-        error: new Error('API Error'),
-        markAsRead: vi.fn(),
-        markAllAsRead: vi.fn(),
-        deleteNotification: vi.fn()
-      });
-
-      const result = mockUseNotifications('user1');
-
-      expect(result.error).toBeInstanceOf(Error);
-      expect(result.notifications).toEqual([]);
-    });
+  it('should handle rate limiting', async () => {
+    const { useRateLimit } = await import('@/hooks/auth/useRateLimit');
+    
+    // Mock rate limit data
+    const rateLimitData = {
+      attempts: 5,
+      resetTime: Date.now() + 60000,
+      blockUntil: Date.now() + 30000
+    };
+    
+    mockLocalStorage.getItem.mockReturnValue(JSON.stringify(rateLimitData));
+    
+    // This is a hook test, so we need to test the actual functionality
+    expect(useRateLimit).toBeDefined();
   });
 
-  describe('Real-time Updates', () => {
-    it('should handle real-time notification updates', async () => {
-      const mockNotifications = [
-        {
-          id: '1',
-          user_id: 'user1',
-          type: 'info' as const,
-          title: 'Real-time Test',
-          message: 'Real-time message',
-          is_read: false,
-          priority: 'normal' as const,
-          created_at: new Date().toISOString()
-        }
-      ];
-
-      mockUseNotifications.mockReturnValue({
-        notifications: mockNotifications,
-        unreadCount: 1,
-        isLoading: false,
-        markAsRead: vi.fn(),
-        markAllAsRead: vi.fn(),
-        deleteNotification: vi.fn()
-      });
-
-      const result = mockUseNotifications('user1');
-
-      await waitFor(() => {
-        expect(result.notifications).toEqual(mockNotifications);
-      });
+  it('should validate input correctly', async () => {
+    const { advancedSanitize, validateNotificationContent } = await import('@/utils/inputValidation');
+    
+    const testInput = '<script>alert("xss")</script>Hello World';
+    const sanitized = advancedSanitize(testInput);
+    
+    expect(sanitized).not.toContain('<script>');
+    expect(sanitized).toContain('Hello World');
+    
+    const validation = validateNotificationContent({
+      title: 'Valid Title',
+      message: 'Valid message',
+      type: 'info'
     });
-  });
-
-  describe('Notification Types', () => {
-    it('should handle different notification types', () => {
-      const notificationTypes = ['info', 'warning', 'error', 'success', 'data_approval'] as const;
-
-      notificationTypes.forEach(type => {
-        const mockNotifications = [
-          {
-            id: `${type}-1`,
-            user_id: 'user1',
-            type,
-            title: `${type} notification`,
-            message: `${type} message`,
-            is_read: false,
-            priority: 'normal' as const,
-            created_at: new Date().toISOString()
-          }
-        ];
-
-        mockUseNotifications.mockReturnValue({
-          notifications: mockNotifications,
-          unreadCount: 1,
-          isLoading: false,
-          markAsRead: vi.fn(),
-          markAllAsRead: vi.fn(),
-          deleteNotification: vi.fn()
-        });
-
-        const result = mockUseNotifications('user1');
-        expect(result.notifications[0].type).toBe(type);
-      });
-    });
-  });
-
-  describe('Performance', () => {
-    it('should handle large numbers of notifications efficiently', () => {
-      const largeNotificationList = Array.from({ length: 1000 }, (_, i) => ({
-        id: `notification-${i}`,
-        user_id: 'user1',
-        type: 'info' as const,
-        title: `Notification ${i}`,
-        message: `Message ${i}`,
-        is_read: i % 2 === 0,
-        priority: 'normal' as const,
-        created_at: new Date().toISOString()
-      }));
-
-      mockUseNotifications.mockReturnValue({
-        notifications: largeNotificationList,
-        unreadCount: 500,
-        isLoading: false,
-        markAsRead: vi.fn(),
-        markAllAsRead: vi.fn(),
-        deleteNotification: vi.fn()
-      });
-
-      const result = mockUseNotifications('user1');
-
-      expect(result.notifications).toHaveLength(1000);
-      expect(result.unreadCount).toBe(500);
-    });
+    
+    expect(validation.isValid).toBe(true);
   });
 });
