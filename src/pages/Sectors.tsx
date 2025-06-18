@@ -3,7 +3,7 @@ import { Helmet } from "react-helmet";
 import { useTranslation } from "@/contexts/TranslationContext";
 import { useSectorsStore, type EnhancedSector } from "@/hooks/useSectorsStore";
 import SectorsContainer from "@/components/sectors/SectorsContainer";
-import AuthDebug from "@/components/debug/AuthDebug";
+
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -93,7 +93,7 @@ const Sectors = () => {
       </div>
       
       {/* Debug Panel - Müvəqqəti */}
-      <AuthDebug />
+
     </>
   );
 };

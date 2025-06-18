@@ -41,14 +41,7 @@ const RegionHeader: React.FC<RegionHeaderProps> = ({
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4">
-        <div className="flex-1">
-          <Input
-            placeholder={t("searchRegions")}
-            value={searchTerm}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="max-w-sm"
-          />
-        </div>
+
 
         <div className="w-full sm:w-[200px]">
           <Select

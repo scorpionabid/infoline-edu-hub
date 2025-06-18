@@ -26,6 +26,20 @@ interface SchoolsContainerProps {
   onAssignAdmin: (schoolId: string, userId: string) => Promise<void>;
   regionNames: Record<string, string>;
   sectorNames: Record<string, string>;
+  // Pagination props
+  currentPage?: number;
+  pageSize?: number;
+  totalCount?: number;
+  onPageChange?: (page: number) => void;
+  onPageSizeChange?: (size: number) => void;
+  // Filter props
+  filters?: {
+    search: string;
+    regionId: string;
+    sectorId: string;
+    status: string;
+  };
+  onFilterChange?: (filters: any) => void;
 }
 
 const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
@@ -39,7 +53,16 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
   onDelete,
   onAssignAdmin,
   regionNames,
-  sectorNames
+  sectorNames,
+  // Pagination props
+  currentPage,
+  pageSize,
+  totalCount,
+  onPageChange,
+  onPageSizeChange,
+  // Filter props
+  filters,
+  onFilterChange
 }) => {
   const { tSafe: t } = useSmartTranslation();
   const user = useAuthStore(selectUser);
@@ -124,8 +147,52 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">{t('schools')}</h1>
-          <p className="text-muted-foreground">{t('schoolsDescription')}</p>
+          {/* h1 və p elementləri silindi */}
+        </div>
+        <div className="flex items-center space-x-2">
+          {/* Filter elementləri */}
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input
+              type="text"
+              placeholder={t('search')}
+              className="px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              value={filters?.search || ''}
+              onChange={(e) => onFilterChange?.({ ...filters, search: e.target.value })}
+            />
+            <select
+              className="px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              value={filters?.regionId || ''}
+              onChange={(e) => onFilterChange?.({ ...filters, regionId: e.target.value })}
+            >
+              <option value="">{t('allRegions')}</option>
+              {regions.map((region) => (
+                <option key={region.id} value={region.id}>
+                  {region.name}
+                </option>
+              ))}
+            </select>
+            <select
+              className="px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              value={filters?.sectorId || ''}
+              onChange={(e) => onFilterChange?.({ ...filters, sectorId: e.target.value })}
+            >
+              <option value="">{t('allSectors')}</option>
+              {sectors.map((sector) => (
+                <option key={sector.id} value={sector.id}>
+                  {sector.name}
+                </option>
+              ))}
+            </select>
+            <select
+              className="px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              value={filters?.status || ''}
+              onChange={(e) => onFilterChange?.({ ...filters, status: e.target.value })}
+            >
+              <option value="">{t('allStatuses')}</option>
+              <option value="active">{t('active')}</option>
+              <option value="inactive">{t('inactive')}</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -140,6 +207,42 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
         regionNames={regionNames}
         sectorNames={sectorNames}
       />
+      
+      {/* Pagination */}
+      {totalCount !== undefined && pageSize !== undefined && currentPage !== undefined && onPageChange && (
+        <div className="flex items-center justify-between mt-4">
+          <div className="text-sm text-muted-foreground">
+            {t('showing')} {((currentPage - 1) * pageSize) + 1} - {Math.min(currentPage * pageSize, totalCount)} {t('of')} {totalCount} {t('schools')}
+          </div>
+          <div className="flex items-center space-x-2">
+            <button
+              className="px-3 py-2 border rounded-md text-sm disabled:opacity-50"
+              disabled={currentPage === 1}
+              onClick={() => onPageChange(currentPage - 1)}
+            >
+              {t('previous')}
+            </button>
+            <span className="px-3 py-2">{currentPage}</span>
+            <button
+              className="px-3 py-2 border rounded-md text-sm disabled:opacity-50"
+              disabled={currentPage * pageSize >= totalCount}
+              onClick={() => onPageChange(currentPage + 1)}
+            >
+              {t('next')}
+            </button>
+            <select
+              className="px-3 py-2 border rounded-md text-sm"
+              value={pageSize}
+              onChange={(e) => onPageSizeChange?.(Number(e.target.value))}
+            >
+              <option value="10">10</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+            </select>
+          </div>
+        </div>
+      )}
 
       {/* Edit School Dialog */}
       {editingSchool && (

@@ -361,6 +361,18 @@ const Schools = () => {
           onAssignAdmin={handleAssignAdmin}
           regionNames={regionNames}
           sectorNames={sectorNames}
+          // Pagination props
+          currentPage={currentPage}
+          pageSize={pageSize}
+          totalCount={totalCount}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={updatePageSize}
+          // Filter props
+          filters={filters}
+          onFilterChange={(newFilters) => {
+            setFilters(newFilters);
+            setCurrentPage(1); // Filter dəyişdikdə ilk səhifəyə qayıt
+          }}
         />
       </div>
     </>
