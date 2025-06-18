@@ -4,14 +4,16 @@ export interface CacheEntry<T> {
   timestamp?: number;
   ttl?: number;
   accessCount?: number;
-  priority?: 'low' | 'normal' | 'high';
+  priority?: boolean | 'low' | 'normal' | 'high';
   tags?: string[];
 }
 
 export interface CacheOptions {
   ttl?: number;
-  priority?: 'low' | 'normal' | 'high';
+  priority?: boolean | 'low' | 'normal' | 'high';
   tags?: string[];
+  storage?: CacheStorageType;
+  crossTab?: boolean;
 }
 
 export interface CacheStats {
@@ -30,10 +32,35 @@ export interface CacheAdapter<T> {
   getStats(): CacheStats;
 }
 
+// Storage type
+export type CacheStorageType = 'memory' | 'localStorage' | 'sessionStorage' | 'storage';
+
+// Strategy type  
+export type CacheStrategy = 'memory-first' | 'storage-first' | 'hybrid';
+
+// Manager config
+export interface CacheManagerConfig {
+  defaultStrategy?: CacheStrategy;
+  maxMemorySize?: number;
+  maxStorageSize?: number;
+  enableCrossTab?: boolean;
+}
+
+// Cross-tab message
+export interface CrossTabMessage {
+  type: 'invalidate' | 'update' | 'clear';
+  key?: string;  
+  data?: any;
+  timestamp: number;
+}
+
+// Cache key type
+export type CacheKey = string;
+
 // Cache keys constants
 export const CACHE_KEYS = {
   REGIONS: 'regions',
-  SECTORS: 'sectors',
+  SECTORS: 'sectors', 
   SCHOOLS: 'schools',
   CATEGORIES: 'categories',
   COLUMNS: 'columns',

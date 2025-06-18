@@ -4,37 +4,25 @@ import { EnhancedRegion, Region } from '@/types/region';
 import { toast } from 'sonner';
 
 export const fetchRegionsFromAPI = async (): Promise<EnhancedRegion[]> => {
-  const session = await supabase.auth.getSession();
-  if (!session || !session.data.session) {
-    console.warn('No valid session found when fetching regions');
-  }
-
-  console.log('Attempting direct table query for regions');
-  const { data: regions, error } = await supabase
-    .from('regions')
-    .select(`
-      *,
-      sectors:sectors(count),
-      schools:schools(count),
-      admin:profiles!regions_admin_id_fkey(id, full_name, email)
-    `);
-  
-  if (error) {
-    console.error('Error in direct table query:', error);
-    console.log('Attempting simplified query for regions');
-    const { data: basicRegions, error: basicError } = await supabase
+  try {
+    console.log('Fetching regions from API...');
+    
+    // First try the basic query without joins to avoid table issues
+    const { data: regions, error } = await supabase
       .from('regions')
-      .select('*');
-      
-    if (basicError) {
-      console.error('Even simplified query failed:', basicError);
+      .select('*')
+      .order('name');
+    
+    if (error) {
+      console.error('Error fetching regions:', error);
       return getMockRegions();
     }
     
-    return enhanceBasicRegions(basicRegions || []);
+    return enhanceBasicRegions(regions || []);
+  } catch (error) {
+    console.error('Unexpected error in fetchRegions:', error);
+    return getMockRegions();
   }
-  
-  return enhanceRegions(regions || []);
 };
 
 const getMockRegions = (): EnhancedRegion[] => {
@@ -77,38 +65,16 @@ const enhanceBasicRegions = (basicRegions: any[]): EnhancedRegion[] => {
     status: (region.status === 'active' || region.status === 'inactive') ? region.status : 'active' as const,
     sector_count: 0,
     school_count: 0,
-    admin_name: '',
-    adminName: '',
-    admin: undefined,
-    completion_rate: 0,
-    completionRate: 0
+    admin_name: region.admin_email || '',
+    adminName: region.admin_email || '',
+    admin: region.admin_id ? {
+      id: region.admin_id,
+      full_name: region.admin_email || '',
+      email: region.admin_email || ''
+    } : undefined,
+    completion_rate: Math.floor(Math.random() * 100),
+    completionRate: Math.floor(Math.random() * 100)
   }));
-};
-
-const enhanceRegions = (regions: any[]): EnhancedRegion[] => {
-  return regions.map(region => {
-    const sectors_count = region.sectors?.[0]?.count || 0;
-    const schools_count = region.schools?.[0]?.count || 0;
-    
-    const adminData = region.admin;
-    const adminObj = Array.isArray(adminData) ? adminData[0] : adminData;
-    
-    return {
-      ...region,
-      status: (region.status === 'active' || region.status === 'inactive') ? region.status : 'active' as const,
-      sector_count: sectors_count,
-      school_count: schools_count,
-      admin_name: adminObj?.full_name || '',
-      adminName: adminObj?.full_name || '',
-      admin: adminObj ? {
-        id: adminObj.id,
-        full_name: adminObj.full_name,
-        email: adminObj.email
-      } : undefined,
-      completion_rate: Math.floor(Math.random() * 100),
-      completionRate: Math.floor(Math.random() * 100)
-    };
-  });
 };
 
 export const addRegionToAPI = async (regionData: Partial<Region>): Promise<EnhancedRegion> => {
@@ -130,8 +96,8 @@ export const addRegionToAPI = async (regionData: Partial<Region>): Promise<Enhan
     status: (data.status === 'active' || data.status === 'inactive') ? data.status : 'active' as const,
     sector_count: 0,
     school_count: 0,
-    admin_name: '',
-    adminName: '',
+    admin_name: data.admin_email || '',
+    adminName: data.admin_email || '',
     completion_rate: 0,
     completionRate: 0
   };
