@@ -20,15 +20,21 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import CreateCategoryDialog from "@/components/categories/CreateCategoryDialog";
+import { EditCategoryDialog } from "@/components/categories/EditCategoryDialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import CategoryCard from "@/components/categories/CategoryCard";
 import { toast } from "sonner";
 import { Category } from "@/types/category";
 import CategoryList from "@/components/categories/CategoryList";
+import useCategoryActions from "@/hooks/categories/useCategoryActions";
 
 const Categories = () => {
   const { t } = useTranslation();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { fetchCategories, addCategory, error } = useCategoryOperations();
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const { fetchCategories, addCategory, deleteCategory, error } = useCategoryOperations();
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState({
     status: "",
@@ -49,12 +55,38 @@ const Categories = () => {
     try {
       await addCategory(categoryData);
       setIsDialogOpen(false);
-      toast.success(t("categoryAdded"), {
-        description: t("categoryAddedSuccess"),
+      toast.success(t("categories.category_created"), {
+        description: t("categories.category_created"),
       });
       refetch();
     } catch (err: any) {
       toast.error(t("errorAddingCategory"), {
+        description: err.message,
+      });
+    }
+  };
+
+  const handleEditSuccess = () => {
+    toast.success(t("categories.category_updated"), {
+      description: t("categories.category_updated"),
+    });
+    refetch();
+    setSelectedCategory(null);
+  };
+
+  const handleDeleteCategory = async () => {
+    try {
+      if (selectedCategory) {
+        await deleteCategory(selectedCategory.id);
+        setIsDeleteDialogOpen(false);
+        setSelectedCategory(null);
+        toast.success(t("categories.category_deleted"), {
+          description: t("categories.category_deleted"),
+        });
+        refetch();
+      }
+    } catch (err: any) {
+      toast.error(t("errorDeletingCategory"), {
         description: err.message,
       });
     }
@@ -74,6 +106,16 @@ const Categories = () => {
     window.location.href = `/categories/${categoryId}`;
   };
 
+  const handleEditClick = (category: Category) => {
+    setSelectedCategory(category);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleDeleteClick = (category: Category) => {
+    setSelectedCategory(category);
+    setIsDeleteDialogOpen(true);
+  };
+
   useEffect(() => {
     console.log("Categories component rendered");
   }, []);
@@ -84,7 +126,7 @@ const Categories = () => {
         <h1 className="text-2xl font-bold">{t("categories")}</h1>
         <Button onClick={() => setIsDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
-          {t("addCategory")}
+          {t("add_category")}
         </Button>
       </div>
 
@@ -159,24 +201,62 @@ const Categories = () => {
           )}
         </CardHeader>
         <CardContent>
-          <CategoryList 
-            categories={categories}
-            isLoading={isLoading}
-            onCategorySelect={handleCategorySelect} 
-          />
+          {isLoading ? (
+            <div className="flex items-center justify-center p-8">
+              <Loader2 className="h-8 w-8 animate-spin" />
+              <span className="ml-2">{t("loading")}...</span>
+            </div>
+          ) : categories.length === 0 ? (
+            <div className="text-center p-8 text-muted-foreground">
+              <p>{t("categories.no_categories")}</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {categories.map((category) => (
+                <CategoryCard
+                  key={category.id}
+                  category={category}
+                  onView={() => handleCategorySelect(category.id)}
+                  onEdit={() => handleEditClick(category)}
+                  onDelete={() => handleDeleteClick(category)}
+                />
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
       <CreateCategoryDialog
         open={isDialogOpen}
-        setOpen={setIsDialogOpen}
-        onSuccess={() => {
-          refetch();
-          toast.success(t("categoryAdded"), {
-            description: t("categoryAddedSuccess"),
-          });
-        }}
+        onOpenChange={setIsDialogOpen}
+        onSubmit={handleAddCategory}
       />
+
+      {selectedCategory && (
+        <EditCategoryDialog
+          open={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+          category={selectedCategory}
+          onSave={handleEditSuccess}
+        />
+      )}
+
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("categories.delete_category")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("categories.delete_category_confirmation")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("categories.cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteCategory} className="bg-destructive text-destructive-foreground">
+              {t("categories.delete_category")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

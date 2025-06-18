@@ -135,12 +135,38 @@ export const useCategoryOperations = () => {
     return addCategoryMutation.mutateAsync(categoryData);
   };
 
+  // Add missing mutation for deleteCategory
+  const deleteCategoryMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('categories')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      return id;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+      toast.success('Kateqoriya uğurla silindi');
+    },
+    onError: (error: Error) => {
+      toast.error('Kateqoriya silinərkən xəta baş verdi');
+      console.error('Error deleting category:', error);
+    }
+  });
+
+  const deleteCategory = async (id: string) => {
+    return deleteCategoryMutation.mutateAsync(id);
+  };
+
   return {
     fetchCategories,
     addCategory,
+    deleteCategory,
     createCategory: createCategoryMutation.mutate,
     updateCategory: updateCategoryMutation.mutate,
-    isLoading: addCategoryMutation.isPending || createCategoryMutation.isPending || updateCategoryMutation.isPending,
+    isLoading: addCategoryMutation.isPending || createCategoryMutation.isPending || updateCategoryMutation.isPending || deleteCategoryMutation.isPending,
     error: null
   };
 };
