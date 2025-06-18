@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -22,7 +22,7 @@ import {
 import { useSchoolsQuery } from '@/hooks/api/schools/useSchoolsQuery';
 import { useSchoolCategories } from '@/hooks/categories/useCategoriesWithAssignment';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { SectorAdminProxyDataEntry } from '@/components/dataEntry/SectorAdminProxyDataEntry';
+import SectorAdminProxyDataEntry from '@/components/dataEntry/SectorAdminProxyDataEntry';
 import { BulkDataEntryDialog } from '@/components/dataEntry/BulkDataEntryDialog';
 import { cn } from '@/lib/utils';
 
@@ -30,6 +30,9 @@ interface SectorAdminSchoolListProps {
   onSchoolSelect?: (schoolId: string) => void;
   onDataEntry?: (schoolId: string) => void;
   onBulkSelect?: (schoolIds: string[]) => void;
+  onBulkAction?: (action: string, schoolIds: string[]) => void; // Bulk əməliyyat üçün handler əlavə edildi
+  categoryId?: string; // Kateqoriya ID-si əlavə edildi
+  bulkMode?: boolean; // Bulk rejim əlavə edildi
 }
 
 const ITEMS_PER_PAGE = 12;
@@ -37,22 +40,30 @@ const ITEMS_PER_PAGE = 12;
 export const SectorAdminSchoolList: React.FC<SectorAdminSchoolListProps> = ({
   onSchoolSelect,
   onDataEntry,
-  onBulkSelect
+  onBulkSelect,
+  onBulkAction,
+  categoryId,
+  bulkMode = false
 }) => {
   // State management
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSchoolId, setSelectedSchoolId] = useState<string | null>(null);
   const [showDataEntry, setShowDataEntry] = useState(false);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
   const [selectedSchools, setSelectedSchools] = useState<Set<string>>(new Set());
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState<'name' | 'completion'>('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [showBulkDialog, setShowBulkDialog] = useState(false);
   
+  // Kateqoriya ID-ni yoxlayırıq
+  useEffect(() => {
+    if (!categoryId) {
+      console.warn('Kateqoriya ID-si təyin edilməyib');
+    }
+  }, [categoryId]);
+  
   // Data fetching
   const { schools, loading: schoolsLoading } = useSchoolsQuery();
-  const { data: categories, isLoading: categoriesLoading } = useSchoolCategories();
 
   // Memoized filtered and sorted schools
   const processedSchools = useMemo(() => {
@@ -106,8 +117,8 @@ export const SectorAdminSchoolList: React.FC<SectorAdminSchoolListProps> = ({
   const handleDataEntryClick = (schoolId: string) => {
     console.log('Data entry button clicked for school:', schoolId);
     
-    if (!selectedCategoryId) {
-      alert('Zəhmət olmasa kateqoriya seçin');
+    if (!categoryId) {
+      alert('Kateqoriya seçilməyib. Zəhmət olmasa əvvəlcə kateqoriya seçin');
       return;
     }
     
@@ -131,11 +142,21 @@ export const SectorAdminSchoolList: React.FC<SectorAdminSchoolListProps> = ({
       return;
     }
     
-    if (!selectedCategoryId) {
+    if (!categoryId) {
       alert('Zəhmət olmasa kateqoriya seçin');
       return;
     }
     
+    // Bulk rejim aktivdirsə, birbaşa onBulkAction-ı çağırırıq
+    if (bulkMode && onBulkSelect) {
+      onBulkSelect(Array.from(selectedSchools));
+      if (onBulkAction) {
+        onBulkAction('data_entry', Array.from(selectedSchools));
+      }
+      return;
+    }
+    
+    // Əks halda köhnə dialog-u göstəririk
     setShowBulkDialog(true);
   };
 
@@ -193,23 +214,45 @@ export const SectorAdminSchoolList: React.FC<SectorAdminSchoolListProps> = ({
     }
   };
 
+  // Effect to update selected schools when bulk selection changes
+  useEffect(() => {
+    if (onBulkSelect && selectedSchools.size > 0) {
+      onBulkSelect(Array.from(selectedSchools));
+    }
+  }, [selectedSchools, onBulkSelect]);
+
+  // Effect to highlight bulk mode UI when bulkMode is true
+  useEffect(() => {
+    if (bulkMode) {
+      // Bulk rejim aktivləşdirildikdə UI elementlərini uyğunlaşdırırıq
+      document.querySelectorAll('.school-card-checkbox').forEach((el) => {
+        (el as HTMLElement).style.opacity = '1';
+      });
+    } else {
+      // Bulk rejim deaktiv edildikdə UI elementlərini gizlədirik
+      document.querySelectorAll('.school-card-checkbox').forEach((el) => {
+        (el as HTMLElement).style.opacity = '0.5';
+      });
+    }
+  }, [bulkMode]);
+
   // Pagination handlers
   const goToPage = (page: number) => {
     setCurrentPage(Math.max(1, Math.min(page, totalPages)));
   };
 
   // Loading state
-  if (schoolsLoading || categoriesLoading) {
+  if (schoolsLoading) {
     return <LoadingSpinner />;
   }
 
   // Show data entry form if a school is selected for data entry
-  if (showDataEntry && selectedSchoolId && selectedCategoryId) {
+  if (showDataEntry && selectedSchoolId && categoryId) {
     return (
       <div className="h-full">
         <SectorAdminProxyDataEntry
           schoolId={selectedSchoolId}
-          categoryId={selectedCategoryId}
+          categoryId={categoryId}
           onClose={handleCloseDataEntry}
           onComplete={() => {
             console.log('Proxy data entry completed');
@@ -276,53 +319,53 @@ export const SectorAdminSchoolList: React.FC<SectorAdminSchoolListProps> = ({
               </SelectContent>
             </Select>
             
-            {/* Category Selection */}
-            <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Kateqoriya seçin" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories?.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {/* Kateqoriya seçimi artıq əsas səhifədə edilir */}
           </div>
           
           {/* Selection Controls */}
           {selectedSchools.size > 0 && (
             <div className="flex items-center justify-between p-3 bg-primary/5 rounded-lg border">
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                <span className="text-sm font-medium">
-                  {selectedSchools.size} məktəb seçildi
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  onClick={handleBulkDataEntry}
-                  disabled={!selectedCategoryId}
-                  className="flex items-center gap-1"
-                >
-                  <Edit3 className="h-3 w-3" />
-                  Toplu Məlumat Daxil Et
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={clearSelection}
-                >
-                  Seçimi Ləğv Et
-                </Button>
+              <div className="flex justify-between items-center mb-4">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-medium">
+                    <Building2 className="h-5 w-5 inline-block mr-1" />
+                    Məktəblər
+                  </h3>
+                  {selectedSchools.size > 0 && (
+                    <Badge variant={bulkMode ? "default" : "secondary"}>
+                      {selectedSchools.size} seçilib
+                    </Badge>
+                  )}
+                  {bulkMode && (
+                    <Badge variant="outline" className="ml-2 bg-primary/10">
+                      Bulk rejim aktiv
+                    </Badge>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    onClick={handleBulkDataEntry}
+                    disabled={!categoryId}
+                    className="flex items-center gap-1"
+                  >
+                    <Edit3 className="h-3 w-3" />
+                    Toplu Məlumat Daxil Et
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={clearSelection}
+                  >
+                    Seçimi Ləğv Et
+                  </Button>
+                </div>
               </div>
             </div>
           )}
           
           {/* Warning for category selection */}
-          {!selectedCategoryId && (
+          {!categoryId && (
             <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
               <p className="text-sm text-amber-800">
                 ⚠️ Məlumat daxil etmək üçün kateqoriya seçin
@@ -369,7 +412,10 @@ export const SectorAdminSchoolList: React.FC<SectorAdminSchoolListProps> = ({
                         checked={selectedSchools.has(school.id)}
                         onCheckedChange={() => toggleSchoolSelection(school.id)}
                         onClick={(e) => e.stopPropagation()}
-                        className="mt-1"
+                        className={cn(
+                          "mt-1 school-card-checkbox transition-opacity", 
+                          bulkMode ? "opacity-100" : "opacity-50"
+                        )}
                       />
                       
                       {/* School Icon */}
@@ -378,7 +424,7 @@ export const SectorAdminSchoolList: React.FC<SectorAdminSchoolListProps> = ({
                       {/* School Info */}
                       <div className="flex-1 min-w-0">
                         <h3 className="font-medium text-sm truncate">
-                          {school.name}
+                          <span className="font-medium">{school.name}</span>
                         </h3>
                         <p className="text-xs text-muted-foreground truncate">
                           ID: {school.id.slice(0, 8)}...
@@ -398,8 +444,8 @@ export const SectorAdminSchoolList: React.FC<SectorAdminSchoolListProps> = ({
                                 e.stopPropagation();
                                 handleDataEntryClick(school.id);
                               }}
-                              disabled={!selectedCategoryId}
-                              variant={!selectedCategoryId ? 'secondary' : 'default'}
+                              disabled={!categoryId}
+                              variant={!categoryId ? 'secondary' : 'default'}
                               className="text-xs h-6"
                             >
                               <Edit3 className="h-3 w-3 mr-1" />
@@ -521,7 +567,7 @@ export const SectorAdminSchoolList: React.FC<SectorAdminSchoolListProps> = ({
         isOpen={showBulkDialog}
         onClose={() => setShowBulkDialog(false)}
         selectedSchools={Array.from(selectedSchools)}
-        categoryId={selectedCategoryId}
+        categoryId={categoryId}
         onComplete={handleBulkDialogComplete}
       />
     </div>

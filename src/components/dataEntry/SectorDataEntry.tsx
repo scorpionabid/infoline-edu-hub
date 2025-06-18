@@ -10,12 +10,16 @@ interface SectorDataEntryProps {
   onDataEntry?: (schoolId: string) => void;
   onSendNotification?: (schoolIds: string[]) => void;
   onBulkAction?: (action: string, schoolIds: string[]) => void;
+  categoryId?: string; // Kateqoriya ID-si əlavə edildi
+  bulkMode?: boolean; // Bulk rejim əlavə edildi
 }
 
 export const SectorDataEntry: React.FC<SectorDataEntryProps> = ({
   onDataEntry,
   onSendNotification,
   onBulkAction,
+  categoryId,
+  bulkMode = false, // Default dəyər false
 }) => {
   const { t } = useTranslation();
   const user = useAuthStore(selectUser);
@@ -55,6 +59,7 @@ export const SectorDataEntry: React.FC<SectorDataEntryProps> = ({
         <SectorAdminSchoolList
           onSchoolSelect={handleSchoolSelect}
           onDataEntry={handleDataEntry}
+          categoryId={categoryId} // Kateqoriya ID-si ötürülür
         />
       </div>
     </div>
