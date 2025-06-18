@@ -34,7 +34,7 @@ export class CacheManager<T = any> {
           adapter = preferredAdapter;
         }
       }
-      return adapter.get(key) as U | null;
+      return adapter.get(key) as unknown as U | null;
     } catch (error) {
       console.warn('Cache get error:', error);
       return null;
@@ -52,7 +52,7 @@ export class CacheManager<T = any> {
           adapter = preferredAdapter;
         }
       }
-      adapter.set(key, value as T, options);
+      adapter.set(key, value as unknown as T, options);
     } catch (error) {
       console.warn('Cache set error:', error);
     }
@@ -128,6 +128,24 @@ export class CacheManager<T = any> {
   }
 
   // Helper methods for compatibility
+  memory() {
+    return {
+      get: (key: string) => this.get(key, 'memory'),
+      set: (key: string, value: any, options?: CacheOptions) => this.set(key, value, { ...options, storage: 'memory' }),
+      delete: (key: string) => this.delete(key),
+      clear: () => this.adapters.get('memory')?.clear()
+    };
+  }
+
+  localStorage() {
+    return {
+      get: (key: string) => this.get(key, 'localStorage'),
+      set: (key: string, value: any, options?: CacheOptions) => this.set(key, value, { ...options, storage: 'localStorage' }),
+      delete: (key: string) => this.delete(key), 
+      clear: () => this.adapters.get('localStorage')?.clear()
+    };
+  }
+
   sessionStorage() {
     return {
       set: (key: string, value: any, options?: CacheOptions) => {
@@ -184,7 +202,8 @@ export class CacheManager<T = any> {
       adapter: this.adapters.get(storage) || this.primaryAdapter,
       options: {
         storage,
-        ttl: isFrequent ? 5 * 60 * 1000 : 15 * 60 * 1000 // 5min vs 15min
+        ttl: isFrequent ? 5 * 60 * 1000 : 15 * 60 * 1000, // 5min vs 15min
+        priority: isFrequent
       }
     };
   }
@@ -226,6 +245,16 @@ export class CacheManager<T = any> {
     }
     
     return health;
+  }
+
+  // Add missing methods for compatibility
+  cleanup(): void {
+    this.evict();
+  }
+
+  destroy(): void {
+    this.clear();
+    this.disable();
   }
 
   disable(): void {

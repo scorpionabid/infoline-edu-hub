@@ -48,10 +48,11 @@ export interface CacheManagerConfig {
 
 // Cross-tab message
 export interface CrossTabMessage {
-  type: 'invalidate' | 'update' | 'clear';
+  type: 'cache_update' | 'cache_delete' | 'cache_clear' | 'cache_sync';
   key?: string;  
-  data?: any;
+  value?: any;
   timestamp: number;
+  source?: string;
 }
 
 // Cache key type

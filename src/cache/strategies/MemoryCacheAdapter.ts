@@ -1,3 +1,4 @@
+
 /**
  * İnfoLine Unified Cache System - Memory Cache Adapter
  * In-memory cache with LRU eviction strategy
@@ -17,8 +18,8 @@ export class MemoryCacheAdapter<T = any> extends BaseCacheAdapter<T> {
   /**
    * LRU eviction strategy
    */
-  protected evict(): void {
-    if (this.cache.size < this.stats.maxSize) return;
+  evict(): void {
+    if (this.cache.size < this.maxSize) return;
 
     // Find least recently used entry
     let lruKey = '';
@@ -60,7 +61,7 @@ export class MemoryCacheAdapter<T = any> extends BaseCacheAdapter<T> {
     const cacheKey = this.getCacheKey(key);
     
     // Check if we need to evict
-    if (this.cache.size >= this.stats.maxSize && !this.cache.has(cacheKey)) {
+    if (this.cache.size >= this.maxSize && !this.cache.has(cacheKey)) {
       this.evict();
     }
     
@@ -113,7 +114,7 @@ export class MemoryCacheAdapter<T = any> extends BaseCacheAdapter<T> {
       accessOrderSize,
       averageAccessCount: this.accessCounter / Math.max(this.cache.size, 1),
       cacheEfficiency: stats.hitRate,
-      memoryFragmentation: (this.stats.maxSize - this.cache.size) / this.stats.maxSize * 100
+      memoryFragmentation: (this.maxSize - this.cache.size) / this.maxSize * 100
     };
   }
 }

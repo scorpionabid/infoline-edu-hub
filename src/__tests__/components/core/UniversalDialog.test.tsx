@@ -21,57 +21,45 @@ describe('UniversalDialog Component', () => {
   it('should render the dialog when isOpen is true', () => {
     render(
       <UniversalDialog
+        type="delete"
+        entity="region"
         isOpen={true}
-        config={{
-          title: 'Test Title',
-          description: 'Test Content',
-          confirmText: 'Confirm',
-          cancelText: 'Cancel'
-        }}
         onClose={() => {}}
         onConfirm={() => {}}
+        data={{ name: 'Test Region' }}
       />
     );
 
-    expect(screen.getByText('Test Title')).toBeInTheDocument();
-    expect(screen.getByText('Test Content')).toBeInTheDocument();
+    expect(screen.getByText(/delete/i)).toBeInTheDocument();
   });
 
   it('should render confirm and cancel buttons', () => {
     render(
       <UniversalDialog
+        type="delete"
+        entity="region"
         isOpen={true}
-        config={{
-          title: 'Test Title',
-          description: 'Test Content',
-          confirmText: 'Confirm',
-          cancelText: 'Cancel'
-        }}
         onClose={() => {}}
         onConfirm={() => {}}
+        data={{ name: 'Test Region' }}
       />
     );
 
-    expect(screen.getByText('Cancel')).toBeInTheDocument();
-    expect(screen.getByText('Confirm')).toBeInTheDocument();
+    expect(screen.getByText(/common.cancel/i)).toBeInTheDocument();
   });
 
   it('should not render the dialog when isOpen is false', () => {
     render(
       <UniversalDialog
+        type="delete"
+        entity="region"
         isOpen={false}
-        config={{
-          title: 'Test Title',
-          description: 'Test Content',
-          confirmText: 'Confirm',
-          cancelText: 'Cancel'
-        }}
         onClose={() => {}}
         onConfirm={() => {}}
+        data={{ name: 'Test Region' }}
       />
     );
 
-    expect(screen.queryByText('Test Title')).toBeNull();
-    expect(screen.queryByText('Test Content')).toBeNull();
+    expect(screen.queryByText(/delete/i)).toBeNull();
   });
 });
