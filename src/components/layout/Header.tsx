@@ -15,7 +15,9 @@ import {
   Globe,
   Moon,
   Sun,
-  Monitor
+  Monitor,
+  FileText,
+  CheckSquare
 } from "lucide-react";
 import UserProfile from './UserProfile';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -52,6 +54,7 @@ const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }) => {
   const { userRole } = usePermissions();
   const { theme, setTheme } = useTheme();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   // Quick access navigation items with icons
   const quickNavItems = [
@@ -60,6 +63,13 @@ const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }) => {
       icon: Home,
       href: '/dashboard',
       tooltip: t('navigation.dashboard'),
+      visible: true,
+    },
+    {
+      id: 'data-entry',
+      icon: FileText,
+      href: userRole === 'schooladmin' ? '/school-data-entry' : '/data-entry',
+      tooltip: t('navigation.dataEntry'),
       visible: true,
     },
     {
@@ -82,13 +92,20 @@ const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }) => {
       href: '/reports',
       tooltip: t('navigation.reports'),
       visible: ['superadmin', 'regionadmin', 'sectoradmin'].includes(userRole || ''),
+    },
+    {
+      id: 'approvals',
+      icon: CheckSquare,
+      href: '/approvals',
+      tooltip: t('navigation.approvals'),
+      visible: ['superadmin', 'regionadmin', 'sectoradmin'].includes(userRole || ''),
     }
   ].filter(item => item.visible);
 
   return (
     <TooltipProvider>
       <header className="sticky top-0 z-50 border-b border-border/40 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center justify-between px-4 lg:px-6">
+        <div className="w-full flex h-16 items-center justify-between px-3 md:px-4 lg:px-6 max-w-full">
           
           {/* Left Section */}
           <div className="flex items-center gap-4 min-w-0 flex-1">
@@ -97,14 +114,14 @@ const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }) => {
               <Button
                 variant="ghost"
                 size="icon"
-                className="shrink-0 hover:bg-accent/50 transition-all duration-200 hover:scale-105"
+                className="shrink-0 h-8 w-8 hover:bg-accent/50 transition-all duration-200 hover:scale-105"
                 onClick={onSidebarToggle}
                 aria-label={isSidebarOpen ? 'Menyunu bağla' : 'Menyunu aç'}
               >
                 {isSidebarOpen ? (
-                  <X className="h-5 w-5" />
+                  <X className="h-4 w-4" />
                 ) : (
-                  <Menu className="h-5 w-5" />
+                  <Menu className="h-4 w-4" />
                 )}
               </Button>
             )}
@@ -121,46 +138,85 @@ const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }) => {
               </div>
             )}
 
-            {/* Desktop Search Bar - Minimized */}
+            {/* Desktop Search - Icon with expandable input */}
             {!isMobile && (
-              <div className="relative max-w-xs flex-1">
-                <Search className="absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Axtar..."
-                  className="pl-7 h-8 bg-muted/30 border-none focus-visible:ring-1 focus-visible:ring-primary/50 transition-all duration-200 text-xs"
-                />
+              <div className="relative">
+                {!isSearchOpen ? (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 hover:bg-accent/50 transition-all duration-200"
+                        onClick={() => setIsSearchOpen(true)}
+                      >
+                        <Search className="h-3 w-3" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Axtarış</p>
+                    </TooltipContent>
+                  </Tooltip>
+                ) : (
+                  <div className="flex items-center gap-2 animate-fade-in-left">
+                    <div className="relative">
+                      <Search className="absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        placeholder="Axtar..."
+                        className="pl-7 h-8 w-64 bg-muted/30 border-none focus-visible:ring-1 focus-visible:ring-primary/50 transition-all duration-200 text-xs"
+                        autoFocus
+                        onBlur={() => setIsSearchOpen(false)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Escape') {
+                            setIsSearchOpen(false);
+                          }
+                        }}
+                      />
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 hover:bg-accent/50 transition-all duration-200"
+                      onClick={() => setIsSearchOpen(false)}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </div>
 
-          {/* Center Section - Quick Navigation (Desktop Only) */}
-          {!isMobile && (
-            <div className="hidden lg:flex items-center gap-1 px-4">
-              {quickNavItems.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Tooltip key={item.id}>
-                    <TooltipTrigger asChild>
-                      <NavLink to={item.href}>
-                        {({ isActive }) => (
-                          <Button
-                            variant={isActive ? "default" : "ghost"}
-                            size="icon"
-                            className={`h-9 w-9 transition-all duration-200 ${isActive ? 'bg-primary shadow-lg' : 'hover:bg-accent/50'}`}
-                          >
-                            <Icon className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </NavLink>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{item.tooltip}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                );
-              })}
-            </div>
-          )}
+          {/* Center Section - Quick Navigation (Always visible) */}
+          <div className="flex items-center gap-1 px-2 lg:px-4 overflow-x-auto">
+            {quickNavItems.slice(0, isMobile ? 4 : quickNavItems.length).map((item) => {
+              const Icon = item.icon;
+              return (
+                <Tooltip key={item.id}>
+                  <TooltipTrigger asChild>
+                    <NavLink to={item.href}>
+                      {({ isActive }) => (
+                        <Button
+                          variant={isActive ? "default" : "ghost"}
+                          size="icon"
+                          className={`h-8 w-8 transition-all duration-200 flex-shrink-0 ${
+                            isActive 
+                              ? 'bg-primary shadow-lg scale-105' 
+                              : 'hover:bg-accent/50 hover:scale-105'
+                          }`}
+                        >
+                          <Icon className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </NavLink>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{item.tooltip}</p>
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })}
+          </div>
 
           {/* Right Section */}
           <div className="flex items-center gap-1 flex-shrink-0 animate-fade-in-right">
