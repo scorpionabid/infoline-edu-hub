@@ -50,6 +50,15 @@ export const common = {
   permissions: 'İcazələr',
   about: 'Haqqında',
   
+  // ===== Language & UI =====
+  language_switcher: 'Dil seçin',
+  languages: {
+    az: 'Azərbaycanca',
+    en: 'English',
+    ru: 'Русский',
+    tr: 'Türkçe'
+  },
+  
   // ===== Data & Tables =====
   noData: 'Məlumat yoxdur',
   noResults: 'Nəticə tapılmadı',

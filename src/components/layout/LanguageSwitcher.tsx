@@ -54,17 +54,14 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
   showLabels = false
 }) => {
   try {
-    const translationContext = useTranslation?.();
-    const { language = DEFAULT_LANGUAGE, setLanguage } = translationContext || {};
-    
-    const availableLanguages = Object.keys(LANGUAGES) as LanguageCode[];
-    const currentLanguage = availableLanguages.includes(language as LanguageCode) 
+    const { language, setLanguage, t } = useTranslation();
+    const currentLanguage = (Object.keys(LANGUAGES) as LanguageCode[]).includes(language as LanguageCode) 
       ? language as LanguageCode 
       : DEFAULT_LANGUAGE;
 
     const handleLanguageChange = (value: string) => {
       try {
-        if (setLanguage && availableLanguages.includes(value as LanguageCode)) {
+        if (setLanguage && (Object.keys(LANGUAGES) as LanguageCode[]).includes(value as LanguageCode)) {
           setLanguage(value as LanguageCode);
           console.log(`Language changed to: ${value}`);
         }
@@ -88,7 +85,7 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
         <Select
           value={currentLanguage}
           onValueChange={handleLanguageChange}
-          aria-label="Dil seçin"
+          aria-label={t('common.language_switcher')}
         >
           <SelectTrigger 
             className={`border-border ${sizeClasses[variant]}`}
@@ -99,17 +96,13 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
             </div>
           </SelectTrigger>
           <SelectContent className="min-w-[120px]" align="end">
-            {availableLanguages.map((lang) => {
+            {(Object.keys(LANGUAGES) as LanguageCode[]).map((lang) => {
               const langInfo = LANGUAGES[lang];
               return (
-                <SelectItem 
-                  key={lang} 
-                  value={lang}
-                  className="py-2"
-                >
+                <SelectItem key={lang} value={lang} className="py-2">
                   <div className="flex items-center gap-3">
                     <span className="text-lg">{langInfo.flag}</span>
-                    <span className="font-medium">{langInfo.nativeName}</span>
+                    <span className="font-medium">{t(`common.languages.${lang}`)}</span>
                   </div>
                 </SelectItem>
               );

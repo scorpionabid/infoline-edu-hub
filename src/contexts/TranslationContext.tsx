@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, ReactNode, useMemo, useEffect, useState, useCallback } from 'react';
 import { 
   SupportedLanguage, 
@@ -56,7 +57,7 @@ const COMPREHENSIVE_AZ_FALLBACK = {
     users: 'İstifadəçilər',
     settings: 'Ayarlar'
   },
-  general: {
+  common: {
     save: 'Saxla',
     cancel: 'Ləğv et',
     delete: 'Sil',
@@ -65,7 +66,14 @@ const COMPREHENSIVE_AZ_FALLBACK = {
     search: 'Axtarış',
     loading: 'Yüklənir...',
     error: 'Xəta',
-    success: 'Uğurlu'
+    success: 'Uğurlu',
+    language_switcher: 'Dil seçin',
+    languages: {
+      az: 'Azərbaycanca',
+      en: 'English',
+      ru: 'Русский',
+      tr: 'Türkçe'
+    }
   },
   ui: {
     search: 'Axtarış...',

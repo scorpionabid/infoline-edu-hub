@@ -13,13 +13,11 @@ if (!rootElement) {
   throw new Error("Root element not found");
 }
 
-// Render app immediately - auth will initialize in background
+// Production-ready render without StrictMode for better performance
 ReactDOM.createRoot(rootElement).render(
-  <React.StrictMode>
-    <BrowserRouter>
-      <TranslationProvider>
-        <App />
-      </TranslationProvider>
-    </BrowserRouter>
-  </React.StrictMode>
+  <BrowserRouter>
+    <TranslationProvider>
+      <App />
+    </TranslationProvider>
+  </BrowserRouter>
 );

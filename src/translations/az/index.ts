@@ -31,6 +31,7 @@ export default {
   auth,
   categories,
   columns,
+  common,
   core,
   dashboard,
   dataEntry,

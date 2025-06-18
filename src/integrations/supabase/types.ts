@@ -904,6 +904,10 @@ export type Database = {
         Args: { target_school_id: string; data_type?: string }
         Returns: boolean
       }
+      approval_permission_check_v2: {
+        Args: { target_school_id: string; data_type?: string }
+        Returns: boolean
+      }
       assign_region_admin: {
         Args: { user_id_param: string; region_id_param: string }
         Returns: Json
@@ -973,6 +977,10 @@ export type Database = {
         Args: { category_id: string; operation_type?: string }
         Returns: boolean
       }
+      category_access_check_v2: {
+        Args: { category_id: string; operation_type?: string }
+        Returns: boolean
+      }
       check_approval_permissions: {
         Args: { target_school_id: string; data_type?: string }
         Returns: boolean
@@ -992,6 +1000,10 @@ export type Database = {
       column_value_validator: {
         Args: { column_type: string; value_text: string }
         Returns: boolean
+      }
+      completion_rate_calculator: {
+        Args: { school_id_param: string }
+        Returns: number
       }
       create_audit_log: {
         Args: {
