@@ -137,8 +137,8 @@ describe('Sidebar', () => {
     it('has proper navigation role and aria-label', () => {
       renderWithProviders(<MockSidebar />);
       
-      const sidebar = screen.getByRole('navigation');
-      expect(sidebar).toBeInTheDocument();
+      const sidebar = screen.getByTestId('sidebar');
+      expect(sidebar).toHaveAttribute('role', 'navigation');
       expect(sidebar).toHaveAttribute('aria-label', 'Main navigation');
     });
 
