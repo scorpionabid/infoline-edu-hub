@@ -8,7 +8,8 @@ export type NotificationType =
   | 'data_approval'
   | 'deadline_reminder'
   | 'proxy_data_entry'
-  | 'system_update';
+  | 'system_update'
+  | 'deadline';
 
 export type NotificationPriority = 'low' | 'normal' | 'high';
 
@@ -32,6 +33,7 @@ export interface AppNotification {
   type: NotificationType;
   priority: NotificationPriority;
   created_at: string;
+  createdAt?: string; // For backward compatibility
   is_read: boolean;
   user_id: string;
 }
@@ -40,4 +42,5 @@ export interface NotificationsCardProps {
   notifications: AppNotification[];
   onMarkAsRead?: (id: string) => void;
   onMarkAllAsRead?: () => void;
+  title?: string;
 }

@@ -3,6 +3,8 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import ApprovalPage from '../pages/Approval';
 import { LanguageProvider } from '../context/LanguageContext';
+import { useTranslation } from '@/contexts/TranslationContext';
+
 // Auth store artıq Zustand-ə köçürülüb
 
 // Mock hooks
@@ -76,6 +78,18 @@ vi.mock('../hooks/approval/useApprovalData', () => ({
     approveSubmission: mockApprovalSubmission,
     rejectSubmission: mockRejectSubmission
   })
+}));
+
+// Mock the translation context
+vi.mock('@/contexts/TranslationContext', () => ({
+  useTranslation: vi.fn(() => ({
+    t: (key: string) => key,
+    language: 'az',
+    setLanguage: vi.fn(),
+    isLoading: false,
+    error: null,
+    isReady: true
+  }))
 }));
 
 describe('Approval Page', () => {

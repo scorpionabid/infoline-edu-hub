@@ -1,201 +1,115 @@
-
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { MemoryRouter } from 'react-router-dom';
-import React from 'react';
-import { UserRole } from '../types/supabase';
-import { LanguageProvider } from '../context/LanguageContext';
+import CategoryColumn from '@/components/columns/CategoryColumn';
+import { useCategoryData } from '@/hooks/useCategoryData';
+import { useColumnStore } from '@/store/columnStore';
+import { useForm } from 'react-hook-form';
+import { ColumnType } from '@/types/column';
+import { Category } from '@/types/category';
+import { useTranslation } from '@/contexts/TranslationContext';
 
+// Mock the useCategoryData hook
+vi.mock('@/hooks/useCategoryData', () => ({
+  useCategoryData: vi.fn()
+}));
 
-// Mock data
-const mockCategory = {
-  id: 1,
-  name: 'Test Category',
-  description: 'Test Description',
-  order: 1
-};
+// Mock the column store
+vi.mock('@/store/columnStore', () => ({
+  useColumnStore: vi.fn()
+}));
 
-const mockColumns = [
-  { id: 1, name: 'Column 1', type: 'text', required: true, order: 1, categoryId: 1 },
-  { id: 2, name: 'Column 2', type: 'number', required: false, order: 2, categoryId: 1 }
-];
-
-// Mock functions
-const mockAddColumn = vi.fn();
-const mockUpdateColumn = vi.fn();
-const mockDeleteColumn = vi.fn();
-
-// Mock hooks
-vi.mock('../hooks/category/useCategoryColumns', () => ({
-  useCategoryColumns: () => ({
-    columns: mockColumns,
+// Mock the translation context
+vi.mock('@/contexts/TranslationContext', () => ({
+  useTranslation: vi.fn(() => ({
+    t: (key: string) => key,
+    language: 'az',
+    setLanguage: vi.fn(),
     isLoading: false,
-    addColumn: mockAddColumn,
-    updateColumn: mockUpdateColumn,
-    deleteColumn: mockDeleteColumn,
-    error: null
-  })
+    error: null,
+    isReady: true
+  }))
 }));
 
-vi.mock('@/hooks/auth/useAuthStore', () => ({
-  useAuthStore: () => ({
-    user: {
-      id: '123',
-      role: 'superadmin' as UserRole,
-    },
-    isAuthenticated: true
-  })
-}));
-
-// Create a mock category column component for testing with state management
-const MockCategoryColumnsUI = ({ categoryId }: { categoryId: number }) => {
-  const [showForm, setShowForm] = React.useState(false);
-  const [editingColumn, setEditingColumn] = React.useState<any>(null);
-  
-  const handleAddClick = () => {
-    setShowForm(true);
-    setEditingColumn(null);
-  };
-  
-  const handleEditClick = (column: any) => {
-    setShowForm(true);
-    setEditingColumn(column);
-  };
-  
-  return (
-    <div data-testid="category-column">
-      <h2>Kateqoriya Sütunları</h2>
-      <button data-testid="add-column-button" onClick={handleAddClick}>Sütun əlavə et</button>
-      <ul>
-        {mockColumns.map(column => (
-          <li key={column.id} data-testid={`column-${column.id}`}>
-            <span>{column.name}</span>
-            <button 
-              data-testid={`edit-column-${column.id}`}
-              onClick={() => handleEditClick(column)}
-            >
-              Düzəliş et
-            </button>
-            <button 
-              data-testid={`delete-column-${column.id}`}
-              onClick={() => mockDeleteColumn(column.id)}
-            >
-              Sil
-            </button>
-          </li>
-        ))}
-      </ul>
-      <div data-testid="column-form" style={{ display: showForm ? 'block' : 'none' }}>
-        <form onSubmit={(e) => {
-          e.preventDefault();
-          // Form submission logic would go here
-          if (editingColumn) {
-            mockUpdateColumn(editingColumn.id, { ...editingColumn });
-          } else {
-            mockAddColumn({ categoryId, name: 'New Column', type: 'text', required: false });
-          }
-          setShowForm(false);
-        }}>
-          <input 
-            type="text" 
-            name="name" 
-            placeholder="Sütun adı" 
-            defaultValue={editingColumn ? editingColumn.name : ''}
-          />
-          <select name="type" defaultValue={editingColumn ? editingColumn.type : 'text'}>
-            <option value="text">Mətn</option>
-            <option value="number">Rəqəm</option>
-            <option value="date">Tarix</option>
-          </select>
-          <input 
-            type="checkbox" 
-            name="required" 
-            id="required" 
-            defaultChecked={editingColumn ? editingColumn.required : false}
-          />
-          <label htmlFor="required">Məcburi</label>
-          <button type="submit">Yadda saxla</button>
-        </form>
-      </div>
-    </div>
-  );
-};
-
-describe('Category Columns Tests', () => {
+describe('CategoryColumn Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
-  
-  it('should render category columns', () => {
-    render(
-      <MemoryRouter>
-        <LanguageProvider>
-          <MockCategoryColumnsUI categoryId={1} />
-        </LanguageProvider>
-      </MemoryRouter>
-    );
-    
-    expect(screen.getByText('Kateqoriya Sütunları')).toBeInTheDocument();
-    expect(screen.getByText('Column 1')).toBeInTheDocument();
-    expect(screen.getByText('Column 2')).toBeInTheDocument();
-  });
 
-  it('should show the add column form when button is clicked', async () => {
-    render(
-      <MemoryRouter>
-        <LanguageProvider>
-          <MockCategoryColumnsUI categoryId={1} />
-        </LanguageProvider>
-      </MemoryRouter>
-    );
+  it('renders the component with category options', async () => {
+    const mockCategories: Category[] = [
+      { id: '1', name: 'Category 1' },
+      { id: '2', name: 'Category 2' }
+    ];
 
-    const addButton = screen.getByTestId('add-column-button');
-    await fireEvent.click(addButton);
-
-    await waitFor(() => {
-      expect(screen.getByTestId('column-form')).toHaveStyle({ display: 'block' });
-    });
-  });
-
-  it('should edit a column when edit button is clicked', async () => {
-    render(
-      <MemoryRouter>
-        <LanguageProvider>
-          <MockCategoryColumnsUI categoryId={1} />
-        </LanguageProvider>
-      </MemoryRouter>
-    );
-
-    const editButton = screen.getByTestId('edit-column-1');
-    await fireEvent.click(editButton);
-
-    await waitFor(() => {
-      expect(screen.getByTestId('column-form')).toHaveStyle({ display: 'block' });
+    (useCategoryData as any).mockReturnValue({
+      category: { id: '1', name: 'Category 1' },
+      isLoading: false,
+      error: null
     });
 
-    // Check if form is pre-filled with column data
-    const nameInput = screen.getByPlaceholderText('Sütun adı');
-    expect(nameInput).toHaveValue('Column 1');
-  });
-});
+    (useColumnStore as any).mockReturnValue({
+      categories: mockCategories,
+      addColumn: vi.fn(),
+      updateColumn: vi.fn(),
+      deleteColumn: vi.fn(),
+      columns: [],
+      selectedColumnType: ColumnType.TEXT,
+      setSelectedColumnType: vi.fn()
+    });
 
-// Performance Tests
-describe('Category Columns Performance Tests', () => {
-  it('renders columns efficiently', async () => {
-    const start = performance.now();
-    
-    render(
-      <MemoryRouter>
-        <LanguageProvider>
-          <MockCategoryColumnsUI categoryId={1} />
-        </LanguageProvider>
-      </MemoryRouter>
+    const { result } = render(
+      <CategoryColumn
+        form={useForm()}
+        control={{}}
+        categories={mockCategories}
+        editColumn={null}
+        selectedType={ColumnType.CATEGORY}
+        onTypeChange={vi.fn()}
+        isEditMode={false}
+      />
     );
 
-    const end = performance.now();
-    const renderTime = end - start;
-    
-    console.log(`Category column render time: ${renderTime}ms`);
-    expect(renderTime).toBeLessThan(500); // Render time should be less than 500ms
+    expect(screen.getByText('Category 1')).toBeInTheDocument();
+    expect(screen.getByText('Category 2')).toBeInTheDocument();
+  });
+
+  it('handles category change correctly', async () => {
+    const mockCategories: Category[] = [
+      { id: '1', name: 'Category 1' },
+      { id: '2', name: 'Category 2' }
+    ];
+
+    const mockUseCategoryData = vi.fn();
+    (useCategoryData as any).mockImplementation(mockUseCategoryData);
+
+    (useColumnStore as any).mockReturnValue({
+      categories: mockCategories,
+      addColumn: vi.fn(),
+      updateColumn: vi.fn(),
+      deleteColumn: vi.fn(),
+      columns: [],
+      selectedColumnType: ColumnType.TEXT,
+      setSelectedColumnType: vi.fn()
+    });
+
+    render(
+      <CategoryColumn
+        form={useForm()}
+        control={{}}
+        categories={mockCategories}
+        editColumn={null}
+        selectedType={ColumnType.CATEGORY}
+        onTypeChange={vi.fn()}
+        isEditMode={false}
+      />
+    );
+
+    const categorySelect = screen.getByRole('combobox');
+    fireEvent.change(categorySelect, { target: { value: '2' } });
+
+    // Wait for the category to be updated
+    await waitFor(() => {
+      expect(mockUseCategoryData).toHaveBeenCalled();
+    });
   });
 });

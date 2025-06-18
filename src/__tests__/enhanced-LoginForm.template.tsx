@@ -1,76 +1,122 @@
-
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { LanguageProvider } from '@/context/LanguageContext';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
+import LoginForm from '@/components/auth/LoginForm';
+import { AuthProvider } from '@/contexts/AuthContext';
+import { MemoryRouter } from 'react-router-dom';
+import { useTranslation } from '@/contexts/TranslationContext';
 
-// Mock LoginForm component
-const MockLoginForm = () => {
-  return (
-    <form role="form">
-      <label htmlFor="email">Email</label>
-      <input id="email" type="email" />
-      
-      <label htmlFor="password">Password</label>
-      <input id="password" type="password" />
-      
-      <button type="submit">Sign In</button>
-    </form>
-  );
-};
+// Mock the translation context
+vi.mock('@/contexts/TranslationContext', () => ({
+  useTranslation: vi.fn(() => ({
+    t: (key: string) => key,
+    language: 'az',
+    setLanguage: vi.fn(),
+    isLoading: false,
+    error: null,
+    isReady: true
+  }))
+}));
 
-// Enhanced LoginForm test template
-const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: { retry: false },
-      mutations: { retry: false }
-    }
+// Mock the AuthContext
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: vi.fn(() => ({
+    login: vi.fn(() => Promise.resolve()),
+    logout: vi.fn(() => Promise.resolve()),
+    user: null,
+    isLoading: false,
+    error: null,
+  })),
+  AuthProvider: ({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  ),
+}));
+
+describe('LoginForm Component', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
-  return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <LanguageProvider>
-          {children}
-        </LanguageProvider>
-      </BrowserRouter>
-    </QueryClientProvider>
-  );
-};
-
-describe('Enhanced LoginForm', () => {
-  test('renders login form with responsive design', () => {
+  it('renders the form elements', () => {
     render(
-      <TestWrapper>
-        <MockLoginForm />
-      </TestWrapper>
+      <MemoryRouter>
+        <AuthProvider>
+          <LoginForm />
+        </AuthProvider>
+      </MemoryRouter>
     );
 
-    expect(screen.getByRole('form')).toBeInTheDocument();
-    expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
+    expect(screen.getByLabelText('Email')).toBeInTheDocument();
+    expect(screen.getByLabelText('Password')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Daxil ol' })).toBeInTheDocument();
   });
 
-  test('handles form submission correctly', async () => {
+  it('calls the login function with correct data when the form is submitted', async () => {
+    const loginMock = vi.fn(() => Promise.resolve());
+    (vi.mocked(useTranslation)).mockImplementation(() => ({
+      t: (key: string) => key,
+      language: 'az',
+      setLanguage: vi.fn(),
+      isLoading: false,
+      error: null,
+      isReady: true
+    }));
+    (vi.mocked(useAuth)).mockImplementation(() => ({
+      login: loginMock,
+      logout: vi.fn(() => Promise.resolve()),
+      user: null,
+      isLoading: false,
+      error: null,
+    }));
+
     render(
-      <TestWrapper>
-        <MockLoginForm />
-      </TestWrapper>
+      <MemoryRouter>
+        <AuthProvider>
+          <LoginForm />
+        </AuthProvider>
+      </MemoryRouter>
     );
 
-    const emailInput = screen.getByLabelText(/email/i);
-    const passwordInput = screen.getByLabelText(/password/i);
-    const submitButton = screen.getByRole('button', { name: /sign in/i });
-
-    fireEvent.change(emailInput, { target: { value: 'test@example.com' } });
-    fireEvent.change(passwordInput, { target: { value: 'password123' } });
-    fireEvent.click(submitButton);
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'test@example.com' } });
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'password123' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Daxil ol' }));
 
     await waitFor(() => {
-      expect(emailInput).toHaveValue('test@example.com');
-      expect(passwordInput).toHaveValue('password123');
+      expect(loginMock).toHaveBeenCalledWith('test@example.com', 'password123');
+    });
+  });
+
+  it('displays an error message if login fails', async () => {
+    (vi.mocked(useTranslation)).mockImplementation(() => ({
+      t: (key: string) => key,
+      language: 'az',
+      setLanguage: vi.fn(),
+      isLoading: false,
+      error: null,
+      isReady: true
+    }));
+    (vi.mocked(useAuth)).mockImplementation(() => ({
+      login: vi.fn(() => Promise.reject('Invalid credentials')),
+      logout: vi.fn(() => Promise.resolve()),
+      user: null,
+      isLoading: false,
+      error: null,
+    }));
+
+    render(
+      <MemoryRouter>
+        <AuthProvider>
+          <LoginForm />
+        </AuthProvider>
+      </MemoryRouter>
+    );
+
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'test@example.com' } });
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'wrongpassword' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Daxil ol' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Invalid credentials')).toBeInTheDocument();
     });
   });
 });

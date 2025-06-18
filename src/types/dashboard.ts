@@ -8,12 +8,20 @@ export interface DashboardFormStats {
   totalRegions?: number;
   totalSectors?: number;
   totalSchools?: number;
-  // Əlavə olunmuş xassələr
+  // Additional properties
   pendingForms?: number;
   approved?: number;
   pending?: number;
   rejected?: number;
   percentage?: number;
+  approvalRate?: number;
+  completion_rate?: number;
+  completionRate?: number;
+  draft?: number;
+  dueSoon?: number;
+  overdue?: number;
+  total?: number;
+  completed?: number;
 }
 
 export interface SuperAdminDashboardData {
@@ -50,12 +58,16 @@ export interface RegionAdminDashboardData {
   completionRate: number;
 }
 
-// Əlavə tip definisiyaları
+// Additional types
 export interface CategoryItem {
   id: string;
   name: string;
   progress: number;
   status: string;
+  completionRate?: number;
+  completion?: number;
+  description?: string;
+  deadline?: string;
 }
 
 export interface StatsGridItem {
@@ -63,12 +75,17 @@ export interface StatsGridItem {
   value: string | number;
   icon: string;
   trend?: 'up' | 'down' | 'neutral';
+  color?: string;
+  description?: string;
 }
 
 export interface DashboardChartProps {
-  data: any[];
-  title: string;
+  data?: any[];
+  title?: string;
   type?: 'bar' | 'line' | 'pie';
+  stats?: DashboardFormStats;
+  showLegend?: boolean;
+  height?: number;
 }
 
 export interface PendingApproval {
@@ -77,6 +94,9 @@ export interface PendingApproval {
   school: string;
   submittedAt: string;
   priority: 'high' | 'medium' | 'low';
+  schoolName?: string;
+  categoryName?: string;
+  date?: string;
 }
 
 export interface FormItem {
@@ -85,6 +105,8 @@ export interface FormItem {
   deadline: string;
   status: 'completed' | 'pending' | 'overdue';
   progress: number;
+  title?: string;
+  category?: string;
 }
 
 export interface SchoolStat {
@@ -94,6 +116,15 @@ export interface SchoolStat {
   total: number;
   percentage: number;
   status: string;
+  completionRate?: number;
+  totalEntries?: number;
+  total_entries?: number;
+  pendingEntries?: number;
+  pending_entries?: number;
+  pendingCount?: number;
+  pendingForms?: number;
+  completedForms?: number;
+  totalForms?: number;
 }
 
 export interface SectorStat {
@@ -103,6 +134,9 @@ export interface SectorStat {
   completed: number;
   total: number;
   percentage: number;
+  completionRate?: number;
+  completion_rate?: number;
+  completion?: number;
 }
 
 export interface DeadlineItem {
@@ -111,6 +145,7 @@ export interface DeadlineItem {
   deadline: string;
   priority: 'high' | 'medium' | 'low';
   daysLeft: number;
+  name?: string;
 }
 
 export interface FormTabsProps {
