@@ -50,6 +50,10 @@
   --enhanced-gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   --enhanced-gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
   --enhanced-gradient-accent: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  --enhanced-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --enhanced-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --enhanced-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --enhanced-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
 /* Global enhancements */
@@ -126,11 +130,92 @@ button, a, [role="button"] {
   }
 }
 
+/* Modern Glassmorphism */
+.glass-morphism {
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: var(--enhanced-shadow-lg);
+}
+
 /* Dark mode enhancements */
 @media (prefers-color-scheme: dark) {
   .glass-morphism {
     background: rgba(0, 0, 0, 0.25);
     border: 1px solid rgba(255, 255, 255, 0.18);
+  }
+}
+
+/* Enhanced gradients */
+.gradient-bg-primary {
+  background: var(--enhanced-gradient-primary);
+}
+
+.gradient-bg-secondary {
+  background: var(--enhanced-gradient-secondary);
+}
+
+.gradient-bg-accent {
+  background: var(--enhanced-gradient-accent);
+}
+
+/* Modern card styles */
+.enhanced-card {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border) / 0.5);
+  border-radius: 12px;
+  box-shadow: var(--enhanced-shadow-md);
+  transition: all 0.2s ease;
+}
+
+.enhanced-card:hover {
+  box-shadow: var(--enhanced-shadow-lg);
+  transform: translateY(-2px);
+}
+
+/* Modern button enhancements */
+.enhanced-button {
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.enhanced-button:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--enhanced-shadow-md);
+}
+
+/* Sidebar specific styles */
+.sidebar-nav-item {
+  position: relative;
+  overflow: hidden;
+}
+
+.sidebar-nav-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.5s;
+}
+
+.sidebar-nav-item:hover::before {
+  left: 100%;
+}
+
+/* Header specific styles */
+.header-backdrop {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.8);
+}
+
+@media (prefers-color-scheme: dark) {
+  .header-backdrop {
+    background: rgba(0, 0, 0, 0.8);
   }
 }
 

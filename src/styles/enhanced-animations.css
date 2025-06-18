@@ -76,13 +76,46 @@
   }
 }
 
+/* Pulse Animation for Logo */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+/* Slide Animations */
+@keyframes slideInFromTop {
+  from {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInFromBottom {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Glow Effect */
 @keyframes glow {
   0%, 100% {
     box-shadow: 0 0 5px rgba(59, 130, 246, 0.3);
   }
   50% {
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.6);
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.6), 0 0 30px rgba(59, 130, 246, 0.4);
   }
 }
 
@@ -106,7 +139,29 @@
   }
 }
 
+/* Rotate Animation */
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Ripple Effect */
+@keyframes ripple {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
 /* Utility Classes */
+.animate-fade-in {
+  animation: fadeInUp 0.5s ease-out forwards;
+}
+
 .animate-fade-in-up {
   animation: fadeInUp 0.6s ease-out forwards;
 }
@@ -131,6 +186,14 @@
   animation: bounceIn 0.8s ease-out forwards;
 }
 
+.animate-slide-in-top {
+  animation: slideInFromTop 0.5s ease-out forwards;
+}
+
+.animate-slide-in-bottom {
+  animation: slideInFromBottom 0.5s ease-out forwards;
+}
+
 .animate-glow {
   animation: glow 2s ease-in-out infinite;
 }
@@ -143,13 +206,22 @@
   animation: float 3s ease-in-out infinite;
 }
 
+.animate-pulse-slow {
+  animation: pulse 3s ease-in-out infinite;
+}
+
+.animate-rotate {
+  animation: rotate 1s linear infinite;
+}
+
 /* Hover Effects */
 .hover-lift {
-  transition: transform 0.2s ease-out;
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
 }
 
 .hover-lift:hover {
   transform: translateY(-4px);
+  box-shadow: var(--enhanced-shadow-lg);
 }
 
 .hover-grow {
@@ -168,6 +240,38 @@
   box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
 }
 
+.hover-slide {
+  transition: transform 0.2s ease-out;
+}
+
+.hover-slide:hover {
+  transform: translateX(4px);
+}
+
+/* Ripple Effect for Buttons */
+.ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.ripple::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.ripple:active::before {
+  width: 300px;
+  height: 300px;
+}
+
 /* Stagger Animation */
 .stagger-animation > * {
   opacity: 0;
@@ -180,6 +284,8 @@
 .stagger-animation > *:nth-child(4) { animation-delay: 0.4s; }
 .stagger-animation > *:nth-child(5) { animation-delay: 0.5s; }
 .stagger-animation > *:nth-child(6) { animation-delay: 0.6s; }
+.stagger-animation > *:nth-child(7) { animation-delay: 0.7s; }
+.stagger-animation > *:nth-child(8) { animation-delay: 0.8s; }
 
 /* Glass Morphism */
 .glass-morphism {
@@ -196,6 +302,13 @@
   background-clip: text;
 }
 
+.gradient-text-primary {
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary)) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
 /* Interactive Elements */
 .interactive-element {
   transition: all 0.2s ease-out;
@@ -204,7 +317,7 @@
 
 .interactive-element:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--enhanced-shadow-lg);
 }
 
 .interactive-element:active {
@@ -238,4 +351,50 @@
 .status-info {
   background: linear-gradient(135deg, #3b82f6, #2563eb);
   color: white;
+}
+
+/* Modern Navigation Effects */
+.nav-item {
+  position: relative;
+  overflow: hidden;
+}
+
+.nav-item::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--primary) / 0.8));
+  transition: width 0.3s ease;
+}
+
+.nav-item:hover::after,
+.nav-item.active::after {
+  width: 100%;
+}
+
+/* Micro-interactions */
+.micro-bounce {
+  transition: transform 0.1s ease;
+}
+
+.micro-bounce:active {
+  transform: scale(0.95);
+}
+
+/* Smooth transitions for layout changes */
+.layout-transition {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Focus ring improvements */
+.focus-ring {
+  transition: box-shadow 0.2s ease;
+}
+
+.focus-ring:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring));
 }

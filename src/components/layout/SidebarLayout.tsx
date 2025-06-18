@@ -34,12 +34,12 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   }
 
   return (
-    <div className="min-h-screen bg-background w-full">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30 w-full">
       <div className="flex h-screen w-full">
         {/* Sidebar - Desktop: Always visible, Mobile: Overlay */}
         <div className={`
-          fixed inset-y-0 left-0 z-50 w-64 bg-card border-r border-border transition-transform duration-300 ease-in-out
-          lg:translate-x-0 lg:static lg:inset-0 lg:z-auto
+          fixed inset-y-0 left-0 z-50 w-64 bg-card/95 backdrop-blur-sm border-r border-border/50 transition-all duration-300 ease-in-out shadow-lg
+          lg:translate-x-0 lg:static lg:inset-0 lg:z-auto lg:shadow-none
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         `}>
           <Sidebar 
@@ -68,7 +68,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
       {/* Mobile sidebar overlay - only show on smaller screens */}
       {sidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden animate-fade-in"
+          className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 lg:hidden animate-fade-in"
           onClick={() => setSidebarOpen(false)}
         />
       )}

@@ -409,7 +409,10 @@ describe('Sidebar', () => {
     it('has proper ARIA roles', () => {
       renderWithProviders(<MockSidebar />);
       
-      expect(screen.getByRole('navigation')).toBeInTheDocument();
+      // Spesifik test ID ilə element tapırıq və onun rol atributunu yoxlayırıq
+      const sidebar = screen.getByTestId('sidebar');
+      expect(sidebar).toHaveAttribute('role', 'navigation');
+      
       expect(screen.getByRole('menubar')).toBeInTheDocument();
       
       const menuItems = screen.getAllByRole('menuitem');
@@ -436,8 +439,9 @@ describe('Sidebar', () => {
       const collapseBtn = screen.getByTestId('collapse-btn');
       const logoutBtn = screen.getByTestId('logout-btn');
       
-      expect(collapseBtn).toHaveAttribute('aria-label');
-      expect(logoutBtn).toHaveAttribute('aria-label');
+      // Konkret aria-label dəyərlərini yoxlayırıq
+      expect(collapseBtn).toHaveAttribute('aria-label', 'Collapse sidebar');
+      expect(logoutBtn).toHaveAttribute('aria-label', 'Logout');
     });
 
     it('supports keyboard navigation', async () => {

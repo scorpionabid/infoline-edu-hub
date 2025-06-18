@@ -30,7 +30,10 @@ describe('UniversalDialog Component', () => {
       />
     );
 
-    expect(screen.getByText(/delete/i)).toBeInTheDocument();
+    // Daha spesifik bir seçici istifadə edək - başlıq elementini yoxlayırıq
+    expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+    // Dialog başlığını yoxlayırıq
+    expect(screen.getByText('regions.delete_region')).toBeInTheDocument();
   });
 
   it('should render confirm and cancel buttons', () => {

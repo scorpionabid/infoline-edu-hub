@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
@@ -18,9 +18,27 @@ import {
   Activity,
   BarChart3,
   FileBarChart,
+  ChevronDown,
+  Star,
+  Zap,
+  UserCog,
+  Calendar,
+  TrendingDown,
+  PieChart,
+  LineChart,
+  BarChart,
+  Target,
+  Shield,
+  Workflow,
+  BookOpen,
+  GraduationCap,
+  MapPin
 } from "lucide-react";
 import { useTranslation } from "@/contexts/TranslationContext";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Badge } from "@/components/ui/badge";
 
 interface SidebarProps {
   userRole: string | null | undefined;
@@ -55,6 +73,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   onToggle,
 }) => {
   const { t } = useTranslation();
+  const [openSections, setOpenSections] = useState<string[]>(['main', 'organization', 'data']);
 
   const userRole = normalizeRole(rawUserRole);
 
@@ -66,157 +85,344 @@ const Sidebar: React.FC<SidebarProps> = ({
   const isSectorAdmin = userRole === "sectoradmin";
   const isSchoolAdmin = userRole === "schooladmin";
 
-  const navItems = [
+  const toggleSection = (sectionId: string) => {
+    setOpenSections(prev => 
+      prev.includes(sectionId) 
+        ? prev.filter(id => id !== sectionId)
+        : [...prev, sectionId]
+    );
+  };
+
+  // Navigation groups for better organization
+  const navigationGroups = [
     {
-      id: "dashboard",
-      label: t("navigation.dashboard"),
-      href: "/dashboard",
-      icon: LayoutDashboard,
-      visible: true,
+      id: 'main',
+      title: 'Əsas',
+      items: [
+        {
+          id: "dashboard",
+          label: t("navigation.dashboard"),
+          href: "/dashboard",
+          icon: LayoutDashboard,
+          visible: true,
+          badge: null,
+          gradient: "from-blue-500 to-blue-600",
+        }
+      ]
     },
     {
-      id: "regions",
-      label: t("navigation.regions"),
-      href: "/regions",
-      icon: Building,
-      visible: isSuperAdmin,
-    },
-    {
-      id: "sectors",
-      label: t("navigation.sectors"),
-      href: "/sectors",
-      icon: Building2,
-      visible: isSuperAdmin || isRegionAdmin,
-    },
-    {
-      id: "schools",
-      label: t("navigation.schools"),
-      href: "/schools",
-      icon: School,
+      id: 'organization',
+      title: 'Təşkilat',
       visible: isAdmin,
+      items: [
+        {
+          id: "regions",
+          label: t("navigation.regions"),
+          href: "/regions",
+          icon: MapPin,
+          visible: isSuperAdmin,
+          badge: null,
+          gradient: "from-purple-500 to-purple-600",
+        },
+        {
+          id: "sectors",
+          label: t("navigation.sectors"),
+          href: "/sectors",
+          icon: Building2,
+          visible: isSuperAdmin || isRegionAdmin,
+          badge: null,
+          gradient: "from-indigo-500 to-indigo-600",
+        },
+        {
+          id: "schools",
+          label: t("navigation.schools"),
+          href: "/schools",
+          icon: GraduationCap,
+          visible: isAdmin,
+          badge: null,
+          gradient: "from-green-500 to-green-600",
+        }
+      ]
     },
     {
-      id: "categories",
-      label: t("navigation.categories"),
-      href: "/categories",
-      icon: ClipboardList,
+      id: 'content',
+      title: 'Məzmun İdarəetməsi',
       visible: isAdmin,
+      items: [
+        {
+          id: "categories",
+          label: t("navigation.categories"),
+          href: "/categories",
+          icon: BookOpen,
+          visible: isAdmin,
+          badge: null,
+          gradient: "from-orange-500 to-orange-600",
+        },
+        {
+          id: "columns",
+          label: t("navigation.columns"),
+          href: "/columns",
+          icon: Columns,
+          visible: isSuperAdmin || isRegionAdmin,
+          badge: null,
+          gradient: "from-pink-500 to-pink-600",
+        }
+      ]
     },
     {
-      id: "columns",
-      label: t("navigation.columns"),
-      href: "/columns",
-      icon: Columns,
-      visible: isSuperAdmin || isRegionAdmin,
+      id: 'data',
+      title: 'Məlumat Prosesləri',
+      items: [
+        {
+          id: "data-entry",
+          label: t("navigation.dataEntry"),
+          href: isSchoolAdmin ? "/school-data-entry" : "/data-entry",
+          icon: FileText,
+          visible: true,
+          badge: null,
+          gradient: "from-teal-500 to-teal-600",
+        },
+        {
+          id: "sector-data-entry",
+          label: t("navigation.sectorDataEntry"),
+          href: "/sector-data-entry",
+          icon: Database,
+          visible: isSectorAdmin,
+          badge: null,
+          gradient: "from-cyan-500 to-cyan-600",
+        },
+        {
+          id: "approvals",
+          label: t("navigation.approvals"),
+          href: "/approvals",
+          icon: CheckSquare,
+          visible: isAdmin,
+          badge: null,
+          gradient: "from-amber-500 to-amber-600",
+        }
+      ]
     },
     {
-      id: "users",
-      label: t("navigation.users"),
-      href: "/users",
-      icon: Users,
+      id: 'analytics',
+      title: 'Analitika və Hesabatlar',
       visible: isAdmin,
+      items: [
+        {
+          id: "reports",
+          label: t("navigation.reports"),
+          href: "/reports",
+          icon: BarChart,
+          visible: isAdmin,
+          badge: null,
+          gradient: "from-violet-500 to-violet-600",
+        },
+        {
+          id: "statistics",
+          label: t("navigation.statistics"),
+          href: "/statistics",
+          icon: PieChart,
+          visible: isRegionAdmin || isSectorAdmin,
+          badge: null,
+          gradient: "from-rose-500 to-rose-600",
+        },
+        {
+          id: "progress",
+          label: t("navigation.progress"),
+          href: "/progress",
+          icon: Target,
+          visible: isRegionAdmin || isSectorAdmin,
+          badge: null,
+          gradient: "from-emerald-500 to-emerald-600",
+        },
+        {
+          id: "performance",
+          label: t("navigation.performance"),
+          href: "/performance",
+          icon: LineChart,
+          visible: isSuperAdmin,
+          badge: null,
+          gradient: "from-slate-500 to-slate-600",
+        }
+      ]
     },
     {
-      id: "sector-data-entry",
-      label: t("navigation.sectorDataEntry"),
-      href: "/sector-data-entry",
-      icon: Database,
-      visible: isSectorAdmin,
-    },
-    {
-      id: "statistics",
-      label: t("navigation.statistics"),
-      href: "/statistics",
-      icon: TrendingUp,
-      visible: isRegionAdmin || isSectorAdmin,
-    },
-    {
-      id: "progress",
-      label: t("navigation.progress"),
-      href: "/progress",
-      icon: Activity,
-      visible: isRegionAdmin || isSectorAdmin,
-    },
-    {
-      id: "performance",
-      label: t("navigation.performance"),
-      href: "/performance",
-      icon: BarChart3,
-      visible: isSuperAdmin,
-    },
-    {
-      id: "user-management",
-      label: t("navigation.userManagement"),
-      href: "/user-management",
-      icon: Users,
-      visible: isSuperAdmin,
-    },
-    {
-      id: "data-entry",
-      label: t("navigation.dataEntry"),
-      href: isSchoolAdmin ? "/school-data-entry" : "/data-entry",
-      icon: FileText,
-      visible: true,
-    },
-    {
-      id: "approvals",
-      label: t("navigation.approvals"),
-      href: "/approvals",
-      icon: CheckSquare,
+      id: 'admin',
+      title: 'Admin Panel',
       visible: isAdmin,
+      items: [
+        {
+          id: "users",
+          label: t("navigation.users"),
+          href: "/users",
+          icon: Users,
+          visible: isAdmin,
+          badge: null,
+          gradient: "from-blue-500 to-indigo-600",
+        },
+        {
+          id: "user-management",
+          label: t("navigation.userManagement"),
+          href: "/user-management",
+          icon: UserCog,
+          visible: isSuperAdmin,
+          badge: null,
+          gradient: "from-gray-500 to-gray-600",
+        }
+      ]
     },
     {
-      id: "reports",
-      label: t("navigation.reports"),
-      href: "/reports",
-      icon: FileBarChart,
-      visible: isAdmin,
-    },
-    {
-      id: "settings",
-      label: t("navigation.settings"),
-      href: "/settings",
-      icon: Settings,
-      visible: true,
-    },
+      id: 'settings',
+      title: 'Tənzimləmələr',
+      items: [
+        {
+          id: "settings",
+          label: t("navigation.settings"),
+          href: "/settings",
+          icon: Settings,
+          visible: true,
+          badge: null,
+          gradient: "from-zinc-500 to-zinc-600",
+        }
+      ]
+    }
   ];
 
-  const uniqueItems = navItems.filter(
-    (item, index, self) => index === self.findIndex((i) => i.id === item.id),
-  );
-
-  const visibleItems = uniqueItems.filter((item) => item.visible);
+  // Filter groups and items based on visibility
+  const visibleGroups = navigationGroups
+    .map(group => ({
+      ...group,
+      items: group.items.filter(item => item.visible)
+    }))
+    .filter(group => (group.visible !== false) && group.items.length > 0);
 
   return (
-    <div className="h-full py-2 sm:py-4">
-      <nav className="flex flex-col gap-1 px-2 sm:px-3">
-        {visibleItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <NavLink
-              key={item.id}
-              to={item.href}
-              onClick={onToggle}
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center gap-2 sm:gap-3 rounded-lg px-2 sm:px-3 py-2 sm:py-2.5 text-sm transition-colors",
-                  "hover:bg-accent/30 hover:text-accent-foreground",
-                  "min-h-[44px] touch-manipulation group",
-                  isActive
-                    ? "bg-accent/50 text-accent-foreground font-medium"
-                    : "text-muted-foreground",
-                )
-              }
-              title={item.label}
-            >
-              <Icon className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
-              <span className="truncate text-xs sm:text-sm group-hover:text-foreground">
-                {item.label}
-              </span>
-            </NavLink>
-          );
-        })}
-      </nav>
+    <div className="h-full py-4 bg-gradient-to-b from-background to-muted/20">
+      <ScrollArea className="h-full px-3">
+        <nav className="flex flex-col gap-2">
+          {visibleGroups.map((group) => (
+            <div key={group.id} className="mb-4">
+              {/* Group Header with Collapsible */}
+              <Collapsible
+                open={openSections.includes(group.id)}
+                onOpenChange={() => toggleSection(group.id)}
+              >
+                <CollapsibleTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-between h-8 px-2 text-xs font-medium text-muted-foreground hover:text-foreground mb-2"
+                  >
+                    <span className="uppercase tracking-wider">{group.title}</span>
+                    <ChevronDown className={cn(
+                      "h-3 w-3 transition-transform duration-200",
+                      openSections.includes(group.id) ? "rotate-180" : "rotate-0"
+                    )} />
+                  </Button>
+                </CollapsibleTrigger>
+                
+                <CollapsibleContent className="space-y-1">
+                  {group.items.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <NavLink
+                        key={item.id}
+                        to={item.href}
+                        onClick={onToggle}
+                        className={({ isActive }) =>
+                          cn(
+                            "group relative flex items-center gap-3 rounded-xl px-3 py-3 text-sm transition-all duration-200",
+                            "hover:bg-accent/50 hover:shadow-md hover:scale-[1.02] hover:-translate-y-0.5",
+                            "min-h-[48px] touch-manipulation",
+                            isActive
+                              ? "bg-gradient-to-r text-white shadow-lg transform scale-[1.02]"
+                              : "text-muted-foreground hover:text-foreground",
+                            isActive && item.gradient ? `bg-gradient-to-r ${item.gradient}` : ""
+                          )
+                        }
+                        title={item.label}
+                      >
+                        {({ isActive }) => (
+                          <>
+                            {/* Icon with gradient background for active state */}
+                            <div className={cn(
+                              "relative flex-shrink-0 p-2 rounded-lg transition-all duration-200",
+                              isActive 
+                                ? "bg-white/20 shadow-lg" 
+                                : "bg-muted/50 group-hover:bg-accent group-hover:shadow-md"
+                            )}>
+                              <Icon className="h-4 w-4" />
+                              
+                              {/* Glow effect for active items */}
+                              {isActive && (
+                                <div className="absolute inset-0 rounded-lg bg-white/30 blur-sm -z-10" />
+                              )}
+                            </div>
+                            
+                            {/* Label */}
+                            <span className="truncate font-medium group-hover:translate-x-1 transition-transform duration-200">
+                              {item.label}
+                            </span>
+                            
+                            {/* Badge */}
+                            {item.badge && (
+                              <div className={cn(
+                                "ml-auto flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold",
+                                isActive
+                                  ? "bg-white/30 text-white"
+                                  : "bg-primary text-primary-foreground"
+                              )}>
+                                {item.badge}
+                              </div>
+                            )}
+                            
+                            {/* Active indicator */}
+                            {isActive && (
+                              <div className="absolute inset-y-0 left-0 w-1 bg-white rounded-r-full" />
+                            )}
+                          </>
+                        )}
+                      </NavLink>
+                    );
+                  })}
+                </CollapsibleContent>
+              </Collapsible>
+            </div>
+          ))}
+
+          {/* Quick Actions Section */}
+          <div className="mt-8 pt-4 border-t border-border/50">
+            <div className="px-2 mb-3">
+              <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                Sürətli Əməliyyatlar
+              </h4>
+            </div>
+            
+            <div className="space-y-2">
+              {/* Quick Add Button */}
+              <Button
+                variant="ghost"
+                className="w-full justify-start h-10 px-3 text-sm hover:bg-accent/50 hover:shadow-md transition-all duration-200"
+                onClick={() => {
+                  console.log('Quick add action');
+                }}
+              >
+                <Star className="h-4 w-4 mr-3 text-yellow-500" />
+                <span>Sürətli Əlavə</span>
+              </Button>
+              
+              <Button
+                variant="ghost"
+                className="w-full justify-start h-10 px-3 text-sm hover:bg-accent/50 hover:shadow-md transition-all duration-200"
+                onClick={() => {
+                  console.log('Quick export action');
+                }}
+              >
+                <Zap className="h-4 w-4 mr-3 text-orange-500" />
+                <span>İxrac</span>
+              </Button>
+            </div>
+          </div>
+        </nav>
+      </ScrollArea>
     </div>
   );
 };
