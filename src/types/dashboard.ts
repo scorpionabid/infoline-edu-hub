@@ -8,7 +8,6 @@ export interface DashboardFormStats {
   totalRegions?: number;
   totalSectors?: number;
   totalSchools?: number;
-  // Additional properties
   pendingForms?: number;
   approved?: number;
   pending?: number;
@@ -58,7 +57,6 @@ export interface RegionAdminDashboardData {
   completionRate: number;
 }
 
-// Additional types
 export interface CategoryItem {
   id: string;
   name: string;
@@ -68,6 +66,9 @@ export interface CategoryItem {
   completion?: number;
   description?: string;
   deadline?: string;
+  totalFields?: number;
+  completedFields?: number;
+  lastUpdated?: string;
 }
 
 export interface StatsGridItem {
@@ -107,6 +108,7 @@ export interface FormItem {
   progress: number;
   title?: string;
   category?: string;
+  lastModified?: string;
 }
 
 export interface SchoolStat {
@@ -137,6 +139,8 @@ export interface SectorStat {
   completionRate?: number;
   completion_rate?: number;
   completion?: number;
+  schoolCount?: number;
+  totalSchools?: number;
 }
 
 export interface DeadlineItem {
@@ -146,10 +150,16 @@ export interface DeadlineItem {
   priority: 'high' | 'medium' | 'low';
   daysLeft: number;
   name?: string;
+  status?: string;
 }
 
 export interface FormTabsProps {
   categories: CategoryItem[];
   deadlines: DeadlineItem[];
   forms: FormItem[];
+  upcoming?: DeadlineItem[];
+  pendingForms?: FormItem[];
+  navigateToDataEntry?: (categoryId: string) => void;
+  handleFormClick?: (formId: string) => void;
+  onCategoryChange?: (categoryId: string) => void;
 }

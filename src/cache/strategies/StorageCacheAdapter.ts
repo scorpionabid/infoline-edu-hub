@@ -133,7 +133,6 @@ export class StorageCacheAdapter<T> extends BaseCacheAdapter<T> {
     return {
       size: entries.length,
       hitRate: this.hitCount / (this.hitCount + this.missCount) || 0,
-      missRate: this.missCount / (this.hitCount + this.missCount) || 0,
       memoryUsage: this.calculateTotalSize(),
       expiredEntries: expired.length
     };

@@ -22,9 +22,12 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     );
   }
 
-  // Use real data from the backend
+  // Use real data from the backend with all required properties
   const formStats: DashboardFormStats = {
+    totalForms: dashboardData.formsByStatus?.total || 0,
     completedForms: dashboardData.formsByStatus?.approved || 0,
+    pendingApprovals: dashboardData.formsByStatus?.pending || 0,
+    rejectedForms: dashboardData.formsByStatus?.rejected || 0,
     pendingForms: dashboardData.formsByStatus?.pending || 0,
     approvalRate: dashboardData.approvalRate || 0,
     total: dashboardData.formsByStatus?.total || 0,
@@ -46,24 +49,28 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
       value: formStats.approved || 0,
       color: "text-green-600",
       description: t("status.approved"),
+      icon: "check-circle"
     },
     {
       title: t("status.pending"),
       value: formStats.pending || 0,
-      color: "text-yellow-600",
+      color: "text-yellow-600", 
       description: t("status.pending"),
+      icon: "clock"
     },
     {
       title: t("status.rejected"),
       value: formStats.rejected || 0,
       color: "text-red-600",
       description: t("status.rejected"),
+      icon: "x-circle"
     },
     {
       title: t("dashboard.stats.completion_rate"),
       value: `${Math.round(formStats.percentage || 0)}%`,
       color: "text-blue-600",
       description: t("dashboard.stats.completion_rate"),
+      icon: "bar-chart"
     },
   ];
 

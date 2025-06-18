@@ -9,7 +9,6 @@ export interface LogContext {
   action?: string;
   resource?: string;
   details?: Record<string, any>;
-  // Additional context fields
   field?: string;
   fileName?: string;
   error?: string;
@@ -43,6 +42,10 @@ export const securityLogger = {
   
   logSuspiciousActivity: (activity: string, context: LogContext) => {
     console.warn('[SUSPICIOUS_ACTIVITY]', activity, context);
+  },
+
+  logAuthEvent: (event: string, context: LogContext) => {
+    console.log('[AUTH_EVENT]', event, context);
   }
 };
 
