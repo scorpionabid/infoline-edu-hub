@@ -45,6 +45,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
           <Sidebar 
             isOpen={sidebarOpen}
             onToggle={() => setSidebarOpen(false)}
+            userName={user?.full_name || user?.email}
           />
         </div>
 

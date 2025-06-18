@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -19,8 +19,8 @@ import {
   BarChart3,
   FileBarChart,
   ChevronDown,
-  Star,
-  Zap,
+  User,
+  LogOut,
   UserCog,
   Calendar,
   TrendingDown,
@@ -39,11 +39,13 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
+import { useAuthStore } from "@/hooks/auth/useAuthStore";
 
 interface SidebarProps {
   userRole: string | null | undefined;
   isOpen: boolean;
   onToggle: () => void;
+  userName?: string;
 }
 
 const normalizeRole = (role?: string | null): string => {
@@ -71,8 +73,11 @@ const Sidebar: React.FC<SidebarProps> = ({
   userRole: rawUserRole,
   isOpen,
   onToggle,
+  userName = "İstifadəçi",
 }) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { logout } = useAuthStore.getState();
   const [openSections, setOpenSections] = useState<string[]>(['main', 'organization', 'data']);
 
   const userRole = normalizeRole(rawUserRole);
@@ -388,36 +393,52 @@ const Sidebar: React.FC<SidebarProps> = ({
             </div>
           ))}
 
-          {/* Quick Actions Section */}
+          {/* User Profile and Logout Section */}
           <div className="mt-8 pt-4 border-t border-border/50">
             <div className="px-2 mb-3">
               <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Sürətli Əməliyyatlar
+                {t("profile.account")}
               </h4>
             </div>
             
             <div className="space-y-2">
-              {/* Quick Add Button */}
+              {/* User Profile Button */}
               <Button
                 variant="ghost"
                 className="w-full justify-start h-10 px-3 text-sm hover:bg-accent/50 hover:shadow-md transition-all duration-200"
                 onClick={() => {
-                  console.log('Quick add action');
+                  navigate('/profile');
+                  onToggle();
                 }}
               >
-                <Star className="h-4 w-4 mr-3 text-yellow-500" />
-                <span>Sürətli Əlavə</span>
+                <User className="h-4 w-4 mr-3 text-blue-500" />
+                <span>{userName}</span>
               </Button>
               
+              {/* Settings Button */}
               <Button
                 variant="ghost"
                 className="w-full justify-start h-10 px-3 text-sm hover:bg-accent/50 hover:shadow-md transition-all duration-200"
                 onClick={() => {
-                  console.log('Quick export action');
+                  navigate('/settings');
+                  onToggle();
                 }}
               >
-                <Zap className="h-4 w-4 mr-3 text-orange-500" />
-                <span>İxrac</span>
+                <Settings className="h-4 w-4 mr-3 text-gray-500" />
+                <span>{t("common.settings")}</span>
+              </Button>
+              
+              {/* Logout Button */}
+              <Button
+                variant="ghost"
+                className="w-full justify-start h-10 px-3 text-sm hover:bg-accent/50 hover:shadow-md hover:text-destructive transition-all duration-200"
+                onClick={() => {
+                  logout();
+                  navigate('/');
+                }}
+              >
+                <LogOut className="h-4 w-4 mr-3 text-red-500" />
+                <span>{t("auth.logout")}</span>
               </Button>
             </div>
           </div>

@@ -12,12 +12,14 @@ interface SidebarProps {
   isOpen?: boolean;
   onToggle?: () => void;
   onMenuClick?: () => void;
+  userName?: string;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ 
   isOpen = false, 
   onToggle, 
-  onMenuClick = () => {} 
+  onMenuClick = () => {},
+  userName
 }) => {
   const { userRole } = usePermissions();
   
@@ -45,7 +47,8 @@ const Sidebar: React.FC<SidebarProps> = ({
         <NavigationSidebar 
           userRole={userRole} 
           isOpen={isOpen} 
-          onToggle={onMenuClick} 
+          onToggle={onMenuClick}
+          userName={userName}
         />
       </ScrollArea>
       
