@@ -1,163 +1,122 @@
 
-import type { SupportedLanguage, LanguageTranslations } from '@/types/translation';
-import { enhancedCache } from './cache/EnhancedCacheService';
+interface TranslationCacheEntry {
+  data: any;
+  timestamp: number;
+  language: string;
+  version: string;
+}
 
-const PRIORITY_LANGUAGE: SupportedLanguage = 'az';
+interface TranslationCacheInfo {
+  languages: string[];
+  priority: boolean;
+  size: number;
+  version: string;
+}
 
-/**
- * Translation-specific cache service using EnhancedCacheService
- */
-class TranslationCacheService {
-  private cachePrefix = 'translations';
+class TranslationCache {
+  private cache = new Map<string, TranslationCacheEntry>();
+  private readonly CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+  private readonly VERSION = '2.0';
+  private readonly PRIORITY_LANG = 'az';
 
-  /**
-   * Set translations with priority handling
-   */
-  set(language: SupportedLanguage, translations: LanguageTranslations): void {
-    const key = `${this.cachePrefix}_${language}`;
-    const isPriority = language === PRIORITY_LANGUAGE;
+  set(language: string, data: any): void {
+    const key = this.getKey(language);
+    const entry: TranslationCacheEntry = {
+      data,
+      timestamp: Date.now(),
+      language,
+      version: this.VERSION
+    };
+
+    this.cache.set(key, entry);
     
-    enhancedCache.set(key, translations, {
-      priority: isPriority,
-      ttl: isPriority ? 24 * 60 * 60 * 1000 : 5 * 60 * 1000 // 24h for priority, 5min for others
-    });
-    
-    console.log(`[TranslationCache] Cached ${language} (priority: ${isPriority})`);
-  }
-
-  /**
-   * Get translations with fallback
-   */
-  get(language: SupportedLanguage): LanguageTranslations | null {
-    const key = `${this.cachePrefix}_${language}`;
-    const result = enhancedCache.get<LanguageTranslations>(key);
-    
-    if (result) {
-      console.log(`[TranslationCache] Hit for ${language}`);
-    } else {
-      console.log(`[TranslationCache] Miss for ${language}`);
-    }
-    
-    return result;
-  }
-
-  /**
-   * Async get with loading deduplication
-   */
-  async getAsync(language: SupportedLanguage): Promise<LanguageTranslations | null> {
-    return Promise.resolve(this.get(language));
-  }
-
-  /**
-   * Preload priority language
-   */
-  preloadPriority(): void {
-    const azTranslations = this.get(PRIORITY_LANGUAGE);
-    if (azTranslations) {
-      console.log(`[TranslationCache] Priority language ${PRIORITY_LANGUAGE} already cached`);
-    } else {
-      console.log(`[TranslationCache] Priority language ${PRIORITY_LANGUAGE} needs loading`);
+    // Also store in localStorage for persistence
+    try {
+      localStorage.setItem(`translation_${key}`, JSON.stringify(entry));
+    } catch (error) {
+      console.warn('Failed to persist translation cache:', error);
     }
   }
 
-  /**
-   * Delete specific language
-   */
-  delete(language: SupportedLanguage): void {
-    const key = `${this.cachePrefix}_${language}`;
-    enhancedCache.delete(key);
-    console.log(`[TranslationCache] Deleted ${language}`);
+  get(language: string): any | null {
+    const key = this.getKey(language);
+    let entry = this.cache.get(key);
+
+    // If not in memory, try localStorage
+    if (!entry) {
+      try {
+        const stored = localStorage.getItem(`translation_${key}`);
+        if (stored) {
+          entry = JSON.parse(stored);
+          if (entry && this.isValid(entry)) {
+            this.cache.set(key, entry);
+          } else {
+            localStorage.removeItem(`translation_${key}`);
+            return null;
+          }
+        }
+      } catch (error) {
+        console.warn('Failed to load translation from localStorage:', error);
+        return null;
+      }
+    }
+
+    if (!entry || !this.isValid(entry)) {
+      this.cache.delete(key);
+      return null;
+    }
+
+    return entry.data;
   }
 
-  /**
-   * Clear with priority preservation
-   */
-  clear(preservePriority: boolean = false): void {
-    if (preservePriority) {
-      // Get priority data before clearing
-      const priorityData = this.get(PRIORITY_LANGUAGE);
-      
-      // Clear all translation cache
-      const allLanguages: SupportedLanguage[] = ['az', 'en', 'ru', 'tr'];
-      allLanguages.forEach(lang => {
-        if (lang !== PRIORITY_LANGUAGE) {
-          this.delete(lang);
+  private isValid(entry: TranslationCacheEntry): boolean {
+    if (!entry.timestamp || !entry.version) return false;
+    if (entry.version !== this.VERSION) return false;
+    if (Date.now() - entry.timestamp > this.CACHE_TTL) return false;
+    return true;
+  }
+
+  private getKey(language: string): string {
+    return `translations_${language}`;
+  }
+
+  clear(): void {
+    this.cache.clear();
+    
+    // Clear from localStorage
+    try {
+      const keys = Object.keys(localStorage);
+      keys.forEach(key => {
+        if (key.startsWith('translation_')) {
+          localStorage.removeItem(key);
         }
       });
-      
-      // Restore priority if it existed
-      if (priorityData) {
-        this.set(PRIORITY_LANGUAGE, priorityData);
-      }
-    } else {
-      // Clear all
-      const allLanguages: SupportedLanguage[] = ['az', 'en', 'ru', 'tr'];
-      allLanguages.forEach(lang => this.delete(lang));
+    } catch (error) {
+      console.warn('Failed to clear translation localStorage:', error);
     }
-    
-    console.log(`[TranslationCache] Cleared (preservePriority: ${preservePriority})`);
   }
 
-  /**
-   * Check if language exists in cache
-   */
-  has(language: SupportedLanguage): boolean {
-    return this.get(language) !== null;
-  }
+  getInfo(): TranslationCacheInfo {
+    const languages = Array.from(this.cache.keys()).map(key => 
+      key.replace('translations_', '')
+    );
 
-  /**
-   * Get cache info
-   */
-  getInfo() {
-    const languages: SupportedLanguage[] = ['az', 'en', 'ru', 'tr'];
-    const cachedLanguages = languages.filter(lang => this.has(lang));
-    
     return {
-      ...enhancedCache.getStats(),
-      languages: cachedLanguages,
-      priority: this.has(PRIORITY_LANGUAGE),
-      priorityLanguage: PRIORITY_LANGUAGE
+      languages,
+      priority: languages.includes(this.PRIORITY_LANG),
+      size: this.cache.size,
+      version: this.VERSION
     };
   }
 
-  /**
-   * Health check for cache integrity
-   */
-  healthCheck(): { healthy: boolean; issues: string[] } {
-    const issues: string[] = [];
-    
-    // Check if priority language is available
-    if (!this.has(PRIORITY_LANGUAGE)) {
-      issues.push(`Priority language ${PRIORITY_LANGUAGE} not cached`);
+  preload(language: string): void {
+    // Preload from localStorage if available
+    const key = this.getKey(language);
+    if (!this.cache.has(key)) {
+      this.get(language); // This will load from localStorage if available
     }
-    
-    // Check cache statistics
-    const stats = enhancedCache.getStats();
-    if (stats.memorySize === 0) {
-      issues.push('No cached translations in memory');
-    }
-    
-    return {
-      healthy: issues.length === 0,
-      issues
-    };
-  }
-
-  /**
-   * Preload all supported languages
-   */
-  async preloadAll(
-    loaders: Record<SupportedLanguage, () => Promise<LanguageTranslations>>
-  ): Promise<void> {
-    const cacheLoaders: Record<string, () => Promise<LanguageTranslations>> = {};
-    
-    Object.entries(loaders).forEach(([lang, loader]) => {
-      cacheLoaders[`${this.cachePrefix}_${lang}`] = loader;
-    });
-    
-    await enhancedCache.preloadCritical(cacheLoaders);
   }
 }
 
-export const translationCache = new TranslationCacheService();
+export const translationCache = new TranslationCache();
 export default translationCache;

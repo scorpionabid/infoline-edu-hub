@@ -1,148 +1,136 @@
 
-import { useEffect, useRef, useCallback } from 'react';
-import { enhancedCache } from '@/services/cache/EnhancedCacheService';
+import { useCallback, useEffect, useRef } from 'react';
+import { cacheManager } from '@/cache';
 
-interface MemoryMonitorOptions {
-  cleanupInterval?: number;
-  memoryThreshold?: number;
-  onMemoryPressure?: () => void;
+interface MemoryStats {
+  memory?: {
+    used: number;
+    total: number;
+    percentage: number;
+    limit: number;
+  };
+  performance?: {
+    navigation: number;
+    loading: number;
+  };
 }
 
-export const useMemoryOptimization = (options: MemoryMonitorOptions = {}) => {
-  const {
-    cleanupInterval = 60000, // 1 minute
-    memoryThreshold = 50 * 1024 * 1024, // 50MB
-    onMemoryPressure
-  } = options;
+interface UseMemoryOptimizationOptions {
+  onMemoryPressure?: () => void;
+  threshold?: number;
+}
 
-  const intervalRef = useRef<NodeJS.Timeout>();
+export const useMemoryOptimization = (options: UseMemoryOptimizationOptions = {}) => {
+  const { onMemoryPressure, threshold = 80 } = options;
   const lastCleanup = useRef<number>(0);
+  const isMonitoring = useRef<boolean>(false);
 
-  /**
-   * Check memory usage and trigger cleanup if needed
-   */
-  const checkMemoryUsage = useCallback(async () => {
-    try {
-      if ('memory' in performance) {
-        const memInfo = (performance as any).memory;
-        
-        if (memInfo.usedJSHeapSize > memoryThreshold) {
-          console.warn('[MemoryOptimization] High memory usage detected:', {
-            used: Math.round(memInfo.usedJSHeapSize / 1024 / 1024) + 'MB',
-            total: Math.round(memInfo.totalJSHeapSize / 1024 / 1024) + 'MB',
-            limit: Math.round(memInfo.jsHeapSizeLimit / 1024 / 1024) + 'MB'
-          });
+  const getMemoryStats = useCallback((): MemoryStats => {
+    const stats: MemoryStats = {};
 
-          // Trigger memory pressure callback
-          if (onMemoryPressure) {
-            onMemoryPressure();
-          }
-
-          // Force cache cleanup
-          enhancedCache.cleanup();
-          
-          // Suggest garbage collection
-          if ('gc' in window) {
-            (window as any).gc();
-          }
-        }
-      }
-    } catch (error) {
-      console.warn('[MemoryOptimization] Memory check failed:', error);
-    }
-  }, [memoryThreshold, onMemoryPressure]);
-
-  /**
-   * Perform regular cleanup
-   */
-  const performCleanup = useCallback(() => {
-    const now = Date.now();
-    
-    // Only cleanup if enough time has passed
-    if (now - lastCleanup.current > cleanupInterval) {
-      enhancedCache.cleanup();
-      lastCleanup.current = now;
-      
-      console.log('[MemoryOptimization] Performed scheduled cleanup');
-    }
-  }, [cleanupInterval]);
-
-  /**
-   * Handle visibility change for aggressive cleanup
-   */
-  const handleVisibilityChange = useCallback(() => {
-    if (document.hidden) {
-      // Page is hidden, perform aggressive cleanup
-      enhancedCache.cleanup();
-      console.log('[MemoryOptimization] Performed visibility-based cleanup');
-    }
-  }, []);
-
-  useEffect(() => {
-    // Start memory monitoring
-    intervalRef.current = setInterval(() => {
-      checkMemoryUsage();
-      performCleanup();
-    }, cleanupInterval);
-
-    // Listen for visibility changes
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    // Cleanup on page unload
-    const handleBeforeUnload = () => {
-      enhancedCache.cleanup();
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-  }, [checkMemoryUsage, performCleanup, handleVisibilityChange, cleanupInterval]);
-
-  /**
-   * Manual memory cleanup
-   */
-  const forceCleanup = useCallback(() => {
-    enhancedCache.cleanup();
-    lastCleanup.current = Date.now();
-    
-    if ('gc' in window) {
-      (window as any).gc();
-    }
-    
-    console.log('[MemoryOptimization] Forced cleanup executed');
-  }, []);
-
-  /**
-   * Get memory statistics
-   */
-  const getMemoryStats = useCallback(() => {
-    const cacheStats = enhancedCache.getStats();
-    
-    let memoryInfo = null;
+    // Performance memory API (Chrome only)
     if ('memory' in performance) {
-      const mem = (performance as any).memory;
-      memoryInfo = {
-        used: Math.round(mem.usedJSHeapSize / 1024 / 1024),
-        total: Math.round(mem.totalJSHeapSize / 1024 / 1024),
-        limit: Math.round(mem.jsHeapSizeLimit / 1024 / 1024)
+      const memory = (performance as any).memory;
+      const used = Math.round(memory.usedJSHeapSize / 1024 / 1024);
+      const total = Math.round(memory.totalJSHeapSize / 1024 / 1024);
+      const limit = Math.round(memory.jsHeapSizeLimit / 1024 / 1024);
+      
+      stats.memory = {
+        used,
+        total,
+        limit,
+        percentage: Math.round((used / limit) * 100)
       };
     }
 
-    return {
-      cache: cacheStats,
-      memory: memoryInfo,
-      lastCleanup: lastCleanup.current
-    };
+    // Performance navigation timing
+    if (performance.navigation && performance.timing) {
+      stats.performance = {
+        navigation: performance.navigation.type,
+        loading: performance.timing.loadEventEnd - performance.timing.navigationStart
+      };
+    }
+
+    return stats;
   }, []);
 
+  const checkMemoryUsage = useCallback(() => {
+    const stats = getMemoryStats();
+    
+    if (stats.memory && stats.memory.percentage > threshold) {
+      console.warn(`Memory usage high: ${stats.memory.percentage}%`);
+      onMemoryPressure?.();
+      return true;
+    }
+    
+    return false;
+  }, [getMemoryStats, threshold, onMemoryPressure]);
+
+  const forceCleanup = useCallback(() => {
+    const now = Date.now();
+    
+    // Prevent too frequent cleanups
+    if (now - lastCleanup.current < 30000) { // 30 seconds
+      console.log('Cleanup skipped - too recent');
+      return;
+    }
+
+    try {
+      // Clear cache
+      cacheManager.clear();
+      
+      // Force garbage collection if available (development)
+      if (window.gc && typeof window.gc === 'function') {
+        window.gc();
+      }
+      
+      lastCleanup.current = now;
+      console.log('Memory cleanup completed');
+    } catch (error) {
+      console.error('Cleanup failed:', error);
+    }
+  }, []);
+
+  const startMonitoring = useCallback(() => {
+    if (isMonitoring.current) return;
+    
+    isMonitoring.current = true;
+    
+    const interval = setInterval(() => {
+      checkMemoryUsage();
+    }, 60000); // Check every minute
+
+    return () => {
+      clearInterval(interval);
+      isMonitoring.current = false;
+    };
+  }, [checkMemoryUsage]);
+
+  useEffect(() => {
+    // Auto-start monitoring in development
+    if (process.env.NODE_ENV === 'development') {
+      const cleanup = startMonitoring();
+      return cleanup;
+    }
+  }, [startMonitoring]);
+
   return {
-    forceCleanup,
     getMemoryStats,
-    checkMemoryUsage
+    checkMemoryUsage,
+    forceCleanup,
+    startMonitoring
   };
 };
+
+declare global {
+  interface Window {
+    gc?: () => void;
+  }
+  interface Performance {
+    memory?: {
+      usedJSHeapSize: number;
+      totalJSHeapSize: number;
+      jsHeapSizeLimit: number;
+    };
+  }
+}

@@ -1,9 +1,13 @@
+
 import { BaseCacheAdapter } from '../core/BaseCacheAdapter';
-import { CacheEntry, CacheStats } from '../core/types';
+import { CacheEntry, CacheStats, CacheOptions } from '../core/types';
 
 export class StorageCacheAdapter<T> extends BaseCacheAdapter<T> {
   private storage: Storage;
   private keyPrefix: string;
+  private hitCount = 0;
+  private missCount = 0;
+  private size = 0;
 
   constructor(storage: Storage = localStorage, keyPrefix: string = 'cache:') {
     super();
@@ -15,51 +19,81 @@ export class StorageCacheAdapter<T> extends BaseCacheAdapter<T> {
     return `${this.keyPrefix}${key}`;
   }
 
-  async get(key: string): Promise<CacheEntry<T> | undefined> {
+  get(key: string): T | null {
     const storedValue = this.storage.getItem(this.generateKey(key));
     if (!storedValue) {
       this.missCount++;
-      return undefined;
+      return null;
     }
 
     try {
       const entry = JSON.parse(storedValue) as CacheEntry<T>;
-      if (entry.expiresAt && entry.expiresAt < Date.now()) {
-        await this.delete(key);
+      if (entry.timestamp && entry.ttl && (Date.now() - entry.timestamp > entry.ttl)) {
+        this.delete(key);
         this.missCount++;
-        return undefined;
+        return null;
       }
 
       this.hitCount++;
-      return entry;
+      return entry.data;
     } catch (error) {
       console.error('Error parsing cache entry:', error);
-      await this.delete(key);
+      this.delete(key);
       this.missCount++;
-      return undefined;
+      return null;
     }
   }
 
-  async set(key: string, value: T, ttl?: number): Promise<void> {
-    const expiresAt = ttl ? Date.now() + ttl : undefined;
-    const entry: CacheEntry<T> = { value, expiresAt, createdAt: Date.now() };
+  set(key: string, value: T, options?: CacheOptions): void {
+    const ttl = options?.ttl || 300000; // 5 minutes default
+    const entry: CacheEntry<T> = { 
+      data: value, 
+      timestamp: Date.now(), 
+      ttl,
+      accessCount: 0,
+      priority: options?.priority || 'normal',
+      tags: options?.tags || []
+    };
+    
     try {
       this.storage.setItem(this.generateKey(key), JSON.stringify(entry));
-      this.size = this.calculateTotalSize(this.getAllEntries());
+      this.size = this.calculateTotalSize();
     } catch (error) {
       console.error('Error setting cache entry:', error);
     }
   }
 
-  async delete(key: string): Promise<void> {
+  delete(key: string): void {
     this.storage.removeItem(this.generateKey(key));
-    this.size = this.calculateTotalSize(this.getAllEntries());
+    this.size = this.calculateTotalSize();
   }
 
-  async clear(): Promise<void> {
+  clear(): void {
     const keys = this.getAllKeys();
     keys.forEach(key => this.storage.removeItem(key));
     this.size = 0;
+  }
+
+  evict(): void {
+    // Simple LRU eviction - remove expired entries
+    const keys = this.getAllKeys();
+    const now = Date.now();
+    
+    keys.forEach(key => {
+      const storedValue = this.storage.getItem(key);
+      if (storedValue) {
+        try {
+          const entry = JSON.parse(storedValue) as CacheEntry<T>;
+          if (entry.timestamp && entry.ttl && (now - entry.timestamp > entry.ttl)) {
+            this.storage.removeItem(key);
+          }
+        } catch {
+          this.storage.removeItem(key);
+        }
+      }
+    });
+    
+    this.size = this.calculateTotalSize();
   }
 
   getAllKeys(): string[] {
@@ -77,11 +111,12 @@ export class StorageCacheAdapter<T> extends BaseCacheAdapter<T> {
     const keys = this.getAllKeys();
     return keys.map(key => {
       const storedValue = this.storage.getItem(key);
-      return storedValue ? JSON.parse(storedValue) as CacheEntry<T> : undefined;
+      return storedValue ? JSON.parse(storedValue) as CacheEntry<T> : null;
     }).filter(Boolean) as CacheEntry<T>[];
   }
 
-  calculateTotalSize(entries: CacheEntry<T>[]): number {
+  calculateTotalSize(): number {
+    const entries = this.getAllEntries();
     return entries.reduce((total, entry) => {
       const entryString = JSON.stringify(entry);
       return total + new Blob([entryString]).size;
@@ -89,17 +124,17 @@ export class StorageCacheAdapter<T> extends BaseCacheAdapter<T> {
   }
 
   getStats(): CacheStats {
-    const keys = this.getAllKeys();
-    const entries = keys.map(key => this.get(key.replace(this.keyPrefix, ''))).filter(Boolean) as CacheEntry<T>[];
-    
+    const entries = this.getAllEntries();
     const now = Date.now();
-    const expired = entries.filter(entry => entry.expiresAt && entry.expiresAt < now);
+    const expired = entries.filter(entry => 
+      entry.timestamp && entry.ttl && (now - entry.timestamp > entry.ttl)
+    );
     
     return {
-      totalEntries: entries.length,
-      totalSize: this.calculateTotalSize(entries),
+      size: entries.length,
       hitRate: this.hitCount / (this.hitCount + this.missCount) || 0,
       missRate: this.missCount / (this.hitCount + this.missCount) || 0,
+      memoryUsage: this.calculateTotalSize(),
       expiredEntries: expired.length
     };
   }

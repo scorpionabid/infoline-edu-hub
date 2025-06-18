@@ -1,3 +1,4 @@
+
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import UniversalDialog from '@/components/core/UniversalDialog';
@@ -9,6 +10,7 @@ vi.mock('@/contexts/TranslationContext', () => ({
     t: (key: string) => key,
     language: 'az',
     setLanguage: vi.fn(),
+    changeLanguage: vi.fn(),
     isLoading: false,
     error: null,
     isReady: true
@@ -19,7 +21,7 @@ describe('UniversalDialog Component', () => {
   it('should render the dialog with title and content', () => {
     render(
       <UniversalDialog
-        open={true}
+        isOpen={true}
         title="Test Title"
         content="Test Content"
         onClose={() => {}}
@@ -34,7 +36,7 @@ describe('UniversalDialog Component', () => {
   it('should render confirm and cancel buttons', () => {
     render(
       <UniversalDialog
-        open={true}
+        isOpen={true}
         title="Test Title"
         content="Test Content"
         onClose={() => {}}
@@ -46,10 +48,10 @@ describe('UniversalDialog Component', () => {
     expect(screen.getByText('Confirm')).toBeInTheDocument();
   });
 
-  it('should not render the dialog when open is false', () => {
+  it('should not render the dialog when isOpen is false', () => {
     render(
       <UniversalDialog
-        open={false}
+        isOpen={false}
         title="Test Title"
         content="Test Content"
         onClose={() => {}}

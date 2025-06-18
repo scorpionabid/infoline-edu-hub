@@ -1,8 +1,8 @@
+
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import ApprovalPage from '../pages/Approval';
-import { LanguageProvider } from '../context/LanguageContext';
 import { useTranslation } from '@/contexts/TranslationContext';
 
 // Auth store artıq Zustand-ə köçürülüb
@@ -86,6 +86,7 @@ vi.mock('@/contexts/TranslationContext', () => ({
     t: (key: string) => key,
     language: 'az',
     setLanguage: vi.fn(),
+    changeLanguage: vi.fn(),
     isLoading: false,
     error: null,
     isReady: true
@@ -101,9 +102,7 @@ describe('Approval Page', () => {
   it('renders approval page', () => {
     render(
       <MemoryRouter>
-        <LanguageProvider>
-          <ApprovalPage />
-        </LanguageProvider>
+        <ApprovalPage />
       </MemoryRouter>
     );
     // Mock language-da key-lər return edir, actual value-lar deyil
@@ -114,9 +113,7 @@ describe('Approval Page', () => {
   it('shows stats cards for pending, approved and rejected items', async () => {
     render(
       <MemoryRouter>
-        <LanguageProvider>
-          <ApprovalPage />
-        </LanguageProvider>
+        <ApprovalPage />
       </MemoryRouter>
     );
 
@@ -140,9 +137,7 @@ describe('Approval Component Performance', () => {
     
     render(
       <MemoryRouter>
-        <LanguageProvider>
-          <ApprovalPage />
-        </LanguageProvider>
+        <ApprovalPage />
       </MemoryRouter>
     );
     
@@ -163,9 +158,7 @@ describe('Approval Component Performance', () => {
     
     render(
       <MemoryRouter>
-        <LanguageProvider>
-          <ApprovalPage />
-        </LanguageProvider>
+        <ApprovalPage />
       </MemoryRouter>
     );
     
