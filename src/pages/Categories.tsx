@@ -159,7 +159,11 @@ const Categories = () => {
           )}
         </CardHeader>
         <CardContent>
-          <CategoryList onCategorySelect={handleCategorySelect} />
+          <CategoryList 
+            categories={categories}
+            isLoading={isLoading}
+            onCategorySelect={handleCategorySelect} 
+          />
         </CardContent>
       </Card>
 
