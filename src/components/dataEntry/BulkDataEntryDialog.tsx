@@ -36,35 +36,31 @@ interface BulkDataEntryDialogProps {
   onClose: () => void;
   selectedSchools: string[];
   categoryId: string;
+  columnId?: string;
   onComplete?: () => void;
+  inline?: boolean;
 }
 
 /**
  * Bulk Data Entry Dialog
  * 
- * Bu komponent bir kateqoriya və sütun seçib, çoxlu məktəb üçün eyni dəyər daxil etməyə imkan verir.
- * 
- * Məsələn:
- * - Kateqoriya: "Təchizat məlumatları"  
- * - Sütun: "Oduna ehtiyac var?"
- * - Seçilmiş məktəblər: Məktəb A, B, C
- * - Dəyər: "Xeyr"
- * 
- * Nəticə: A, B, C məktəbləri üçün "Oduna ehtiyac var?" sütununa "Xeyr" dəyəri daxil edilir.
+ * Bu komponent bir kateqoriya ve sutun secib, coxlu mekteb ucun eyni deyer daxil etmeye imkan verir.
  */
 export const BulkDataEntryDialog: React.FC<BulkDataEntryDialogProps> = ({
   isOpen,
   onClose,
   selectedSchools,
   categoryId,
-  onComplete
+  columnId: preSelectedColumnId,
+  onComplete,
+  inline = false
 }) => {
   const { toast } = useToast();
   const user = useAuthStore(selectUser);
   const queryClient = useQueryClient();
   
   // State
-  const [selectedColumnId, setSelectedColumnId] = useState<string>('');
+  const [selectedColumnId, setSelectedColumnId] = useState<string>(preSelectedColumnId || '');
   const [bulkValue, setBulkValue] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionResults, setSubmissionResults] = useState<{
@@ -95,7 +91,7 @@ export const BulkDataEntryDialog: React.FC<BulkDataEntryDialogProps> = ({
           )
         `)
         .eq('id', categoryId)
-        .eq('columns.status', 'active') // FILTER: Only active columns
+        .eq('columns.status', 'active')
         .single();
       
       if (error) throw error;
@@ -123,15 +119,14 @@ export const BulkDataEntryDialog: React.FC<BulkDataEntryDialogProps> = ({
 
   // Get selected column info
   const selectedColumn = category?.columns?.find(col => col.id === selectedColumnId);
-  
   const columns = category?.columns || [];
 
   // Handle bulk submission
   const handleBulkSubmit = async () => {
     if (!selectedColumnId || !bulkValue.trim()) {
       toast({
-        title: 'Məlumat çatmır',
-        description: 'Zəhmət olmasa sütun və dəyər seçin',
+        title: 'Melumat catmir',
+        description: 'Zehmet olmasa sutun ve deyer secin',
         variant: 'destructive'
       });
       return;
@@ -139,8 +134,8 @@ export const BulkDataEntryDialog: React.FC<BulkDataEntryDialogProps> = ({
 
     if (selectedSchools.length === 0) {
       toast({
-        title: 'Məktəb seçilməyib',
-        description: 'Zəhmət olmasa ən azı bir məktəb seçin',
+        title: 'Mekteb secilmeyib',
+        description: 'Zehmet olmasa en azi bir mekteb secin',
         variant: 'destructive'
       });
       return;
@@ -173,7 +168,7 @@ export const BulkDataEntryDialog: React.FC<BulkDataEntryDialogProps> = ({
 
           if (!saveResult.success) {
             console.error('Save failed for school:', schoolId, saveResult);
-            throw new Error(saveResult.error || saveResult.message || 'Saxlama xətası');
+            throw new Error(saveResult.error || saveResult.message || 'Saxlama xetasi');
           }
 
           // Submit for auto-approval
@@ -188,12 +183,12 @@ export const BulkDataEntryDialog: React.FC<BulkDataEntryDialogProps> = ({
 
           if (!submitResult.success) {
             console.error('Submit failed for school:', schoolId, submitResult);
-            throw new Error(submitResult.error || submitResult.message || 'Təsdiq xətası');
+            throw new Error(submitResult.error || submitResult.message || 'Tesdiq xetasi');
           }
 
           successful.push(schoolId);
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Naməlum xəta';
+          const errorMessage = error instanceof Error ? error.message : 'Namelum xeta';
           failed.push({ schoolId, error: errorMessage });
         }
       }
@@ -203,8 +198,8 @@ export const BulkDataEntryDialog: React.FC<BulkDataEntryDialogProps> = ({
 
       // Show success toast
       toast({
-        title: 'Bulk əməliyyat tamamlandı',
-        description: `${successful.length} məktəb uğurlu, ${failed.length} xətə`
+        title: 'Bulk emeliyyat tamamlandi',
+        description: `${successful.length} mekteb ugurlu, ${failed.length} xete`
       });
 
       // Invalidate relevant queries
@@ -222,8 +217,8 @@ export const BulkDataEntryDialog: React.FC<BulkDataEntryDialogProps> = ({
 
     } catch (error) {
       toast({
-        title: 'Bulk əməliyyat xətası',
-        description: error instanceof Error ? error.message : 'Naməlum xəta',
+        title: 'Bulk emeliyyat xetasi',
+        description: error instanceof Error ? error.message : 'Namelum xeta',
         variant: 'destructive'
       });
     } finally {
@@ -233,9 +228,11 @@ export const BulkDataEntryDialog: React.FC<BulkDataEntryDialogProps> = ({
 
   // Reset state when dialog closes
   const handleClose = () => {
-    setSelectedColumnId('');
-    setBulkValue('');
-    setSubmissionResults(null);
+    if (!inline) {
+      setSelectedColumnId('');
+      setBulkValue('');
+      setSubmissionResults(null);
+    }
     onClose();
   };
 
@@ -248,7 +245,7 @@ export const BulkDataEntryDialog: React.FC<BulkDataEntryDialogProps> = ({
         return (
           <Select value={bulkValue} onValueChange={setBulkValue}>
             <SelectTrigger>
-              <SelectValue placeholder="Seçin..." />
+              <SelectValue placeholder="Secin..." />
             </SelectTrigger>
             <SelectContent>
               {(selectedColumn.options as any[])?.map((option: any, index: number) => (
@@ -287,211 +284,240 @@ export const BulkDataEntryDialog: React.FC<BulkDataEntryDialogProps> = ({
     }
   };
 
-  return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Toplu Məlumat Daxil Etmə
-          </DialogTitle>
-          <DialogDescription>
-            Seçilmiş məktəblər üçün eyni məlumatı toplu şəkildə daxil edin
-          </DialogDescription>
-        </DialogHeader>
+  // Inline content
+  const content = (
+    <div className="space-y-6">
+      {/* Selected Schools Summary */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Secilmis Mektebler ({selectedSchools.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {schoolsLoading ? (
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span className="text-sm">Mektebler yuklenir...</span>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-32 overflow-y-auto">
+              {schools?.map((school) => (
+                <div key={school.id} className="flex items-center gap-2 p-2 bg-muted/30 rounded text-sm">
+                  <span className="truncate">{school.name}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-        <div className="space-y-6">
-          {/* Selected Schools Summary */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                Seçilmiş Məktəblər ({selectedSchools.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {schoolsLoading ? (
-                <div className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="text-sm">Məktəblər yüklənir...</span>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-32 overflow-y-auto">
-                  {schools?.map((school) => (
-                    <div key={school.id} className="flex items-center gap-2 p-2 bg-muted/30 rounded text-sm">
-                      <span className="truncate">{school.name}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+      {/* Category Info */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm">Kateqoriya</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {categoryLoading ? (
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span className="text-sm">Kateqoriya yuklenir...</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span className="font-medium">{category?.name}</span>
+              <Badge variant="outline">
+                {columns.length} sutun
+              </Badge>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-          {/* Category Info */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm">Kateqoriya</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {categoryLoading ? (
-                <div className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="text-sm">Kateqoriya yüklənir...</span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">{category?.name}</span>
-                  <Badge variant="outline">
-                    {columns.length} sütun
-                  </Badge>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Column Selection */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm">Sütun Seçimi</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="text-sm font-medium">Hansı sütuna məlumat daxil edəcəksiniz?</label>
-                <Select value={selectedColumnId} onValueChange={setSelectedColumnId}>
-                  <SelectTrigger className="mt-2">
-                    <SelectValue placeholder="Sütun seçin" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {columns.map((column) => (
-                      <SelectItem key={column.id} value={column.id}>
-                        <div className="flex items-center gap-2">
-                          <span>{column.name}</span>
-                          {column.is_required && (
-                            <Badge variant="destructive" className="text-xs">
-                              Məcburi
-                            </Badge>
-                          )}
-                          <Badge variant="outline" className="text-xs">
-                            {column.type}
+      {/* Column Selection */}
+      {!preSelectedColumnId && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm">Sutun Secimi</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Hansi sutuna melumat daxil edeceksiniz?</label>
+              <Select value={selectedColumnId} onValueChange={setSelectedColumnId}>
+                <SelectTrigger className="mt-2">
+                  <SelectValue placeholder="Sutun secin" />
+                </SelectTrigger>
+                <SelectContent>
+                  {columns.map((column) => (
+                    <SelectItem key={column.id} value={column.id}>
+                      <div className="flex items-center gap-2">
+                        <span>{column.name}</span>
+                        {column.is_required && (
+                          <Badge variant="destructive" className="text-xs">
+                            Mecburi
                           </Badge>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                        )}
+                        <Badge variant="outline" className="text-xs">
+                          {column.type}
+                        </Badge>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {selectedColumn && (
+              <div>
+                <label className="text-sm font-medium flex items-center gap-2">
+                  Deyer
+                  {selectedColumn.is_required && <span className="text-red-500">*</span>}
+                </label>
+                <div className="mt-2">
+                  {renderColumnInput()}
+                </div>
+                {selectedColumn.help_text && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {selectedColumn.help_text}
+                  </p>
+                )}
               </div>
-
-              {selectedColumn && (
-                <div>
-                  <label className="text-sm font-medium flex items-center gap-2">
-                    Dəyər
-                    {selectedColumn.is_required && <span className="text-red-500">*</span>}
-                  </label>
-                  <div className="mt-2">
-                    {renderColumnInput()}
-                  </div>
-                  {selectedColumn.help_text && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {selectedColumn.help_text}
-                    </p>
-                  )}
-                </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+      
+      {/* Pre-selected Column Info */}
+      {preSelectedColumnId && selectedColumn && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm">Secilmis Sutun</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center gap-2 p-3 bg-primary/5 rounded-lg">
+              <span className="font-medium">{selectedColumn.name}</span>
+              {selectedColumn.is_required && (
+                <Badge variant="destructive" className="text-xs">
+                  Mecburi
+                </Badge>
               )}
-            </CardContent>
-          </Card>
+              <Badge variant="outline" className="text-xs">
+                {selectedColumn.type}
+              </Badge>
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium flex items-center gap-2">
+                Deyer
+                {selectedColumn.is_required && <span className="text-red-500">*</span>}
+              </label>
+              <div className="mt-2">
+                {renderColumnInput()}
+              </div>
+              {selectedColumn.help_text && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {selectedColumn.help_text}
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-          {/* Preview */}
-          {selectedColumn && bulkValue && (
-            <Alert>
-              <Info className="h-4 w-4" />
-              <AlertDescription>
-                <div className="space-y-2">
-                  <p className="font-medium">Önizləmə:</p>
-                  <p className="text-sm">
-                    <strong>{selectedSchools.length}</strong> məktəb üçün{' '}
-                    <strong>"{selectedColumn.name}"</strong> sütununa{' '}
-                    <strong>"{bulkValue}"</strong> dəyəri daxil ediləcək.
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Bu əməliyyat geri alına bilməz. Təsdiq etmədən əvvəl yoxlayın.
-                  </p>
+      {/* Preview */}
+      {selectedColumn && bulkValue && (
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            <div className="space-y-2">
+              <p className="font-medium">Onizleme:</p>
+              <p className="text-sm">
+                <strong>{selectedSchools.length}</strong> mekteb ucun{' '}
+                <strong>"{selectedColumn.name}"</strong> sutununa{' '}
+                <strong>"{bulkValue}"</strong> deyeri daxil edilecek.
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Bu emeliyyat geri alina bilmez. Tesdiq etmeden evvel yoxlayin.
+              </p>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Submission Results */}
+      {submissionResults && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              {submissionResults.failed.length === 0 ? (
+                <CheckCircle className="h-4 w-4 text-green-600" />
+              ) : (
+                <AlertTriangle className="h-4 w-4 text-amber-600" />
+              )}
+              Neticeler
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Success */}
+            {submissionResults.successful.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 text-green-600 text-sm font-medium">
+                  <CheckCircle className="h-4 w-4" />
+                  Ugurlu ({submissionResults.successful.length})
                 </div>
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {/* Submission Results */}
-          {submissionResults && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  {submissionResults.failed.length === 0 ? (
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                  ) : (
-                    <AlertTriangle className="h-4 w-4 text-amber-600" />
-                  )}
-                  Nəticələr
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Success */}
-                {submissionResults.successful.length > 0 && (
-                  <div>
-                    <div className="flex items-center gap-2 text-green-600 text-sm font-medium">
-                      <CheckCircle className="h-4 w-4" />
-                      Uğurlu ({submissionResults.successful.length})
-                    </div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      Məlumatlar avtomatik təsdiq edildi və bildirişlər göndərildi
-                    </div>
-                  </div>
-                )}
-
-                {/* Failures */}
-                {submissionResults.failed.length > 0 && (
-                  <div>
-                    <div className="flex items-center gap-2 text-red-600 text-sm font-medium">
-                      <X className="h-4 w-4" />
-                      Xətələr ({submissionResults.failed.length})
-                    </div>
-                    <div className="space-y-1 mt-2 max-h-32 overflow-y-auto">
-                      {submissionResults.failed.map(({ schoolId, error }) => {
-                        const school = schools?.find(s => s.id === schoolId);
-                        return (
-                          <div key={schoolId} className="text-xs text-red-600 p-2 bg-red-50 rounded">
-                            <span className="font-medium">{school?.name || schoolId}:</span> {error}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* Progress */}
-                <div>
-                  <div className="flex justify-between text-xs text-muted-foreground mb-1">
-                    <span>Tamamlanma</span>
-                    <span>
-                      {submissionResults.successful.length}/{selectedSchools.length}
-                    </span>
-                  </div>
-                  <Progress 
-                    value={(submissionResults.successful.length / selectedSchools.length) * 100} 
-                    className="h-2"
-                  />
+                <div className="text-xs text-muted-foreground mt-1">
+                  Melumatlar avtomatik tesdiq edildi ve bildirisler gonderildi
                 </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+              </div>
+            )}
 
-        <DialogFooter>
+            {/* Failures */}
+            {submissionResults.failed.length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 text-red-600 text-sm font-medium">
+                  <X className="h-4 w-4" />
+                  Xeteler ({submissionResults.failed.length})
+                </div>
+                <div className="space-y-1 mt-2 max-h-32 overflow-y-auto">
+                  {submissionResults.failed.map(({ schoolId, error }) => {
+                    const school = schools?.find(s => s.id === schoolId);
+                    return (
+                      <div key={schoolId} className="text-xs text-red-600 p-2 bg-red-50 rounded">
+                        <span className="font-medium">{school?.name || schoolId}:</span> {error}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Progress */}
+            <div>
+              <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                <span>Tamamlanma</span>
+                <span>
+                  {submissionResults.successful.length}/{selectedSchools.length}
+                </span>
+              </div>
+              <Progress 
+                value={(submissionResults.successful.length / selectedSchools.length) * 100} 
+                className="h-2"
+              />
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Action Buttons - Inline mode ucun */}
+      {inline && (
+        <div className="flex justify-end gap-2 pt-4 border-t">
           <Button
             variant="outline"
             onClick={handleClose}
             disabled={isSubmitting}
           >
-            {submissionResults ? 'Bağla' : 'Ləğv et'}
+            {submissionResults ? 'Bitir' : 'Legv et'}
           </Button>
           
           {!submissionResults && (
@@ -507,12 +533,96 @@ export const BulkDataEntryDialog: React.FC<BulkDataEntryDialogProps> = ({
               {isSubmitting ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Göndərilir...
+                  Gonderilir...
                 </>
               ) : (
                 <>
                   <Send className="h-4 w-4 mr-2" />
-                  Toplu Göndər ({selectedSchools.length} məktəb)
+                  Toplu Gonder ({selectedSchools.length} mekteb)
+                </>
+              )}
+            </Button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
+  // Render inline or as dialog
+  if (inline) {
+    console.log('BulkDataEntryDialog: Rendering inline mode', {
+      selectedSchools: selectedSchools.length,
+      categoryId,
+      columnId: preSelectedColumnId,
+      selectedColumnId
+    });
+    
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Toplu Melumat Daxil Etme
+          </h3>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Secilmis mektebler ucun eyni melumati toplu sekilde daxil edin
+        </p>
+        <div className="text-xs text-muted-foreground bg-yellow-50 p-2 rounded">
+          Debug Info: 
+          - Category: {categoryId}
+          - PreSelected Column: {preSelectedColumnId || 'None'}
+          - Current Column: {selectedColumnId || 'None'}
+          - Schools: {selectedSchools.length}
+          - Category Loading: {categoryLoading.toString()}
+          - Schools Loading: {schoolsLoading.toString()}
+        </div>
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Toplu Melumat Daxil Etme
+          </DialogTitle>
+          <DialogDescription>
+            Secilmis mektebler ucun eyni melumati toplu sekilde daxil edin
+          </DialogDescription>
+        </DialogHeader>
+        {content}
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={handleClose}
+            disabled={isSubmitting}
+          >
+            {submissionResults ? 'Bagla' : 'Legv et'}
+          </Button>
+          
+          {!submissionResults && (
+            <Button
+              onClick={handleBulkSubmit}
+              disabled={
+                isSubmitting || 
+                !selectedColumnId || 
+                !bulkValue.trim() || 
+                selectedSchools.length === 0
+              }
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Gonderilir...
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4 mr-2" />
+                  Toplu Gonder ({selectedSchools.length} mekteb)
                 </>
               )}
             </Button>

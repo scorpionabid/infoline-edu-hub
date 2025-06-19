@@ -1,36 +1,43 @@
 import React, { useState, useEffect } from 'react';
 import { DataEntryContainer } from '@/components/dataEntry/DataEntryContainer';
-import { SectorDataEntry as SectorDataEntryComponent } from '@/components/dataEntry/SectorDataEntry';
-import SectorAdminProxyDataEntry from '@/components/dataEntry/SectorAdminProxyDataEntry';
-import { BulkProxyDataEntry } from '@/components/dataEntry/bulk';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft, Building2, Table2, Edit3, CheckCircle2 } from 'lucide-react';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { supabase } from '@/integrations/supabase/client';
+import { ArrowLeft } from 'lucide-react';
+
+// Import new workflow components
+import { 
+  EntryModeSelector, 
+  ProgressIndicator, 
+  DataEntryContext, 
+  WorkflowNavigation, 
+  useDataEntryWorkflow 
+} from '@/components/dataEntry/workflow';
+
+import { SectorAdminSchoolList } from '@/components/schools/SectorAdminSchoolList';
+import SectorAdminProxyDataEntry from '@/components/dataEntry/SectorAdminProxyDataEntry';
+import { BulkDataEntryDialog } from '@/components/dataEntry/BulkDataEntryDialog';
 
 /**
- * Sektor Məlumat Daxil Etmə Səhifəsi
+ * Yenilenmis Sektor Melumat Daxil Etme Sehifesi
  * 
- * Bu səhifə sektoradminlərə öz sektorlarındakı məktəblər üçün məlumat daxil etməyə imkan verir.
- * Məktəblərin siyahısı göstərilir və seçilmiş məktəb üçün məlumat daxil etmək mümkündür.
+ * Bu sehife yeni UX pattern-ini tetbiq edir:
+ * 1. Mode Selection (tek/bulk)
+ * 2. Context Setup (kateqoriya/sutun)
+ * 3. Target Selection (mekteb secimi)
+ * 4. Data Input (melumat daxil etme)
  */
 const SectorDataEntryPage: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const user = useAuthStore(selectUser);
   const [userSectorId, setUserSectorId] = useState<string>('');
+  
+  // Workflow state management
+  const workflow = useDataEntryWorkflow();
   
   // Get user's sector ID
   useEffect(() => {
@@ -56,356 +63,229 @@ const SectorDataEntryPage: React.FC = () => {
     fetchUserSectorId();
   }, [user]);
 
-  const [selectedSchoolId, setSelectedSchoolId] = useState<string | null>(null);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
-  const [selectedColumnId, setSelectedColumnId] = useState<string | null>(null);
-  const [showDataEntry, setShowDataEntry] = useState(false);
-  const [bulkMode, setBulkMode] = useState(false);
-  const [showAdvancedBulkEntry, setShowAdvancedBulkEntry] = useState(false);
-  
-  // Kateqoriyaları əldə etmək
-  const { data: categories, isLoading: categoriesLoading } = useQuery({
-    queryKey: ['categories'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .eq('status', 'active')
-        .order('name');
-        
-      if (error) throw error;
-      return data || [];
+  // Navigation handlers
+  const handleNext = () => {
+    const { step, canProceed } = workflow;
+    
+    switch (step) {
+      case 'mode':
+        if (canProceed.context) {
+          workflow.nextStep();
+        }
+        break;
+      case 'context':
+        if (canProceed.target) {
+          workflow.nextStep();
+        }
+        break;
+      case 'target':
+        if (canProceed.input) {
+          workflow.nextStep();
+        }
+        break;
+      case 'input':
+        // Handle completion - bulk mode-da komponent ozu complete edecek
+        if (workflow.mode === 'single') {
+          handleComplete();
+        }
+        // Bulk mode-da BulkDataEntryDialog oz completion-i idare edir
+        break;
     }
-  });
-  
-  // Sütunları əldə etmək
-  const { data: columns, isLoading: columnsLoading } = useQuery({
-    queryKey: ['columns', selectedCategoryId],
-    queryFn: async () => {
-      if (!selectedCategoryId) return [];
-      
-      const { data, error } = await supabase
-        .from('columns')
-        .select('*')
-        .eq('category_id', selectedCategoryId)
-        .eq('status', 'active')
-        .order('order_index');
-        
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!selectedCategoryId
-  });
+  };
 
-  // Məktəb seçimi üçün handler
+  const handleBack = () => {
+    workflow.previousStep();
+  };
+
+  const handleCancel = () => {
+    workflow.resetWorkflow();
+  };
+
+  // Step-specific handlers
+  const handleModeSelect = (mode: 'single' | 'bulk') => {
+    workflow.setMode(mode);
+  };
+
+  const handleCategoryChange = (categoryId: string) => {
+    workflow.setCategory(categoryId);
+  };
+
+  const handleColumnChange = (columnId: string) => {
+    workflow.setColumn(columnId);
+  };
+
   const handleSchoolSelect = (schoolId: string) => {
-    setSelectedSchoolId(schoolId);
+    if (workflow.mode === 'single') {
+      workflow.setSelectedSchools([schoolId]);
+    }
   };
 
-  // Data daxil etmə üçün handler
+  const handleBulkSchoolSelect = (schoolIds: string[]) => {
+    workflow.setSelectedSchools(schoolIds);
+  };
+
   const handleDataEntry = (schoolId: string) => {
-    if (!selectedCategoryId || !selectedColumnId) {
-      toast({
-        title: "Kateqoriya və sütun seçilməyib",
-        description: "Zəhmət olmasa, əvvəlcə kateqoriya və sütun seçin",
-        variant: "destructive",
-      });
-      return;
+    if (workflow.mode === 'single') {
+      workflow.setSelectedSchools([schoolId]);
+      workflow.goToStep('input');
     }
-    
-    setSelectedSchoolId(schoolId);
-    setShowDataEntry(true);
-  };
-  
-  // Bulk data daxil etmə üçün handler
-  const handleBulkDataEntry = (schoolIds: string[]) => {
-    if (!selectedCategoryId || !selectedColumnId) {
-      toast({
-        title: "Kateqoriya və sütun seçilməyib",
-        description: "Zəhmət olmasa, əvvəlcə kateqoriya və sütun seçin",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    // Show the advanced bulk entry component
-    setShowAdvancedBulkEntry(true);
   };
 
-  // Data daxil etmə tamamlandıqda
-  const handleDataEntryComplete = () => {
-    setShowDataEntry(false);
+  const handleComplete = () => {
     toast({
-      title: "Məlumat uğurla saxlanıldı",
-      description: "Məlumatlar uğurla yadda saxlanıldı və təsdiqləndi.",
+      title: "Melumat daxil etme tamamlandi",
+      description: `${workflow.selectedSchools.length} mekteb ucun melumatlar ugurla daxil edildi.`,
       variant: "default",
     });
+    
+    // Reset workflow
+    setTimeout(() => {
+      workflow.resetWorkflow();
+    }, 1000);
   };
-  
-  // Bulk data daxil etmə dialog-u üçün state
-  const [showBulkDialog, setShowBulkDialog] = useState(false);
-  const [bulkValue, setBulkValue] = useState('');
-  
-  // Bulk data daxil etmə tamamlandıqda çağrılan handler
-  const handleBulkComplete = async () => {
-    if (!bulkValue.trim()) {
-      toast({
-        title: "Dəyər daxil edilməyib",
-        description: "Zəhmət olmasa, daxil etmək istədiyiniz dəyəri yazın",
-        variant: "destructive",
-      });
-      return;
+
+  // Validation logic
+  const canProceed = (() => {
+    switch (workflow.step) {
+      case 'mode':
+        return workflow.canProceed.context;
+      case 'context':
+        return workflow.canProceed.target;
+      case 'target':
+        return workflow.canProceed.input;
+      case 'input':
+        // Input step-de ve bulk mode-da her zaman true qayit
+        return workflow.mode === 'bulk' || workflow.inputValue.trim().length > 0;
+      default:
+        return false;
     }
-    
-    // Burada seçilmiş məktəblər üçün eyni dəyəri daxil edəcəyik
-    // TODO: API çağrışı ilə bulk data daxil etmək
-    
-    setShowBulkDialog(false);
-    setBulkValue('');
-    
-    toast({
-      title: "Bulk məlumat daxil edildi",
-      description: "Seçilmiş məktəblər üçün məlumatlar uğurla daxil edildi.",
-      variant: "default",
-    });
-  };
+  })();
 
-  // Data daxil etmə bağlandıqda
-  const handleDataEntryClose = () => {
-    setShowDataEntry(false);
-  };
+  const canGoBack = workflow.step !== 'mode';
 
-  // Kateqoriya seçimi
-  const handleCategoryChange = (value: string) => {
-    setSelectedCategoryId(value);
-    setSelectedColumnId(null); // Kateqoriya dəyişdikdə sütun seçimini sıfırla
-  };
-  
-  // Sütun seçimi
-  const handleColumnChange = (value: string) => {
-    setSelectedColumnId(value);
-  };
-  
-  // Data daxil etmə səhifəsindən çıxış
-  const handleBackToList = () => {
-    setShowDataEntry(false);
-    setSelectedSchoolId(null);
-  };
-  
-  // Bulk data daxil etmə rejimini açmaq/bağlamaq
-  const toggleBulkMode = () => {
-    setBulkMode(!bulkMode);
-  };
-  
   return (
     <DataEntryContainer>
-      {/* Kateqoriya və sütun seçimi */}
+      {/* Header */}
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Building2 className="h-5 w-5" />
-            Sektor Məlumat Daxiletmə
-          </CardTitle>
-          <CardDescription>
-            Məlumat daxil etmək üçün əvvəlcə kateqoriya və sütun seçin
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
-            {/* Kateqoriya seçimi */}
-            <div className="w-full md:w-72">
-              <Label htmlFor="category-select">Kateqoriya</Label>
-              <Select 
-                value={selectedCategoryId || ''} 
-                onValueChange={handleCategoryChange}
-                disabled={categoriesLoading}
+          <div className="flex items-center justify-between">
+            <CardTitle>Sektor Melumat Daxiletme</CardTitle>
+            {workflow.step !== 'mode' && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => navigate('/dashboard')}
               >
-                <SelectTrigger id="category-select" className="mt-1">
-                  <SelectValue placeholder="Kateqoriya seçin" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categoriesLoading ? (
-                    <div className="flex justify-center p-2">
-                      <LoadingSpinner size="sm" />
-                    </div>
-                  ) : (
-                    categories?.map((category: any) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {/* Sütun seçimi */}
-            {selectedCategoryId && (
-              <div className="w-full md:w-72">
-                <Label htmlFor="column-select">Sütun</Label>
-                <Select 
-                  value={selectedColumnId || ''} 
-                  onValueChange={handleColumnChange}
-                  disabled={columnsLoading}
-                >
-                  <SelectTrigger id="column-select" className="mt-1">
-                    <SelectValue placeholder="Sütun seçin" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {columnsLoading ? (
-                      <div className="flex justify-center p-2">
-                        <LoadingSpinner size="sm" />
-                      </div>
-                    ) : (
-                      columns?.map((column: any) => (
-                        <SelectItem key={column.id} value={column.id}>
-                          {column.name}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-            
-            {/* Bulk rejim düymələri */}
-            {selectedCategoryId && selectedColumnId && (
-              <div className="flex items-end gap-2 mt-auto pt-1">
-                <Button 
-                  variant={bulkMode ? "default" : "outline"} 
-                  size="sm" 
-                  onClick={toggleBulkMode}
-                >
-                  <CheckCircle2 className="h-4 w-4 mr-2" />
-                  {bulkMode ? "Bulk rejim aktiv" : "Bulk rejim"}
-                </Button>
-                
-                <Button 
-                  variant="secondary" 
-                  size="sm" 
-                  onClick={() => setShowAdvancedBulkEntry(true)}
-                >
-                  <Edit3 className="h-4 w-4 mr-2" />
-                  Qabaqcıl Bulk Entry
-                </Button>
-              </div>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Dashboard-a qayit
+              </Button>
             )}
           </div>
-          
-          {selectedCategoryId && selectedColumnId && (
-            <div className="mt-4 text-sm">
-              <Badge variant="outline" className="mr-2">
-                {categories?.find((c: any) => c.id === selectedCategoryId)?.name}
-              </Badge>
-              <Badge variant="outline">
-                {columns?.find((c: any) => c.id === selectedColumnId)?.name}
-              </Badge>
-            </div>
-          )}
-        </CardContent>
+        </CardHeader>
       </Card>
-      
-      {showDataEntry && selectedSchoolId && selectedCategoryId && selectedColumnId ? (
-        <Card className="mb-6">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Məlumat daxil etmə</CardTitle>
-            <Button variant="outline" size="sm" onClick={handleBackToList}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Geri qayıt
-            </Button>
-          </CardHeader>
-          <CardContent>
-            <SectorAdminProxyDataEntry 
-              schoolId={selectedSchoolId}
-              categoryId={selectedCategoryId}
-              columnId={selectedColumnId}
-              onClose={handleDataEntryClose}
-              onComplete={handleDataEntryComplete}
-            />
-          </CardContent>
-        </Card>
-      ) : showAdvancedBulkEntry ? (
-        <Card>
-          <CardContent className="p-6">
-            <BulkProxyDataEntry
-              sectorId={userSectorId}
-              onComplete={() => {
-                setShowAdvancedBulkEntry(false);
-                toast({
-                  title: 'Bulk data entry tamamlandı',
-                  description: 'Məlumatlar uğurla daxil edildi',
-                  variant: 'default'
-                });
-              }}
-              onClose={() => setShowAdvancedBulkEntry(false)}
-            />
-          </CardContent>
-        </Card>
-      ) : selectedCategoryId && selectedColumnId ? (
-        <SectorDataEntryComponent 
-          onDataEntry={handleDataEntry}
-          onBulkAction={(action, schoolIds) => {
-            console.log(`Bulk action ${action} for schools:`, schoolIds);
-            if (action === 'data_entry') {
-              handleBulkDataEntry(schoolIds);
-            } else {
-              toast({
-                title: `${action} əməliyyatı`,
-                description: `${schoolIds.length} məktəb üçün ${action} əməliyyatı başladıldı`,
-                variant: "default",
-              });
-            }
-          }}
-          categoryId={selectedCategoryId}
-          bulkMode={bulkMode}
-        />
-      ) : (
-        <Card>
-          <CardContent className="py-10">
-            <div className="text-center text-muted-foreground">
-              <p>Məlumat daxil etmək üçün əvvəlcə kateqoriya və sütun seçin</p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-      
-      {/* Bulk data daxil etmə dialog-u */}
-      <Dialog open={showBulkDialog} onOpenChange={setShowBulkDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Bulk Məlumat Daxil Etmə</DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="bulk-value">Daxil ediləcək dəyər</Label>
-              <Input
-                id="bulk-value"
-                placeholder="Dəyəri daxil edin..."
-                value={bulkValue}
-                onChange={(e) => setBulkValue(e.target.value)}
+
+      {/* Progress Indicator */}
+      <ProgressIndicator
+        currentStep={workflow.step}
+        completedSteps={workflow.completedSteps}
+        mode={workflow.mode || 'single'}
+        className="mb-8"
+      />
+
+      {/* Step Content */}
+      <div className="flex-1 mb-6">
+        {workflow.step === 'mode' && (
+          <EntryModeSelector
+            selectedMode={workflow.mode}
+            onModeSelect={handleModeSelect}
+          />
+        )}
+
+        {workflow.step === 'context' && (
+          <DataEntryContext
+            selectedCategory={workflow.selectedCategory}
+            selectedColumn={workflow.selectedColumn}
+            onCategoryChange={handleCategoryChange}
+            onColumnChange={handleColumnChange}
+            mode={workflow.mode!}
+          />
+        )}
+
+        {workflow.step === 'target' && (
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                {workflow.mode === 'single' ? 'Mekteb Secimi' : 'Mektebler Secimi'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <SectorAdminSchoolList
+                onSchoolSelect={handleSchoolSelect}
+                onDataEntry={handleDataEntry}
+                onBulkSelect={handleBulkSchoolSelect}
+                categoryId={workflow.selectedCategory!}
+                bulkMode={workflow.mode === 'bulk'}
+                workflowMode={true}
               />
-            </div>
-            
-            <div className="text-sm text-muted-foreground">
-              <p>Bu dəyər seçilmiş bütün məktəblər üçün daxil ediləcək:</p>
-              <div className="mt-2">
-                <Badge variant="outline" className="mr-2">
-                  {categories?.find((c: any) => c.id === selectedCategoryId)?.name}
-                </Badge>
-                <Badge variant="outline">
-                  {columns?.find((c: any) => c.id === selectedColumnId)?.name}
-                </Badge>
-              </div>
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowBulkDialog(false)}>Ləğv et</Button>
-            <Button onClick={handleBulkComplete}>Təsdiqlə</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </CardContent>
+          </Card>
+        )}
+
+        {workflow.step === 'input' && workflow.selectedSchools.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Melumat Daxil Etme</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {workflow.mode === 'single' ? (
+                <SectorAdminProxyDataEntry 
+                  schoolId={workflow.selectedSchools[0]}
+                  categoryId={workflow.selectedCategory!}
+                  columnId={workflow.selectedColumn!}
+                  onClose={handleCancel}
+                  onComplete={handleComplete}
+                />
+              ) : (
+                <div className="space-y-4">
+                  <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                    <h4 className="font-medium mb-2">Bulk Melumat Daxil Etme</h4>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      <strong>{workflow.selectedSchools.length}</strong> mekteb ucun{' '}
+                      <strong>{workflow.selectedColumn}</strong> sutununa melumat daxil edin
+                    </p>
+                    <div className="text-xs text-muted-foreground">
+                      Debug: categoryId={workflow.selectedCategory}, columnId={workflow.selectedColumn}
+                    </div>
+                  </div>
+                  
+                  <BulkDataEntryDialog
+                    isOpen={true}
+                    onClose={handleCancel}
+                    selectedSchools={workflow.selectedSchools}
+                    categoryId={workflow.selectedCategory!}
+                    columnId={workflow.selectedColumn!}
+                    onComplete={handleComplete}
+                    inline={true}
+                  />
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      {/* Navigation - Input step-de bulk mode ucun gizlet */}
+      {!(workflow.step === 'input' && workflow.mode === 'bulk') && (
+        <WorkflowNavigation
+          currentStep={workflow.step}
+          canProceed={canProceed}
+          canGoBack={canGoBack}
+          onNext={handleNext}
+          onBack={handleBack}
+          onCancel={handleCancel}
+          isLoading={workflow.isLoading}
+        />
+      )}
     </DataEntryContainer>
   );
 };

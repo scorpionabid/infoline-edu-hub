@@ -30,9 +30,10 @@ interface SectorAdminSchoolListProps {
   onSchoolSelect?: (schoolId: string) => void;
   onDataEntry?: (schoolId: string) => void;
   onBulkSelect?: (schoolIds: string[]) => void;
-  onBulkAction?: (action: string, schoolIds: string[]) => void; // Bulk əməliyyat üçün handler əlavə edildi
-  categoryId?: string; // Kateqoriya ID-si əlavə edildi
-  bulkMode?: boolean; // Bulk rejim əlavə edildi
+  onBulkAction?: (action: string, schoolIds: string[]) => void;
+  categoryId?: string;
+  bulkMode?: boolean;
+  workflowMode?: boolean; // Yeni workflow mode
 }
 
 const ITEMS_PER_PAGE = 12;
@@ -43,7 +44,8 @@ export const SectorAdminSchoolList: React.FC<SectorAdminSchoolListProps> = ({
   onBulkSelect,
   onBulkAction,
   categoryId,
-  bulkMode = false
+  bulkMode = false,
+  workflowMode = false
 }) => {
   // State management
   const [searchQuery, setSearchQuery] = useState('');
@@ -322,8 +324,8 @@ export const SectorAdminSchoolList: React.FC<SectorAdminSchoolListProps> = ({
             {/* Kateqoriya seçimi artıq əsas səhifədə edilir */}
           </div>
           
-          {/* Selection Controls */}
-          {selectedSchools.size > 0 && (
+          {/* Selection Controls - Yalnız workflowMode false olanda göstər */}
+          {!workflowMode && selectedSchools.size > 0 && (
             <div className="flex items-center justify-between p-3 bg-primary/5 rounded-lg border">
               <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center gap-2">
@@ -360,6 +362,31 @@ export const SectorAdminSchoolList: React.FC<SectorAdminSchoolListProps> = ({
                     Seçimi Ləğv Et
                   </Button>
                 </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Workflow mode selection summary */}
+          {workflowMode && selectedSchools.size > 0 && (
+            <div className="p-3 bg-primary/5 rounded-lg border mb-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Badge variant="default">
+                    {selectedSchools.size} məktəb seçilib
+                  </Badge>
+                  {bulkMode && (
+                    <Badge variant="outline">
+                      Bulk rejim
+                    </Badge>
+                  )}
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={clearSelection}
+                >
+                  Seçimi Ləğv Et
+                </Button>
               </div>
             </div>
           )}
@@ -436,8 +463,8 @@ export const SectorAdminSchoolList: React.FC<SectorAdminSchoolListProps> = ({
                             {school.completion_rate || 0}% tamamlandı
                           </Badge>
                           
-                          {/* Action Button */}
-                          {selectedSchoolId === school.id && (
+                          {/* Action Button - Workflow mode-da göstərmə */}
+                          {!workflowMode && selectedSchoolId === school.id && (
                             <Button 
                               size="sm"
                               onClick={(e) => {
@@ -451,6 +478,13 @@ export const SectorAdminSchoolList: React.FC<SectorAdminSchoolListProps> = ({
                               <Edit3 className="h-3 w-3 mr-1" />
                               Daxil Et
                             </Button>
+                          )}
+                          
+                          {/* Workflow mode selection indicator */}
+                          {workflowMode && selectedSchools.has(school.id) && (
+                            <div className="text-xs text-primary font-medium">
+                              Seçilib
+                            </div>
                           )}
                         </div>
                       </div>
