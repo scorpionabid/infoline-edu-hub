@@ -1,8 +1,10 @@
+
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { School, Building2, Edit3, Users, Clock, CheckCircle } from 'lucide-react';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 interface EntryModeSelectorProps {
   selectedMode: 'single' | 'bulk' | null;
@@ -15,13 +17,15 @@ export const EntryModeSelector: React.FC<EntryModeSelectorProps> = ({
   onModeSelect,
   className
 }) => {
+  const { t } = useTranslation();
+
   return (
     <div className={`space-y-6 ${className}`}>
       {/* Header */}
       <div className="text-center space-y-2">
-        <h2 className="text-2xl font-semibold">Melumat Daxil Etme</h2>
+        <h2 className="text-2xl font-semibold">{t('dataEntry.data_entry')}</h2>
         <p className="text-muted-foreground">
-          Hansi usulla melumat daxil etmek istediyinizi secin
+          {t('dataEntry.workflow.mode_selection')}
         </p>
       </div>
 
@@ -41,9 +45,9 @@ export const EntryModeSelector: React.FC<EntryModeSelectorProps> = ({
                 <School className="h-6 w-6 text-blue-600" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold">Tek Mekteb</h3>
+                <h3 className="text-lg font-semibold">{t('dataEntry.workflow.single_school')}</h3>
                 <p className="text-sm text-muted-foreground">
-                  Bir mekteb ucun melumat daxil edin
+                  {t('dataEntry.workflow.single_description')}
                 </p>
               </div>
             </div>
@@ -52,15 +56,15 @@ export const EntryModeSelector: React.FC<EntryModeSelectorProps> = ({
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm">
                 <CheckCircle className="h-4 w-4 text-green-500" />
-                <span>Tez ve asan daxil etme</span>
+                <span>{t('dataEntry.workflow.quick_easy')}</span>
               </div>
               <div className="flex items-center gap-2 text-sm">
                 <CheckCircle className="h-4 w-4 text-green-500" />
-                <span>Mekteb-spesifik melumatlar</span>
+                <span>{t('dataEntry.workflow.school_specific')}</span>
               </div>
               <div className="flex items-center gap-2 text-sm">
                 <CheckCircle className="h-4 w-4 text-green-500" />
-                <span>Real-time validation</span>
+                <span>{t('dataEntry.workflow.real_time_validation')}</span>
               </div>
             </div>
 
@@ -68,9 +72,9 @@ export const EntryModeSelector: React.FC<EntryModeSelectorProps> = ({
             <div className="pt-2 border-t">
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Ideal:</span>
+                <span className="text-sm text-muted-foreground">{t('common.ideal')}:</span>
                 <Badge variant="secondary" className="text-xs">
-                  Ferdi melumatlar
+                  {t('dataEntry.workflow.ideal_individual')}
                 </Badge>
               </div>
             </div>
@@ -84,7 +88,7 @@ export const EntryModeSelector: React.FC<EntryModeSelectorProps> = ({
                 onModeSelect('single');
               }}
             >
-              Tek Mekteb Sec
+              {t('dataEntry.workflow.single_school')} {t('common.select')}
             </Button>
           </CardContent>
         </Card>
@@ -103,9 +107,9 @@ export const EntryModeSelector: React.FC<EntryModeSelectorProps> = ({
                 <Building2 className="h-6 w-6 text-purple-600" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold">Bulk Mekteb</h3>
+                <h3 className="text-lg font-semibold">{t('dataEntry.workflow.bulk_school')}</h3>
                 <p className="text-sm text-muted-foreground">
-                  Coxlu mekteb ucun eyni melumat
+                  {t('dataEntry.workflow.bulk_description')}
                 </p>
               </div>
             </div>
@@ -114,15 +118,15 @@ export const EntryModeSelector: React.FC<EntryModeSelectorProps> = ({
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm">
                 <CheckCircle className="h-4 w-4 text-green-500" />
-                <span>Vaxt qenaeti</span>
+                <span>{t('dataEntry.workflow.time_saving')}</span>
               </div>
               <div className="flex items-center gap-2 text-sm">
                 <CheckCircle className="h-4 w-4 text-green-500" />
-                <span>Coxlu mekteb secimi</span>
+                <span>{t('dataEntry.workflow.multi_selection')}</span>
               </div>
               <div className="flex items-center gap-2 text-sm">
                 <CheckCircle className="h-4 w-4 text-green-500" />
-                <span>Toplu emeliyyatlar</span>
+                <span>{t('dataEntry.workflow.bulk_operations')}</span>
               </div>
             </div>
 
@@ -130,9 +134,9 @@ export const EntryModeSelector: React.FC<EntryModeSelectorProps> = ({
             <div className="pt-2 border-t">
               <div className="flex items-center gap-2">
                 <Users className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Ideal:</span>
+                <span className="text-sm text-muted-foreground">{t('common.ideal')}:</span>
                 <Badge variant="secondary" className="text-xs">
-                  Standart melumatlar
+                  {t('dataEntry.workflow.ideal_standard')}
                 </Badge>
               </div>
             </div>
@@ -146,7 +150,7 @@ export const EntryModeSelector: React.FC<EntryModeSelectorProps> = ({
                 onModeSelect('bulk');
               }}
             >
-              Bulk Mekteb Sec
+              {t('dataEntry.workflow.bulk_school')} {t('common.select')}
             </Button>
           </CardContent>
         </Card>
@@ -158,14 +162,14 @@ export const EntryModeSelector: React.FC<EntryModeSelectorProps> = ({
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 text-primary">
             <CheckCircle className="h-4 w-4" />
             <span className="text-sm font-medium">
-              {selectedMode === 'single' ? 'Tek mekteb rejimi secildi' : 'Bulk mekteb rejimi secildi'}
+              {selectedMode === 'single' 
+                ? t('dataEntry.workflow.single_mode_selected') 
+                : t('dataEntry.workflow.bulk_mode_selected')
+              }
             </span>
           </div>
           <p className="text-sm text-muted-foreground">
-            {selectedMode === 'single' 
-              ? 'Indi kateqoriya ve sutun secimi ucun novbeti addima kecin'
-              : 'Indi kateqoriya ve sutun secimi ucun novbeti addima kecin'
-            }
+            {t('dataEntry.workflow.proceed_next')}
           </p>
         </div>
       )}
