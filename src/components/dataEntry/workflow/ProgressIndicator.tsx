@@ -30,7 +30,8 @@ export const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
   // 🆕 Yeni parametr
   entryType = 'school'
 }) => {
-  const steps: ProgressStep[] = [
+  const { t } = useTranslation();
+  const allSteps: ProgressStep[] = [
     { 
       key: 'mode', 
       label: 'Rejim Secimi', 
