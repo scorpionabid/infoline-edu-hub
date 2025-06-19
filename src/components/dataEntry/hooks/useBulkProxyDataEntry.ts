@@ -42,6 +42,7 @@ export const useBulkProxyDataEntry = ({
       const { data, error } = await supabase
         .from('categories')
         .select('id, name, description')
+        .eq('status', 'active')
         .order('name', { ascending: true });
       
       if (error) throw error;
@@ -51,67 +52,35 @@ export const useBulkProxyDataEntry = ({
     staleTime: 5 * 60 * 1000
   });
 
-  // Seçilmiş kateqoriya üzrə sütunları əldə et (məktəbadmin sorgu formatı ilə eyni)
+  // Seçilmiş kateqoriya üzrə sütunları əldə et (yalnız aktiv sütunlar)
   const { data: columns, isLoading: isLoadingColumns, error: columnsError } = useQuery({
     queryKey: ['category-columns', selectedCategory],
     queryFn: async () => {
       console.log('Sütunları yükləməyə çalışırıq. Kateqoriya ID:', selectedCategory);
       
-      // Cədvəlin strukturu haqqında məlumat üçün
       try {
-        const { data: columnsInfo, error: infoError } = await supabase
-          .rpc('get_columns_table_info');
-          
-        if (!infoError && columnsInfo) {
-          console.log('Columns cədvəli strukturu:', columnsInfo);
-        }
-      } catch (infoErr) {
-        console.log('Table info xətası:', infoErr);
-      }
-      
-      // Əsas sorgu – məktəbadmin üçün işləyən eyni format
-      try {
-        // Sütunları yükləyək
-        let query = supabase
+        // Əsas sorqu – yalnız aktiv sütunlar
+        const { data, error } = await supabase
           .from('columns')
-          .select('*')
-          .eq('category_id', selectedCategory);
-        
-        // Sıralama əlavə etməyə cəhd edək
-        try {
-          query = query.order('order_index', { ascending: true });
-        } catch (sortErr) {
-          console.log('Sıralama xətası, but continuing:', sortErr);
-        }
-        
-        const { data, error } = await query;
+          .select('id, name, type, is_required, placeholder, help_text, default_value, options, validation, status')
+          .eq('category_id', selectedCategory)
+          .eq('status', 'active') // FILTER: Yalnız aktiv sütunlar
+          .order('name', { ascending: true }); // Name üzrə sırala (hər zaman mövcuddur)
         
         if (error) {
           console.error('Sütunlar yüklənərkən xəta:', error);
           throw error;
         }
         
-        // Debug üçün ümumi sütunları da yükləyək
-        try {
-          const { data: allColumns } = await supabase
-            .from('columns')
-            .select('*')
-            .limit(5);
-          
-          console.log(`Ümumi sütunlar (ilk 5):`, allColumns);
-        } catch (debugErr) {
-          console.log('Debug sorgusu xətası:', debugErr);
-        }
-        
         if (data && data.length > 0) {
-          console.log(`Yüklənən sütunlar (${data.length}):`, data);
+          console.log(`Yüklənən aktiv sütunlar (${data.length}):`, data);
           return data;
         } else {
-          console.log('Bu kateqoriya üçün sütun tapılmadı');
+          console.log('Bu kateqoriya üçün aktiv sütun tapılmadı');
           return [];
         }
       } catch (err) {
-        console.error('Sütun sorgusu xətası:', err);
+        console.error('Sütun sorqusu xətası:', err);
         throw err;
       }
     },
@@ -128,7 +97,7 @@ export const useBulkProxyDataEntry = ({
     }
     
     if (selectedCategory && !isLoadingColumns && columns && columns.length === 0) {
-      console.log('Kateqoriya seçilib ancaq sütunlar boşdur. Kateqoriya ID:', selectedCategory);
+      console.log('Kateqoriya seçilib ancaq aktiv sütunlar boşdur. Kateqoriya ID:', selectedCategory);
       
       // Kateqoriyanın mövcudluğunu yoxlayırıq
       supabase
@@ -153,6 +122,7 @@ export const useBulkProxyDataEntry = ({
         .from('schools')
         .select('id, name, code')
         .eq('sector_id', sectorId)
+        .eq('status', 'active')
         .order('name', { ascending: true });
       
       if (error) throw error;
@@ -179,7 +149,7 @@ export const useBulkProxyDataEntry = ({
 
   // Topluca yaddaşda saxla
   const handleBulkSave = useCallback(async () => {
-    if (!selectedCategory || !selectedColumn || selectedSchools.length === 0) {
+    if (!selectedCategory || !selectedColumn || selectedSchools.length === 0 || !bulkValue.trim()) {
       return;
     }
     
@@ -187,25 +157,41 @@ export const useBulkProxyDataEntry = ({
     setSaveError(null);
     
     try {
-      const result = await ProxyDataEntryService.bulkSaveProxyFormData(
-        selectedSchools,
-        selectedCategory,
-        selectedColumn,
-        bulkValue
-      );
+      const results = [];
       
-      if (result.success) {
+      // Hər məktəb üçün ayrı-ayrılıqda məlumat saxla
+      for (const schoolId of selectedSchools) {
+        const formData = { [selectedColumn]: bulkValue };
+        
+        const result = await ProxyDataEntryService.saveProxyFormData(formData, {
+          categoryId: selectedCategory,
+          schoolId: schoolId,
+          userId: sectorId, // sector admin ID-si
+          proxyUserId: sectorId,
+          proxyUserRole: 'sectoradmin',
+          originalSchoolId: schoolId,
+          proxyReason: `Bulk data entry: ${selectedColumn} = ${bulkValue}`,
+          status: 'draft'
+        });
+        
+        results.push(result);
+      }
+      
+      const successfulCount = results.filter(r => r.success).length;
+      const failedCount = results.length - successfulCount;
+      
+      if (successfulCount > 0) {
         setLastSaved(new Date());
         toast({
           title: 'Məlumatlar yadda saxlanıldı',
-          description: 'Məlumatlar müvəqqəti yadda saxlanıldı',
-          variant: 'default'
+          description: `${successfulCount} məktəb üçün məlumatlar müvəqqəti yadda saxlanıldı${failedCount > 0 ? `, ${failedCount} məktəb üçün xəta baş verdi` : ''}`,
+          variant: failedCount === 0 ? 'default' : 'destructive'
         });
       } else {
-        setSaveError(result.message || 'Məlumatları yadda saxlamaq mümkün olmadı');
+        setSaveError('Heç bir məktəb üçün məlumat saxlana bilmədi');
         toast({
           title: 'Xəta',
-          description: result.message || 'Məlumatları yadda saxlamaq mümkün olmadı',
+          description: 'Heç bir məktəb üçün məlumat saxlana bilmədi',
           variant: 'destructive'
         });
       }
@@ -219,7 +205,7 @@ export const useBulkProxyDataEntry = ({
     } finally {
       setIsSaving(false);
     }
-  }, [selectedCategory, selectedColumn, selectedSchools, bulkValue, toast]);
+  }, [selectedCategory, selectedColumn, selectedSchools, bulkValue, toast, sectorId]);
 
   // Topluca təqdim et
   const handleBulkSubmit = useCallback(async () => {
@@ -234,28 +220,38 @@ export const useBulkProxyDataEntry = ({
       // Əvvəlcə yadda saxla
       await handleBulkSave();
       
-      const result = await ProxyDataEntryService.bulkSubmitProxyData(
-        selectedSchools,
-        selectedCategory,
-        selectedColumn,
-        bulkValue
-      );
+      // Hər məktəb üçün ayrı-ayrılıqda submit et
+      const results = [];
+      for (const schoolId of selectedSchools) {
+        const result = await ProxyDataEntryService.submitProxyData({
+          categoryId: selectedCategory,
+          schoolId: schoolId,
+          proxyUserId: sectorId, // sector admin istifadəçi ID-si
+          proxyUserRole: 'sectoradmin',
+          proxyReason: `Bulk data entry for column: ${selectedColumn}`,
+          autoApprove: true
+        });
+        results.push(result);
+      }
       
-      if (result.success) {
+      const successfulCount = results.filter(r => r.success).length;
+      const failedCount = results.length - successfulCount;
+      
+      if (successfulCount > 0) {
         toast({
           title: 'Məlumatlar təqdim edildi',
-          description: 'Məlumatlar uğurla təqdim edildi və təsdiq edildi',
-          variant: 'default'
+          description: `${successfulCount} məktəb üçün məlumatlar uğurla təqdim edildi${failedCount > 0 ? `, ${failedCount} məktəb üçün xəta baş verdi` : ''}`,
+          variant: failedCount === 0 ? 'default' : 'destructive'
         });
         
-        if (onComplete) {
+        if (failedCount === 0 && onComplete) {
           onComplete();
         }
       } else {
-        setSubmitError(result.message || 'Məlumatları təqdim etmək mümkün olmadı');
+        setSubmitError('Heç bir məktəb üçün məlumat təqdim edilə bilmədi');
         toast({
           title: 'Xəta',
-          description: result.message || 'Məlumatları təqdim etmək mümkün olmadı',
+          description: 'Heç bir məktəb üçün məlumat təqdim edilə bilmədi',
           variant: 'destructive'
         });
       }
@@ -269,7 +265,7 @@ export const useBulkProxyDataEntry = ({
     } finally {
       setIsSubmitting(false);
     }
-  }, [selectedCategory, selectedColumn, selectedSchools, bulkValue, handleBulkSave, toast, onComplete]);
+  }, [selectedCategory, selectedColumn, selectedSchools, bulkValue, handleBulkSave, toast, onComplete, sectorId]);
 
   return {
     // Data

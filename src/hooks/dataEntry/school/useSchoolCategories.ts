@@ -23,7 +23,7 @@ export const useSchoolCategories = (schoolId?: string) => {
         `)
         .in('assignment', ['all', 'schools'])
         .eq('status', 'active')
-        .order('order_index');
+        .order('name');
 
       if (error) throw error;
 

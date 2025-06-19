@@ -11,7 +11,7 @@ export const useCategories = () => {
         .from('categories')
         .select('*')
         .eq('status', 'active')
-        .order('order_index', { ascending: true });
+        .order('name', { ascending: true }); // name üzrə sırala çünki order_index mövcud deyil
 
       if (error) {
         console.error('Error fetching categories:', error);

@@ -10,7 +10,7 @@ export const useColumnsQuery = (categoryId?: string) => {
       let query = supabase
         .from('columns')
         .select('*')
-        .order('order_index', { ascending: true });
+        .order('name', { ascending: true }); // name üzrə sırala çünki order_index mövcud deyil
 
       if (categoryId) {
         query = query.eq('category_id', categoryId);

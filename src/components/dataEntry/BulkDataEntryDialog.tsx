@@ -172,7 +172,8 @@ export const BulkDataEntryDialog: React.FC<BulkDataEntryDialogProps> = ({
           });
 
           if (!saveResult.success) {
-            throw new Error(saveResult.error || 'Saxlama xətası');
+            console.error('Save failed for school:', schoolId, saveResult);
+            throw new Error(saveResult.error || saveResult.message || 'Saxlama xətası');
           }
 
           // Submit for auto-approval
@@ -186,7 +187,8 @@ export const BulkDataEntryDialog: React.FC<BulkDataEntryDialogProps> = ({
           });
 
           if (!submitResult.success) {
-            throw new Error(submitResult.error || 'Təsdiq xətası');
+            console.error('Submit failed for school:', schoolId, submitResult);
+            throw new Error(submitResult.error || submitResult.message || 'Təsdiq xətası');
           }
 
           successful.push(schoolId);

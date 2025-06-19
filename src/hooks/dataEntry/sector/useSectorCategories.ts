@@ -22,7 +22,7 @@ export const useSectorCategories = (sectorId?: string) => {
         `)
         .in('assignment', ['all', 'sectors'])
         .eq('status', 'active')
-        .order('order_index');
+        .order('name');
 
       if (error) throw error;
 

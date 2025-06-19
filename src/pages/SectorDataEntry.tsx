@@ -1,8 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { DataEntryContainer } from '@/components/dataEntry/DataEntryContainer';
 import { SectorDataEntry as SectorDataEntryComponent } from '@/components/dataEntry/SectorDataEntry';
 import SectorAdminProxyDataEntry from '@/components/dataEntry/SectorAdminProxyDataEntry';
+import { BulkProxyDataEntry } from '@/components/dataEntry/bulk';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
@@ -30,11 +30,38 @@ const SectorDataEntryPage: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const user = useAuthStore(selectUser);
+  const [userSectorId, setUserSectorId] = useState<string>('');
+  
+  // Get user's sector ID
+  useEffect(() => {
+    const fetchUserSectorId = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('user_roles')
+          .select('sector_id')
+          .eq('user_id', user.id)
+          .eq('role', 'sectoradmin')
+          .single();
+          
+        if (data?.sector_id) {
+          setUserSectorId(data.sector_id);
+        }
+      } catch (error) {
+        console.error('Error fetching user sector ID:', error);
+      }
+    };
+    
+    fetchUserSectorId();
+  }, [user]);
+
   const [selectedSchoolId, setSelectedSchoolId] = useState<string | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [selectedColumnId, setSelectedColumnId] = useState<string | null>(null);
   const [showDataEntry, setShowDataEntry] = useState(false);
   const [bulkMode, setBulkMode] = useState(false);
+  const [showAdvancedBulkEntry, setShowAdvancedBulkEntry] = useState(false);
   
   // Kateqoriyaları əldə etmək
   const { data: categories, isLoading: categoriesLoading } = useQuery({
@@ -62,7 +89,7 @@ const SectorDataEntryPage: React.FC = () => {
         .select('*')
         .eq('category_id', selectedCategoryId)
         .eq('status', 'active')
-        .order('order');
+        .order('order_index');
         
       if (error) throw error;
       return data || [];
@@ -101,8 +128,8 @@ const SectorDataEntryPage: React.FC = () => {
       return;
     }
     
-    // Burada bulk data daxil etmə üçün dialog göstəriləcək
-    setShowBulkDialog(true);
+    // Show the advanced bulk entry component
+    setShowAdvancedBulkEntry(true);
   };
 
   // Data daxil etmə tamamlandıqda
@@ -241,17 +268,25 @@ const SectorDataEntryPage: React.FC = () => {
               </div>
             )}
             
-            {/* Bulk rejim düyməsi */}
+            {/* Bulk rejim düymələri */}
             {selectedCategoryId && selectedColumnId && (
-              <div className="flex items-end mt-auto pt-1">
+              <div className="flex items-end gap-2 mt-auto pt-1">
                 <Button 
                   variant={bulkMode ? "default" : "outline"} 
                   size="sm" 
                   onClick={toggleBulkMode}
-                  className="ml-auto mt-4 md:mt-0"
                 >
                   <CheckCircle2 className="h-4 w-4 mr-2" />
                   {bulkMode ? "Bulk rejim aktiv" : "Bulk rejim"}
+                </Button>
+                
+                <Button 
+                  variant="secondary" 
+                  size="sm" 
+                  onClick={() => setShowAdvancedBulkEntry(true)}
+                >
+                  <Edit3 className="h-4 w-4 mr-2" />
+                  Qabaqcıl Bulk Entry
                 </Button>
               </div>
             )}
@@ -286,6 +321,23 @@ const SectorDataEntryPage: React.FC = () => {
               columnId={selectedColumnId}
               onClose={handleDataEntryClose}
               onComplete={handleDataEntryComplete}
+            />
+          </CardContent>
+        </Card>
+      ) : showAdvancedBulkEntry ? (
+        <Card>
+          <CardContent className="p-6">
+            <BulkProxyDataEntry
+              sectorId={userSectorId}
+              onComplete={() => {
+                setShowAdvancedBulkEntry(false);
+                toast({
+                  title: 'Bulk data entry tamamlandı',
+                  description: 'Məlumatlar uğurla daxil edildi',
+                  variant: 'default'
+                });
+              }}
+              onClose={() => setShowAdvancedBulkEntry(false)}
             />
           </CardContent>
         </Card>

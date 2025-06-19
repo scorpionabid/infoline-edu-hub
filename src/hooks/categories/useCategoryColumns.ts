@@ -13,7 +13,7 @@ const useCategoryColumns = (categoryId: string | undefined) => {
         .from('columns')
         .select('*')
         .eq('category_id', categoryId)
-        .order('order_index', { ascending: true });
+        .order('name', { ascending: true }); // name üzrə sırala çünki order_index mövcud deyil
         
       if (error) throw error;
       

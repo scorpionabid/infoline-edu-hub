@@ -24,7 +24,7 @@ export const useSchoolDataEntry = (schoolId?: string) => {
           columns(*)
         `)
         .eq('status', 'active')
-        .order('order_index');
+        .order('name');
 
       if (error) throw error;
 

@@ -71,7 +71,8 @@ export const useProxyDataEntry = ({
         .from('columns')
         .select('*')
         .eq('category_id', categoryId)
-        .order('order_index', { ascending: true });
+        .eq('status', 'active') // FILTER: Yalnz aktiv sütunlar
+        .order('name', { ascending: true }); // name üzrə sırala
       
       if (columnId) {
         query = query.eq('id', columnId);
@@ -137,11 +138,16 @@ export const useProxyDataEntry = ({
     setSaveAttempts(prev => prev + 1);
     
     try {
-      const result = await ProxyDataEntryService.saveProxyFormData(
-        schoolId,
+      const result = await ProxyDataEntryService.saveProxyFormData(formData, {
         categoryId,
-        formData
-      );
+        schoolId,
+        userId: schoolId, // Use schoolId for now
+        proxyUserId: schoolId,
+        proxyUserRole: 'sectoradmin',
+        originalSchoolId: schoolId,
+        proxyReason: 'Data entry by sector admin',
+        status: 'draft'
+      });
 
       if (result.success) {
         setHasUnsavedChanges(false);
@@ -170,7 +176,7 @@ export const useProxyDataEntry = ({
     } finally {
       setIsSaving(false);
     }
-  }, [hasUnsavedChanges, schoolId, categoryId, formData, toast]);
+  }, [hasUnsavedChanges, categoryId, formData, toast, schoolId]);
 
   // Input dəyişiklik handler-i
   const handleInputChange = useCallback((columnId: string, value: string) => {
@@ -191,11 +197,14 @@ export const useProxyDataEntry = ({
       // Əvvəlcə yadda saxla, sonra təqdim et
       await handleSave();
 
-      const result = await ProxyDataEntryService.submitProxyData(
-        schoolId,
+      const result = await ProxyDataEntryService.submitProxyData({
         categoryId,
-        formData
-      );
+        schoolId,
+        proxyUserId: schoolId, // Use schoolId as proxy user id for now
+        proxyUserRole: 'sectoradmin',
+        proxyReason: 'Data entry by sector admin',
+        autoApprove: true
+      });
 
       if (result.success) {
         toast({
@@ -223,7 +232,7 @@ export const useProxyDataEntry = ({
     } finally {
       setIsSubmitting(false);
     }
-  }, [schoolId, categoryId, formData, toast, onComplete, handleSave]);
+  }, [categoryId, formData, toast, onComplete, handleSave, schoolId]);
 
   // Error reset
   const resetError = useCallback(() => {

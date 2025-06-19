@@ -54,7 +54,7 @@ export const useDataEntryManager = (options?: DataEntryManagerOptions | Category
           columns(*)
         `)
         .eq('status', 'active')
-        .order('order_index');
+        .order('name'); // name üzrə sırala çünki order_index mövcud deyil
 
       if (assignmentFilter && assignmentFilter !== 'all') {
         query = query.in('assignment', [assignmentFilter, 'all']);

@@ -29,6 +29,7 @@ export interface ProxyDataEntryResult {
   success: boolean;
   entryId?: string;
   message?: string;
+  error?: string; // Add error field
   errors?: Record<string, string>;
   autoApproved?: boolean;
 }
@@ -46,4 +47,25 @@ export interface DataEntryTableData {
   created_at: string;
   updated_at: string;
   submitted_by: string;
+}
+
+// Additional interfaces needed for proxy data entry
+export interface SaveProxyFormDataOptions {
+  categoryId: string;
+  schoolId: string;
+  userId: string;
+  proxyUserId: string;
+  proxyUserRole: string;
+  originalSchoolId: string;
+  proxyReason: string;
+  status: string;
+}
+
+export interface SubmitProxyDataOptions {
+  categoryId: string;
+  schoolId: string;
+  proxyUserId: string;
+  proxyUserRole: string;
+  proxyReason: string;
+  autoApprove: boolean;
 }

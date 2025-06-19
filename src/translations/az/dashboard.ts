@@ -69,6 +69,18 @@ export const dashboard = {
     no_activity_yet: 'Hələ heç bir fəaliyyət yoxdur'
   },
 
+  // SectorAdmin specific translations
+  sectoradmin: {
+    dashboard_title: 'Sektor Admin Dashboard',
+    bulk_data_entry: 'Topluca Data Daxil Et',
+    bulk_data_entry_description: 'Seçilmiş məktəblər üçün eyni məlumatı toplu şəkildə daxil edin',
+    select_schools: 'Məktəbləri seçin',
+    select_category: 'Kateqoriya seçin',
+    select_column: 'Sütun seçin',
+    enter_data: 'Məlumat daxil edin',
+    bulk_operations: 'Toplu əməliyyatlar'
+  },
+
   // Cards and widgets
   cards: {
     overview: 'Ümumi Baxış',
