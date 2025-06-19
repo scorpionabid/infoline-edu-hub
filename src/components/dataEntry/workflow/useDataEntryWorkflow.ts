@@ -21,6 +21,10 @@ interface DataEntryWorkflowState {
   
   // Progress
   completedSteps: string[];
+  
+  // 🆕 Yeni field-lər
+  entryType: 'school' | 'sector';
+  targetType: 'schools' | 'sector';
 }
 
 export const useDataEntryWorkflow = () => {
@@ -33,13 +37,21 @@ export const useDataEntryWorkflow = () => {
     inputValue: '',
     isLoading: false,
     errors: {},
-    completedSteps: []
+    completedSteps: [],
+    
+    // 🆕 Yeni field-lər default dəyərləri
+    entryType: 'school',
+    targetType: 'schools'
   });
 
   // Step validation logic
   const canProceedToContext = state.mode !== null;
   const canProceedToTarget = state.selectedCategory && state.selectedColumn;
-  const canProceedToInput = state.selectedSchools.length > 0;
+  
+  // 🆕 Sector mode üçün target step skip edilir
+  const canProceedToInput = state.entryType === 'sector' 
+    ? true  // Sector mode-da target step skip olunur
+    : state.selectedSchools.length > 0;
 
   const canProceed = {
     context: canProceedToContext,
@@ -47,11 +59,16 @@ export const useDataEntryWorkflow = () => {
     input: canProceedToInput
   };
 
-  // Step navigation
+  // Step navigation - sector mode üçün target step skip edilir
   const nextStep = useCallback(() => {
     const stepOrder = ['mode', 'context', 'target', 'input'];
     const currentIndex = stepOrder.indexOf(state.step);
-    const nextStepKey = stepOrder[currentIndex + 1];
+    let nextStepKey = stepOrder[currentIndex + 1];
+    
+    // 🆕 Sector mode-da context-dən birbaşa input-a keç
+    if (state.entryType === 'sector' && state.step === 'context') {
+      nextStepKey = 'input';
+    }
     
     if (nextStepKey) {
       setState(prev => ({
@@ -60,12 +77,17 @@ export const useDataEntryWorkflow = () => {
         completedSteps: [...prev.completedSteps, prev.step]
       }));
     }
-  }, [state.step]);
+  }, [state.step, state.entryType]);
 
   const previousStep = useCallback(() => {
     const stepOrder = ['mode', 'context', 'target', 'input'];
     const currentIndex = stepOrder.indexOf(state.step);
-    const prevStepKey = stepOrder[currentIndex - 1];
+    let prevStepKey = stepOrder[currentIndex - 1];
+    
+    // 🆕 Sector mode-da input-dan birbaşa context-ə qayit
+    if (state.entryType === 'sector' && state.step === 'input') {
+      prevStepKey = 'context';
+    }
     
     if (prevStepKey) {
       setState(prev => ({
@@ -74,7 +96,7 @@ export const useDataEntryWorkflow = () => {
         completedSteps: prev.completedSteps.filter(step => step !== prevStepKey)
       }));
     }
-  }, [state.step]);
+  }, [state.step, state.entryType]);
 
   const goToStep = useCallback((step: DataEntryWorkflowState['step']) => {
     setState(prev => ({
@@ -191,6 +213,16 @@ export const useDataEntryWorkflow = () => {
     }));
   }, []);
 
+  // 🆕 Entry type management
+  const setEntryType = useCallback((entryType: 'school' | 'sector') => {
+    setState(prev => ({
+      ...prev,
+      entryType,
+      targetType: entryType === 'sector' ? 'sector' : 'schools',
+      selectedSchools: [] // Reset target selection when type changes
+    }));
+  }, []);
+
   // Reset workflow
   const resetWorkflow = useCallback(() => {
     setState({
@@ -202,7 +234,11 @@ export const useDataEntryWorkflow = () => {
       inputValue: '',
       isLoading: false,
       errors: {},
-      completedSteps: []
+      completedSteps: [],
+      
+      // 🆕 Yeni field-lər default dəyərləri
+      entryType: 'school',
+      targetType: 'schools'
     });
   }, []);
 
@@ -228,6 +264,9 @@ export const useDataEntryWorkflow = () => {
     
     // Mode management
     setMode,
+    
+    // 🆕 Entry type management
+    setEntryType,
     
     // Context management
     setCategoryAndColumn,

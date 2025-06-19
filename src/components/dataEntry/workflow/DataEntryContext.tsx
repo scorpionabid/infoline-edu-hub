@@ -32,6 +32,10 @@ interface DataEntryContextProps {
   onColumnChange: (columnId: string) => void;
   mode: 'single' | 'bulk';
   className?: string;
+  
+  // 🆕 Yeni parametrlər (optional - backwards compatible)
+  userRole?: string;
+  entryType?: 'school' | 'sector';
 }
 
 export const DataEntryContext: React.FC<DataEntryContextProps> = ({
@@ -40,17 +44,32 @@ export const DataEntryContext: React.FC<DataEntryContextProps> = ({
   onCategoryChange,
   onColumnChange,
   mode,
-  className
+  className,
+  
+  // 🆕 Yeni parametrlər
+  userRole,
+  entryType = 'school'
 }) => {
-  // Categories Query
+  // Categories Query - role-based filtering əlavə edildi
   const { data: categories, isLoading: categoriesLoading, error: categoriesError } = useQuery({
-    queryKey: ['categories'],
+    queryKey: ['categories', userRole, entryType],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('categories')
         .select('*')
-        .eq('status', 'active')
-        .order('name');
+        .eq('status', 'active');
+      
+      // 🎯 Role-based filtering
+      if (userRole === 'sectoradmin' && entryType === 'sector') {
+        // Sektoradmin sector mode-da: yalnız 'sectors' və 'all' assignment-li kategoriler
+        query = query.in('assignment', ['sectors', 'all']);
+      } else if (userRole === 'schooladmin' || entryType === 'school') {
+        // Məktəb adminləri və school mode: yalnız 'all' assignment-li kategoriler
+        query = query.eq('assignment', 'all');
+      }
+      // SuperAdmin və RegionAdmin üçün filterlə yoxdur (hər şeyi görür)
+      
+      const { data, error } = await query.order('name');
         
       if (error) throw error;
       return data as Category[];
@@ -95,9 +114,13 @@ export const DataEntryContext: React.FC<DataEntryContextProps> = ({
           Kateqoriya ve Sutun Secimi
         </h2>
         <p className="text-muted-foreground">
-          {mode === 'single' 
-            ? 'Bir mekteb ucun melumat daxil edilecek kateqoriya ve sutunu secin'
-            : 'Coxlu mekteb ucun melumat daxil edilecek kateqoriya ve sutunu secin'
+          {entryType === 'sector'
+            ? mode === 'single'
+              ? 'Sektor ucun melumat daxil edilecek kateqoriya ve sutunu secin'
+              : 'Sektor ucun coxlu melumat daxil edilecek kateqoriya ve sutunu secin'
+            : mode === 'single' 
+              ? 'Bir mekteb ucun melumat daxil edilecek kateqoriya ve sutunu secin'
+              : 'Coxlu mekteb ucun melumat daxil edilecek kateqoriya ve sutunu secin'
           }
         </p>
       </div>
@@ -165,12 +188,29 @@ export const DataEntryContext: React.FC<DataEntryContextProps> = ({
                       </div>
                     )}
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-xs">
-                        {selectedCategoryDetails.assignment === 'all' ? 'Butun istifadeciler' : 'Sektorlar'}
+                      <Badge 
+                        variant={selectedCategoryDetails.assignment === 'sectors' ? 'default' : 'outline'} 
+                        className={`text-xs ${
+                          selectedCategoryDetails.assignment === 'sectors' 
+                            ? 'bg-blue-100 text-blue-800 border-blue-200' 
+                            : ''
+                        }`}
+                      >
+                        {selectedCategoryDetails.assignment === 'all' 
+                          ? 'Butun istifadeciler' 
+                          : selectedCategoryDetails.assignment === 'sectors'
+                          ? '🏢 Sektorlara aid'
+                          : 'Diger'
+                        }
                       </Badge>
                       {selectedCategoryDetails.deadline && (
                         <Badge variant="outline" className="text-xs">
                           Son tarix: {new Date(selectedCategoryDetails.deadline).toLocaleDateString()}
+                        </Badge>
+                      )}
+                      {entryType === 'sector' && (
+                        <Badge variant="secondary" className="text-xs">
+                          🏢 Sektor melumat rejimi
                         </Badge>
                       )}
                     </div>
@@ -275,7 +315,12 @@ export const DataEntryContext: React.FC<DataEntryContextProps> = ({
                 <p className="text-sm text-muted-foreground">
                   Siz <strong>{selectedCategoryDetails?.name}</strong> kateqoriyasinda{' '}
                   <strong>{selectedColumnDetails?.name}</strong> sutunu ucun{' '}
-                  {mode === 'single' ? 'bir mektebe' : 'coxlu mektebe'} melumat daxil edeceksiniz.
+                  {entryType === 'sector'
+                    ? 'sektor melumat'
+                    : mode === 'single' 
+                      ? 'bir mektebe' 
+                      : 'coxlu mektebe'
+                  } melumat daxil edeceksiniz.
                 </p>
                 <div className="flex items-center gap-2 mt-2">
                   <Badge variant="outline">
@@ -287,7 +332,12 @@ export const DataEntryContext: React.FC<DataEntryContextProps> = ({
                   </Badge>
                   <span className="text-muted-foreground">→</span>
                   <Badge variant="default">
-                    {mode === 'single' ? 'Tek mekteb' : 'Bulk mekteb'}
+                    {entryType === 'sector'
+                      ? 'Sektor'
+                      : mode === 'single' 
+                        ? 'Tek mekteb' 
+                        : 'Bulk mekteb'
+                    }
                   </Badge>
                 </div>
               </div>

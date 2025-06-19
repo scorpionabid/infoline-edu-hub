@@ -14,40 +14,54 @@ interface ProgressIndicatorProps {
   completedSteps: string[];
   mode?: 'single' | 'bulk';
   className?: string;
+  
+  // 🆕 Yeni parametr
+  entryType?: 'school' | 'sector';
 }
 
 export const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
   currentStep,
   completedSteps,
   mode = 'single',
-  className
+  className,
+  
+  // 🆕 Yeni parametr
+  entryType = 'school'
 }) => {
-  const steps: ProgressStep[] = [
+  // 🆕 Sector mode-da target step skip edilir
+  const allSteps: ProgressStep[] = [
     { 
       key: 'mode', 
-      label: 'Rejim Secimi', 
+      label: 'Rejim Seçimi', 
       icon: <Target className="h-4 w-4" />,
-      description: 'Tek ve ya bulk melumat daxil etme'
+      description: 'Tək və ya bulk məlumat daxil etmə'
     },
     { 
       key: 'context', 
-      label: 'Kateqoriya & Sutun', 
+      label: 'Kateqoriya & Sütun', 
       icon: <Settings className="h-4 w-4" />,
-      description: 'Melumat novunun mueyyen edilmesi'
+      description: 'Məlumat novünün mueyyen edilməsi'
     },
     { 
       key: 'target', 
-      label: mode === 'single' ? 'Mekteb Secimi' : 'Mektebler Secimi',
+      label: mode === 'single' ? 'Məktəb Seçimi' : 'Məktəblər Seçimi',
       icon: <School className="h-4 w-4" />,
-      description: mode === 'single' ? 'Mektebin secilmesi' : 'Coxlu mektebin secilmesi'
+      description: mode === 'single' ? 'Məktəbin seçilməsi' : 'Çoxlu məktəbin seçilməsi'
     },
     { 
       key: 'input', 
-      label: 'Melumat Daxil Etme', 
+      label: entryType === 'sector' ? 'Sektor Məlumat' : 'Məlumat Daxil Etmə', 
       icon: <Edit3 className="h-4 w-4" />,
-      description: 'Melumatlarin daxil edilmesi ve tesdiqlenmeesi'
+      description: entryType === 'sector' 
+        ? 'Sektor üçün məlumat daxil etmə'
+        : 'Məlumatların daxil edilməsi və təsdiqlenməsi'
     }
   ];
+  
+  // Sector mode-da target step-i çıxar
+  const steps: ProgressStep[] = entryType === 'sector' 
+    ? allSteps.filter(step => step.key !== 'target')
+    : allSteps;
 
   const getStepStatus = (stepKey: string) => {
     if (completedSteps.includes(stepKey)) {

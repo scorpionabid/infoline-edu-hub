@@ -66,3 +66,31 @@ export const updateSectorDataEntriesStatus = async (entries: any[], status: stri
   if (error) throw error;
   return data;
 };
+
+// 🆕 Yeni single value entry funksiyası
+export const saveSingleSectorDataEntry = async (
+  sectorId: string,
+  categoryId: string,
+  columnId: string,
+  value: string,
+  userId?: string
+) => {
+  const entry = {
+    sector_id: sectorId,
+    category_id: categoryId,
+    column_id: columnId,
+    value,
+    status: 'approved', // 🎯 Birbaşa təsdiq olunmuş
+    created_by: userId,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+  
+  const { data, error } = await supabase
+    .from('sector_data_entries')
+    .upsert(entry, { onConflict: 'sector_id,category_id,column_id' })
+    .select();
+  
+  if (error) throw error;
+  return data[0];
+};
