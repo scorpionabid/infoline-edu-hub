@@ -262,7 +262,24 @@ export const common = {
   days: 'gün',
   weeks: 'həftə',
   months: 'ay',
-  years: 'il'
+  years: 'il',
+
+  // ===== Additional UI Elements =====
+  ideal: 'İdeal',
+  select: 'Seç',
+  selection: 'Seçim',
+  step: 'Addım',
+  steps: 'Addımlar',
+  current: 'Hazırki',
+  proceed: 'Davam et',
+  complete_setup: 'Qurulmanı tamamla',
+  
+  // ===== File Operations (continued) =====
+  choose_file: 'Fayl seç',
+  drop_files: 'Faylları buraya sürükləyin',
+  upload_progress: 'Yükləmə gedişatı',
+  upload_complete: 'Yükləmə tamamlandı',
+  upload_failed: 'Yükləmə uğursuz oldu'
 } as const;
 
 export type Common = typeof common;

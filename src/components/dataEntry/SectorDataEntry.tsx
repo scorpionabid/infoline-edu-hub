@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -36,11 +37,11 @@ export const SectorDataEntry: React.FC<SectorDataEntryProps> = ({
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-amber-800">
             <Info className="h-5 w-5" />
-            Legacy Komponent
+            {t('dataEntry.workflow.legacy_component')}
           </CardTitle>
           <p className="text-amber-700 text-sm">
-            Bu komponent köhnədir və artıq yeni workflow sistemi tərəfindən əvəz edilib.
-            Zəhmət olmasa yeni SectorDataEntry səhifəsini istifadə edin.
+            {t('dataEntry.workflow.legacy_notice')} {' '}
+            {t('dataEntry.workflow.use_new_system')}
           </p>
         </CardHeader>
       </Card>
@@ -50,15 +51,15 @@ export const SectorDataEntry: React.FC<SectorDataEntryProps> = ({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Building2 className="h-6 w-6" />
-            Sektor Məlumat İdarəetməsi (Legacy)
+            {t('dataEntry.workflow.legacy_management')}
             {user?.role === "sectoradmin" && (
               <Badge className="bg-blue-100 text-blue-800">
-                Sektor Administratoru
+                {t('user.role.sectoradmin')}
               </Badge>
             )}
           </CardTitle>
           <p className="text-muted-foreground">
-            Bu interfeys artıq istifadə edilmir.
+            {t('dataEntry.workflow.not_in_use')}
           </p>
         </CardHeader>
       </Card>
@@ -69,11 +70,10 @@ export const SectorDataEntry: React.FC<SectorDataEntryProps> = ({
           <CardContent className="text-center space-y-4">
             <div className="text-6xl text-muted-foreground">🔄</div>
             <div className="text-lg font-medium text-muted-foreground">
-              Yeni Workflow Sistemi
+              {t('dataEntry.workflow.new_workflow_system')}
             </div>
             <p className="text-sm text-muted-foreground max-w-md">
-              Bu səhifə artıq yeni workflow sistemi ilə əvəz edilib.
-              Daha yaxşı istifadəçi təcrübəsi üçün yeni interfeysi istifadə edin.
+              {t('dataEntry.workflow.better_experience')}
             </p>
             <div className="flex items-center justify-center gap-2 mt-4">
               <Badge variant="outline">Progressive Disclosure</Badge>

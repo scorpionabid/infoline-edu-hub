@@ -1,7 +1,9 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 interface WorkflowNavigationProps {
   currentStep: string;
@@ -30,26 +32,28 @@ export const WorkflowNavigation: React.FC<WorkflowNavigationProps> = ({
   backLabel,
   className
 }) => {
+  const { t } = useTranslation();
+
   const getNextLabel = () => {
     if (nextLabel) return nextLabel;
     
     switch (currentStep) {
       case 'mode':
-        return 'Kateqoriya Secimine Kec';
+        return t('dataEntry.workflow.next_to_context');
       case 'context':
-        return 'Mekteb Secimine Kec';
+        return t('dataEntry.workflow.next_to_target');
       case 'target':
-        return 'Melumat Daxil Etmeye Kec';
+        return t('dataEntry.workflow.next_to_input');
       case 'input':
-        return 'Tamamla';
+        return t('dataEntry.workflow.complete');
       default:
-        return 'Novbeti';
+        return t('common.next');
     }
   };
 
   const getBackLabel = () => {
     if (backLabel) return backLabel;
-    return 'Geri';
+    return t('dataEntry.workflow.back');
   };
 
   return (
@@ -86,7 +90,7 @@ export const WorkflowNavigation: React.FC<WorkflowNavigationProps> = ({
                 disabled={isLoading}
                 className="text-muted-foreground"
               >
-                Legv et
+                {t('dataEntry.workflow.cancel')}
               </Button>
             )}
           </div>
@@ -108,10 +112,10 @@ export const WorkflowNavigation: React.FC<WorkflowNavigationProps> = ({
         {!canProceed && !errorMessage && (
           <div className="mt-3 text-center">
             <span className="text-xs text-muted-foreground">
-              {currentStep === 'mode' && 'Rejim secmek lazimdir'}
-              {currentStep === 'context' && 'Kateqoriya ve sutun secmek lazimdir'}
-              {currentStep === 'target' && 'En azi bir mekteb secmek lazimdir'}
-              {currentStep === 'input' && 'Melumat daxil etmek lazimdir'}
+              {currentStep === 'mode' && t('dataEntry.workflow.select_mode')}
+              {currentStep === 'context' && t('dataEntry.workflow.select_category')}
+              {currentStep === 'target' && t('dataEntry.workflow.select_school')}
+              {currentStep === 'input' && t('dataEntry.workflow.enter_data')}
             </span>
           </div>
         )}

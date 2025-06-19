@@ -1,6 +1,8 @@
+
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { Target, Settings, School, Edit3, CheckCircle, Circle } from 'lucide-react';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 interface ProgressStep {
   key: string;
@@ -28,33 +30,30 @@ export const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
   // 🆕 Yeni parametr
   entryType = 'school'
 }) => {
-  // 🆕 Sector mode-da target step skip edilir
-  const allSteps: ProgressStep[] = [
+  const steps: ProgressStep[] = [
     { 
       key: 'mode', 
-      label: 'Rejim Seçimi', 
+      label: 'Rejim Secimi', 
       icon: <Target className="h-4 w-4" />,
-      description: 'Tək və ya bulk məlumat daxil etmə'
+      description: 'Tek ve ya bulk melumat daxil etme'
     },
     { 
       key: 'context', 
-      label: 'Kateqoriya & Sütun', 
+      label: 'Kateqoriya & Sutun', 
       icon: <Settings className="h-4 w-4" />,
-      description: 'Məlumat novünün mueyyen edilməsi'
+      description: 'Melumat novunun mueyyen edilmesi'
     },
     { 
       key: 'target', 
-      label: mode === 'single' ? 'Məktəb Seçimi' : 'Məktəblər Seçimi',
+      label: mode === 'single' ? 'Mekteb Secimi' : 'Mektebler Secimi',
       icon: <School className="h-4 w-4" />,
-      description: mode === 'single' ? 'Məktəbin seçilməsi' : 'Çoxlu məktəbin seçilməsi'
+      description: mode === 'single' ? 'Mektebin secilmesi' : 'Coxlu mektebin secilmesi'
     },
     { 
       key: 'input', 
-      label: entryType === 'sector' ? 'Sektor Məlumat' : 'Məlumat Daxil Etmə', 
+      label: 'Melumat Daxil Etme', 
       icon: <Edit3 className="h-4 w-4" />,
-      description: entryType === 'sector' 
-        ? 'Sektor üçün məlumat daxil etmə'
-        : 'Məlumatların daxil edilməsi və təsdiqlenməsi'
+      description: 'Melumatlarin daxil edilmesi ve tesdiqlenmeesi'
     }
   ];
   
@@ -102,7 +101,6 @@ export const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
         <div className="relative flex justify-between">
           {steps.map((step, index) => {
             const status = getStepStatus(step.key);
-            const isLast = index === steps.length - 1;
 
             return (
               <div key={step.key} className="flex flex-col items-center group">
@@ -174,7 +172,10 @@ export const ProgressIndicator: React.FC<ProgressIndicatorProps> = ({
               {steps[getCurrentStepIndex()]?.label}
             </div>
             <div className="text-sm text-muted-foreground">
-              Addim {getCurrentStepIndex() + 1} / {steps.length}
+              {t('dataEntry.workflow.step_of', { 
+                current: getCurrentStepIndex() + 1, 
+                total: steps.length 
+              })}
             </div>
           </div>
         )}
