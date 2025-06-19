@@ -51,22 +51,99 @@ export const useBulkProxyDataEntry = ({
     staleTime: 5 * 60 * 1000
   });
 
-  // Seçilmiş kateqoriya üzrə sütunları əldə et
-  const { data: columns, isLoading: isLoadingColumns } = useQuery({
+  // Seçilmiş kateqoriya üzrə sütunları əldə et (məktəbadmin sorgu formatı ilə eyni)
+  const { data: columns, isLoading: isLoadingColumns, error: columnsError } = useQuery({
     queryKey: ['category-columns', selectedCategory],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('columns')
-        .select('id, name, description, type, options')
-        .eq('category_id', selectedCategory)
-        .order('order_index', { ascending: true });
+      console.log('Sütunları yükləməyə çalışırıq. Kateqoriya ID:', selectedCategory);
       
-      if (error) throw error;
-      return data || [];
+      // Cədvəlin strukturu haqqında məlumat üçün
+      try {
+        const { data: columnsInfo, error: infoError } = await supabase
+          .rpc('get_columns_table_info');
+          
+        if (!infoError && columnsInfo) {
+          console.log('Columns cədvəli strukturu:', columnsInfo);
+        }
+      } catch (infoErr) {
+        console.log('Table info xətası:', infoErr);
+      }
+      
+      // Əsas sorgu – məktəbadmin üçün işləyən eyni format
+      try {
+        // Sütunları yükləyək
+        let query = supabase
+          .from('columns')
+          .select('*')
+          .eq('category_id', selectedCategory);
+        
+        // Sıralama əlavə etməyə cəhd edək
+        try {
+          query = query.order('order_index', { ascending: true });
+        } catch (sortErr) {
+          console.log('Sıralama xətası, but continuing:', sortErr);
+        }
+        
+        const { data, error } = await query;
+        
+        if (error) {
+          console.error('Sütunlar yüklənərkən xəta:', error);
+          throw error;
+        }
+        
+        // Debug üçün ümumi sütunları da yükləyək
+        try {
+          const { data: allColumns } = await supabase
+            .from('columns')
+            .select('*')
+            .limit(5);
+          
+          console.log(`Ümumi sütunlar (ilk 5):`, allColumns);
+        } catch (debugErr) {
+          console.log('Debug sorgusu xətası:', debugErr);
+        }
+        
+        if (data && data.length > 0) {
+          console.log(`Yüklənən sütunlar (${data.length}):`, data);
+          return data;
+        } else {
+          console.log('Bu kateqoriya üçün sütun tapılmadı');
+          return [];
+        }
+      } catch (err) {
+        console.error('Sütun sorgusu xətası:', err);
+        throw err;
+      }
     },
     enabled: !!selectedCategory,
-    staleTime: 5 * 60 * 1000
+    staleTime: 5 * 60 * 1000,
+    retry: 2,
+    retryDelay: 1000
   });
+  
+  // Xəta monitorinqi və əlavə məlumat
+  useEffect(() => {
+    if (columnsError) {
+      console.error('Sütunları yükləmə xətası:', columnsError);
+    }
+    
+    if (selectedCategory && !isLoadingColumns && columns && columns.length === 0) {
+      console.log('Kateqoriya seçilib ancaq sütunlar boşdur. Kateqoriya ID:', selectedCategory);
+      
+      // Kateqoriyanın mövcudluğunu yoxlayırıq
+      supabase
+        .from('categories')
+        .select('id, name')
+        .eq('id', selectedCategory)
+        .then(({ data, error }) => {
+          if (error) {
+            console.error('Kateqoriya məlumatlarını yükləmə xətası:', error);
+          } else {
+            console.log('Seçilmiş kateqoriya:', data);
+          }
+        });
+    }
+  }, [selectedCategory, isLoadingColumns, columns, columnsError]);
 
   // Sektor üzrə məktəbləri əldə et
   const { data: schools, isLoading: isLoadingSchools } = useQuery({

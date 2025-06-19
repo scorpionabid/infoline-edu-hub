@@ -99,21 +99,32 @@ export const ColumnSelector: React.FC<ColumnSelectorProps> = ({
         <Select 
           value={selectedColumnId || undefined} 
           onValueChange={handleColumnSelect}
+          disabled={isLoading}
         >
           <SelectTrigger className="w-full">
-            <SelectValue placeholder="Bir sütun seçin" />
+            <SelectValue placeholder={isLoading ? "Yüklənir..." : "Bir sütun seçin"} />
           </SelectTrigger>
           <SelectContent>
-            {columns.map(column => (
-              <SelectItem key={column.id} value={column.id}>
-                <div className="flex items-center gap-2">
-                  <span>{column.name}</span>
-                  <span className={`text-xs px-1.5 py-0.5 rounded-full ${getTypeColor(column.type)}`}>
-                    {column.type}
-                  </span>
-                </div>
-              </SelectItem>
-            ))}
+            {isLoading ? (
+              <div className="p-2 text-center text-muted-foreground">
+                Sütunlar yüklənir...
+              </div>
+            ) : columns.length > 0 ? (
+              columns.map(column => (
+                <SelectItem key={column.id} value={column.id}>
+                  <div className="flex items-center gap-2">
+                    <span>{column.name}</span>
+                    <span className={`text-xs px-1.5 py-0.5 rounded-full ${getTypeColor(column.type)}`}>
+                      {column.type}
+                    </span>
+                  </div>
+                </SelectItem>
+              ))
+            ) : (
+              <div className="p-2 text-center text-muted-foreground">
+                Bu kateqoriya üçün heç bir sütun tapılmadı
+              </div>
+            )}
           </SelectContent>
         </Select>
       </div>
