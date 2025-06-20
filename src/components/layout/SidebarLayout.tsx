@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { LogOut, User } from "lucide-react";
 import { useAuthStore, selectSignOut } from "@/hooks/auth/useAuthStore";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { LanguageSelect } from "@/components/ui/language-select";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 interface SidebarLayoutProps {
   children: React.ReactNode;
@@ -39,7 +39,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
 
             <div className="flex items-center space-x-2">
               <NotificationBell />
-              <LanguageSelect />
+              <LanguageSwitcher />
               <ThemeToggle />
               
               <Button
