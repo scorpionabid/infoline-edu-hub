@@ -52,11 +52,11 @@ const SectorStatsTable: React.FC<SectorStatsTableProps> = ({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>{t("sector")}</TableHead>
-            <TableHead className="text-right">{t("progress")}</TableHead>
-            <TableHead className="text-center">{t("schoolCount")}</TableHead>
+            <TableHead>{t("sectorLabel") || "Sektor"}</TableHead>
+            <TableHead className="text-right">{t("dashboard.progress") || "İrəliləyiş"}</TableHead>
+            <TableHead className="text-center">{t("dashboard.schoolCount") || "Məktəb sayı"}</TableHead>
             {showActions && (
-              <TableHead className="text-right">{t("actions")}</TableHead>
+              <TableHead className="text-right">{t("actionsLabel") || "Əməliyyatlar"}</TableHead>
             )}
           </TableRow>
         </TableHeader>

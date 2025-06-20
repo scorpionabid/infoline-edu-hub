@@ -44,7 +44,7 @@ export const common = {
   backToHome: 'Əsas səhifəyə qayıt',
   backToLogin: 'Giriş səhifəsinə qayıt',
   home: 'Əsas səhifə',
-  dashboard: 'İdarə paneli',
+  dashboardLabel: 'İdarə paneli',
   users: 'İstifadəçilər',
   roles: 'Rollar',
   permissions: 'İcazələr',
@@ -77,7 +77,7 @@ export const common = {
   clearSelection: 'Seçimi təmizlə',
   
   // ===== Actions =====
-  actions: 'Əməliyyatlar',
+  actionsLabel: 'Əməliyyatlar',
   create: 'Yarat',
   update: 'Yenilə',
   saveChanges: 'Dəyişiklikləri yadda saxla',
@@ -213,6 +213,26 @@ export const common = {
   draft: 'Qaralama',
   published: 'Dərc edilib',
   archived: 'Arxivləşdirilib',
+  approved: 'Təsdiqlənib',
+  rejected: 'Rədd edilib',
+  completionRate: 'Tamamlanma faizi',
+  
+  // ===== Dashboard =====
+  formStatistics: 'Form statistikası',
+  sectorLabel: 'Sektor',
+  dashboard: {
+    title: 'İdarə Paneli',
+    subtitle: 'Dashboard məzmunu',
+    progress: 'İrəliləyiş',
+    schoolCount: 'Məktəb sayı',
+    actions: 'Əməliyyatlar',
+    schools: 'Məktəblər',
+    totalApproved: 'Təsdiqlənmiş',
+    totalPending: 'Gözləyən',
+    totalRejected: 'Rədd edilmiş',
+    completion: 'Tamamlanma',
+    summary: 'İcmal'
+  },
   
   // ===== UI/UX =====
   darkMode: 'Qaranlıq rejim',

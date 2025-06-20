@@ -62,6 +62,7 @@ export class EnhancedApprovalService {
   static async getApprovalItems(filter: ApprovalFilter = {}): Promise<ServiceResponse<ApprovalItem[]>> {
     try {
       console.log('Getting approval items with filter:', filter);
+      console.log('User authenticated, proceeding with data fetch...');
 
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
@@ -74,14 +75,22 @@ export class EnhancedApprovalService {
       }
 
       // Get user role
-      const { data: userRole, error: roleError } = await supabase.rpc('get_user_role_safe');
+      const { data: userRoles, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+        
       if (roleError) {
+        console.error('Error fetching user role:', roleError);
         return {
           success: false,
           error: `İstifadəçi rolu alınarkən xəta: ${roleError.message}`,
           code: 'ROLE_FETCH_ERROR'
         };
       }
+      
+      const userRole = userRoles?.role;
 
       // Build the main query
       let query = supabase
@@ -91,24 +100,34 @@ export class EnhancedApprovalService {
           name,
           region_id,
           sector_id,
-          completion_rate,
-          regions!inner(id, name),
-          sectors!inner(id, name)
+          completion_rate
         `)
         .eq('status', 'active');
 
       // Apply permission-based filtering
       if (userRole === 'sectoradmin') {
-        // Get user's sector ID
-        const { data: userSectorId } = await supabase.rpc('get_user_sector_id');
-        if (userSectorId) {
-          query = query.eq('sector_id', userSectorId);
+        // Get user's sector ID from user_roles
+        const { data: userSectorRole } = await supabase
+          .from('user_roles')
+          .select('sector_id')
+          .eq('user_id', user.id)
+          .eq('role', 'sectoradmin')
+          .single();
+          
+        if (userSectorRole?.sector_id) {
+          query = query.eq('sector_id', userSectorRole.sector_id);
         }
       } else if (userRole === 'regionadmin') {
-        // Get user's region ID
-        const { data: userRegionId } = await supabase.rpc('get_user_region_id');
-        if (userRegionId) {
-          query = query.eq('region_id', userRegionId);
+        // Get user's region ID from user_roles
+        const { data: userRegionRole } = await supabase
+          .from('user_roles')
+          .select('region_id')
+          .eq('user_id', user.id)
+          .eq('role', 'regionadmin')
+          .single();
+          
+        if (userRegionRole?.region_id) {
+          query = query.eq('region_id', userRegionRole.region_id);
         }
       }
       // superadmin can see all schools
@@ -126,7 +145,14 @@ export class EnhancedApprovalService {
         query = query.ilike('name', `%${filter.searchTerm}%`);
       }
 
-      const { data: schools, error: schoolsError } = await query;
+      const { data: schools, error: schoolsError } = await query.limit(20); // Limit schools for performance
+
+      console.log('Schools query result:', { 
+        schoolsCount: schools?.length || 0, 
+        error: schoolsError,
+        userRole,
+        filter 
+      });
 
       if (schoolsError) {
         console.error('Schools query error:', schoolsError);
@@ -174,11 +200,17 @@ export class EnhancedApprovalService {
         };
       }
 
-      // Create school-category combinations
+      // Create school-category combinations (with pagination for performance)
       const approvalItems: ApprovalItem[] = [];
+      const maxItems = 50; // Limit to 50 items for performance
+      let itemCount = 0;
 
       for (const school of schools) {
+        if (itemCount >= maxItems) break;
+        
         for (const category of categories) {
+          if (itemCount >= maxItems) break;
+          
           // Skip sector-only categories for school admins
           if (category.assignment === 'sectors' && userRole === 'schooladmin') {
             continue;
@@ -260,6 +292,7 @@ export class EnhancedApprovalService {
           };
 
           approvalItems.push(approvalItem);
+          itemCount++; // Increment item count for pagination
         }
       }
 
@@ -380,7 +413,13 @@ export class EnhancedApprovalService {
       }
 
       // Get user role
-      const { data: userRole } = await supabase.rpc('get_user_role_safe');
+      const { data: userRoles } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+        
+      const userRole = userRoles?.role || 'unknown';
       
       // Execute transition
       const transitionResult = await StatusTransitionService.executeTransition(
@@ -467,7 +506,13 @@ export class EnhancedApprovalService {
       }
 
       // Get user role
-      const { data: userRole } = await supabase.rpc('get_user_role_safe');
+      const { data: userRoles } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+        
+      const userRole = userRoles?.role || 'unknown';
       
       // Combine reason and comment
       const fullComment = comment ? `${reason}. ${comment}` : reason;
@@ -640,11 +685,7 @@ export class EnhancedApprovalService {
       // Get school and category info
       const { data: school } = await supabase
         .from('schools')
-        .select(`
-          id, name, region_id, sector_id,
-          regions(id, name),
-          sectors(id, name)
-        `)
+        .select('id, name, region_id, sector_id')
         .eq('id', schoolId)
         .single();
 
@@ -662,15 +703,36 @@ export class EnhancedApprovalService {
         };
       }
 
+      // Get region and sector names
+      const [regionResult, sectorResult] = await Promise.all([
+        supabase.from('regions').select('name').eq('id', school.region_id).single(),
+        supabase.from('sectors').select('name').eq('id', school.sector_id).single()
+      ]);
+
       // Get data entries with column info
       const { data: entries } = await supabase
         .from('data_entries')
         .select(`
           id, value, status, created_at, updated_at,
-          columns(id, name, type, is_required)
+          column_id
         `)
         .eq('school_id', schoolId)
         .eq('category_id', categoryId);
+
+      // Get column details separately if entries exist
+      let entriesWithColumns = [];
+      if (entries && entries.length > 0) {
+        const columnIds = [...new Set(entries.map(e => e.column_id))];
+        const { data: columns } = await supabase
+          .from('columns')
+          .select('id, name, type, is_required')
+          .in('id', columnIds);
+
+        entriesWithColumns = entries.map(entry => ({
+          ...entry,
+          column: columns?.find(col => col.id === entry.column_id)
+        }));
+      }
 
       // Get status history using StatusHistoryService
       const { StatusHistoryService } = await import('@/services/statusHistoryService');
@@ -682,16 +744,16 @@ export class EnhancedApprovalService {
           id: school.id,
           name: school.name,
           regionId: school.region_id,
-          regionName: school.regions?.name,
+          regionName: regionResult.data?.name,
           sectorId: school.sector_id,
-          sectorName: school.sectors?.name
+          sectorName: sectorResult.data?.name
         },
         category: {
           id: category.id,
           name: category.name,
           description: category.description
         },
-        entries: entries || [],
+        entries: entriesWithColumns || [],
         statusHistory: historyResult.success ? historyResult.data : []
       };
 

@@ -68,13 +68,21 @@ export const useEnhancedApprovalData = (
     draft: 0,
     total: 0
   });
-  const [filter, setFilter] = useState<ApprovalFilter>(props.initialFilter || { status: 'pending' });
+  const [filter, setFilter] = useState<ApprovalFilter>(() => 
+    props.initialFilter || { status: 'pending' }
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [hasInitialLoad, setHasInitialLoad] = useState(false);
 
   // Load items function
   const loadItems = useCallback(async () => {
+    if (isLoading) {
+      console.log('Already loading, skipping...');
+      return;
+    }
+    
     setIsLoading(true);
     setError(null);
     
@@ -88,27 +96,45 @@ export const useEnhancedApprovalData = (
         setItems(itemsResult.data);
         console.log(`Loaded ${itemsResult.data.length} approval items`);
       } else {
+        console.error('Failed to load items:', itemsResult.error);
         setError(itemsResult.error || 'Məlumatlar alınarkən xəta');
         setItems([]);
       }
       
-      // Load stats
-      const statsResult = await EnhancedApprovalService.getApprovalStats(filter);
-      
-      if (statsResult.success && statsResult.data) {
-        setStats(statsResult.data);
-      } else {
-        console.warn('Failed to load stats:', statsResult.error);
+      // Load stats only if items were loaded successfully
+      if (itemsResult.success) {
+        const statsResult = await EnhancedApprovalService.getApprovalStats(filter);
+        
+        if (statsResult.success && statsResult.data) {
+          setStats(statsResult.data);
+        } else {
+          console.warn('Failed to load stats:', statsResult.error);
+          // Set default stats
+          setStats({
+            pending: 0,
+            approved: 0,
+            rejected: 0,
+            draft: 0,
+            total: 0
+          });
+        }
       }
       
     } catch (error: any) {
       console.error('Error loading approval data:', error);
       setError(error.message || 'Naməlum xəta');
       setItems([]);
+      setStats({
+        pending: 0,
+        approved: 0,
+        rejected: 0,
+        draft: 0,
+        total: 0
+      });
     } finally {
       setIsLoading(false);
     }
-  }, [filter]);
+  }, [filter]); // Remove isLoading from dependencies to avoid infinite loop
 
   // Real-time subscription effect
   useEffect(() => {
@@ -125,17 +151,12 @@ export const useEnhancedApprovalData = (
         filter: 'status=in.(pending,approved,rejected)'
       }, (payload) => {
         console.log('Real-time update received:', payload);
-        // Reload data when changes occur
-        loadItems();
-      })
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'schools'
-      }, (payload) => {
-        console.log('School update received:', payload);
-        // Reload if school data changes
-        loadItems();
+        // Debounce the reload to avoid too frequent updates
+        setTimeout(() => {
+          if (!isLoading) {
+            loadItems();
+          }
+        }, 1000);
       })
       .subscribe();
 
@@ -143,25 +164,41 @@ export const useEnhancedApprovalData = (
       console.log('Cleaning up real-time subscription');
       subscription.unsubscribe();
     };
-  }, [loadItems, props.autoRefresh]);
+  }, [props.autoRefresh]); // Remove loadItems from dependencies
 
   // Auto-refresh interval effect
   useEffect(() => {
     if (!props.autoRefresh || !props.refreshInterval) return;
 
     console.log(`Setting up auto-refresh interval: ${props.refreshInterval}ms`);
-    const interval = setInterval(loadItems, props.refreshInterval);
+    const interval = setInterval(() => {
+      if (!isLoading) {
+        loadItems();
+      }
+    }, props.refreshInterval);
     
     return () => {
       console.log('Cleaning up auto-refresh interval');
       clearInterval(interval);
     };
-  }, [loadItems, props.autoRefresh, props.refreshInterval]);
+  }, [props.autoRefresh, props.refreshInterval]); // Remove loadItems from dependencies
 
-  // Initial load
+  // Initial load - only once when component mounts
   useEffect(() => {
-    loadItems();
-  }, [loadItems]);
+    if (!hasInitialLoad) {
+      console.log('Initial load triggered');
+      setHasInitialLoad(true);
+      loadItems();
+    }
+  }, []); // Empty dependency array for one-time load
+
+  // Reload when filter changes (but not on initial load)
+  useEffect(() => {
+    if (hasInitialLoad) {
+      console.log('Filter changed, reloading data:', filter);
+      loadItems();
+    }
+  }, [filter]);
 
   // Approve item function
   const approveItem = useCallback(async (id: string, comment?: string) => {
@@ -260,7 +297,19 @@ export const useEnhancedApprovalData = (
   // Update filter function
   const updateFilter = useCallback((newFilter: Partial<ApprovalFilter>) => {
     console.log('Updating filter:', newFilter);
-    setFilter(prevFilter => ({ ...prevFilter, ...newFilter }));
+    setFilter(prevFilter => {
+      // Shallow comparison to avoid unnecessary re-renders
+      const updatedFilter = { ...prevFilter, ...newFilter };
+      const isFilterChanged = JSON.stringify(prevFilter) !== JSON.stringify(updatedFilter);
+      
+      if (isFilterChanged) {
+        console.log('Filter actually changed:', updatedFilter);
+        return updatedFilter;
+      } else {
+        console.log('Filter unchanged, skipping update');
+        return prevFilter;
+      }
+    });
     setSelectedItems([]); // Clear selection when filter changes
   }, []);
 

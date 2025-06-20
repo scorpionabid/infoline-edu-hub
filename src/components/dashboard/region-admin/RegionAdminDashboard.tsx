@@ -38,30 +38,39 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({
     completionRate: dashboardData.formStats?.completionRate || 0,
   };
 
+  // Məcburi xassələri təyin edirik
+  formStats.totalForms = formStats.total || 0;
+  formStats.pendingApprovals = formStats.pendingForms || 0;
+  formStats.rejectedForms = formStats.rejected || 0;
+
   const statsGridData = [
     {
-      title: t("totalApproved"),
+      title: t("dashboard.totalApproved") || "Təsdiqlənmiş",
       value: formStats.approved || 0,
+      icon: "check-circle",
       color: "text-green-600",
-      description: t("approved"),
+      description: t("approved") || "Təsdiqləndi",
     },
     {
-      title: t("totalPending"),
+      title: t("dashboard.totalPending") || "Gözləyən",
       value: formStats.pending || 0,
+      icon: "clock", 
       color: "text-yellow-600",
-      description: t("pending"),
+      description: t("pending") || "Gözləyir",
     },
     {
-      title: t("totalRejected"),
+      title: t("dashboard.totalRejected") || "Rədd edilmiş",
       value: formStats.rejected || 0,
+      icon: "x-circle",
       color: "text-red-600",
-      description: t("rejected"),
+      description: t("rejected") || "Rədd edildi",
     },
     {
-      title: t("completion"),
-      value: `${formStats.percentage || 0}%`,
+      title: t("dashboard.completion") || "Tamamlanma",
+      value: `${Math.round(formStats.percentage || 0)}%`,
+      icon: "pie-chart",
       color: "text-blue-600",
-      description: t("completionRate"),
+      description: t("completionRate") || "Tamamlanma dərəcəsi",
     },
   ];
 
