@@ -16,7 +16,9 @@ import {
   CheckCircle,
   AlertCircle,
   ArrowLeft,
-  Save
+  Save,
+  Filter,
+  Search
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -44,6 +46,12 @@ interface Column {
 interface School {
   id: string;
   name: string;
+}
+
+interface SchoolWithStatus extends School {
+  hasData: boolean;
+  dataValue: string | null;
+  dataStatus: 'pending' | 'approved' | 'rejected' | null;
 }
 
 type Mode = 'category-selection' | 'data-entry';
@@ -128,22 +136,96 @@ export const UnifiedSectorDataEntry: React.FC<UnifiedSectorDataEntryProps> = ({
     enabled: !!selectedCategory
   });
 
-  // Fetch schools for bulk mode
-  const { data: schools, isLoading: schoolsLoading } = useQuery({
-    queryKey: ['sector-schools', userSectorId],
+  // Enhanced school filter state
+  const [schoolFilter, setSchoolFilter] = useState<'all' | 'filled' | 'empty'>('all');
+  const [schoolSearchQuery, setSchoolSearchQuery] = useState<string>('');
+
+  // Fetch schools with data completion status for selected column
+  const { data: schoolsWithStatus, isLoading: schoolsLoading } = useQuery({
+    queryKey: ['sector-schools-with-status', userSectorId, selectedCategory, selectedColumn],
     queryFn: async () => {
-      const { data, error } = await supabase
+      if (!userSectorId) return [];
+      
+      // Get all schools in sector
+      const { data: schools, error: schoolsError } = await supabase
         .from('schools')
         .select('id, name')
         .eq('sector_id', userSectorId)
         .eq('status', 'active')
         .order('name');
         
-      if (error) throw error;
-      return data as School[];
+      if (schoolsError) throw schoolsError;
+      
+      // If no column selected yet, return basic school data
+      if (!selectedColumn || !selectedCategory) {
+        return schools?.map(school => ({
+          ...school,
+          hasData: false,
+          dataValue: null,
+          dataStatus: null
+        })) || [];
+      }
+      
+      // Get data entries for selected column
+      const { data: dataEntries, error: dataError } = await supabase
+        .from('data_entries')
+        .select('school_id, value, status')
+        .eq('category_id', selectedCategory)
+        .eq('column_id', selectedColumn)
+        .in('school_id', schools?.map(s => s.id) || []);
+        
+      if (dataError) throw dataError;
+      
+      // Create a map of school data
+      const dataMap = new Map();
+      dataEntries?.forEach(entry => {
+        dataMap.set(entry.school_id, {
+          value: entry.value,
+          status: entry.status
+        });
+      });
+      
+      // Combine schools with their data status
+      return schools?.map(school => {
+        const data = dataMap.get(school.id);
+        return {
+          ...school,
+          hasData: !!data,
+          dataValue: data?.value || null,
+          dataStatus: data?.status || null
+        };
+      }) || [];
     },
     enabled: !!userSectorId && entryType !== 'sector'
   });
+
+  // Filter schools based on filter selection and search query
+  const filteredSchools = schoolsWithStatus?.filter(school => {
+    // Apply status filter
+    let statusMatch = true;
+    switch (schoolFilter) {
+      case 'filled':
+        statusMatch = school.hasData;
+        break;
+      case 'empty':
+        statusMatch = !school.hasData;
+        break;
+      default:
+        statusMatch = true;
+    }
+    
+    // Apply search filter
+    const searchMatch = schoolSearchQuery.trim() === '' || 
+      school.name.toLowerCase().includes(schoolSearchQuery.toLowerCase().trim());
+    
+    return statusMatch && searchMatch;
+  }) || [];
+
+  // Get schools for backward compatibility
+  const schools = schoolsWithStatus?.map(school => ({
+    id: school.id,
+    name: school.name
+  })) || [];
 
   // Smart category selection handler
   const handleCategorySelect = (categoryId: string) => {
@@ -183,6 +265,13 @@ export const UnifiedSectorDataEntry: React.FC<UnifiedSectorDataEntryProps> = ({
     }
   };
 
+  // Reset school filter and search when column changes
+  useEffect(() => {
+    setSchoolFilter('all');
+    setSelectedSchools([]);
+    setSchoolSearchQuery('');
+  }, [selectedColumn]);
+
   // Update selected schools and auto-detect entry type
   const handleSchoolSelection = (schoolIds: string[]) => {
     setSelectedSchools(schoolIds);
@@ -198,19 +287,39 @@ export const UnifiedSectorDataEntry: React.FC<UnifiedSectorDataEntryProps> = ({
 
       if (entryType === 'sector') {
         // Sector direct entry
+        // First, delete existing entry for this sector, category, and column
+        const { error: deleteError } = await supabase
+          .from('sector_data_entries')
+          .delete()
+          .eq('sector_id', userSectorId)
+          .eq('category_id', selectedCategory)
+          .eq('column_id', selectedColumn);
+          
+        if (deleteError) {
+          console.error('Sektor data deletion error:', deleteError);
+          throw new Error(`Mövcud sektor məlumatı silinə bilmədi: ${deleteError.message}`);
+        }
+        
+        // Then insert new entry
         const { error } = await supabase
           .from('sector_data_entries')
-          .upsert({
+          .insert({
             sector_id: userSectorId,
             category_id: selectedCategory,
             column_id: selectedColumn,
             value: inputValue,
             status: 'approved',
             created_by: user.id,
+            approved_by: user.id,
+            approved_at: new Date().toISOString(),
+            created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           });
           
-        if (error) throw error;
+        if (error) {
+          console.error('Sektor data insertion error:', error);
+          throw new Error(`Sektor məlumatı əlavə edilmədi: ${error.message}`);
+        }
       } else {
         // School entries (single or bulk)
         const schoolIds = entryType === 'single-school' ? selectedSchools.slice(0, 1) : selectedSchools;
@@ -220,23 +329,42 @@ export const UnifiedSectorDataEntry: React.FC<UnifiedSectorDataEntryProps> = ({
           category_id: selectedCategory,
           column_id: selectedColumn,
           value: inputValue,
-          status: 'pending',
+          status: 'approved',
           created_by: user.id,
+          approved_by: user.id,
+          approved_at: new Date().toISOString(),
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         }));
 
+        // First, delete existing entries for these schools, category, and column
+        const { error: deleteError } = await supabase
+          .from('data_entries')
+          .delete()
+          .eq('category_id', selectedCategory)
+          .eq('column_id', selectedColumn)
+          .in('school_id', schoolIds);
+          
+        if (deleteError) {
+          console.error('School data deletion error:', deleteError);
+          throw new Error(`Mövcud məktəb məlumatları silinə bilmədi: ${deleteError.message}`);
+        }
+        
+        // Then insert new entries
         const { error } = await supabase
           .from('data_entries')
-          .upsert(entries);
+          .insert(entries);
           
-        if (error) throw error;
+        if (error) {
+          console.error('School data insertion error:', error);
+          throw new Error(`Məktəb məlumatları əlavə edilmədi: ${error.message}`);
+        }
       }
     },
     onSuccess: () => {
       toast({
-        title: "Məlumat uğurla yadda saxlandı",
-        description: `${entryType === 'sector' ? 'Sektor' : selectedSchools.length + ' məktəb'} üçün məlumat yadda saxlandı.`,
+        title: "Məlumat uğurla təsdiqləndi",
+        description: `${entryType === 'sector' ? 'Sektor' : selectedSchools.length + ' məktəb'} üçün məlumat təsdiqlənmiş vəziyyətdə yadda saxlandı.`,
       });
       
       queryClient.invalidateQueries({ queryKey: ['sector-categories'] });
@@ -370,7 +498,7 @@ export const UnifiedSectorDataEntry: React.FC<UnifiedSectorDataEntryProps> = ({
                 <div>
                   <div className="font-medium text-primary">Sektor Məlumatı</div>
                   <div className="text-sm text-muted-foreground">
-                    Bu məlumat birbaşa sektor üçün qeyd ediləcək
+                    Bu məlumat birbaşa sektor üçün təsdiqlənmiş statusda qeyd ediləcək
                   </div>
                 </div>
               </>
@@ -380,7 +508,7 @@ export const UnifiedSectorDataEntry: React.FC<UnifiedSectorDataEntryProps> = ({
                 <div className="flex-1">
                   <div className="font-medium text-primary">Məktəb Məlumatları</div>
                   <div className="text-sm text-muted-foreground">
-                    Aşağıdan məktəb(ləri) seçin və məlumat daxil edin
+                    Aşağıdan məktəb(ləri) seçin və məlumat təsdiqlənmiş statusda daxil edin
                   </div>
                 </div>
               </>
@@ -461,7 +589,17 @@ export const UnifiedSectorDataEntry: React.FC<UnifiedSectorDataEntryProps> = ({
       {entryType !== 'sector' && selectedColumn && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Məktəb Seçimi</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg">Məktəb Seçimi</CardTitle>
+              {/* Data completion stats */}
+              {schoolsWithStatus && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span>{schoolsWithStatus.filter(s => s.hasData).length} doldurulub</span>
+                  <span>•</span>
+                  <span>{schoolsWithStatus.filter(s => !s.hasData).length} boş</span>
+                </div>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             {schoolsLoading ? (
@@ -469,37 +607,92 @@ export const UnifiedSectorDataEntry: React.FC<UnifiedSectorDataEntryProps> = ({
                 <LoadingSpinner />
               </div>
             ) : (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">
-                    {selectedSchools.length === 0 
-                      ? 'Məktəb seçin (bir və ya bir neçəsini)' 
-                      : selectedSchools.length === 1
-                      ? '1 məktəb seçilib - tək məktəb üçün data entry'
-                      : `${selectedSchools.length} məktəb seçilib - bulk data entry`
-                    }
-                  </span>
+              <div className="space-y-4">
+                {/* Smart Filter Controls */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">
+                      {selectedSchools.length === 0 
+                        ? 'Məktəb seçin (bir və ya bir neçəsini)' 
+                        : selectedSchools.length === 1
+                        ? '1 məktəb seçilib - tək məktəb üçün data entry'
+                        : `${selectedSchools.length} məktəb seçilib - bulk data entry`
+                      }
+                    </span>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleSchoolSelection(filteredSchools?.map(s => s.id) || [])}
+                      >
+                        Hamısını seç
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleSchoolSelection([])}
+                      >
+                        Təmizlə
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Search Input */}
+                  <div className="relative">
+                    <Input
+                      value={schoolSearchQuery}
+                      onChange={(e) => setSchoolSearchQuery(e.target.value)}
+                      placeholder="Məktəb adı ilə axtar..."
+                      className="pr-8"
+                    />
+                    <Search className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  </div>
+
+                  {/* Filter Buttons */}
                   <div className="flex gap-2">
                     <Button
-                      variant="outline"
+                      variant={schoolFilter === 'all' ? 'default' : 'outline'}
                       size="sm"
-                      onClick={() => handleSchoolSelection(schools?.map(s => s.id) || [])}
+                      onClick={() => setSchoolFilter('all')}
+                      className="text-xs"
                     >
-                      Hamısını seç
+                      Hamısı ({schoolsWithStatus?.filter(school => {
+                        const searchMatch = schoolSearchQuery.trim() === '' || 
+                          school.name.toLowerCase().includes(schoolSearchQuery.toLowerCase().trim());
+                        return searchMatch;
+                      }).length || 0})
                     </Button>
                     <Button
-                      variant="outline"
+                      variant={schoolFilter === 'filled' ? 'default' : 'outline'}
                       size="sm"
-                      onClick={() => handleSchoolSelection([])}
+                      onClick={() => setSchoolFilter('filled')}
+                      className="text-xs bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
                     >
-                      Təmizlə
+                      ✓ Doldurulmuş ({schoolsWithStatus?.filter(school => {
+                        const searchMatch = schoolSearchQuery.trim() === '' || 
+                          school.name.toLowerCase().includes(schoolSearchQuery.toLowerCase().trim());
+                        return school.hasData && searchMatch;
+                      }).length || 0})
+                    </Button>
+                    <Button
+                      variant={schoolFilter === 'empty' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setSchoolFilter('empty')}
+                      className="text-xs bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100"
+                    >
+                      ⚠ Boş ({schoolsWithStatus?.filter(school => {
+                        const searchMatch = schoolSearchQuery.trim() === '' || 
+                          school.name.toLowerCase().includes(schoolSearchQuery.toLowerCase().trim());
+                        return !school.hasData && searchMatch;
+                      }).length || 0})
                     </Button>
                   </div>
                 </div>
                 
+                {/* School List with Status */}
                 <div className="max-h-64 overflow-y-auto border rounded-lg p-2">
-                  {schools?.map((school) => (
-                    <div key={school.id} className="flex items-center gap-3 p-2 hover:bg-muted/50 rounded">
+                  {filteredSchools?.map((school) => (
+                    <div key={school.id} className="flex items-center gap-3 p-2 hover:bg-muted/50 rounded transition-colors">
                       <Checkbox
                         checked={selectedSchools.includes(school.id)}
                         onCheckedChange={(checked) => {
@@ -512,11 +705,71 @@ export const UnifiedSectorDataEntry: React.FC<UnifiedSectorDataEntryProps> = ({
                           handleSchoolSelection(newSelection);
                         }}
                       />
-                      <div className="flex-1">
-                        <span className="text-sm font-medium">{school.name}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium truncate">{school.name}</span>
+                          <div className="flex items-center gap-2 ml-2">
+                            {/* Data Status Indicator */}
+                            {school.hasData ? (
+                              <div className="flex items-center gap-1">
+                                <CheckCircle className="h-3 w-3 text-green-500" />
+                                <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                                  {school.dataStatus === 'approved' ? 'Təsdiqlənmiş' : 
+                                   school.dataStatus === 'pending' ? 'Gözləyir' : 
+                                   school.dataStatus === 'rejected' ? 'Rədd edilmiş' : 'Doldurulmuş'}
+                                </Badge>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-1">
+                                <AlertCircle className="h-3 w-3 text-amber-500" />
+                                <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
+                                  Boş
+                                </Badge>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        {/* Show current value if exists */}
+                        {school.hasData && school.dataValue && (
+                          <div className="text-xs text-muted-foreground mt-1 truncate">
+                            Cari dəyər: "{school.dataValue}"
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
+                  
+                  {/* Empty state */}
+                  {filteredSchools?.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      {schoolSearchQuery.trim() ? (
+                        <>
+                          <p className="text-sm">"<strong>{schoolSearchQuery}</strong>" axtarışına uyğun məktəb tapılmadı</p>
+                          <Button
+                            variant="link"
+                            size="sm"
+                            onClick={() => setSchoolSearchQuery('')}
+                            className="mt-2"
+                          >
+                            Axtarışı təmizlə
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-sm">Bu filterdə məktəb tapılmadı</p>
+                          <Button
+                            variant="link"
+                            size="sm"
+                            onClick={() => setSchoolFilter('all')}
+                            className="mt-2"
+                          >
+                            Bütün məktəbləri göstər
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -589,12 +842,12 @@ export const UnifiedSectorDataEntry: React.FC<UnifiedSectorDataEntryProps> = ({
                   </div>
                   <p className="text-sm text-muted-foreground">
                     {entryType === 'sector' ? (
-                      <>Sektor üçün <strong>"{selectedColumnDetails?.name}"</strong> sütununa <strong>"{inputValue || '[boş]'}"</strong> dəyəri daxil ediləcək.</>
+                      <>Sektor üçün <strong>"{selectedColumnDetails?.name}"</strong> sütununa <strong>"{inputValue || '[boş]'}"</strong> dəyəri təsdiqlənmiş statusda daxil ediləcək.</>
                     ) : (
                       <>
                         <strong>{selectedSchools.length}</strong> məktəb üçün{' '}
                         <strong>"{selectedColumnDetails?.name}"</strong> sütununa{' '}
-                        <strong>"{inputValue || '[boş]'}"</strong> dəyəri daxil ediləcək.
+                        <strong>"{inputValue || '[boş]'}"</strong> dəyəri təsdiqlənmiş statusda daxil ediləcək.
                       </>
                     )}
                   </p>
@@ -612,12 +865,12 @@ export const UnifiedSectorDataEntry: React.FC<UnifiedSectorDataEntryProps> = ({
                 {submitMutation.isPending ? (
                   <>
                     <LoadingSpinner size="sm" className="mr-2" />
-                    Yadda saxlanılır...
+                    Təsdiqlənir və saxlanılır...
                   </>
                 ) : (
                   <>
                     <Save className="mr-2 h-4 w-4" />
-                    Yadda saxla və göndər
+                    Təsdiqlə və saxla
                   </>
                 )}
               </Button>

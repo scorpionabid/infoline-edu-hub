@@ -183,7 +183,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           label: t("navigation.dataEntry"),
           href: isSchoolAdmin ? "/school-data-entry" : "/data-entry",
           icon: FileText,
-          visible: true,
+          visible: isSchoolAdmin,
           badge: null,
           gradient: "from-teal-500 to-teal-600",
         },
@@ -425,7 +425,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 }}
               >
                 <Settings className="h-4 w-4 mr-3 text-gray-500" />
-                <span>{t("common.settings")}</span>
+                <span>{t("general.settings")}</span>
               </Button>
               
               {/* Logout Button */}
@@ -438,7 +438,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 }}
               >
                 <LogOut className="h-4 w-4 mr-3 text-red-500" />
-                <span>{t("auth.logout")}</span>
+                <span>{t("auth.logout.title")}</span>
               </Button>
             </div>
           </div>

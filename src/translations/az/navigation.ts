@@ -4,6 +4,8 @@ export const navigation = {
   // Main navigation
   dashboard: 'İdarə Paneli',
   dataEntry: 'Məlumat Daxil Etmə',
+  sectorDataEntry: 'Sektor Məlumat Girişi',
+  approvals: 'Təsdiqlər',
   categories: 'Kateqoriyalar',
   columns: 'Sütunlar',
   users: 'İstifadəçilər',
@@ -15,6 +17,9 @@ export const navigation = {
   settings: 'Parametrlər',
   profile: 'Profil',
   notifications: 'Bildirişlər',
+  userManagement: 'İstifadəçi İdarəetməsi',
+  progress: 'Tərəqqi',
+  performance: 'Performans',
   
   // Breadcrumb navigation
   home: 'Ana səhifə',

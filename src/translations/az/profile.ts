@@ -4,6 +4,7 @@ export const profile = {
   // Basic terms
   profile: 'Profil',
   my_profile: 'Mənim profilim',
+  account: 'Hesab',
   
   // Actions
   edit_profile: 'Profili redaktə et',

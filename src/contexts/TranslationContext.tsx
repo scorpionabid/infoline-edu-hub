@@ -9,6 +9,7 @@ export interface TranslationContextType {
   language: SupportedLanguage;
   setLanguage: (lang: SupportedLanguage) => void;
   changeLanguage: (lang: SupportedLanguage) => Promise<void>;
+  clearCache: () => void;
   isLoading: boolean;
   error: string | null;
   isReady: boolean;
@@ -137,6 +138,14 @@ export const TranslationProvider: React.FC<TranslationProviderProps> = ({
     changeLanguage(lang);
   }, [changeLanguage]);
 
+  // Clear cache function
+  const clearCache = useCallback(() => {
+    translationCache.clear();
+    setTranslations(null);
+    // Reload current language
+    loadTranslations(language);
+  }, [language, loadTranslations]);
+
   // Initialize translations
   useEffect(() => {
     // Check for saved language preference
@@ -148,6 +157,16 @@ export const TranslationProvider: React.FC<TranslationProviderProps> = ({
     }
     
     loadTranslations(initialLang);
+    
+    // Development helper - expose cache clear function globally
+    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+      (window as any).clearTranslationCache = () => {
+        translationCache.clear();
+        setTranslations(null);
+        loadTranslations(language);
+        console.log('Translation cache cleared and reloaded!');
+      };
+    }
   }, []); // Only run once on mount
 
   // Memoized context value
@@ -156,10 +175,11 @@ export const TranslationProvider: React.FC<TranslationProviderProps> = ({
     language,
     setLanguage,
     changeLanguage,
+    clearCache,
     isLoading,
     error,
     isReady: !!translations && !isLoading
-  }), [t, language, setLanguage, changeLanguage, isLoading, error, translations]);
+  }), [t, language, setLanguage, changeLanguage, clearCache, isLoading, error, translations]);
 
   return (
     <TranslationContext.Provider value={contextValue}>
