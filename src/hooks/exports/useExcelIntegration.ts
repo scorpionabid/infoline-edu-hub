@@ -1,9 +1,7 @@
-
 import { useState, useCallback } from 'react';
-import { useLanguage } from '@/context/LanguageContext';
+import { useTranslation } from '@/contexts/TranslationContext';
 import { useToast } from '@/hooks/use-toast';
 import * as XLSX from 'xlsx';
-import { saveAs } from 'file-saver';
 
 export interface UseExcelIntegrationOptions {
   category?: any;
@@ -11,7 +9,7 @@ export interface UseExcelIntegrationOptions {
 }
 
 export const useExcelIntegration = (options: UseExcelIntegrationOptions = {}) => {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -19,8 +17,8 @@ export const useExcelIntegration = (options: UseExcelIntegrationOptions = {}) =>
   const downloadTemplate = useCallback(async () => {
     if (!options.category) {
       toast({
-        title: t('error'),
-        description: 'Category not available for template generation',
+        title: t('common.error'),
+        description: 'Şablon yaratmaq üçün kateqoriya mövcud deyil',
         variant: 'destructive'
       });
       return;
@@ -30,27 +28,26 @@ export const useExcelIntegration = (options: UseExcelIntegrationOptions = {}) =>
       setIsProcessing(true);
       
       // Create template data based on category columns
-      const headers = options.category.columns?.map((col: any) => col.name) || ['Sample Column'];
+      const headers = options.category.columns?.map((col: any) => col.name) || ['Nümunə Sütun'];
       const templateData = [headers, ...Array(5).fill(headers.map(() => ''))];
       
       const ws = XLSX.utils.aoa_to_sheet(templateData);
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Template');
+      XLSX.utils.book_append_sheet(wb, ws, 'Şablon');
       
-      const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-      const data = new Blob([excelBuffer], { type: 'application/octet-stream' });
-      
-      saveAs(data, `${options.category.name || 'Template'}_template.xlsx`);
+      // Generate file and trigger download
+      const fileName = `${options.category.name || 'Şablon'}_şablon.xlsx`;
+      XLSX.writeFile(wb, fileName);
       
       toast({
-        title: t('success'),
-        description: t('templateDownloaded'),
+        title: t('common.success'),
+        description: 'Şablon uğurla yükləndi',
       });
     } catch (error) {
       console.error('Error downloading template:', error);
       toast({
-        title: t('error'),
-        description: t('errorDownloadingTemplate'),
+        title: t('common.error'),
+        description: 'Şablon yükləməkdə xəta baş verdi',
         variant: 'destructive'
       });
     } finally {
@@ -62,8 +59,8 @@ export const useExcelIntegration = (options: UseExcelIntegrationOptions = {}) =>
   const exportData = useCallback(async () => {
     if (!options.data || options.data.length === 0) {
       toast({
-        title: t('error'),
-        description: 'No data available for export',
+        title: t('common.error'),
+        description: 'İxrac üçün məlumat mövcud deyil',
         variant: 'destructive'
       });
       return;
@@ -75,22 +72,21 @@ export const useExcelIntegration = (options: UseExcelIntegrationOptions = {}) =>
       // Convert data to worksheet
       const ws = XLSX.utils.json_to_sheet(options.data);
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Data');
+      XLSX.utils.book_append_sheet(wb, ws, 'Məlumatlar');
       
-      const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-      const data = new Blob([excelBuffer], { type: 'application/octet-stream' });
-      
-      saveAs(data, `export_${new Date().toISOString().split('T')[0]}.xlsx`);
+      // Generate file and trigger download
+      const fileName = `ixrac_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(wb, fileName);
       
       toast({
-        title: t('success'),
-        description: t('dataExported'),
+        title: t('common.success'),
+        description: 'Məlumatlar uğurla ixrac edildi',
       });
     } catch (error) {
       console.error('Error exporting data:', error);
       toast({
-        title: t('error'),
-        description: t('errorExportingData'),
+        title: t('common.error'),
+        description: 'Məlumat ixracında xəta baş verdi',
         variant: 'destructive'
       });
     } finally {
@@ -110,16 +106,16 @@ export const useExcelIntegration = (options: UseExcelIntegrationOptions = {}) =>
       const jsonData = XLSX.utils.sheet_to_json(worksheet);
       
       toast({
-        title: t('success'),
-        description: `${jsonData.length} records imported successfully`,
+        title: t('common.success'),
+        description: `${jsonData.length} qeyd uğurla idxal edildi`,
       });
       
       return jsonData;
     } catch (error) {
       console.error('Error importing file:', error);
       toast({
-        title: t('error'),
-        description: t('errorImportingFile'),
+        title: t('common.error'),
+        description: 'Fayl idxalında xəta baş verdi',
         variant: 'destructive'
       });
       throw error;

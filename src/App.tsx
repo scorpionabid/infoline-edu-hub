@@ -1,10 +1,10 @@
-
 import { Suspense } from "react";
 import { Toaster } from "sonner";
 import AppRoutes from "./routes/AppRoutes";
 import ErrorBoundary from "./components/ErrorBoundary";
 import TranslationWrapper from "./components/translation/TranslationWrapper";
 import "./App.css";
+import "./styles/enhanced-data-entry.css";
 
 // Simple loading fallback
 const AppLoading = () => (

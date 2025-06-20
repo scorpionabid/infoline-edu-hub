@@ -1,4 +1,3 @@
-
 // Data Entry translation module
 export const dataEntry = {
   // Basic terms
@@ -27,6 +26,88 @@ export const dataEntry = {
   entry_saved: 'Giriş saxlandı',
   entry_submitted: 'Giriş təqdim edildi',
   entry_failed: 'Giriş uğursuz oldu',
+  
+  // Microsoft Forms Style Interface
+  microsoft_forms: {
+    category_selection: 'Kateqoriya Seçimi',
+    data_entry_mode: 'Məlumat Daxil Etmə',
+    review_submit: 'Baxış və Təqdim',
+    
+    // Category selection
+    overall_progress: 'Ümumi İrəliləyiş',
+    total_categories: 'Ümumi kateqoriyalar',
+    completed_categories: 'Tamamlanmış kateqoriyalar',
+    remaining_categories: 'Qalan kateqoriyalar',
+    select_category: 'Kateqoriya seçin',
+    category_progress: 'Kateqoriya irəliləyişi',
+    
+    // Progress indicators
+    not_started: 'Başlanmayıb',
+    in_progress: 'Davam edir',
+    completed: 'Tamamlandı',
+    progress_percentage: '{percentage}% tamamlandı',
+    fields_completed: '{completed} / {total} sahə',
+    required_fields: '{completed} / {total} məcburi',
+    
+    // Navigation
+    back_to_categories: 'Kateqoriyalara qayıt',
+    continue_to_review: 'Baxış səhifəsinə keç',
+    back_to_entry: 'Redaktəyə qayıt',
+    edit_category: 'Kateqoriyanı redaktə et',
+    
+    // Auto-save
+    auto_save: 'Avtomatik saxlama',
+    auto_save_enabled: 'Avtomatik saxlama aktiv',
+    auto_save_disabled: 'Avtomatik saxlama deaktiv',
+    saving: 'Saxlanılır...',
+    saved: 'Saxlandı',
+    save_error: 'Saxlama xətası',
+    unsaved_changes: 'Saxlanmamış dəyişikliklər',
+    last_saved: 'Son saxlama',
+    save_now: 'İndi saxla',
+    retry_save: 'Yenidən cəhd et',
+    clear_error: 'Xətanı sil',
+    
+    // Form validation
+    field_required: 'Bu sahə məcburidir',
+    field_valid: 'Düzgün',
+    field_invalid: 'Səhv format',
+    min_length: 'Minimum {min} simvol tələb olunur',
+    max_length: 'Maksimum {max} simvol icazə verilir',
+    min_value: 'Minimum dəyər: {min}',
+    max_value: 'Maksimum dəyər: {max}',
+    invalid_email: 'E-poçt formatı düzgün deyil',
+    invalid_number: 'Rəqəm daxil edin',
+    
+    // Review mode
+    data_summary: 'Məlumatların İcmalı',
+    ready_to_submit: 'Təqdim etməyə hazır',
+    submit_for_approval: 'Təsdiq üçün göndər',
+    submitting: 'Göndərilir...',
+    
+    // Excel integration
+    excel_integration: 'Excel İnteqrasiyası',
+    download_template: 'Şablon yüklə',
+    import_data: 'Məlumat idxal et',
+    export_data: 'Məlumat ixrac et',
+    processing_file: 'Fayl emal edilir',
+    
+    // Help texts
+    fill_required_fields: 'Məcburi sahələri doldurun',
+    auto_save_info: 'Dəyişikliklər avtomatik olaraq 3 saniyə sonra saxlanacaq',
+    excel_help: 'Excel şablonu yükləyib dolduraraq toplu məlumat idxal edə bilərsiniz',
+    
+    // Status messages
+    category_complete: 'Bu kateqoriya tamamlandı',
+    category_incomplete: 'Bu kateqoriyada hələ doldurulmamış sahələr var',
+    all_required_complete: 'Bütün məcburi sahələr doldurulub',
+    form_ready: 'Form təqdim etməyə hazırdır',
+    
+    // Mobile specific
+    touch_to_edit: 'Redaktə etmək üçün toxunun',
+    swipe_to_navigate: 'Naviqasiya üçün çekin',
+    tap_to_select: 'Seçmək üçün toxunun'
+  },
   
   // Workflow specific
   workflow: {
