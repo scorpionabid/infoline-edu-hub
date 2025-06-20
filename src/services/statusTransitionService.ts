@@ -102,6 +102,94 @@ export const STATUS_TRANSITIONS: StatusTransition[] = [
     }
   },
   {
+    from: DataEntryStatus.REJECTED,
+    to: DataEntryStatus.APPROVED,
+    requiredRoles: ['sectoradmin', 'regionadmin', 'superadmin'],
+    conditions: ['valid_approval_permission'],
+    description: 'Rədd edilmiş məlumatları təsdiqləmək',
+    validateCondition: async (data: TransitionContext) => {
+      // Use same permission check as approval
+      const approvalTransition = STATUS_TRANSITIONS.find(t => 
+        t.from === DataEntryStatus.DRAFT && t.to === DataEntryStatus.APPROVED
+      );
+      
+      if (approvalTransition?.validateCondition) {
+        return await approvalTransition.validateCondition(data);
+      }
+      
+      return false;
+    }
+  },
+  {
+    from: DataEntryStatus.DRAFT,
+    to: DataEntryStatus.REJECTED,
+    requiredRoles: ['sectoradmin', 'regionadmin', 'superadmin'],
+    conditions: ['valid_approval_permission', 'rejection_reason_provided'],
+    description: 'Məlumatları birbaşa rədd etmək (admin)',
+    validateCondition: async (data: TransitionContext) => {
+      // Rədd səbəbinin mövcudluğunu və icazəni yoxla
+      const { comment } = data;
+      
+      if (!comment || comment.trim().length === 0) {
+        return false; // Rejection reason is required
+      }
+      
+      // Use same permission check as approval
+      const approvalTransition = STATUS_TRANSITIONS.find(t => 
+        t.from === DataEntryStatus.DRAFT && t.to === DataEntryStatus.APPROVED
+      );
+      
+      if (approvalTransition?.validateCondition) {
+        return await approvalTransition.validateCondition(data);
+      }
+      
+      return false;
+    }
+  },
+  {
+    from: DataEntryStatus.DRAFT,
+    to: DataEntryStatus.APPROVED,
+    requiredRoles: ['sectoradmin', 'regionadmin', 'superadmin'],
+    conditions: ['valid_approval_permission'],
+    description: 'Məlumatları birbaşa təsdiqləmək (admin)',
+    validateCondition: async (data: TransitionContext) => {
+      // Təsdiq icazəsini yoxla
+      const { schoolId, userId, userRole } = data;
+      
+      try {
+        // Get school information
+        const { data: school } = await supabase
+          .from('schools')
+          .select('region_id, sector_id')
+          .eq('id', schoolId)
+          .single();
+
+        if (!school) return false;
+
+        // Get user roles and permissions
+        const { data: userRoles } = await supabase
+          .from('user_roles')
+          .select('role, region_id, sector_id, school_id')
+          .eq('user_id', userId);
+
+        if (!userRoles || userRoles.length === 0) return false;
+
+        // Check if user has permission to approve for this school
+        const hasPermission = userRoles.some(userRole => {
+          if (userRole.role === 'superadmin') return true;
+          if (userRole.role === 'regionadmin' && userRole.region_id === school.region_id) return true;
+          if (userRole.role === 'sectoradmin' && userRole.sector_id === school.sector_id) return true;
+          return false;
+        });
+
+        return hasPermission;
+      } catch (error) {
+        console.error('Error validating approval permission:', error);
+        return false;
+      }
+    }
+  },
+  {
     from: DataEntryStatus.PENDING,
     to: DataEntryStatus.APPROVED,
     requiredRoles: ['sectoradmin', 'regionadmin', 'superadmin'],

@@ -56,7 +56,7 @@ export const EnhancedApprovalManager: React.FC<EnhancedApprovalManagerProps> = (
   } = useEnhancedApprovalData({
     initialFilter,
     autoRefresh: true,
-    refreshInterval: 30000
+    refreshInterval: 60000 // DÜZƏLDILMIŞ: 60 saniyə interval
   });
 
   const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'rejected' | 'draft'>('pending');
@@ -66,6 +66,11 @@ export const EnhancedApprovalManager: React.FC<EnhancedApprovalManagerProps> = (
   const [bulkReason, setBulkReason] = useState('');
   const [bulkComment, setBulkComment] = useState('');
   const [isBulkProcessing, setIsBulkProcessing] = useState(false);
+  const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [rejectingItem, setRejectingItem] = useState<ApprovalItem | null>(null);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [rejectionComment, setRejectionComment] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const handleSearch = (term: string) => {
     setSearchTerm(term);
@@ -89,17 +94,40 @@ export const EnhancedApprovalManager: React.FC<EnhancedApprovalManagerProps> = (
 
   const handleApprove = async (item: ApprovalItem) => {
     try {
+      setIsProcessing(true);
+      console.log('Handling approve for item:', item.id);
       await approveItem(item.id);
+      console.log('Approve successful for item:', item.id);
     } catch (error: any) {
       console.error('Approval failed:', error);
+      alert('Təsdiq zamanı xəta: ' + error.message);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
-  const handleReject = async (item: ApprovalItem, reason: string) => {
+  const handleRejectClick = (item: ApprovalItem) => {
+    setRejectingItem(item);
+    setRejectionReason('');
+    setRejectionComment('');
+    setShowRejectDialog(true);
+  };
+
+  const handleRejectConfirm = async () => {
+    if (!rejectingItem || !rejectionReason.trim()) return;
+    
     try {
-      await rejectItem(item.id, reason);
+      setIsProcessing(true);
+      await rejectItem(rejectingItem.id, rejectionReason, rejectionComment || undefined);
+      setShowRejectDialog(false);
+      setRejectingItem(null);
+      setRejectionReason('');
+      setRejectionComment('');
     } catch (error: any) {
       console.error('Rejection failed:', error);
+      alert('Rədd zamanı xəta: ' + error.message);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -364,16 +392,23 @@ export const EnhancedApprovalManager: React.FC<EnhancedApprovalManagerProps> = (
                     {activeTab === 'pending' && item.canApprove && (
                       <CardContent className="pt-0">
                         <div className="flex gap-2">
-                          <Button onClick={() => handleApprove(item)} className="flex-1">
-                            <CheckCircle className="mr-2 h-4 w-4" />Təsdiq et
+                          <Button 
+                            onClick={() => handleApprove(item)} 
+                            className="flex-1"
+                            disabled={isProcessing}
+                          >
+                            {isProcessing ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <CheckCircle className="mr-2 h-4 w-4" />
+                            )}
+                            Təsdiq et
                           </Button>
                           <Button 
                             variant="destructive" 
-                            onClick={() => {
-                              const reason = prompt('Rədd səbəbini daxil edin:');
-                              if (reason) handleReject(item, reason);
-                            }}
+                            onClick={() => handleRejectClick(item)}
                             className="flex-1"
+                            disabled={isProcessing}
                           >
                             <XCircle className="mr-2 h-4 w-4" />Rədd et
                           </Button>
@@ -451,6 +486,76 @@ export const EnhancedApprovalManager: React.FC<EnhancedApprovalManagerProps> = (
                     <XCircle className="h-4 w-4 mr-2" />
                   )}
                   {bulkAction === 'approve' ? 'Təsdiq et' : 'Rədd et'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Rədd Etmə Dialoqu */}
+      {showRejectDialog && rejectingItem && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md mx-4">
+            <CardHeader>
+              <CardTitle>Məlumatı Rədd Et</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                {rejectingItem.schoolName} - {rejectingItem.categoryName}
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <label className="text-sm font-medium">Rədd səbəbi *</label>
+                <Input
+                  placeholder="Rədd səbəbini daxil edin..."
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Əlavə şərh (istəyə bağlı)</label>
+                <Input
+                  placeholder="Əlavə şərh..."
+                  value={rejectionComment}
+                  onChange={(e) => setRejectionComment(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Bu əməliyyat geri alına bilməz. Məktəb admininə rədd səbəbi göndəriləcək.
+                </AlertDescription>
+              </Alert>
+            </CardContent>
+            <CardContent className="pt-0">
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowRejectDialog(false);
+                    setRejectingItem(null);
+                    setRejectionReason('');
+                    setRejectionComment('');
+                  }}
+                  disabled={isProcessing}
+                  className="flex-1"
+                >
+                  Ləğv et
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={handleRejectConfirm}
+                  disabled={isProcessing || !rejectionReason.trim()}
+                  className="flex-1"
+                >
+                  {isProcessing ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <XCircle className="h-4 w-4 mr-2" />
+                  )}
+                  Rədd et
                 </Button>
               </div>
             </CardContent>

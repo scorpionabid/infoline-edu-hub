@@ -136,11 +136,12 @@ export const useEnhancedApprovalData = (
     }
   }, [filter]); // Remove isLoading from dependencies to avoid infinite loop
 
-  // Real-time subscription effect
+  // DÜZƏLDILMIŞ: Throttled real-time subscription
   useEffect(() => {
     if (!props.autoRefresh) return;
 
-    console.log('Setting up real-time subscription for approval data');
+    console.log('Setting up THROTTLED real-time subscription for approval data');
+    let updateTimeout: NodeJS.Timeout;
 
     const subscription = supabase
       .channel('approval-data-updates')
@@ -150,38 +151,52 @@ export const useEnhancedApprovalData = (
         table: 'data_entries',
         filter: 'status=in.(pending,approved,rejected)'
       }, (payload) => {
-        console.log('Real-time update received:', payload);
-        // Debounce the reload to avoid too frequent updates
-        setTimeout(() => {
-          if (!isLoading) {
+        console.log('Real-time update received (throttled):', payload);
+        
+        // Clear existing timeout
+        if (updateTimeout) {
+          clearTimeout(updateTimeout);
+        }
+        
+        // Throttle updates to prevent excessive reloads
+        updateTimeout = setTimeout(() => {
+          if (!isLoading && hasInitialLoad) {
+            console.log('Executing throttled reload');
             loadItems();
           }
-        }, 1000);
+        }, 2000); // 2 second throttle
       })
       .subscribe();
 
     return () => {
       console.log('Cleaning up real-time subscription');
+      if (updateTimeout) {
+        clearTimeout(updateTimeout);
+      }
       subscription.unsubscribe();
     };
-  }, [props.autoRefresh]); // Remove loadItems from dependencies
+  }, [props.autoRefresh, hasInitialLoad]); // Add hasInitialLoad dependency
 
-  // Auto-refresh interval effect
+  // DÜZƏLDILMIŞ: Less frequent auto-refresh
   useEffect(() => {
     if (!props.autoRefresh || !props.refreshInterval) return;
 
-    console.log(`Setting up auto-refresh interval: ${props.refreshInterval}ms`);
+    // Minimum interval of 30 seconds to prevent excessive API calls
+    const safeInterval = Math.max(props.refreshInterval, 30000);
+    
+    console.log(`Setting up auto-refresh interval: ${safeInterval}ms`);
     const interval = setInterval(() => {
-      if (!isLoading) {
+      if (!isLoading && hasInitialLoad) {
+        console.log('Auto-refresh triggered');
         loadItems();
       }
-    }, props.refreshInterval);
+    }, safeInterval);
     
     return () => {
       console.log('Cleaning up auto-refresh interval');
       clearInterval(interval);
     };
-  }, [props.autoRefresh, props.refreshInterval]); // Remove loadItems from dependencies
+  }, [props.autoRefresh, props.refreshInterval, hasInitialLoad]);
 
   // Initial load - only once when component mounts
   useEffect(() => {
