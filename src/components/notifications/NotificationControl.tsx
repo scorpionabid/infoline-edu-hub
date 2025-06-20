@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,6 @@ import { useTranslation } from "@/contexts/TranslationContext";
 import NotificationList from "./NotificationList";
 import { AppNotification } from "@/types/notification";
 
-// Props interfeysi əlavə edildi
 interface NotificationControlProps {
   notifications: AppNotification[];
   onMarkAsRead: (id: string) => void;
@@ -27,8 +27,9 @@ const NotificationControl: React.FC<NotificationControlProps> = ({
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
+  // Fix: use is_read instead of isRead
   const unreadCount = notifications.filter(
-    (notification) => !notification.isRead,
+    (notification) => !notification.is_read,
   ).length;
 
   return (

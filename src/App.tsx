@@ -1,36 +1,48 @@
-import { Suspense } from "react";
-import { Toaster } from "sonner";
-import AppRoutes from "./routes/AppRoutes";
-import ErrorBoundary from "./components/ErrorBoundary";
-import TranslationWrapper from "./components/translation/TranslationWrapper";
-import "./App.css";
-import "./styles/enhanced-data-entry.css";
 
-// Simple loading fallback
-const AppLoading = () => (
-  <div className="min-h-screen flex items-center justify-center bg-background">
-    <div className="text-center space-y-4">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-      <p className="text-sm text-muted-foreground">İnfoLine yüklənir...</p>
-    </div>
-  </div>
-);
+import { useEffect } from "react";
+import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter } from "react-router-dom";
+import { useAuthStore } from "@/hooks/auth/useAuthStore";
+import { ThemeProvider } from "@/contexts/ThemeContext";
+import { TranslationProvider } from "@/contexts/TranslationContext";
+import { UnifiedNotificationProvider } from "@/notifications/components/NotificationProvider";
+import { AppRoutes } from "@/routes/AppRoutes";
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 function App() {
+  const initializeAuth = useAuthStore((state) => state.initializeAuth);
+
+  useEffect(() => {
+    initializeAuth();
+  }, [initializeAuth]);
+
   return (
-    <ErrorBoundary>
-      <TranslationWrapper skipLoading={true}>
-        <Suspense fallback={<AppLoading />}>
-          <AppRoutes />
-          <Toaster 
-            position="top-right" 
-            richColors 
-            closeButton
-            duration={4000}
-          />
-        </Suspense>
-      </TranslationWrapper>
-    </ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <ThemeProvider>
+          <TranslationProvider>
+            <UnifiedNotificationProvider enableToasts={true}>
+              <TooltipProvider>
+                <div className="min-h-screen bg-background font-sans antialiased">
+                  <AppRoutes />
+                </div>
+                <Toaster position="top-right" />
+              </TooltipProvider>
+            </UnifiedNotificationProvider>
+          </TranslationProvider>
+        </ThemeProvider>
+      </BrowserRouter>
+    </QueryClientProvider>
   );
 }
 
