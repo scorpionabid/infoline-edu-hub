@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { ChevronDown, RefreshCw } from 'lucide-react';
@@ -10,22 +10,125 @@ import {
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+
+type DashboardStats = {
+  schoolCount: number;
+  activeUserCount: number;
+  completionPercentage: number;
+  pendingFormCount: number;
+};
 
 const DashboardHeader: React.FC = () => {
   const { t } = useTranslation();
   const user = useAuthStore(selectUser);
   const [isRefreshing, setIsRefreshing] = React.useState(false);
+  const [stats, setStats] = useState<DashboardStats>({
+    schoolCount: 0,
+    activeUserCount: 0,
+    completionPercentage: 0,
+    pendingFormCount: 0
+  });
+  
+  // Fetch dashboard statistics based on user role
+  const fetchDashboardStats = async () => {
+    if (!user) return;
+    
+    try {
+      let schoolCount = 0;
+      let activeUserCount = 0;
+      let completionPercentage = 0;
+      let pendingFormCount = 0;
+      
+      if (user.role === 'regionadmin' && user.region_id) {
+        // Count schools in this region
+        const { data: schools, error: schoolsError } = await supabase
+          .from('schools')
+          .select('id')
+          .eq('region_id', user.region_id);
+        
+        schoolCount = schools?.length || 0;
+        
+        // Count active users in this region
+        const { data: users, error: usersError } = await supabase
+          .from('user_roles')
+          .select('id')
+          .eq('region_id', user.region_id);
+        
+        activeUserCount = users?.length || 0;
+      } 
+      else if (user.role === 'sectoradmin' && user.sector_id) {
+        // Count schools in this sector
+        const { data: schools, error: schoolsError } = await supabase
+          .from('schools')
+          .select('id')
+          .eq('sector_id', user.sector_id);
+        
+        schoolCount = schools?.length || 0;
+        
+        // Calculate completion percentage (this is an example - adjust to your actual data model)
+        const { data: entries, error: entriesError } = await supabase
+          .from('data_entries')
+          .select('status')
+          .eq('sector_id', user.sector_id);
+        
+        if (entries && entries.length > 0) {
+          const completedEntries = entries.filter(e => e.status === 'completed').length;
+          completionPercentage = Math.round((completedEntries / entries.length) * 100);
+        }
+      }
+      else if (user.role === 'schooladmin' && user.school_id) {
+        // Count pending forms
+        const { data: pendingForms, error: formsError } = await supabase
+          .from('data_entries')
+          .select('id')
+          .eq('school_id', user.school_id)
+          .eq('status', 'pending');
+        
+        pendingFormCount = pendingForms?.length || 0;
+        
+        // Calculate completion percentage
+        const { data: entries, error: entriesError } = await supabase
+          .from('data_entries')
+          .select('status')
+          .eq('school_id', user.school_id);
+        
+        if (entries && entries.length > 0) {
+          const completedEntries = entries.filter(e => e.status === 'completed').length;
+          completionPercentage = Math.round((completedEntries / entries.length) * 100);
+        }
+      }
+      
+      setStats({
+        schoolCount,
+        activeUserCount,
+        completionPercentage,
+        pendingFormCount
+      });
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+    }
+  };
+
+  // Fetch stats on component mount and when user changes
+  useEffect(() => {
+    fetchDashboardStats();
+  }, [user]);
   
   const handleRefresh = () => {
     setIsRefreshing(true);
-    setTimeout(() => {
+    fetchDashboardStats().then(() => {
       setIsRefreshing(false);
       toast.success("Məlumatlar yeniləndi");
-    }, 1000);
+    }).catch(err => {
+      setIsRefreshing(false);
+      toast.error("Məlumatları yeniləmək mümkün olmadı");
+    });
   };
   
   const handlePeriodChange = (period: string) => {
     toast.info("Dövr dəyişdirildi");
+    // Add period filtering logic here if needed
   };
   
   return (
@@ -34,20 +137,20 @@ const DashboardHeader: React.FC = () => {
 
         {user?.role === 'regionadmin' && (
           <p>
-            Region məktəbləri: <span className="font-medium">126</span> | {' '}
-            Aktiv istifadəçilər: <span className="font-medium">158</span>
+            Region məktəbləri: <span className="font-medium">{stats.schoolCount}</span> | {' '}
+            Aktiv istifadəçilər: <span className="font-medium">{stats.activeUserCount}</span>
           </p>
         )}
         {user?.role === 'sectoradmin' && (
           <p>
-            Sektor məktəbləri: <span className="font-medium">24</span> | {' '}
-            Tamamlanma faizi: <span className="font-medium">68%</span>
+            Sektor məktəbləri: <span className="font-medium">{stats.schoolCount}</span> | {' '}
+            Tamamlanma faizi: <span className="font-medium">{stats.completionPercentage}%</span>
           </p>
         )}
         {user?.role === 'schooladmin' && (
           <p>
-            Gözləyən formlar: <span className="font-medium">3</span> | {' '}
-            Tamamlanma faizi: <span className="font-medium">85%</span>
+            Gözləyən formlar: <span className="font-medium">{stats.pendingFormCount}</span> | {' '}
+            Tamamlanma faizi: <span className="font-medium">{stats.completionPercentage}%</span>
           </p>
         )}
       </div>
