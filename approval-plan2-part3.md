@@ -1,5 +1,7 @@
 # İnfoLine Approval System - Detallı İmplementasiya Planı v2.0 (Hissə 3/4)
 
+**STATUS: ⚠️ SUPERSEDED by approval-implementation-final.md**
+
 ## Phase 3: Enhanced React Components (3 gün)
 
 ### 3.1 Enhanced Approval Manager

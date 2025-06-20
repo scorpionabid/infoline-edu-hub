@@ -1,5 +1,7 @@
 # İnfoLine Approval System - Detallı İmplementasiya Planı v2.0 (Hissə 2/4)
 
+**STATUS: ⚠️ SUPERSEDED by approval-implementation-final.md**
+
 ## Phase 2: Enhanced Services və Hooks (2 gün)
 
 ### 2.1 Enhanced Approval Service
