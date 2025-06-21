@@ -11,6 +11,7 @@ export interface LogContext {
   details?: Record<string, any>;
   field?: string;
   fileName?: string;
+  fileSize?: number;
   error?: string;
   metadata?: Record<string, any>;
   value?: any;
