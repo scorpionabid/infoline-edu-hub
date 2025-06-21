@@ -1,3 +1,4 @@
+
 // ============================================================================
 // İnfoLine Auth System - Main Export File
 // ============================================================================
@@ -94,41 +95,6 @@ export const useSupabaseAuth = () => {
     signOut
   };
 };
-
-// ========== Permission System ==========
-export { 
-  usePermissions,
-  useDataAccessControl
-} from './usePermissions';
-
-export {
-  checkRegionAccess,
-  checkSectorAccess,
-  checkSchoolAccess,
-  checkIsSuperAdmin,
-  checkIsRegionAdmin,
-  checkIsSectorAdmin,
-  checkUserRole,
-  checkRegionAccessUtil,
-  checkSectorAccessUtil,
-  checkSchoolAccessUtil
-} from './usePermissions';
-
-// ========== Type Exports ==========
-export type { 
-  UsePermissionsResult,
-  PermissionLevel, 
-  PermissionChecker, 
-  PermissionResult,
-  DataAccessConfig,
-  DataAccessResult,
-  UserRole,
-  UserStatus,
-  FullUserData,
-  AuthState,
-  AuthContextType,
-  UseAuthResult
-} from '@/types/auth';
 
 // ========== Default Export ==========
 export { useAuthStore as default } from './useAuthStore';

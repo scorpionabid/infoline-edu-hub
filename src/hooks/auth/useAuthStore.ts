@@ -53,7 +53,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       securityLogger.logAuthEvent('User signed in', { 
         userId: data.user?.id, 
-        email: data.user?.email 
+        userEmail: data.user?.email 
       });
 
       set({ 
@@ -183,4 +183,18 @@ export const selectUpdatePassword = (state: AuthState) => state.updatePassword;
 export const selectHasPermission = (state: AuthState) => (permission: string) => {
   // Basic permission check implementation
   return !!state.user;
+};
+
+// Helper functions for route protection
+export const shouldAuthenticate = (pathname: string): boolean => {
+  const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password'];
+  return !publicRoutes.includes(pathname);
+};
+
+export const isProtectedRoute = (pathname: string): boolean => {
+  return shouldAuthenticate(pathname);
+};
+
+export const getRedirectPath = (userRole?: string): string => {
+  return '/dashboard';
 };

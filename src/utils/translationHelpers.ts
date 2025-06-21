@@ -21,15 +21,20 @@ export const formatTranslationData = (data: any): string => {
   return String(data);
 };
 
-// Helper function to safely handle translation with object parameters
-export const translateWithData = (translationFn: ((key: string, fallback?: string) => string) | undefined, key: string, data?: any, fallback?: string): string => {
+// Helper function to safely handle translation with interpolation
+export const translateWithInterpolation = (
+  translationFn: ((key: string, fallback?: string) => string) | undefined, 
+  key: string, 
+  data?: Record<string, any>, 
+  fallback?: string
+): string => {
   if (typeof translationFn === 'function') {
-    if (typeof data === 'object' && data !== null) {
-      // Format the data object into a string representation
-      const formattedData = formatTranslationData(data);
-      return translationFn(key, formattedData) || fallback || key;
-    }
+    // For now, just use the base translation function since our system doesn't support interpolation yet
+    // In the future, this can be enhanced to handle template strings
     return translationFn(key, fallback);
   }
   return fallback || key;
 };
+
+// Legacy function for backwards compatibility
+export const translateWithData = translateWithInterpolation;
