@@ -5,9 +5,13 @@ export type LanguageType = 'az' | 'en' | 'tr' | 'ru';
 
 export interface LanguageContextType {
   currentLanguage: LanguageType;
+  language: LanguageType; // Add this for backward compatibility
   setLanguage: (lang: LanguageType) => void;
   t: (key: string, fallback?: string) => string;
   tSafe: (key: string, fallback?: string) => string;
+  isLoading?: boolean;
+  isReady?: boolean;
+  error?: string | null;
 }
 
 const translations: Record<LanguageType, Record<string, string>> = {
@@ -30,7 +34,9 @@ const translations: Record<LanguageType, Record<string, string>> = {
     'roles.superadmin': 'Super Admin',
     'roles.regionadmin': 'Region Admin',
     'roles.sectoradmin': 'Sektor Admin',
-    'roles.schooladmin': 'Məktəb Admin'
+    'roles.schooladmin': 'Məktəb Admin',
+    'theme.light': 'Açıq',
+    'theme.dark': 'Qaranlıq'
   },
   en: {
     'dashboardLabel': 'Dashboard',
@@ -51,7 +57,9 @@ const translations: Record<LanguageType, Record<string, string>> = {
     'roles.superadmin': 'Super Admin',
     'roles.regionadmin': 'Region Admin',
     'roles.sectoradmin': 'Sector Admin',
-    'roles.schooladmin': 'School Admin'
+    'roles.schooladmin': 'School Admin',
+    'theme.light': 'Light',
+    'theme.dark': 'Dark'
   },
   tr: {
     'dashboardLabel': 'Kontrol Paneli',
@@ -72,7 +80,9 @@ const translations: Record<LanguageType, Record<string, string>> = {
     'roles.superadmin': 'Süper Admin',
     'roles.regionadmin': 'Bölge Admin',
     'roles.sectoradmin': 'Sektör Admin',
-    'roles.schooladmin': 'Okul Admin'
+    'roles.schooladmin': 'Okul Admin',
+    'theme.light': 'Açık',
+    'theme.dark': 'Karanlık'
   },
   ru: {
     'dashboardLabel': 'Панель управления',
@@ -93,7 +103,9 @@ const translations: Record<LanguageType, Record<string, string>> = {
     'roles.superadmin': 'Супер Админ',
     'roles.regionadmin': 'Региональный Админ',
     'roles.sectoradmin': 'Секторный Админ',
-    'roles.schooladmin': 'Школьный Админ'
+    'roles.schooladmin': 'Школьный Админ',
+    'theme.light': 'Светлая',
+    'theme.dark': 'Темная'
   }
 };
 
@@ -101,6 +113,8 @@ const TranslationContext = createContext<LanguageContextType | undefined>(undefi
 
 export const TranslationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentLanguage, setCurrentLanguage] = useState<LanguageType>('az');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const setLanguage = (lang: LanguageType) => {
     setCurrentLanguage(lang);
@@ -123,7 +137,16 @@ export const TranslationProvider: React.FC<{ children: React.ReactNode }> = ({ c
   }, []);
 
   return (
-    <TranslationContext.Provider value={{ currentLanguage, setLanguage, t, tSafe }}>
+    <TranslationContext.Provider value={{ 
+      currentLanguage, 
+      language: currentLanguage, // For backward compatibility
+      setLanguage, 
+      t, 
+      tSafe,
+      isLoading,
+      isReady: !isLoading && !error,
+      error
+    }}>
       {children}
     </TranslationContext.Provider>
   );

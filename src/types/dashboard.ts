@@ -27,6 +27,62 @@ export interface StatsGridItem {
   icon: string;
 }
 
+// Add missing types for dashboard components
+export interface CategoryItem {
+  id: string;
+  name: string;
+  progress: number;
+  status: string;
+}
+
+export interface FormItem {
+  id: string;
+  title: string;
+  school: string;
+  deadline: string;
+  status: string;
+}
+
+export interface DeadlineItem {
+  id: string;
+  title: string;
+  deadline: string;
+  priority: string;
+}
+
+export interface PendingApproval {
+  id: string;
+  title: string;
+  school: string;
+  submittedAt: string;
+  priority: string;
+}
+
+export interface SchoolStat {
+  id: string;
+  name: string;
+  completionRate: number;
+  totalForms: number;
+  completedForms: number;
+  pendingForms: number;
+  status: string;
+  lastUpdated: string;
+}
+
+export interface SectorStat {
+  id: string;
+  name: string;
+  schoolCount: number;
+  completionRate: number;
+  status: string;
+}
+
+export interface DashboardChartProps {
+  data: any[];
+  title: string;
+  type: 'line' | 'bar' | 'pie';
+}
+
 export interface SuperAdminDashboardData {
   totalUsers: number;
   totalRegions: number;
@@ -74,6 +130,7 @@ export interface RegionAdminDashboardData {
   categories: any[];
   pendingItems: any[];
   notifications: any[];
+  deadlines?: any[];
 }
 
 export interface SectorAdminDashboardData {
@@ -94,6 +151,7 @@ export interface SectorAdminDashboardData {
   categories: any[];
   pendingItems: any[];
   notifications: any[];
+  deadlines?: any[];
 }
 
 export interface SchoolAdminDashboardData {

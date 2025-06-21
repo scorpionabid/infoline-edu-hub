@@ -1,8 +1,9 @@
+
 import React from "react";
 import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/contexts/TranslationContext";
-import { useThemeSafe } from "@/contexts/ThemeContext";
+import { useTheme } from "@/contexts/ThemeContext";
 
 // Simple error boundary component
 class ErrorBoundary extends React.Component<
@@ -37,7 +38,7 @@ const ThemeToggle: React.FC = () => {
   try {
     // Safely get translation function with optional chaining
     const { t } = useTranslation?.() || {};
-    const { theme = 'light', setTheme } = useThemeSafe?.() || {};
+    const { theme = 'light', setTheme } = useTheme?.() || {};
 
     // Don't render if theme context is not available
     if (!setTheme) {
@@ -58,8 +59,8 @@ const ThemeToggle: React.FC = () => {
     };
 
     // Get theme display names with fallbacks
-    const lightText = t?.('theme.light', { defaultValue: defaultTranslations.light }) || defaultTranslations.light;
-    const darkText = t?.('theme.dark', { defaultValue: defaultTranslations.dark }) || defaultTranslations.dark;
+    const lightText = t?.('theme.light') || defaultTranslations.light;
+    const darkText = t?.('theme.dark') || defaultTranslations.dark;
     const label = theme === "dark" ? lightText : darkText;
 
     // Memoize the icon to prevent unnecessary re-renders
