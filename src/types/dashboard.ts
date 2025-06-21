@@ -95,9 +95,9 @@ export interface SectorStat {
 }
 
 export interface DashboardChartProps {
-  data: any[];
-  title: string;
-  type: 'line' | 'bar' | 'pie';
+  data?: any[];
+  title?: string;
+  type?: 'line' | 'bar' | 'pie';
   stats?: DashboardFormStats;
   showLegend?: boolean;
   height?: number;
