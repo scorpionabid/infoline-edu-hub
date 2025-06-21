@@ -1,4 +1,5 @@
-import { DataEntryStatus, DataEntryValue } from './dataEntry';
+
+import { DataEntryStatus, DataEntryStatusType, DataEntryValue } from './dataEntry';
 
 // Original types for backwards compatibility
 export interface ApprovalItem {
@@ -9,7 +10,7 @@ export interface ApprovalItem {
   schoolName: string;
   submittedBy: string;
   submittedAt: string;
-  status: DataEntryStatus;
+  status: DataEntryStatusType;
   entries: DataEntryValue[];
   completionRate: number;
 }
@@ -32,7 +33,7 @@ export interface ApprovalAction {
 }
 
 export interface ApprovalFilters {
-  status?: DataEntryStatus;
+  status?: DataEntryStatusType;
   schoolId?: string;
   categoryId?: string;
   dateRange?: {
@@ -56,7 +57,7 @@ export interface EnhancedApprovalItem {
   schoolName: string;
   categoryId: string;
   categoryName: string;
-  status: DataEntryStatus;
+  status: DataEntryStatusType;
   submittedBy?: string;
   submittedAt?: string;
   completionRate: number;
