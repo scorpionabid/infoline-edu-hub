@@ -4,10 +4,10 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter } from "react-router-dom";
-import { useAuthStore } from "@/hooks/auth/useAuthStore";
+import { useAuthStore, selectUser } from "@/hooks/auth/useAuthStore";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { TranslationProvider } from "@/contexts/TranslationContext";
-import { UnifiedNotificationProvider } from "@/notifications/components/NotificationProvider";
+import { NotificationProvider } from "@/components/notifications/NotificationProvider";
 import { AppRoutes } from "@/routes/AppRoutes";
 
 const queryClient = new QueryClient({
@@ -21,6 +21,7 @@ const queryClient = new QueryClient({
 
 function App() {
   const initializeAuth = useAuthStore((state) => state.initializeAuth);
+  const user = useAuthStore(selectUser);
 
   useEffect(() => {
     initializeAuth();
@@ -31,14 +32,14 @@ function App() {
       <BrowserRouter>
         <ThemeProvider>
           <TranslationProvider>
-            <UnifiedNotificationProvider enableToasts={true}>
+            <NotificationProvider userId={user?.id}>
               <TooltipProvider>
                 <div className="min-h-screen bg-background font-sans antialiased">
                   <AppRoutes />
                 </div>
                 <Toaster position="top-right" />
               </TooltipProvider>
-            </UnifiedNotificationProvider>
+            </NotificationProvider>
           </TranslationProvider>
         </ThemeProvider>
       </BrowserRouter>

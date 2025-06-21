@@ -27,7 +27,7 @@ const NotificationControl: React.FC<NotificationControlProps> = ({
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
-  // Fix: use is_read instead of isRead
+  // Use consistent field name
   const unreadCount = notifications.filter(
     (notification) => !notification.is_read,
   ).length;

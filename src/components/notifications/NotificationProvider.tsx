@@ -6,10 +6,14 @@ const NotificationContext = createContext<UseNotificationsResult | undefined>(un
 
 interface NotificationProviderProps {
   children: ReactNode;
+  userId?: string;
 }
 
-export const NotificationProvider: React.FC<NotificationProviderProps> = ({ children }) => {
-  const notificationData = useNotifications();
+export const NotificationProvider: React.FC<NotificationProviderProps> = ({ 
+  children, 
+  userId 
+}) => {
+  const notificationData = useNotifications(userId);
 
   return (
     <NotificationContext.Provider value={notificationData}>
