@@ -4,10 +4,11 @@ import { useTranslation } from "@/contexts/TranslationContext";
 import Sidebar from "@/components/navigation/Sidebar";
 import { NotificationBell } from "./NotificationBell";
 import { Button } from "@/components/ui/button";
-import { LogOut, User } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { useAuthStore, selectSignOut } from "@/hooks/auth/useAuthStore";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { LanguageSelect } from "@/components/ui/language-select";
+import { usePermissions } from "@/hooks/auth/usePermissions";
 
 interface SidebarLayoutProps {
   children: React.ReactNode;
@@ -16,6 +17,7 @@ interface SidebarLayoutProps {
 const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   const { t } = useTranslation();
   const signOut = useAuthStore(selectSignOut);
+  const { userRole } = usePermissions();
 
   const handleSignOut = () => {
     signOut();
@@ -24,7 +26,11 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   return (
     <div className="flex min-h-screen bg-background">
       <div className="w-64 flex-shrink-0">
-        <Sidebar />
+        <Sidebar 
+          userRole={userRole}
+          isOpen={true}
+          onToggle={() => {}}
+        />
       </div>
 
       <div className="flex-1 flex flex-col">

@@ -2,9 +2,9 @@
 import React from 'react';
 import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useTheme } from "@/context/ThemeContext";
+import { useTheme } from "@/contexts/ThemeContext";
 
-export function ModeToggle() {
+export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
 
   return (
@@ -23,3 +23,5 @@ export function ModeToggle() {
     </Button>
   );
 }
+
+export { ThemeToggle as ModeToggle };

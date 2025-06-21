@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Bell, X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,28 +8,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { useNotifications } from '@/hooks/notifications/useNotifications';
 import { cn } from '@/lib/utils';
 
-interface Notification {
-  id: string;
-  title: string;
-  message?: string;
-  type: 'info' | 'success' | 'warning' | 'error';
-  isRead: boolean;
-  createdAt: string;
-  related_entity_type?: string;
-  related_entity_id?: string;
-  priority?: 'low' | 'normal' | 'high';
-}
-
-interface UseNotificationsResult {
-  notifications: Notification[];
-  unreadCount: number;
-  isLoading: boolean;
-  error: Error | null;
-  markAsRead: (id: string) => void;
-  markAllAsRead: () => void;
-  removeNotification: (id: string) => void;
-}
-
 export const NotificationSystem: React.FC = () => {
   const {
     notifications,
@@ -39,8 +16,8 @@ export const NotificationSystem: React.FC = () => {
     error,
     markAsRead,
     markAllAsRead,
-    removeNotification
-  } = useNotifications() as UseNotificationsResult;
+    clearAll
+  } = useNotifications();
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -55,8 +32,8 @@ export const NotificationSystem: React.FC = () => {
     }
   };
 
-  const handleNotificationClick = (notification: Notification) => {
-    if (!notification.isRead) {
+  const handleNotificationClick = (notification: any) => {
+    if (!notification.is_read) {
       markAsRead(notification.id);
     }
   };
@@ -135,7 +112,7 @@ export const NotificationSystem: React.FC = () => {
                   key={notification.id}
                   className={cn(
                     "border-0 border-l-4 rounded-none cursor-pointer hover:bg-muted/50 transition-colors",
-                    !notification.isRead && "bg-muted/30",
+                    !notification.is_read && "bg-muted/30",
                     notification.type === 'success' && "border-l-green-500",
                     notification.type === 'warning' && "border-l-yellow-500",
                     notification.type === 'error' && "border-l-red-500",
@@ -150,7 +127,7 @@ export const NotificationSystem: React.FC = () => {
                         <div className="flex-1 min-w-0">
                           <p className={cn(
                             "text-sm font-medium truncate",
-                            !notification.isRead && "font-semibold"
+                            !notification.is_read && "font-semibold"
                           )}>
                             {notification.title}
                           </p>
@@ -160,13 +137,13 @@ export const NotificationSystem: React.FC = () => {
                             </p>
                           )}
                           <p className="text-xs text-muted-foreground mt-1">
-                            {formatDate(notification.createdAt)}
+                            {formatDate(notification.created_at)}
                           </p>
                         </div>
                       </div>
                       
                       <div className="flex items-center gap-1">
-                        {!notification.isRead && (
+                        {!notification.is_read && (
                           <div className="w-2 h-2 bg-blue-600 rounded-full" />
                         )}
                         <Button
@@ -175,7 +152,7 @@ export const NotificationSystem: React.FC = () => {
                           className="h-6 w-6 p-0"
                           onClick={(e) => {
                             e.stopPropagation();
-                            removeNotification(notification.id);
+                            clearAll();
                           }}
                         >
                           <X className="h-3 w-3" />
