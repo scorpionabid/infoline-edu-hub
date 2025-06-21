@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useTranslation } from "@/contexts/TranslationContext";
 import { DashboardFormStats } from "@/types/dashboard";
@@ -21,7 +20,7 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({
     );
   }
 
-  // Real Backend Data with required properties
+  // Real Backend Data
   const formStats: DashboardFormStats = {
     completedForms: dashboardData.formStats?.completedForms || 0,
     pendingForms: dashboardData.formStats?.pendingForms || 0,
@@ -37,11 +36,12 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({
     percentage: dashboardData.formStats?.percentage || 0,
     completion_rate: dashboardData.formStats?.completion_rate || 0,
     completionRate: dashboardData.formStats?.completionRate || 0,
-    // Required properties
-    totalForms: dashboardData.formStats?.total || 0,
-    pendingApprovals: dashboardData.formStats?.pendingForms || 0,
-    rejectedForms: dashboardData.formStats?.rejected || 0,
   };
+
+  // Məcburi xassələri təyin edirik
+  formStats.totalForms = formStats.total || 0;
+  formStats.pendingApprovals = formStats.pendingForms || 0;
+  formStats.rejectedForms = formStats.rejected || 0;
 
   const statsGridData = [
     {

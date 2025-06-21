@@ -1,44 +1,36 @@
+import { Suspense } from "react";
+import { Toaster } from "sonner";
+import AppRoutes from "./routes/AppRoutes";
+import ErrorBoundary from "./components/ErrorBoundary";
+import TranslationWrapper from "./components/translation/TranslationWrapper";
+import "./App.css";
+import "./styles/enhanced-data-entry.css";
 
-import React, { useEffect } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from 'sonner';
-import { ThemeProvider } from '@/contexts/ThemeContext';
-import { TranslationProvider } from '@/contexts/TranslationContext';
-import { NotificationProvider } from '@/components/notifications/NotificationProvider';
-import { useAuthStore } from '@/hooks/auth/useAuthStore';
-import AppRoutes from '@/routes/AppRoutes';
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      refetchOnWindowFocus: false,
-    },
-  },
-});
+// Simple loading fallback
+const AppLoading = () => (
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="text-center space-y-4">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+      <p className="text-sm text-muted-foreground">İnfoLine yüklənir...</p>
+    </div>
+  </div>
+);
 
 function App() {
-  const initializeAuth = useAuthStore((state) => state.initializeAuth);
-  const user = useAuthStore((state) => state.user);
-
-  useEffect(() => {
-    console.log('[App] Initializing auth on app mount');
-    initializeAuth();
-  }, [initializeAuth]);
-
   return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <TranslationProvider>
-          <NotificationProvider userId={user?.id}>
-            <div className="min-h-screen bg-background">
-              <AppRoutes />
-              <Toaster position="top-right" />
-            </div>
-          </NotificationProvider>
-        </TranslationProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <TranslationWrapper skipLoading={true}>
+        <Suspense fallback={<AppLoading />}>
+          <AppRoutes />
+          <Toaster 
+            position="top-right" 
+            richColors 
+            closeButton
+            duration={4000}
+          />
+        </Suspense>
+      </TranslationWrapper>
+    </ErrorBoundary>
   );
 }
 

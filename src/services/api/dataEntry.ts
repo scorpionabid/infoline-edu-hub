@@ -1,117 +1,70 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { DataEntry } from '@/types/dataEntry';
+import { DataEntryStatus } from '@/types/dataEntry';
 
-export interface SaveDataEntryOptions {
-  categoryId: string;
-  schoolId: string;
-  userId?: string;
-}
-
-export interface SaveResult {
-  success: boolean;
-  data?: any;
-  error?: string;
-}
-
-export interface SubmitResult {
-  success: boolean;
-  data?: any;
-  error?: string;
-}
-
-export const fetchDataEntries = async (options: SaveDataEntryOptions): Promise<DataEntry[]> => {
-  try {
+export const dataEntryApi = {
+  async getDataEntries(schoolId: string, categoryId: string) {
     const { data, error } = await supabase
       .from('data_entries')
-      .select('*')
-      .eq('category_id', options.categoryId)
-      .eq('school_id', options.schoolId);
+      .select(`
+        *,
+        columns!inner(id, name, type),
+        categories!inner(id, name)
+      `)
+      .eq('school_id', schoolId)
+      .eq('category_id', categoryId);
 
     if (error) throw error;
-    return data || [];
-  } catch (error) {
-    console.error('Error fetching data entries:', error);
-    throw error;
-  }
-};
+    return data;
+  },
 
-export const saveDataEntries = async (
-  entries: Partial<DataEntry>[],
-  categoryId: string,
-  schoolId: string,
-  userId?: string
-): Promise<SaveResult> => {
-  try {
-    const entriesWithMetadata = entries.map(entry => ({
-      ...entry,
-      category_id: categoryId,
-      school_id: schoolId,
-      created_by: userId,
-      updated_at: new Date().toISOString()
-    }));
-
+  async saveDataEntry(entryData: any) {
     const { data, error } = await supabase
       .from('data_entries')
-      .upsert(entriesWithMetadata)
-      .select();
+      .upsert(entryData)
+      .select()
+      .single();
 
     if (error) throw error;
+    return data;
+  },
 
-    return {
-      success: true,
-      data
-    };
-  } catch (error) {
-    console.error('Error saving data entries:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
-    };
-  }
-};
-
-export const updateDataEntriesStatus = async (
-  entries: DataEntry[],
-  status: string
-): Promise<SaveResult> => {
-  try {
-    const updates = entries.map(entry => ({
-      id: entry.id,
+  async updateStatus(entryId: string, status: DataEntryStatus, comment?: string) {
+    const updateData: any = {
       status,
       updated_at: new Date().toISOString()
-    }));
+    };
+
+    if (status === DataEntryStatus.APPROVED) {
+      const { data: user } = await supabase.auth.getUser();
+      updateData.approved_by = user.user?.id;
+      updateData.approved_at = new Date().toISOString();
+    }
+
+    if (status === DataEntryStatus.REJECTED) {
+      const { data: user } = await supabase.auth.getUser();
+      updateData.rejected_by = user.user?.id;
+      updateData.rejected_at = new Date().toISOString();
+      updateData.rejection_reason = comment;
+    }
 
     const { data, error } = await supabase
       .from('data_entries')
-      .upsert(updates)
-      .select();
+      .update(updateData)
+      .eq('id', entryId)
+      .select()
+      .single();
 
     if (error) throw error;
+    return data;
+  },
 
-    return {
-      success: true,
-      data
-    };
-  } catch (error) {
-    console.error('Error updating status:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
-    };
+  async deleteDataEntry(entryId: string) {
+    const { error } = await supabase
+      .from('data_entries')
+      .delete()
+      .eq('id', entryId);
+
+    if (error) throw error;
   }
 };
-
-export class DataEntryService {
-  static async fetchEntries(options: SaveDataEntryOptions) {
-    return fetchDataEntries(options);
-  }
-
-  static async saveEntries(entries: Partial<DataEntry>[], categoryId: string, schoolId: string, userId?: string) {
-    return saveDataEntries(entries, categoryId, schoolId, userId);
-  }
-
-  static async updateStatus(entries: DataEntry[], status: string) {
-    return updateDataEntriesStatus(entries, status);
-  }
-}

@@ -1,152 +1,188 @@
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import { getTranslations } from '@/translations';
+import type { SupportedLanguage, LanguageTranslations } from '@/types/translation';
+import { translationCache } from '@/services/translationCache';
 
-export type LanguageType = 'az' | 'en' | 'tr' | 'ru';
-
-export interface LanguageContextType {
-  currentLanguage: LanguageType;
-  language: LanguageType; // Add this for backward compatibility
-  setLanguage: (lang: LanguageType) => void;
-  t: (key: string, fallback?: string) => string;
-  tSafe: (key: string, fallback?: string) => string;
-  isLoading?: boolean;
-  isReady?: boolean;
-  error?: string | null;
+export interface TranslationContextType {
+  t: (key: string, interpolation?: Record<string, any>) => string;
+  language: SupportedLanguage;
+  setLanguage: (lang: SupportedLanguage) => void;
+  changeLanguage: (lang: SupportedLanguage) => Promise<void>;
+  clearCache: () => void;
+  isLoading: boolean;
+  error: string | null;
+  isReady: boolean;
 }
 
-const translations: Record<LanguageType, Record<string, string>> = {
-  az: {
-    'dashboardLabel': 'İdarə Paneli',
-    'logout': 'Çıxış',
-    'dashboard.title': 'İdarə Paneli',
-    'dashboard.subtitle': 'Dashboard məzmunu',
-    'users.add': 'İstifadəçi Əlavə Et',
-    'users.email': 'E-poçt',
-    'users.fullName': 'Ad və Soyad',
-    'users.role': 'Rol',
-    'users.phone': 'Telefon',
-    'users.position': 'Vəzifə',
-    'users.selectRole': 'Rol seçin',
-    'users.addSuccess': 'İstifadəçi uğurla əlavə edildi',
-    'users.addError': 'İstifadəçi əlavə edilərkən xəta baş verdi',
-    'common.cancel': 'Ləğv et',
-    'common.loading': 'Yüklənir...',
-    'roles.superadmin': 'Super Admin',
-    'roles.regionadmin': 'Region Admin',
-    'roles.sectoradmin': 'Sektor Admin',
-    'roles.schooladmin': 'Məktəb Admin',
-    'theme.light': 'Açıq',
-    'theme.dark': 'Qaranlıq'
-  },
-  en: {
-    'dashboardLabel': 'Dashboard',
-    'logout': 'Logout',
-    'dashboard.title': 'Dashboard',
-    'dashboard.subtitle': 'Dashboard content',
-    'users.add': 'Add User',
-    'users.email': 'Email',
-    'users.fullName': 'Full Name',
-    'users.role': 'Role',
-    'users.phone': 'Phone',
-    'users.position': 'Position',
-    'users.selectRole': 'Select Role',
-    'users.addSuccess': 'User added successfully',
-    'users.addError': 'Error adding user',
-    'common.cancel': 'Cancel',
-    'common.loading': 'Loading...',
-    'roles.superadmin': 'Super Admin',
-    'roles.regionadmin': 'Region Admin',
-    'roles.sectoradmin': 'Sector Admin',
-    'roles.schooladmin': 'School Admin',
-    'theme.light': 'Light',
-    'theme.dark': 'Dark'
-  },
-  tr: {
-    'dashboardLabel': 'Kontrol Paneli',
-    'logout': 'Çıkış',
-    'dashboard.title': 'Kontrol Paneli',
-    'dashboard.subtitle': 'Dashboard içeriği',
-    'users.add': 'Kullanıcı Ekle',
-    'users.email': 'E-posta',
-    'users.fullName': 'Ad Soyad',
-    'users.role': 'Rol',
-    'users.phone': 'Telefon',
-    'users.position': 'Pozisyon',
-    'users.selectRole': 'Rol Seçin',
-    'users.addSuccess': 'Kullanıcı başarıyla eklendi',
-    'users.addError': 'Kullanıcı eklenirken hata oluştu',
-    'common.cancel': 'İptal',
-    'common.loading': 'Yükleniyor...',
-    'roles.superadmin': 'Süper Admin',
-    'roles.regionadmin': 'Bölge Admin',
-    'roles.sectoradmin': 'Sektör Admin',
-    'roles.schooladmin': 'Okul Admin',
-    'theme.light': 'Açık',
-    'theme.dark': 'Karanlık'
-  },
-  ru: {
-    'dashboardLabel': 'Панель управления',
-    'logout': 'Выход',
-    'dashboard.title': 'Панель управления',
-    'dashboard.subtitle': 'Содержимое панели',
-    'users.add': 'Добавить пользователя',
-    'users.email': 'Эл. почта',
-    'users.fullName': 'Полное имя',
-    'users.role': 'Роль',
-    'users.phone': 'Телефон',
-    'users.position': 'Должность',
-    'users.selectRole': 'Выберите роль',
-    'users.addSuccess': 'Пользователь успешно добавлен',
-    'users.addError': 'Ошибка при добавлении пользователя',
-    'common.cancel': 'Отмена',
-    'common.loading': 'Загрузка...',
-    'roles.superadmin': 'Супер Админ',
-    'roles.regionadmin': 'Региональный Админ',
-    'roles.sectoradmin': 'Секторный Админ',
-    'roles.schooladmin': 'Школьный Админ',
-    'theme.light': 'Светлая',
-    'theme.dark': 'Темная'
-  }
-};
+const TranslationContext = createContext<TranslationContextType | undefined>(undefined);
 
-const TranslationContext = createContext<LanguageContextType | undefined>(undefined);
+interface TranslationProviderProps {
+  children: React.ReactNode;
+  defaultLanguage?: SupportedLanguage;
+}
 
-export const TranslationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentLanguage, setCurrentLanguage] = useState<LanguageType>('az');
+export const TranslationProvider: React.FC<TranslationProviderProps> = ({ 
+  children, 
+  defaultLanguage = 'az' 
+}) => {
+  const [language, setLanguageState] = useState<SupportedLanguage>(defaultLanguage);
+  const [translations, setTranslations] = useState<LanguageTranslations | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const setLanguage = (lang: LanguageType) => {
-    setCurrentLanguage(lang);
-    localStorage.setItem('preferred-language', lang);
-  };
+  // Enhanced translation function with caching and interpolation
+  const t = useCallback((key: string, interpolation?: Record<string, any>): string => {
+    if (!translations) {
+      return key.split('.').pop() || key;
+    }
 
-  const t = (key: string, fallback?: string): string => {
-    return translations[currentLanguage]?.[key] || fallback || key;
-  };
+    try {
+      const keys = key.split('.');
+      let value: any = translations;
 
-  const tSafe = (key: string, fallback?: string): string => {
-    return translations[currentLanguage]?.[key] || fallback || key;
-  };
+      for (const k of keys) {
+        if (value && typeof value === 'object' && k in value) {
+          value = value[k];
+        } else {
+          // Fallback to key末segment or full key
+          return key.split('.').pop() || key;
+        }
+      }
 
-  useEffect(() => {
-    const savedLang = localStorage.getItem('preferred-language') as LanguageType;
-    if (savedLang && ['az', 'en', 'tr', 'ru'].includes(savedLang)) {
-      setCurrentLanguage(savedLang);
+      let result = typeof value === 'string' ? value : key;
+
+      // Handle interpolation
+      if (interpolation && typeof result === 'string') {
+        Object.entries(interpolation).forEach(([param, val]) => {
+          const regex = new RegExp(`{{\\s*${param}\\s*}}`, 'g');
+          result = result.replace(regex, String(val));
+        });
+      }
+
+      return result;
+    } catch (err) {
+      console.warn(`Translation error for key: ${key}`, err);
+      return key.split('.').pop() || key;
+    }
+  }, [translations]);
+
+  // Load translations with caching
+  const loadTranslations = useCallback(async (lang: SupportedLanguage) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Check cache first
+      let cached = translationCache.get(lang);
+      
+      if (cached) {
+        setTranslations(cached);
+        setIsLoading(false);
+        return cached;
+      }
+
+      // Load from source
+      const newTranslations = await getTranslations(lang);
+      
+      // Cache the result
+      translationCache.set(lang, newTranslations);
+      setTranslations(newTranslations);
+      
+      return newTranslations;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Translation loading failed';
+      console.error(`Failed to load translations for ${lang}:`, err);
+      setError(errorMessage);
+      
+      // Fallback to cached Azerbaijani if available
+      if (lang !== 'az') {
+        const fallback = translationCache.get('az');
+        if (fallback) {
+          setTranslations(fallback);
+          console.warn('Using cached Azerbaijani translations as fallback');
+        }
+      }
+      
+      return null;
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
+  // Enhanced language change with persistence
+  const changeLanguage = useCallback(async (newLang: SupportedLanguage) => {
+    if (newLang === language) return;
+
+    try {
+      await loadTranslations(newLang);
+      setLanguageState(newLang);
+      
+      // Persist language preference
+      localStorage.setItem('preferred_language', newLang);
+      
+      // Preload other languages in background
+      if (newLang === 'az') {
+        setTimeout(() => translationCache.preload('en'), 1000);
+      } else {
+        setTimeout(() => translationCache.preload('az'), 1000);
+      }
+      
+    } catch (err) {
+      console.error('Language change failed:', err);
+      setError('Failed to change language');
+    }
+  }, [language, loadTranslations]);
+
+  const setLanguage = useCallback((lang: SupportedLanguage) => {
+    changeLanguage(lang);
+  }, [changeLanguage]);
+
+  // Clear cache function
+  const clearCache = useCallback(() => {
+    translationCache.clear();
+    setTranslations(null);
+    // Reload current language
+    loadTranslations(language);
+  }, [language, loadTranslations]);
+
+  // Initialize translations
+  useEffect(() => {
+    // Check for saved language preference
+    const savedLang = localStorage.getItem('preferred_language') as SupportedLanguage;
+    const initialLang = savedLang || defaultLanguage;
+    
+    if (initialLang !== language) {
+      setLanguageState(initialLang);
+    }
+    
+    loadTranslations(initialLang);
+    
+    // Development helper - expose cache clear function globally
+    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+      (window as any).clearTranslationCache = () => {
+        translationCache.clear();
+        setTranslations(null);
+        loadTranslations(language);
+        console.log('Translation cache cleared and reloaded!');
+      };
+    }
+  }, []); // Only run once on mount
+
+  // Memoized context value
+  const contextValue = useMemo(() => ({
+    t,
+    language,
+    setLanguage,
+    changeLanguage,
+    clearCache,
+    isLoading,
+    error,
+    isReady: !!translations && !isLoading
+  }), [t, language, setLanguage, changeLanguage, clearCache, isLoading, error, translations]);
+
   return (
-    <TranslationContext.Provider value={{ 
-      currentLanguage, 
-      language: currentLanguage, // For backward compatibility
-      setLanguage, 
-      t, 
-      tSafe,
-      isLoading,
-      isReady: !isLoading && !error,
-      error
-    }}>
+    <TranslationContext.Provider value={contextValue}>
       {children}
     </TranslationContext.Provider>
   );
@@ -154,8 +190,10 @@ export const TranslationProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
 export const useTranslation = () => {
   const context = useContext(TranslationContext);
-  if (!context) {
+  if (context === undefined) {
     throw new Error('useTranslation must be used within a TranslationProvider');
   }
   return context;
 };
+
+export default TranslationContext;

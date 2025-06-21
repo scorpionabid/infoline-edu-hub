@@ -1,66 +1,71 @@
 
-// DataEntry status as enum for both type and value usage
+// Enhanced data entry types with proper status enums
 export enum DataEntryStatus {
-  PENDING = 'pending',
+  DRAFT = 'draft',
+  PENDING = 'pending', 
   APPROVED = 'approved',
-  REJECTED = 'rejected',
-  DRAFT = 'draft'
+  REJECTED = 'rejected'
 }
 
-// Legacy type alias for backward compatibility
-export type DataEntryStatusType = 'pending' | 'approved' | 'rejected' | 'draft';
-
-export interface DataEntry {
-  id: string;
-  category_id: string;
-  school_id: string;
-  column_id: string;
-  value: string;
-  status: DataEntryStatusType;
-  created_by?: string;
-  created_at: string;
-  updated_at: string;
-  approved_by?: string;
-  approved_at?: string;
-  rejected_by?: string;
-  rejected_at?: string;
-  rejection_reason?: string;
-  approval_comment?: string;
-  proxy_created_by?: string;
-  proxy_reason?: string;
-  proxy_original_entity?: string;
-}
-
-export interface DataEntryTableData {
-  columns: Array<{
-    id: string;
-    name: string;
-    type: string;
-  }>;
-  values: Record<string, string>;
+export interface ProxyDataEntryOptions {
+  schoolId: string;
+  categoryId: string;
+  reason?: string;
+  autoApprove?: boolean;
+  notifySchoolAdmin?: boolean;
 }
 
 export interface DataEntryFormData {
-  [columnId: string]: string;
+  [columnId: string]: any;
 }
 
-export interface ApprovalSubmission {
-  id: string;
-  categoryId: string;
-  categoryName: string;
+export interface BulkDataEntry {
   schoolId: string;
-  schoolName: string;
-  submittedBy: string;
-  submittedAt: string;
-  status: DataEntryStatusType;
-  entries: DataEntry[];
-  completionRate: number;
+  data: DataEntryFormData;
+  status?: DataEntryStatus;
 }
 
-// Additional data entry value interface
-export interface DataEntryValue {
+export interface ProxyDataEntryResult {
+  success: boolean;
+  entryId?: string;
+  message?: string;
+  error?: string; // Add error field
+  errors?: Record<string, string>;
+  autoApproved?: boolean;
+}
+
+export interface DataEntryValidation {
+  isValid: boolean;
+  errors: Record<string, string>;
+}
+
+export interface DataEntryTableData {
   id: string;
-  column_id: string;
-  value: string;
-  status: DataEntryStatusType;
+  school_name: string;
+  category_name: string;
+  status: DataEntryStatus;
+  created_at: string;
+  updated_at: string;
+  submitted_by: string;
+}
+
+// Additional interfaces needed for proxy data entry
+export interface SaveProxyFormDataOptions {
+  categoryId: string;
+  schoolId: string;
+  userId: string;
+  proxyUserId: string;
+  proxyUserRole: string;
+  originalSchoolId: string;
+  proxyReason: string;
+  status: string;
+}
+
+export interface SubmitProxyDataOptions {
+  categoryId: string;
+  schoolId: string;
+  proxyUserId: string;
+  proxyUserRole: string;
+  proxyReason: string;
+  autoApprove: boolean;
 }

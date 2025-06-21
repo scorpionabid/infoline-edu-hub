@@ -1,127 +1,144 @@
 
 import { BaseCacheAdapter } from '../core/BaseCacheAdapter';
-import { CacheEntry, CacheOptions, CacheStats } from '../core/types';
+import { CacheEntry, CacheStats, CacheOptions } from '../core/types';
 
 export class StorageCacheAdapter<T> extends BaseCacheAdapter<T> {
-  protected hitCount = 0;
-  protected missCount = 0;
-  protected storage: Storage;
+  private storage: Storage;
   private keyPrefix: string;
+  private hitCount = 0;
+  private missCount = 0;
+  private size = 0;
 
-  constructor(storage: Storage = localStorage, keyPrefix: string = 'cache_') {
+  constructor(storage: Storage = localStorage, keyPrefix: string = 'cache:') {
     super();
     this.storage = storage;
     this.keyPrefix = keyPrefix;
   }
 
+  protected generateKey(key: string): string {
+    return `${this.keyPrefix}${key}`;
+  }
+
   get(key: string): T | null {
+    const storedValue = this.storage.getItem(this.generateKey(key));
+    if (!storedValue) {
+      this.missCount++;
+      return null;
+    }
+
     try {
-      const fullKey = this.keyPrefix + key;
-      const item = this.storage.getItem(fullKey);
-      
-      if (!item) {
+      const entry = JSON.parse(storedValue) as CacheEntry<T>;
+      if (entry.timestamp && entry.ttl && (Date.now() - entry.timestamp > entry.ttl)) {
+        this.delete(key);
         this.missCount++;
         return null;
-      }
-
-      const entry: CacheEntry<T> = JSON.parse(item);
-      
-      // Check TTL
-      if (entry.ttl && entry.timestamp) {
-        const now = Date.now();
-        if (now - entry.timestamp > entry.ttl) {
-          this.storage.removeItem(fullKey);
-          this.missCount++;
-          return null;
-        }
       }
 
       this.hitCount++;
       return entry.data;
     } catch (error) {
-      console.error('Cache get error:', error);
+      console.error('Error parsing cache entry:', error);
+      this.delete(key);
       this.missCount++;
       return null;
     }
   }
 
   set(key: string, value: T, options?: CacheOptions): void {
+    const ttl = options?.ttl || 300000; // 5 minutes default
+    const entry: CacheEntry<T> = { 
+      data: value, 
+      timestamp: Date.now(), 
+      ttl,
+      accessCount: 0,
+      priority: options?.priority || 'normal',
+      tags: options?.tags || []
+    };
+    
     try {
-      const fullKey = this.keyPrefix + key;
-      const entry: CacheEntry<T> = {
-        data: value,
-        timestamp: Date.now(),
-        ttl: options?.ttl,
-        priority: options?.priority,
-        tags: options?.tags
-      };
-
-      this.storage.setItem(fullKey, JSON.stringify(entry));
+      this.storage.setItem(this.generateKey(key), JSON.stringify(entry));
+      this.size = this.calculateTotalSize();
     } catch (error) {
-      console.error('Cache set error:', error);
+      console.error('Error setting cache entry:', error);
     }
   }
 
   delete(key: string): void {
-    const fullKey = this.keyPrefix + key;
-    this.storage.removeItem(fullKey);
+    this.storage.removeItem(this.generateKey(key));
+    this.size = this.calculateTotalSize();
   }
 
   clear(): void {
-    // Clear only items with our prefix
-    const keys = [];
+    const keys = this.getAllKeys();
+    keys.forEach(key => this.storage.removeItem(key));
+    this.size = 0;
+  }
+
+  evict(): void {
+    // Simple LRU eviction - remove expired entries
+    const keys = this.getAllKeys();
+    const now = Date.now();
+    
+    keys.forEach(key => {
+      const storedValue = this.storage.getItem(key);
+      if (storedValue) {
+        try {
+          const entry = JSON.parse(storedValue) as CacheEntry<T>;
+          if (entry.timestamp && entry.ttl && (now - entry.timestamp > entry.ttl)) {
+            this.storage.removeItem(key);
+          }
+        } catch {
+          this.storage.removeItem(key);
+        }
+      }
+    });
+    
+    this.size = this.calculateTotalSize();
+  }
+
+  getAllKeys(): string[] {
+    const keys: string[] = [];
     for (let i = 0; i < this.storage.length; i++) {
       const key = this.storage.key(i);
       if (key && key.startsWith(this.keyPrefix)) {
         keys.push(key);
       }
     }
-    keys.forEach(key => this.storage.removeItem(key));
+    return keys;
   }
 
-  evict(): void {
-    // Simple LRU eviction - remove oldest items
-    const items = [];
-    for (let i = 0; i < this.storage.length; i++) {
-      const key = this.storage.key(i);
-      if (key && key.startsWith(this.keyPrefix)) {
-        try {
-          const item = this.storage.getItem(key);
-          if (item) {
-            const entry = JSON.parse(item);
-            items.push({ key, timestamp: entry.timestamp || 0 });
-          }
-        } catch (e) {
-          // Remove invalid entries
-          this.storage.removeItem(key);
-        }
-      }
-    }
+  getAllEntries(): CacheEntry<T>[] {
+    const keys = this.getAllKeys();
+    return keys.map(key => {
+      const storedValue = this.storage.getItem(key);
+      return storedValue ? JSON.parse(storedValue) as CacheEntry<T> : null;
+    }).filter(Boolean) as CacheEntry<T>[];
+  }
 
-    // Sort by timestamp and remove oldest 25%
-    items.sort((a, b) => a.timestamp - b.timestamp);
-    const toRemove = Math.floor(items.length * 0.25);
-    for (let i = 0; i < toRemove; i++) {
-      this.storage.removeItem(items[i].key);
-    }
+  calculateTotalSize(): number {
+    const entries = this.getAllEntries();
+    return entries.reduce((total, entry) => {
+      const entryString = JSON.stringify(entry);
+      return total + new Blob([entryString]).size;
+    }, 0);
   }
 
   getStats(): CacheStats {
-    let size = 0;
-    for (let i = 0; i < this.storage.length; i++) {
-      const key = this.storage.key(i);
-      if (key && key.startsWith(this.keyPrefix)) {
-        size++;
-      }
-    }
-
-    const total = this.hitCount + this.missCount;
-    const hitRate = total > 0 ? this.hitCount / total : 0;
-
+    const entries = this.getAllEntries();
+    const now = Date.now();
+    const expired = entries.filter(entry => 
+      entry.timestamp && entry.ttl && (now - entry.timestamp > entry.ttl)
+    );
+    
     return {
-      size,
-      hitRate,
-      expiredEntries: 0
+      size: entries.length,
+      hitRate: this.hitCount / (this.hitCount + this.missCount) || 0,
+      memoryUsage: this.calculateTotalSize(),
+      expiredEntries: expired.length
     };
+  }
+
+  getSize(): number {
+    return this.size;
   }
 }

@@ -1,20 +1,22 @@
 
 import { useState, useEffect } from 'react';
 
-export function useDebounce<T>(value: T, delay: number): T {
+function useDebounce<T>(value: T, delay: number = 500): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
   useEffect(() => {
-    const handler = setTimeout(() => {
+    const timer = setTimeout(() => {
       setDebouncedValue(value);
     }, delay);
 
     return () => {
-      clearTimeout(handler);
+      clearTimeout(timer);
     };
   }, [value, delay]);
 
   return debouncedValue;
 }
 
+// Export both as default and named export for backward compatibility
 export default useDebounce;
+export { useDebounce };

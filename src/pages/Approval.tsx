@@ -1,9 +1,8 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTranslation } from "@/contexts/TranslationContext";
 import { Loader2, CheckCircle, Clock, XCircle } from "lucide-react";
-import { EnhancedApprovalManager } from "@/components/approval/EnhancedApprovalManager";
+import { EnhancedApprovalManager } from "@/components/approval/ApprovalManager";
 
 // Static filter object to prevent re-creation
 const INITIAL_FILTER = { status: 'pending' as const };
@@ -20,10 +19,8 @@ const ApprovalPage: React.FC = () => {
 
         {/* Enhanced Approval Manager - Real data integration */}
         <EnhancedApprovalManager
-          pendingApprovals={[]}
-          approvedItems={[]}
-          rejectedItems={[]}
-          isLoading={false}
+          initialFilter={INITIAL_FILTER}
+          className="space-y-6"
         />
       </div>
     </div>

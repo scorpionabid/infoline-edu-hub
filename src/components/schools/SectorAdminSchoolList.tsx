@@ -1,221 +1,608 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useDebounce } from '@/hooks/common/useDebounce';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { SectorSelect } from '@/components/ui/sector-select';
-import { RegionSelect } from '@/components/ui/region-select';
-import { CategorySelect } from '@/components/ui/category-select';
-import BulkDataEntryDialog from '@/components/dataEntry/BulkDataEntryDialog';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { 
+  School, 
+  Search, 
+  Building2, 
+  Filter,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  Edit3,
+  Users,
+  CheckSquare,
+  Square
+} from 'lucide-react';
+import { useSchoolsQuery } from '@/hooks/api/schools/useSchoolsQuery';
+import { useSchoolCategories } from '@/hooks/categories/useCategoriesWithAssignment';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import SectorAdminProxyDataEntry from '@/components/dataEntry/SectorAdminProxyDataEntry';
+import { BulkDataEntryDialog } from '@/components/dataEntry/BulkDataEntryDialog';
+import { cn } from '@/lib/utils';
 
-interface School {
-  id: string;
-  name: string;
-  sector_id: string;
-  region_id: string;
-  status: string;
-  created_at: string;
-  updated_at: string;
+interface SectorAdminSchoolListProps {
+  onSchoolSelect?: (schoolId: string) => void;
+  onDataEntry?: (schoolId: string) => void;
+  onBulkSelect?: (schoolIds: string[]) => void;
+  onBulkAction?: (action: string, schoolIds: string[]) => void;
+  categoryId?: string;
+  bulkMode?: boolean;
+  workflowMode?: boolean; // Yeni workflow mode
 }
 
-const SectorAdminSchoolList: React.FC = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedSector, setSelectedSector] = useState<string | null>(null);
-  const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
-  const [selectedSchool, setSelectedSchool] = useState<School | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<{ id: string; name: string } | null>(null);
-  const [selectedSchools, setSelectedSchools] = useState<string[]>([]);
-  const [showDataEntryDialog, setShowDataEntryDialog] = useState(false);
+const ITEMS_PER_PAGE = 12;
+
+export const SectorAdminSchoolList: React.FC<SectorAdminSchoolListProps> = ({
+  onSchoolSelect,
+  onDataEntry,
+  onBulkSelect,
+  onBulkAction,
+  categoryId,
+  bulkMode = false,
+  workflowMode = false
+}) => {
+  // State management
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedSchoolId, setSelectedSchoolId] = useState<string | null>(null);
+  const [showDataEntry, setShowDataEntry] = useState(false);
+  const [selectedSchools, setSelectedSchools] = useState<Set<string>>(new Set());
+  const [currentPage, setCurrentPage] = useState(1);
+  const [sortBy, setSortBy] = useState<'name' | 'completion'>('name');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [showBulkDialog, setShowBulkDialog] = useState(false);
+  
+  // Kateqoriya ID-ni yoxlayırıq
+  useEffect(() => {
+    if (!categoryId) {
+      console.warn('Kateqoriya ID-si təyin edilməyib');
+    }
+  }, [categoryId]);
+  
+  // Data fetching
+  const { schools, loading: schoolsLoading } = useSchoolsQuery();
 
-  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+  // Memoized filtered and sorted schools
+  const processedSchools = useMemo(() => {
+    let filtered = schools.filter(school => 
+      school.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
-  const { data: schools, isLoading, error } = useQuery({
-    queryKey: ['schools', debouncedSearchTerm, selectedSector, selectedRegion],
-    queryFn: async () => {
-      let query = supabase
-        .from('schools')
-        .select('*')
-        .ilike('name', `%${debouncedSearchTerm}%`);
-
-      if (selectedSector) {
-        query = query.eq('sector_id', selectedSector);
-      }
-
-      if (selectedRegion) {
-        query = query.eq('region_id', selectedRegion);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('Error fetching schools:', error);
-        throw error;
-      }
-
-      return data || [];
-    },
-  });
-
-  const handleSchoolSelect = (school: School) => {
-    setSelectedSchool(school);
-    setShowDataEntryDialog(true);
-  };
-
-  const handleBulkSelect = useCallback((schoolId: string) => {
-    setSelectedSchools(prev => {
-      if (prev.includes(schoolId)) {
-        return prev.filter(id => id !== schoolId);
+    // Sorting
+    filtered.sort((a, b) => {
+      let aValue: string | number;
+      let bValue: string | number;
+      
+      if (sortBy === 'name') {
+        aValue = a.name.toLowerCase();
+        bValue = b.name.toLowerCase();
       } else {
-        return [...prev, schoolId];
+        aValue = a.completion_rate || 0;
+        bValue = b.completion_rate || 0;
+      }
+      
+      if (sortOrder === 'asc') {
+        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+      } else {
+        return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
       }
     });
-  }, []);
 
-  const isSchoolSelected = useCallback((schoolId: string) => {
-    return selectedSchools.includes(schoolId);
-  }, [selectedSchools]);
+    return filtered;
+  }, [schools, searchQuery, sortBy, sortOrder]);
+
+  // Pagination calculations
+  const totalPages = Math.ceil(processedSchools.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const currentSchools = processedSchools.slice(startIndex, endIndex);
+
+  // Selection management
+  const isAllCurrentPageSelected = currentSchools.length > 0 && 
+    currentSchools.every(school => selectedSchools.has(school.id));
+  const isSomeCurrentPageSelected = currentSchools.some(school => selectedSchools.has(school.id));
+
+  // Event handlers
+  const handleSchoolSelect = (schoolId: string) => {
+    console.log('School selected:', schoolId);
+    setSelectedSchoolId(schoolId);
+    if (onSchoolSelect) {
+      onSchoolSelect(schoolId);
+    }
+  };
+
+  const handleDataEntryClick = (schoolId: string) => {
+    console.log('Data entry button clicked for school:', schoolId);
+    
+    if (!categoryId) {
+      alert('Kateqoriya seçilməyib. Zəhmət olmasa əvvəlcə kateqoriya seçin');
+      return;
+    }
+    
+    setSelectedSchoolId(schoolId);
+    setShowDataEntry(true);
+    
+    if (onDataEntry) {
+      onDataEntry(schoolId);
+    }
+  };
+
+  const handleCloseDataEntry = () => {
+    console.log('Closing data entry');
+    setShowDataEntry(false);
+    setSelectedSchoolId(null);
+  };
+
+  const handleBulkDataEntry = () => {
+    if (selectedSchools.size === 0) {
+      alert('Zəhmət olmasa ən azı bir məktəb seçin');
+      return;
+    }
+    
+    if (!categoryId) {
+      alert('Zəhmət olmasa kateqoriya seçin');
+      return;
+    }
+    
+    // Bulk rejim aktivdirsə, birbaşa onBulkAction-ı çağırırıq
+    if (bulkMode && onBulkSelect) {
+      onBulkSelect(Array.from(selectedSchools));
+      if (onBulkAction) {
+        onBulkAction('data_entry', Array.from(selectedSchools));
+      }
+      return;
+    }
+    
+    // Əks halda köhnə dialog-u göstəririk
+    setShowBulkDialog(true);
+  };
+
+  const handleBulkDialogComplete = () => {
+    // Clear selection and refresh data
+    setSelectedSchools(new Set());
+    setShowBulkDialog(false);
+    
+    if (onBulkSelect) {
+      onBulkSelect([]);
+    }
+  };
+
+  const toggleSchoolSelection = (schoolId: string) => {
+    setSelectedSchools(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(schoolId)) {
+        newSet.delete(schoolId);
+      } else {
+        newSet.add(schoolId);
+      }
+      
+      if (onBulkSelect) {
+        onBulkSelect(Array.from(newSet));
+      }
+      
+      return newSet;
+    });
+  };
+
+  const toggleAllCurrentPage = () => {
+    setSelectedSchools(prev => {
+      const newSet = new Set(prev);
+      
+      if (isAllCurrentPageSelected) {
+        // Deselect all on current page
+        currentSchools.forEach(school => newSet.delete(school.id));
+      } else {
+        // Select all on current page
+        currentSchools.forEach(school => newSet.add(school.id));
+      }
+      
+      if (onBulkSelect) {
+        onBulkSelect(Array.from(newSet));
+      }
+      
+      return newSet;
+    });
+  };
+
+  const clearSelection = () => {
+    setSelectedSchools(new Set());
+    if (onBulkSelect) {
+      onBulkSelect([]);
+    }
+  };
+
+  // Effect to update selected schools when bulk selection changes
+  useEffect(() => {
+    if (onBulkSelect && selectedSchools.size > 0) {
+      onBulkSelect(Array.from(selectedSchools));
+    }
+  }, [selectedSchools, onBulkSelect]);
+
+  // Effect to highlight bulk mode UI when bulkMode is true
+  useEffect(() => {
+    if (bulkMode) {
+      // Bulk rejim aktivləşdirildikdə UI elementlərini uyğunlaşdırırıq
+      document.querySelectorAll('.school-card-checkbox').forEach((el) => {
+        (el as HTMLElement).style.opacity = '1';
+      });
+    } else {
+      // Bulk rejim deaktiv edildikdə UI elementlərini gizlədirik
+      document.querySelectorAll('.school-card-checkbox').forEach((el) => {
+        (el as HTMLElement).style.opacity = '0.5';
+      });
+    }
+  }, [bulkMode]);
+
+  // Pagination handlers
+  const goToPage = (page: number) => {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+  };
+
+  // Loading state
+  if (schoolsLoading) {
+    return <LoadingSpinner />;
+  }
+
+  // Show data entry form if a school is selected for data entry
+  if (showDataEntry && selectedSchoolId && categoryId) {
+    return (
+      <div className="h-full">
+        <SectorAdminProxyDataEntry
+          schoolId={selectedSchoolId}
+          categoryId={categoryId}
+          onClose={handleCloseDataEntry}
+          onComplete={() => {
+            console.log('Proxy data entry completed');
+            handleCloseDataEntry();
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Header and Filters */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Məktəblər</h2>
-        <Button onClick={() => setShowBulkDialog(true)}>
-          Toplu Məlumat Girişi
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
-          <Label htmlFor="search">Axtarış</Label>
-          <Input
-            type="text"
-            id="search"
-            placeholder="Məktəb adı ilə axtar"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <div>
-          <Label htmlFor="sector">Sektor</Label>
-          <SectorSelect
-            id="sector"
-            value={selectedSector || ''}
-            onValueChange={setSelectedSector}
-          />
-        </div>
-        <div>
-          <Label htmlFor="region">Region</Label>
-          <RegionSelect
-            id="region"
-            value={selectedRegion || ''}
-            onValueChange={setSelectedRegion}
-          />
-        </div>
-      </div>
-      
-      {/* Schools Table */}
-      <div className="bg-white rounded-lg shadow">
-        <ScrollArea>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[50px]">Seç</TableHead>
-                <TableHead>Adı</TableHead>
-                <TableHead>Sektor</TableHead>
-                <TableHead>Region</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Əməliyyatlar</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading && (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center">
-                    Yüklənir...
-                  </TableCell>
-                </TableRow>
-              )}
-              {error && (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center text-red-500">
-                    Xəta: {error.message}
-                  </TableCell>
-                </TableRow>
-              )}
-              {schools?.map((school) => (
-                <TableRow key={school.id}>
-                  <TableCell>
-                    <input
-                      type="checkbox"
-                      checked={isSchoolSelected(school.id)}
-                      onChange={() => handleBulkSelect(school.id)}
-                    />
-                  </TableCell>
-                  <TableCell>{school.name}</TableCell>
-                  <TableCell>{school.sector_id}</TableCell>
-                  <TableCell>{school.region_id}</TableCell>
-                  <TableCell>{school.status}</TableCell>
-                  <TableCell>
-                    <Button onClick={() => handleSchoolSelect(school)}>
-                      Məlumat Girişi
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </ScrollArea>
-      </div>
-
-      {/* Data Entry Dialog - fixed props */}
-      {showDataEntryDialog && selectedSchool && selectedCategory && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-auto">
-            <div className="p-6">
-              <h2 className="text-lg font-semibold mb-4">
-                {selectedSchool.name} - Məlumat Girişi
-              </h2>
-              {/* Custom data entry content here */}
-              <div className="flex justify-end mt-4">
-                <button
-                  onClick={() => {
-                    setShowDataEntryDialog(false);
-                    setSelectedSchool(null);
-                    setSelectedCategory(null);
-                  }}
-                  className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
-                >
-                  Bağla
-                </button>
+    <div className="h-full flex flex-col space-y-4">
+      {/* Header Controls */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Building2 className="h-5 w-5" />
+              Məktəb Seçimi və Məlumat Daxil Etmə
+            </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span>{processedSchools.length} məktəb</span>
+              <span>•</span>
+              <span>Səhifə {currentPage}/{totalPages}</span>
+            </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Search and Filters */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                placeholder="Məktəb axtarın..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="pl-9"
+              />
+            </div>
+            
+            {/* Sort By */}
+            <Select value={sortBy} onValueChange={(value: 'name' | 'completion') => setSortBy(value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Sıralama" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name">Ada görə</SelectItem>
+                <SelectItem value="completion">Tamamlanma faiziə görə</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            {/* Sort Order */}
+            <Select value={sortOrder} onValueChange={(value: 'asc' | 'desc') => setSortOrder(value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Sıra" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="asc">Artan</SelectItem>
+                <SelectItem value="desc">Azalan</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            {/* Kateqoriya seçimi artıq əsas səhifədə edilir */}
+          </div>
+          
+          {/* Selection Controls - Yalnız workflowMode false olanda göstər */}
+          {!workflowMode && selectedSchools.size > 0 && (
+            <div className="flex items-center justify-between p-3 bg-primary/5 rounded-lg border">
+              <div className="flex justify-between items-center mb-4">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-medium">
+                    <Building2 className="h-5 w-5 inline-block mr-1" />
+                    Məktəblər
+                  </h3>
+                  {selectedSchools.size > 0 && (
+                    <Badge variant={bulkMode ? "default" : "secondary"}>
+                      {selectedSchools.size} seçilib
+                    </Badge>
+                  )}
+                  {bulkMode && (
+                    <Badge variant="outline" className="ml-2 bg-primary/10">
+                      Bulk rejim aktiv
+                    </Badge>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    onClick={handleBulkDataEntry}
+                    disabled={!categoryId}
+                    className="flex items-center gap-1"
+                  >
+                    <Edit3 className="h-3 w-3" />
+                    Toplu Məlumat Daxil Et
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={clearSelection}
+                  >
+                    Seçimi Ləğv Et
+                  </Button>
+                </div>
               </div>
             </div>
+          )}
+          
+          {/* Workflow mode selection summary */}
+          {workflowMode && selectedSchools.size > 0 && (
+            <div className="p-3 bg-primary/5 rounded-lg border mb-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Badge variant="default">
+                    {selectedSchools.size} məktəb seçilib
+                  </Badge>
+                  {bulkMode && (
+                    <Badge variant="outline">
+                      Bulk rejim
+                    </Badge>
+                  )}
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={clearSelection}
+                >
+                  Seçimi Ləğv Et
+                </Button>
+              </div>
+            </div>
+          )}
+          
+          {/* Warning for category selection */}
+          {!categoryId && (
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <p className="text-sm text-amber-800">
+                ⚠️ Məlumat daxil etmək üçün kateqoriya seçin
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Schools Grid */}
+      <div className="flex-1 overflow-hidden">
+        <div className="h-full flex flex-col">
+          {/* Bulk Selection Header */}
+          {currentSchools.length > 0 && (
+            <div className="flex items-center gap-2 p-2 border-b bg-muted/30">
+              <Checkbox
+                checked={isAllCurrentPageSelected}
+                onCheckedChange={toggleAllCurrentPage}
+                {...(isSomeCurrentPageSelected && !isAllCurrentPageSelected ? { indeterminate: true } : {})}
+              />
+              <span className="text-sm text-muted-foreground">
+                Bu səhifədəki hamısını seç
+              </span>
+            </div>
+          )}
+          
+          {/* Schools List */}
+          <div className="flex-1 overflow-y-auto p-2">
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-3">
+              {currentSchools.map((school) => (
+                <Card 
+                  key={school.id}
+                  className={cn(
+                    "cursor-pointer transition-all duration-200 hover:shadow-md",
+                    selectedSchools.has(school.id) && "ring-2 ring-primary/50 bg-primary/5",
+                    selectedSchoolId === school.id && "border-primary shadow-md"
+                  )}
+                  onClick={() => handleSchoolSelect(school.id)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-3">
+                      {/* Selection Checkbox */}
+                      <Checkbox
+                        checked={selectedSchools.has(school.id)}
+                        onCheckedChange={() => toggleSchoolSelection(school.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        className={cn(
+                          "mt-1 school-card-checkbox transition-opacity", 
+                          bulkMode ? "opacity-100" : "opacity-50"
+                        )}
+                      />
+                      
+                      {/* School Icon */}
+                      <School className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                      
+                      {/* School Info */}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-sm truncate">
+                          <span className="font-medium">{school.name}</span>
+                        </h3>
+                        <p className="text-xs text-muted-foreground truncate">
+                          ID: {school.id.slice(0, 8)}...
+                        </p>
+                        
+                        {/* Completion Badge */}
+                        <div className="flex items-center justify-between mt-2">
+                          <Badge variant="secondary" className="text-xs">
+                            {school.completion_rate || 0}% tamamlandı
+                          </Badge>
+                          
+                          {/* Action Button - Workflow mode-da göstərmə */}
+                          {!workflowMode && selectedSchoolId === school.id && (
+                            <Button 
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDataEntryClick(school.id);
+                              }}
+                              disabled={!categoryId}
+                              variant={!categoryId ? 'secondary' : 'default'}
+                              className="text-xs h-6"
+                            >
+                              <Edit3 className="h-3 w-3 mr-1" />
+                              Daxil Et
+                            </Button>
+                          )}
+                          
+                          {/* Workflow mode selection indicator */}
+                          {workflowMode && selectedSchools.has(school.id) && (
+                            <div className="text-xs text-primary font-medium">
+                              Seçilib
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+            
+            {/* Empty State */}
+            {currentSchools.length === 0 && (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">
+                    {searchQuery ? 'Axtarış nəticəsində məktəb tapılmadı' : 'Heç bir məktəb tapılmadı'}
+                  </p>
+                  {searchQuery && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setSearchQuery('')}
+                      className="mt-2"
+                    >
+                      Axtarışı Ləğv Et
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
+      </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Card>
+          <CardContent className="py-3">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-muted-foreground">
+                {startIndex + 1}-{Math.min(endIndex, processedSchools.length)} / {processedSchools.length} məktəb
+              </div>
+              
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => goToPage(1)}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronsLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => goToPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                
+                {/* Page numbers */}
+                <div className="flex items-center gap-1 mx-2">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => goToPage(pageNum)}
+                        className="w-8 h-8"
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => goToPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => goToPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                >
+                  <ChevronsRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
-      {/* Bulk Data Entry Dialog - fixed props */}
+      {/* Bulk Data Entry Dialog */}
       <BulkDataEntryDialog
-        open={showBulkDialog}
+        isOpen={showBulkDialog}
         onClose={() => setShowBulkDialog(false)}
-        selectedSchools={selectedSchools}
-        categoryId={selectedCategory?.id}
-        onComplete={() => {
-          setShowBulkDialog(false);
-          setSelectedSchools([]);
-        }}
+        selectedSchools={Array.from(selectedSchools)}
+        categoryId={categoryId}
+        onComplete={handleBulkDialogComplete}
       />
     </div>
   );

@@ -26,7 +26,6 @@ export interface NotificationData {
   created_at: string;
 }
 
-// Unified interface for both old and new systems
 export interface AppNotification {
   id: string;
   title: string;

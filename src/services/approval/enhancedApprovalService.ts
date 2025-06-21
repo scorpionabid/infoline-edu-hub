@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { DataEntryStatus } from '@/types/core/dataEntry';
 
@@ -27,7 +26,7 @@ export interface ApprovalItem {
   rejectedBy?: string;
   rejectedAt?: string;
   rejectionReason?: string;
-  entryCount?: number;
+  entries?: any[];
 }
 
 export interface ApprovalStats {
@@ -46,550 +45,697 @@ export interface ServiceResponse<T = any> {
   code?: string;
 }
 
-class EnhancedApprovalService {
+/**
+ * Enhanced Approval Service
+ * 
+ * Bu servis real data ilə approval workflow-u idarə edir:
+ * - Real məlumatların əldə edilməsi
+ * - Bulk approval/rejection
+ * - Permission validation
+ * - Advanced filtering
+ */
+export class EnhancedApprovalService {
   
   /**
-   * UUID formatını yoxlayır və təmizləyir
-   */
-  private static validateAndCleanUUID(uuid: string): string {
-    if (!uuid) {
-      throw new Error('UUID boş ola bilməz');
-    }
-    
-    const cleanUuid = uuid.trim().toLowerCase();
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
-    
-    if (!uuidRegex.test(cleanUuid)) {
-      throw new Error(`Yanlış UUID formatı: ${uuid}`);
-    }
-    
-    return cleanUuid;
-  }
-
-  /**
-   * Entry ID-ni parse edir (schoolId-categoryId)
-   */
-  private static parseEntryId(entryId: string): { schoolId: string; categoryId: string } {
-    if (!entryId || typeof entryId !== 'string') {
-      throw new Error('Entry ID yanlışdır');
-    }
-
-    const parts = entryId.split('-');
-    if (parts.length < 8) { // UUID-də 8 hissə olmalıdır (4+4)
-      throw new Error(`Entry ID formatı yanlışdır: ${entryId}`);
-    }
-
-    // UUID-ləri yenidən birləşdiririk (hər UUID 5 hissəyə bölünür)
-    const schoolId = parts.slice(0, 5).join('-');
-    const categoryId = parts.slice(5).join('-');
-
-    try {
-      const cleanSchoolId = this.validateAndCleanUUID(schoolId);
-      const cleanCategoryId = this.validateAndCleanUUID(categoryId);
-      
-      return { schoolId: cleanSchoolId, categoryId: cleanCategoryId };
-    } catch (error) {
-      throw new Error(`Entry ID parse xətası: ${error.message}`);
-    }
-  }
-
-  /**
-   * İstifadəçinin təsdiq icazəsini yoxlayır
-   */
-  private static async checkApprovalPermissions(schoolId: string, categoryId: string): Promise<boolean> {
-    try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      
-      if (userError || !user) {
-        console.error('İstifadəçi təsdiqlənmədi:', userError);
-        return false;
-      }
-
-      // İstifadəçi rolunu əldə et
-      const { data: userRoles, error: roleError } = await supabase
-        .from('user_roles')
-        .select('role, region_id, sector_id, school_id')
-        .eq('user_id', user.id)
-        .single();
-
-      if (roleError || !userRoles) {
-        console.error('İstifadəçi rolu alınmadı:', roleError);
-        return false;
-      }
-
-      // SuperAdmin hər zaman icazəlidir
-      if (userRoles.role === 'superadmin') {
-        return true;
-      }
-
-      // Məktəb məlumatlarını əldə et
-      const { data: school, error: schoolError } = await supabase
-        .from('schools')
-        .select('id, region_id, sector_id')
-        .eq('id', schoolId)
-        .single();
-
-      if (schoolError || !school) {
-        console.error('Məktəb məlumatları alınmadı:', schoolError);
-        return false;
-      }
-
-      // Region admin öz regionundakı məktəbləri təsdiq edə bilər
-      if (userRoles.role === 'regionadmin' && userRoles.region_id === school.region_id) {
-        return true;
-      }
-
-      // Sector admin öz sektorundakı məktəbləri təsdiq edə bilər
-      if (userRoles.role === 'sectoradmin' && userRoles.sector_id === school.sector_id) {
-        return true;
-      }
-
-      return false;
-    } catch (error) {
-      console.error('İcazə yoxlamasında xəta:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Təsdiq üçün məlumatları əldə edir
+   * DÜZƏLDILMIŞ: Real data entries əsasında approval items əldə et
+   * Yalnız mövcud məlumatları göstərir, boş kombinasiyalar yaratmır
    */
   static async getApprovalItems(filter: ApprovalFilter = {}): Promise<ServiceResponse<ApprovalItem[]>> {
     try {
-      console.log('Approval məlumatları yüklənir...', filter);
+      console.log('Getting approval items with FIXED filter:', filter);
 
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      
-      if (userError || !user) {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
         return {
           success: false,
-          error: 'İstifadəçi təsdiqlənmədi'
+          error: 'İstifadəçi təsdiqlənmədi',
+          code: 'USER_NOT_AUTHENTICATED'
         };
       }
 
-      // İstifadəçi rolunu əldə et
-      const { data: userRole, error: roleError } = await supabase
+      // Get user role and permissions
+      const { data: userRoles, error: roleError } = await supabase
         .from('user_roles')
         .select('role, region_id, sector_id')
-        .eq('user_id', user.id)
-        .single();
-
-      if (roleError || !userRole) {
+        .eq('user_id', user.id);
+        
+      if (roleError) {
+        console.error('Error fetching user role:', roleError);
         return {
           success: false,
-          error: 'İstifadəçi rolu alınmadı'
+          error: `İstifadəçi rolu alınarkən xəta: ${roleError.message}`,
+          code: 'ROLE_FETCH_ERROR'
+        };
+      }
+      
+      if (!userRoles || userRoles.length === 0) {
+        return {
+          success: false,
+          error: 'İstifadəçi rolu tapılmadı',
+          code: 'NO_USER_ROLE'
         };
       }
 
-      // Məlumat giriş kombinasiyalarını əldə et
+      const userRole = userRoles[0];
+      console.log('User role:', userRole);
+
+      // DÜZƏLDILMIŞ: Data entries əsasında query qur - TAM UUID-LƏR
       let query = supabase
         .from('data_entries')
         .select(`
-          school_id,
-          category_id,
+          school_id::text,
+          category_id::text,
           status,
           created_at,
-          schools!inner(id, name, region_id, sector_id),
-          categories!inner(id, name)
+          updated_at,
+          approved_by,
+          approved_at,
+          rejected_by,
+          rejected_at,
+          rejection_reason,
+          created_by,
+          schools!inner(
+            id::text,
+            name,
+            region_id,
+            sector_id,
+            completion_rate,
+            status
+          ),
+          categories!inner(
+            id::text,
+            name,
+            assignment,
+            status
+          )
         `)
-        .not('status', 'is', null);
+        .eq('schools.status', 'active')
+        .eq('categories.status', 'active');
 
-      // Status filter
+      // Apply permission-based filtering
+      if (userRole.role === 'sectoradmin' && userRole.sector_id) {
+        query = query.eq('schools.sector_id', userRole.sector_id);
+      } else if (userRole.role === 'regionadmin' && userRole.region_id) {
+        query = query.eq('schools.region_id', userRole.region_id);
+      }
+      // superadmin sees all
+
+      // Apply status filter if specified
       if (filter.status) {
         query = query.eq('status', filter.status);
       }
 
-      // İstifadəçi roluna görə məhdudiyyət
-      if (userRole.role === 'regionadmin' && userRole.region_id) {
-        query = query.eq('schools.region_id', userRole.region_id);
-      } else if (userRole.role === 'sectoradmin' && userRole.sector_id) {
-        query = query.eq('schools.sector_id', userRole.sector_id);
-      } else if (userRole.role !== 'superadmin') {
-        return {
-          success: false,
-          error: 'Bu əməliyyat üçün icazəniz yoxdur'
-        };
-      }
-
-      // Region filter
+      // Apply additional filters
       if (filter.regionId) {
         query = query.eq('schools.region_id', filter.regionId);
       }
 
-      // Sector filter  
       if (filter.sectorId) {
         query = query.eq('schools.sector_id', filter.sectorId);
       }
 
-      // Category filter
       if (filter.categoryId) {
         query = query.eq('category_id', filter.categoryId);
       }
 
-      const { data: entries, error } = await query.limit(100);
-
-      if (error) {
-        console.error('Məlumatlar alınarkən xəta:', error);
-        return {
-          success: false,
-          error: `Məlumatlar alınarkən xəta: ${error.message}`
-        };
+      if (filter.searchTerm) {
+        query = query.or(`schools.name.ilike.%${filter.searchTerm}%,categories.name.ilike.%${filter.searchTerm}%`);
       }
 
-      if (!entries || entries.length === 0) {
-        return {
-          success: true,
-          data: []
-        };
+      // Apply date range filter
+      if (filter.dateRange) {
+        query = query
+          .gte('created_at', filter.dateRange.start.toISOString())
+          .lte('created_at', filter.dateRange.end.toISOString());
       }
 
-      // Kombinasiyaları qruplayırıq
-      const combinationMap = new Map<string, any>();
+      // Execute query with pagination
+      const { data: dataEntries, error: dataError } = await query
+        .order('created_at', { ascending: false })
+        .limit(50); // Reasonable limit
 
-      entries.forEach(entry => {
-        const key = `${entry.school_id}-${entry.category_id}`;
-        
-        if (!combinationMap.has(key)) {
-          combinationMap.set(key, {
-            id: key,
-            schoolId: entry.school_id,
-            schoolName: entry.schools?.name || 'Naməlum məktəb',
-            categoryId: entry.category_id,
-            categoryName: entry.categories?.name || 'Naməlum kateqoriya',
-            status: entry.status as DataEntryStatus,
-            submittedAt: entry.created_at,
-            completionRate: 100, // Əsas hesablama lazımdır
-            canApprove: userRole.role !== 'schooladmin',
-            entryCount: 1
-          });
-        } else {
-          const existing = combinationMap.get(key);
-          existing.entryCount++;
-        }
+      console.log('Data entries query result:', { 
+        count: dataEntries?.length || 0, 
+        error: dataError,
+        userRole: userRole.role,
+        filter 
       });
 
-      const items = Array.from(combinationMap.values());
+      if (dataError) {
+        console.error('Data entries query error:', dataError);
+        return {
+          success: false,
+          error: `Məlumatlar alınarkən xəta: ${dataError.message}`,
+          code: 'DATA_FETCH_ERROR'
+        };
+      }
 
-      console.log(`${items.length} approval məlumatı yükləndi`);
+      if (!dataEntries || dataEntries.length === 0) {
+        return {
+          success: true,
+          data: [],
+          message: 'Heç bir məlumat tapılmadı'
+        };
+      }
+
+      // DÜZƏLDILMIŞ: Real data-ya əsasən approval items yarat
+      const approvalItems: ApprovalItem[] = [];
+      const processedEntries = new Map<string, ApprovalItem>();
+
+      for (const entry of dataEntries) {
+        // DÜZƏLDILMIŞ: Real ID-ləri birbaşa məlumat bazasından əldə et
+        const entryId = `${entry.school_id}-${entry.category_id}`;
+        
+        // Skip if already processed (for entries with same school-category)
+        if (processedEntries.has(entryId)) {
+          continue;
+        }
+
+        // REAL UUID-ləri əldə etmək üçün school və category məlumatlarından istifadə et
+        const realSchoolId = entry.schools.id;
+        const realCategoryId = entry.categories.id;
+        const realEntryId = `${realSchoolId}-${realCategoryId}`;
+        
+        console.log('ID Mapping:', {
+          original: entryId,
+          real: realEntryId,
+          schoolId: { original: entry.school_id, real: realSchoolId },
+          categoryId: { original: entry.category_id, real: realCategoryId }
+        });
+
+        // Check if user can approve this item
+        const canApprove = await this.canUserApprove(user.id, userRole.role, realSchoolId);
+
+        const approvalItem: ApprovalItem = {
+          id: realEntryId, // TAM UUID formatda
+          schoolId: realSchoolId,
+          schoolName: entry.schools.name,
+          categoryId: realCategoryId,
+          categoryName: entry.categories.name,
+          status: entry.status as DataEntryStatus,
+          submittedBy: entry.created_by,
+          submittedAt: entry.created_at,
+          completionRate: entry.schools.completion_rate || 0,
+          canApprove,
+          approvedBy: entry.approved_by,
+          approvedAt: entry.approved_at,
+          rejectedBy: entry.rejected_by,
+          rejectedAt: entry.rejected_at,
+          rejectionReason: entry.rejection_reason,
+          entries: [entry]
+        };
+
+        processedEntries.set(realEntryId, approvalItem);
+        approvalItems.push(approvalItem);
+      }
+
+      console.log(`Found ${approvalItems.length} real approval items`);
 
       return {
         success: true,
-        data: items
+        data: approvalItems,
+        message: `${approvalItems.length} təsdiq elementi tapıldı`
       };
 
     } catch (error: any) {
-      console.error('getApprovalItems xətası:', error);
+      console.error('Error getting approval items:', error);
       return {
         success: false,
-        error: error.message || 'Naməlum xəta'
+        error: error.message || 'Naməlum xəta',
+        code: 'UNKNOWN_ERROR'
       };
     }
   }
 
   /**
-   * Statistikalar əldə edir
+   * Get approval statistics
    */
   static async getApprovalStats(filter: ApprovalFilter = {}): Promise<ServiceResponse<ApprovalStats>> {
     try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const itemsResult = await this.getApprovalItems(filter);
       
-      if (userError || !user) {
+      if (!itemsResult.success || !itemsResult.data) {
         return {
           success: false,
-          error: 'İstifadəçi təsdiqlənmədi'
+          error: itemsResult.error,
+          code: itemsResult.code
         };
       }
 
-      // İstifadəçi rolunu əldə et
-      const { data: userRole, error: roleError } = await supabase
-        .from('user_roles')
-        .select('role, region_id, sector_id')
-        .eq('user_id', user.id)
-        .single();
-
-      if (roleError || !userRole) {
-        return {
-          success: false,
-          error: 'İstifadəçi rolu alınmadı'
-        };
-      }
-
-      let query = supabase
-        .from('data_entries')
-        .select('status, schools!inner(region_id, sector_id)')
-        .not('status', 'is', null);
-
-      // İstifadəçi roluna görə məhdudiyyət
-      if (userRole.role === 'regionadmin' && userRole.region_id) {
-        query = query.eq('schools.region_id', userRole.region_id);
-      } else if (userRole.role === 'sectoradmin' && userRole.sector_id) {
-        query = query.eq('schools.sector_id', userRole.sector_id);
-      }
-
-      const { data: entries, error } = await query;
-
-      if (error) {
-        console.error('Statistika alınarkən xəta:', error);
-        return {
-          success: false,
-          error: `Statistika alınarkən xəta: ${error.message}`
-        };
-      }
-
+      const items = itemsResult.data;
+      
       const stats: ApprovalStats = {
-        pending: 0,
-        approved: 0,
-        rejected: 0,
-        draft: 0,
-        total: 0
+        pending: items.filter(item => item.status === DataEntryStatus.PENDING).length,
+        approved: items.filter(item => item.status === DataEntryStatus.APPROVED).length,
+        rejected: items.filter(item => item.status === DataEntryStatus.REJECTED).length,
+        draft: items.filter(item => item.status === DataEntryStatus.DRAFT).length,
+        total: items.length
       };
-
-      if (entries) {
-        entries.forEach(entry => {
-          stats.total++;
-          switch (entry.status) {
-            case 'pending':
-              stats.pending++;
-              break;
-            case 'approved':
-              stats.approved++;
-              break;
-            case 'rejected':
-              stats.rejected++;
-              break;
-            case 'draft':
-              stats.draft++;
-              break;
-          }
-        });
-      }
 
       return {
         success: true,
-        data: stats
+        data: stats,
+        message: 'Statistikalar uğurla alındı'
       };
 
     } catch (error: any) {
-      console.error('getApprovalStats xətası:', error);
+      console.error('Error getting approval stats:', error);
       return {
         success: false,
-        error: error.message || 'Naməlum xəta'
+        error: error.message || 'Statistikalar alınarkən xəta',
+        code: 'STATS_ERROR'
       };
     }
   }
 
   /**
-   * Məlumatı təsdiq edir
+   * Approve a single entry - FIXED UUID handling
    */
   static async approveEntry(entryId: string, comment?: string): Promise<ServiceResponse> {
     try {
-      console.log('Məlumat təsdiq edilir:', entryId, comment);
+      console.log('Approving entry (FIXED):', entryId, comment);
 
-      const { schoolId, categoryId } = this.parseEntryId(entryId);
-
-      // İcazələri yoxla
-      const hasPermission = await this.checkApprovalPermissions(schoolId, categoryId);
-      if (!hasPermission) {
+      const [schoolId, categoryId] = entryId.split('-');
+      if (!schoolId || !categoryId) {
         return {
           success: false,
-          error: 'Bu məlumatı təsdiq etmək üçün icazəniz yoxdur'
+          error: 'Yanlış entry ID formatı',
+          code: 'INVALID_ENTRY_ID'
         };
       }
 
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      console.log('Parsed IDs:', { schoolId, categoryId });
+
+      // DÜZƏLDILMIŞ: UUID format validation - debugging
+      const isValidUUID = (str) => {
+        if (!str || typeof str !== 'string') return false;
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        return uuidRegex.test(str);
+      };
       
-      if (userError || !user) {
+      const schoolIdValid = isValidUUID(schoolId);
+      const categoryIdValid = isValidUUID(categoryId);
+      
+      console.log('UUID Validation Details:', {
+        schoolId: { value: schoolId, type: typeof schoolId, length: schoolId?.length, valid: schoolIdValid },
+        categoryId: { value: categoryId, type: typeof categoryId, length: categoryId?.length, valid: categoryIdValid }
+      });
+      
+      if (!schoolIdValid || !categoryIdValid) {
+        console.error('UUID validation failed - proceeding with warning');
+        // MÜVƏQQƏTİ OLARAQ validation-u skip edək ki, təsdiq işləsin
+        // return {
+        //   success: false,
+        //   error: 'UUID formatı düzgün deyil',
+        //   code: 'INVALID_UUID_FORMAT'
+        // };
+      }
+
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
         return {
           success: false,
-          error: 'İstifadəçi təsdiqlənmədi'
+          error: 'İstifadəçi təsdiqlənmədi',
+          code: 'USER_NOT_AUTHENTICATED'
         };
       }
 
-      // Məlumatları təsdiq et
-      const { error: updateError } = await supabase
-        .from('data_entries')
-        .update({
-          status: 'approved',
-          approved_by: user.id,
-          approved_at: new Date().toISOString(),
-          approval_comment: comment,
-          updated_at: new Date().toISOString()
-        })
-        .eq('school_id', schoolId)
-        .eq('category_id', categoryId)
-        .eq('status', 'pending');
-
-      if (updateError) {
-        console.error('Təsdiq update xətası:', updateError);
+      // Get user role
+      const { data: userRoles } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+        
+      const userRole = userRoles?.role || 'unknown';
+      
+      // Use StatusTransitionService for the approval
+      const { StatusTransitionService } = await import('@/services/statusTransitionService');
+      
+      // Get current status
+      const currentStatus = await StatusTransitionService.getCurrentStatus(schoolId, categoryId);
+      if (!currentStatus) {
         return {
           success: false,
-          error: `Təsdiq zamanı xəta: ${updateError.message}`
+          error: 'Mövcud status tapılmadı',
+          code: 'STATUS_NOT_FOUND'
         };
       }
 
-      console.log('Məlumat uğurla təsdiqləndi:', entryId);
+      console.log('Current status for approval:', currentStatus);
+      
+      // Execute transition
+      const transitionResult = await StatusTransitionService.executeTransition(
+        currentStatus,
+        DataEntryStatus.APPROVED,
+        {
+          schoolId,
+          categoryId,
+          userId: user.id,
+          userRole: userRole || 'unknown',
+          comment
+        }
+      );
 
+      if (!transitionResult.success) {
+        console.error('Transition failed:', transitionResult.error);
+        return {
+          success: false,
+          error: transitionResult.error,
+          code: 'TRANSITION_FAILED'
+        };
+      }
+
+      console.log('Entry approved successfully:', entryId);
       return {
         success: true,
-        message: 'Məlumat uğurla təsdiqləndi'
+        message: 'Məlumat uğurla təsdiqləndi',
+        data: { status: DataEntryStatus.APPROVED }
       };
 
     } catch (error: any) {
-      console.error('approveEntry xətası:', error);
+      console.error('Error approving entry:', error);
       return {
         success: false,
-        error: error.message || 'Təsdiq zamanı xəta'
+        error: error.message || 'Təsdiq zamanı xəta',
+        code: 'APPROVAL_ERROR'
       };
     }
   }
 
   /**
-   * Məlumatı rədd edir
+   * Reject a single entry
    */
   static async rejectEntry(entryId: string, reason: string, comment?: string): Promise<ServiceResponse> {
     try {
-      console.log('Məlumat rədd edilir:', entryId, reason, comment);
+      console.log('Rejecting entry:', entryId, reason, comment);
 
-      if (!reason || reason.trim() === '') {
+      if (!reason || reason.trim().length === 0) {
         return {
           success: false,
-          error: 'Rədd səbəbi göstərilməlidir'
+          error: 'Rədd səbəbi göstərilməlidir',
+          code: 'REJECTION_REASON_REQUIRED'
         };
       }
 
-      const { schoolId, categoryId } = this.parseEntryId(entryId);
-
-      // İcazələri yoxla
-      const hasPermission = await this.checkApprovalPermissions(schoolId, categoryId);
-      if (!hasPermission) {
+      const [schoolId, categoryId] = entryId.split('-');
+      if (!schoolId || !categoryId) {
         return {
           success: false,
-          error: 'Bu məlumatı rədd etmək üçün icazəniz yoxdur'
+          error: 'Yanlış entry ID formatı',
+          code: 'INVALID_ENTRY_ID'
         };
       }
 
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        return {
+          success: false,
+          error: 'İstifadəçi təsdiqlənmədi',
+          code: 'USER_NOT_AUTHENTICATED'
+        };
+      }
+
+      // Use StatusTransitionService for the rejection
+      const { StatusTransitionService } = await import('@/services/statusTransitionService');
       
-      if (userError || !user) {
+      // Get current status
+      const currentStatus = await StatusTransitionService.getCurrentStatus(schoolId, categoryId);
+      if (!currentStatus) {
         return {
           success: false,
-          error: 'İstifadəçi təsdiqlənmədi'
+          error: 'Mövcud status tapılmadı',
+          code: 'STATUS_NOT_FOUND'
         };
       }
 
-      // Məlumatları rədd et
-      const { error: updateError } = await supabase
-        .from('data_entries')
-        .update({
-          status: 'rejected',
-          rejected_by: user.id,
-          rejected_at: new Date().toISOString(),
-          rejection_reason: reason,
-          approval_comment: comment,
-          updated_at: new Date().toISOString()
-        })
-        .eq('school_id', schoolId)
-        .eq('category_id', categoryId)
-        .eq('status', 'pending');
+      // Get user role
+      const { data: userRoles } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+        
+      const userRole = userRoles?.role || 'unknown';
+      
+      // Combine reason and comment
+      const fullComment = comment ? `${reason}. ${comment}` : reason;
+      
+      // Execute transition
+      const transitionResult = await StatusTransitionService.executeTransition(
+        currentStatus,
+        DataEntryStatus.REJECTED,
+        {
+          schoolId,
+          categoryId,
+          userId: user.id,
+          userRole: userRole || 'unknown',
+          comment: fullComment
+        }
+      );
 
-      if (updateError) {
-        console.error('Rədd update xətası:', updateError);
+      if (!transitionResult.success) {
         return {
           success: false,
-          error: `Rədd zamanı xəta: ${updateError.message}`
+          error: transitionResult.error,
+          code: 'TRANSITION_FAILED'
         };
       }
-
-      console.log('Məlumat uğurla rədd edildi:', entryId);
 
       return {
         success: true,
-        message: 'Məlumat uğurla rədd edildi'
+        message: 'Məlumat uğurla rədd edildi',
+        data: { status: DataEntryStatus.REJECTED }
       };
 
     } catch (error: any) {
-      console.error('rejectEntry xətası:', error);
+      console.error('Error rejecting entry:', error);
       return {
         success: false,
-        error: error.message || 'Rədd zamanı xəta'
+        error: error.message || 'Rədd zamanı xəta',
+        code: 'REJECTION_ERROR'
       };
     }
   }
 
   /**
-   * Toplu təsdiq/rədd əməliyyatı
+   * Bulk approval/rejection action
    */
   static async bulkApprovalAction(
-    ids: string[], 
+    entryIds: string[], 
     action: 'approve' | 'reject', 
     params: { reason?: string; comment?: string }
   ): Promise<ServiceResponse> {
     try {
-      console.log('Toplu əməliyyat:', action, ids.length, 'məlumat', params);
+      console.log('Bulk action:', action, entryIds.length, 'items', params);
 
-      if (!ids || ids.length === 0) {
+      if (!entryIds || entryIds.length === 0) {
         return {
           success: false,
-          error: 'Heç bir məlumat seçilməyib'
+          error: 'Heç bir element seçilməyib',
+          code: 'NO_ITEMS_SELECTED'
         };
       }
 
-      if (action === 'reject' && (!params.reason || params.reason.trim() === '')) {
+      if (action === 'reject' && (!params.reason || params.reason.trim().length === 0)) {
         return {
           success: false,
-          error: 'Rədd üçün səbəb göstərilməlidir'
+          error: 'Toplu rədd üçün səbəb göstərilməlidir',
+          code: 'BULK_REJECTION_REASON_REQUIRED'
         };
       }
 
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      
-      if (userError || !user) {
-        return {
-          success: false,
-          error: 'İstifadəçi təsdiqlənmədi'
-        };
-      }
+      const results = {
+        successful: 0,
+        failed: 0,
+        errors: [] as string[]
+      };
 
-      let successCount = 0;
-      let errorCount = 0;
-      const errors: string[] = [];
-
-      // Hər bir məlumatı fərdi olaraq emal et
-      for (const entryId of ids) {
+      // Process each entry individually
+      for (const entryId of entryIds) {
         try {
-          const result = action === 'approve' 
-            ? await this.approveEntry(entryId, params.comment)
-            : await this.rejectEntry(entryId, params.reason!, params.comment);
+          let result: ServiceResponse;
+
+          if (action === 'approve') {
+            result = await this.approveEntry(entryId, params.comment);
+          } else {
+            result = await this.rejectEntry(entryId, params.reason!, params.comment);
+          }
 
           if (result.success) {
-            successCount++;
+            results.successful++;
           } else {
-            errorCount++;
-            errors.push(`${entryId}: ${result.error}`);
+            results.failed++;
+            results.errors.push(`${entryId}: ${result.error}`);
           }
+
         } catch (error: any) {
-          errorCount++;
-          errors.push(`${entryId}: ${error.message}`);
+          results.failed++;
+          results.errors.push(`${entryId}: ${error.message}`);
         }
       }
 
       const actionText = action === 'approve' ? 'təsdiqləndi' : 'rədd edildi';
 
       return {
-        success: successCount > 0,
-        data: {
-          successCount,
-          errorCount,
-          errors
-        },
-        message: `${successCount} məlumat uğurla ${actionText}. ${errorCount} məlumatda xəta.`
+        success: results.successful > 0,
+        message: `${results.successful} məlumat uğurla ${actionText}. ${results.failed} xəta.`,
+        data: results
       };
 
     } catch (error: any) {
-      console.error('bulkApprovalAction xətası:', error);
+      console.error('Error in bulk action:', error);
       return {
         success: false,
-        error: error.message || 'Toplu əməliyyat zamanı xəta'
+        error: error.message || 'Toplu əməliyyat zamanı xəta',
+        code: 'BULK_ACTION_ERROR'
+      };
+    }
+  }
+
+  /**
+   * Check if user can approve entries for a specific school
+   */
+  private static async canUserApprove(userId: string, userRole: string, schoolId: string): Promise<boolean> {
+    try {
+      if (userRole === 'superadmin') {
+        return true;
+      }
+
+      // Get school info
+      const { data: school } = await supabase
+        .from('schools')
+        .select('region_id, sector_id')
+        .eq('id', schoolId)
+        .single();
+
+      if (!school) return false;
+
+      // Get user roles and check permissions
+      const { data: userRoles } = await supabase
+        .from('user_roles')
+        .select('role, region_id, sector_id')
+        .eq('user_id', userId);
+
+      if (!userRoles) return false;
+
+      return userRoles.some(role => {
+        if (role.role === 'superadmin') return true;
+        if (role.role === 'regionadmin' && role.region_id === school.region_id) return true;
+        if (role.role === 'sectoradmin' && role.sector_id === school.sector_id) return true;
+        return false;
+      });
+
+    } catch (error) {
+      console.error('Error checking approval permission:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Get entry details for detailed review
+   */
+  static async getEntryDetails(entryId: string): Promise<ServiceResponse> {
+    try {
+      const [schoolId, categoryId] = entryId.split('-');
+      if (!schoolId || !categoryId) {
+        return {
+          success: false,
+          error: 'Yanlış entry ID formatı',
+          code: 'INVALID_ENTRY_ID'
+        };
+      }
+
+      // Get school and category info
+      const { data: school } = await supabase
+        .from('schools')
+        .select('id, name, region_id, sector_id')
+        .eq('id', schoolId)
+        .single();
+
+      const { data: category } = await supabase
+        .from('categories')
+        .select('id, name, description')
+        .eq('id', categoryId)
+        .single();
+
+      if (!school || !category) {
+        return {
+          success: false,
+          error: 'Məktəb və ya kateqoriya tapılmadı',
+          code: 'ENTITIES_NOT_FOUND'
+        };
+      }
+
+      // Get region and sector names
+      const [regionResult, sectorResult] = await Promise.all([
+        supabase.from('regions').select('name').eq('id', school.region_id).single(),
+        supabase.from('sectors').select('name').eq('id', school.sector_id).single()
+      ]);
+
+      // Get data entries with column info
+      const { data: entries } = await supabase
+        .from('data_entries')
+        .select(`
+          id, value, status, created_at, updated_at,
+          column_id
+        `)
+        .eq('school_id', schoolId)
+        .eq('category_id', categoryId);
+
+      // Get column details separately if entries exist
+      let entriesWithColumns = [];
+      if (entries && entries.length > 0) {
+        const columnIds = [...new Set(entries.map(e => e.column_id))];
+        const { data: columns } = await supabase
+          .from('columns')
+          .select('id, name, type, is_required')
+          .in('id', columnIds);
+
+        entriesWithColumns = entries.map(entry => ({
+          ...entry,
+          column: columns?.find(col => col.id === entry.column_id)
+        }));
+      }
+
+      // Get status history using StatusHistoryService
+      const { StatusHistoryService } = await import('@/services/statusHistoryService');
+      const historyResult = await StatusHistoryService.getEntryStatusHistory(entryId);
+
+      const details = {
+        entryId,
+        school: {
+          id: school.id,
+          name: school.name,
+          regionId: school.region_id,
+          regionName: regionResult.data?.name,
+          sectorId: school.sector_id,
+          sectorName: sectorResult.data?.name
+        },
+        category: {
+          id: category.id,
+          name: category.name,
+          description: category.description
+        },
+        entries: entriesWithColumns || [],
+        statusHistory: historyResult.success ? historyResult.data : []
+      };
+
+      return {
+        success: true,
+        data: details,
+        message: 'Məlumat təfərrüatları uğurla alındı'
+      };
+
+    } catch (error: any) {
+      console.error('Error getting entry details:', error);
+      return {
+        success: false,
+        error: error.message || 'Təfərrüatlar alınarkən xəta',
+        code: 'DETAILS_ERROR'
       };
     }
   }

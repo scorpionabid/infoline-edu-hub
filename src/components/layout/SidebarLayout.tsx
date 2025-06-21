@@ -1,70 +1,78 @@
 
-import React from "react";
-import { useTranslation } from "@/contexts/TranslationContext";
-import Sidebar from "@/components/navigation/Sidebar";
-import { NotificationBell } from "./NotificationBell";
-import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
-import { useAuthStore, selectSignOut } from "@/hooks/auth/useAuthStore";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { LanguageSelect } from "@/components/ui/language-select";
-import { usePermissions } from "@/hooks/auth/usePermissions";
+import React, { useState } from 'react';
+import { Outlet } from 'react-router-dom';
+import Sidebar from './Sidebar';
+import Header from './Header';
+import { Loader2 } from 'lucide-react';
+import { useAuthStore, selectIsLoading, selectUser } from '@/hooks/auth/useAuthStore';
 
 interface SidebarLayoutProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
-  const { t } = useTranslation();
-  const signOut = useAuthStore(selectSignOut);
-  const { userRole } = usePermissions();
+  const isLoading = useAuthStore(selectIsLoading);
+  const user = useAuthStore(selectUser);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  
+  console.log('[SidebarLayout] Render state:', { user: !!user, isLoading });
 
-  const handleSignOut = () => {
-    signOut();
-  };
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p>İstifadəçi məlumatları yüklənir...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <div className="w-64 flex-shrink-0">
-        <Sidebar 
-          userRole={userRole}
-          isOpen={true}
-          onToggle={() => {}}
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30 w-full">
+      <div className="flex h-screen w-full">
+        {/* Sidebar - Desktop: Always visible, Mobile: Overlay */}
+        <div className={`
+          fixed inset-y-0 left-0 z-50 w-64 bg-card/95 backdrop-blur-sm border-r border-border/50 transition-all duration-300 ease-in-out shadow-lg
+          lg:translate-x-0 lg:static lg:inset-0 lg:z-auto lg:shadow-none
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        `}>
+          <Sidebar 
+            isOpen={sidebarOpen}
+            onToggle={() => setSidebarOpen(false)}
+            userName={user?.full_name || user?.email}
+          />
+        </div>
+
+        {/* Main content area */}
+        <div className="flex flex-col flex-1 w-full min-w-0">
+          {/* Header */}
+          <Header 
+            onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}
+            isSidebarOpen={sidebarOpen}
+          />
+          
+          {/* Page content with responsive padding and animation */}
+          <main className="flex-1 overflow-auto p-2 sm:p-4 lg:p-6 w-full">
+            <div className="w-full max-w-full mx-auto animate-fade-in-up">
+              {children || <Outlet />}
+            </div>
+          </main>
+        </div>
+      </div>
+
+      {/* Mobile sidebar overlay - only show on smaller screens */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 lg:hidden animate-fade-in"
+          onClick={() => setSidebarOpen(false)}
         />
-      </div>
-
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="flex h-14 items-center justify-between px-4">
-            <div className="flex items-center space-x-4">
-              <h1 className="text-lg font-semibold">
-                {t("dashboardLabel")}
-              </h1>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <NotificationBell />
-              <LanguageSelect />
-              <ThemeToggle />
-              
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleSignOut}
-                title={t("logout")}
-              >
-                <LogOut className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </header>
-
-        {/* Main Content */}
-        <main className="flex-1 overflow-auto p-6">
-          {children}
-        </main>
-      </div>
+      )}
     </div>
   );
 };

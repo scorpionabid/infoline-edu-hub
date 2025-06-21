@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import EnhancedApprovalService, { 
@@ -48,13 +47,13 @@ export interface UseEnhancedApprovalDataReturn {
 }
 
 /**
- * Enhanced Approval Data Hook - Optimized version
+ * Enhanced Approval Data Hook
  * 
  * Bu hook real data ilə approval workflow-u idarə edir:
  * - Real-time subscription to approval changes
  * - Advanced filtering and search
  * - Bulk operations support
- * - Optimized error handling
+ * - Smart caching and optimization
  */
 export const useEnhancedApprovalData = (
   props: UseEnhancedApprovalDataProps = {}
@@ -69,30 +68,16 @@ export const useEnhancedApprovalData = (
     draft: 0,
     total: 0
   });
-  
   const [filter, setFilter] = useState<ApprovalFilter>(() => 
     props.initialFilter || { status: 'pending' }
   );
-  
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [hasInitialLoad, setHasInitialLoad] = useState(false);
-  const [lastLoadTime, setLastLoadTime] = useState<number>(0);
 
-  // Minimum interval between loads (prevent excessive API calls)
-  const MIN_LOAD_INTERVAL = 3000; // 3 seconds
-
-  // Load items function with throttling
+  // Load items function
   const loadItems = useCallback(async () => {
-    const now = Date.now();
-    
-    // Throttle yoxlaması
-    if (now - lastLoadTime < MIN_LOAD_INTERVAL && hasInitialLoad) {
-      console.log('Load throttled, skipping...');
-      return;
-    }
-    
     if (isLoading) {
       console.log('Already loading, skipping...');
       return;
@@ -100,18 +85,13 @@ export const useEnhancedApprovalData = (
     
     setIsLoading(true);
     setError(null);
-    setLastLoadTime(now);
     
     try {
       console.log('Loading approval items with filter:', filter);
       
-      // Load items and stats in parallel
-      const [itemsResult, statsResult] = await Promise.all([
-        EnhancedApprovalService.getApprovalItems(filter),
-        EnhancedApprovalService.getApprovalStats(filter)
-      ]);
+      // Load items
+      const itemsResult = await EnhancedApprovalService.getApprovalItems(filter);
       
-      // Handle items result
       if (itemsResult.success && itemsResult.data) {
         setItems(itemsResult.data);
         console.log(`Loaded ${itemsResult.data.length} approval items`);
@@ -121,19 +101,23 @@ export const useEnhancedApprovalData = (
         setItems([]);
       }
       
-      // Handle stats result
-      if (statsResult.success && statsResult.data) {
-        setStats(statsResult.data);
-      } else {
-        console.warn('Failed to load stats:', statsResult.error);
-        // Set default stats instead of showing error
-        setStats({
-          pending: 0,
-          approved: 0,
-          rejected: 0,
-          draft: 0,
-          total: 0
-        });
+      // Load stats only if items were loaded successfully
+      if (itemsResult.success) {
+        const statsResult = await EnhancedApprovalService.getApprovalStats(filter);
+        
+        if (statsResult.success && statsResult.data) {
+          setStats(statsResult.data);
+        } else {
+          console.warn('Failed to load stats:', statsResult.error);
+          // Set default stats
+          setStats({
+            pending: 0,
+            approved: 0,
+            rejected: 0,
+            draft: 0,
+            total: 0
+          });
+        }
       }
       
     } catch (error: any) {
@@ -150,13 +134,13 @@ export const useEnhancedApprovalData = (
     } finally {
       setIsLoading(false);
     }
-  }, [filter, isLoading, hasInitialLoad, lastLoadTime]);
+  }, [filter]); // Remove isLoading from dependencies to avoid infinite loop
 
-  // Optimized real-time subscription
+  // DÜZƏLDILMIŞ: Throttled real-time subscription
   useEffect(() => {
     if (!props.autoRefresh) return;
 
-    console.log('Setting up optimized real-time subscription');
+    console.log('Setting up THROTTLED real-time subscription for approval data');
     let updateTimeout: NodeJS.Timeout;
 
     const subscription = supabase
@@ -167,20 +151,20 @@ export const useEnhancedApprovalData = (
         table: 'data_entries',
         filter: 'status=in.(pending,approved,rejected)'
       }, (payload) => {
-        console.log('Real-time update received:', payload);
+        console.log('Real-time update received (throttled):', payload);
         
         // Clear existing timeout
         if (updateTimeout) {
           clearTimeout(updateTimeout);
         }
         
-        // Debounce updates to prevent excessive reloads
+        // Throttle updates to prevent excessive reloads
         updateTimeout = setTimeout(() => {
           if (!isLoading && hasInitialLoad) {
-            console.log('Executing debounced reload');
+            console.log('Executing throttled reload');
             loadItems();
           }
-        }, 5000); // 5 second debounce
+        }, 2000); // 2 second throttle
       })
       .subscribe();
 
@@ -191,14 +175,14 @@ export const useEnhancedApprovalData = (
       }
       subscription.unsubscribe();
     };
-  }, [props.autoRefresh, hasInitialLoad, loadItems]);
+  }, [props.autoRefresh, hasInitialLoad]); // Add hasInitialLoad dependency
 
-  // Auto-refresh with longer intervals
+  // DÜZƏLDILMIŞ: Less frequent auto-refresh
   useEffect(() => {
     if (!props.autoRefresh || !props.refreshInterval) return;
 
-    // Minimum interval of 60 seconds to prevent excessive API calls
-    const safeInterval = Math.max(props.refreshInterval, 60000);
+    // Minimum interval of 30 seconds to prevent excessive API calls
+    const safeInterval = Math.max(props.refreshInterval, 30000);
     
     console.log(`Setting up auto-refresh interval: ${safeInterval}ms`);
     const interval = setInterval(() => {
@@ -212,7 +196,7 @@ export const useEnhancedApprovalData = (
       console.log('Cleaning up auto-refresh interval');
       clearInterval(interval);
     };
-  }, [props.autoRefresh, props.refreshInterval, hasInitialLoad, loadItems]);
+  }, [props.autoRefresh, props.refreshInterval, hasInitialLoad]);
 
   // Initial load - only once when component mounts
   useEffect(() => {
@@ -227,41 +211,32 @@ export const useEnhancedApprovalData = (
   useEffect(() => {
     if (hasInitialLoad) {
       console.log('Filter changed, reloading data:', filter);
-      // Clear selection when filter changes
-      setSelectedItems([]);
       loadItems();
     }
-  }, [filter, hasInitialLoad, loadItems]);
+  }, [filter]);
 
-  // Approve item function with optimistic updates
+  // Approve item function
   const approveItem = useCallback(async (id: string, comment?: string) => {
     try {
       console.log('Approving item:', id, comment);
       
-      // Optimistic update
-      setItems(prevItems => 
-        prevItems.map(item => 
-          item.id === id 
-            ? { ...item, status: DataEntryStatus.APPROVED }
-            : item
-        )
-      );
-      
       const result = await EnhancedApprovalService.approveEntry(id, comment);
       
       if (result.success) {
-        console.log('Item approved successfully:', id);
-        // Reload fresh data
-        setTimeout(() => loadItems(), 1000);
-      } else {
-        // Revert optimistic update on error
+        // Update local state optimistically
         setItems(prevItems => 
           prevItems.map(item => 
             item.id === id 
-              ? { ...item, status: DataEntryStatus.PENDING }
+              ? { ...item, status: DataEntryStatus.APPROVED }
               : item
           )
         );
+        
+        // Reload to get fresh data
+        await loadItems();
+        
+        console.log('Item approved successfully:', id);
+      } else {
         throw new Error(result.error || 'Təsdiq zamanı xəta');
       }
     } catch (error: any) {
@@ -271,35 +246,28 @@ export const useEnhancedApprovalData = (
     }
   }, [loadItems]);
 
-  // Reject item function with optimistic updates
+  // Reject item function
   const rejectItem = useCallback(async (id: string, reason: string, comment?: string) => {
     try {
       console.log('Rejecting item:', id, reason, comment);
       
-      // Optimistic update
-      setItems(prevItems => 
-        prevItems.map(item => 
-          item.id === id 
-            ? { ...item, status: DataEntryStatus.REJECTED, rejectionReason: reason }
-            : item
-        )
-      );
-      
       const result = await EnhancedApprovalService.rejectEntry(id, reason, comment);
       
       if (result.success) {
-        console.log('Item rejected successfully:', id);
-        // Reload fresh data
-        setTimeout(() => loadItems(), 1000);
-      } else {
-        // Revert optimistic update on error
+        // Update local state optimistically
         setItems(prevItems => 
           prevItems.map(item => 
             item.id === id 
-              ? { ...item, status: DataEntryStatus.PENDING, rejectionReason: undefined }
+              ? { ...item, status: DataEntryStatus.REJECTED, rejectionReason: reason }
               : item
           )
         );
+        
+        // Reload to get fresh data
+        await loadItems();
+        
+        console.log('Item rejected successfully:', id);
+      } else {
         throw new Error(result.error || 'Rədd zamanı xəta');
       }
     } catch (error: any) {
@@ -324,8 +292,8 @@ export const useEnhancedApprovalData = (
         // Clear selection
         setSelectedItems([]);
         
-        // Reload fresh data
-        setTimeout(() => loadItems(), 1000);
+        // Reload to get fresh data
+        await loadItems();
         
         console.log('Bulk action completed:', result);
       }
@@ -341,13 +309,12 @@ export const useEnhancedApprovalData = (
     }
   }, [loadItems]);
 
-  // Update filter function with validation
+  // Update filter function
   const updateFilter = useCallback((newFilter: Partial<ApprovalFilter>) => {
     console.log('Updating filter:', newFilter);
     setFilter(prevFilter => {
+      // Shallow comparison to avoid unnecessary re-renders
       const updatedFilter = { ...prevFilter, ...newFilter };
-      
-      // Only update if filter actually changed
       const isFilterChanged = JSON.stringify(prevFilter) !== JSON.stringify(updatedFilter);
       
       if (isFilterChanged) {
@@ -358,6 +325,7 @@ export const useEnhancedApprovalData = (
         return prevFilter;
       }
     });
+    setSelectedItems([]); // Clear selection when filter changes
   }, []);
 
   // Reset filter function

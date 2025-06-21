@@ -1,59 +1,73 @@
 
 import { useState, useEffect } from 'react';
-import { EnhancedApprovalItem, EnhancedApprovalStats } from '@/types/approval';
+import { DataEntryStatus } from '@/types/dataEntry';
+import { ApprovalItem } from '@/types/approval';
 
-export interface UseApprovalDataResult {
-  pendingApprovals: EnhancedApprovalItem[];
-  approvedItems: EnhancedApprovalItem[];
-  rejectedItems: EnhancedApprovalItem[];
-  stats: EnhancedApprovalStats;
+interface UseApprovalDataReturn {
+  pendingApprovals: ApprovalItem[];
+  approvedItems: ApprovalItem[];
+  rejectedItems: ApprovalItem[];
   isLoading: boolean;
-  error: string | null;
-  refetch: () => void;
+  approveItem: (id: string, comment?: string) => void;
+  rejectItem: (id: string, reason: string) => void;
+  viewItem: (item: ApprovalItem) => void;
 }
 
-export const useApprovalData = (): UseApprovalDataResult => {
-  const [pendingApprovals, setPendingApprovals] = useState<EnhancedApprovalItem[]>([]);
-  const [approvedItems, setApprovedItems] = useState<EnhancedApprovalItem[]>([]);
-  const [rejectedItems, setRejectedItems] = useState<EnhancedApprovalItem[]>([]);
+export const useApprovalData = (): UseApprovalDataReturn => {
+  const [pendingApprovals, setPendingApprovals] = useState<ApprovalItem[]>([]);
+  const [approvedItems, setApprovedItems] = useState<ApprovalItem[]>([]);
+  const [rejectedItems, setRejectedItems] = useState<ApprovalItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const stats: EnhancedApprovalStats = {
-    pending: pendingApprovals.length,
-    approved: approvedItems.length,
-    rejected: rejectedItems.length,
-    draft: 0,
-    total: pendingApprovals.length + approvedItems.length + rejectedItems.length
-  };
+  useEffect(() => {
+    // Mock data for now
+    setPendingApprovals([
+      {
+        id: '1',
+        categoryId: 'cat-1',
+        categoryName: 'Infrastruktur',
+        schoolId: '123',
+        schoolName: 'Test School',
+        submittedBy: 'John Doe',
+        submittedAt: '2025-04-18',
+        status: DataEntryStatus.PENDING,
+        entries: [],
+        completionRate: 75,
+      }
+    ]);
+  }, []);
 
-  const fetchData = async () => {
-    setIsLoading(true);
-    try {
-      // TODO: Burada real API çağırışı olacaq
-      // Hələlik mock data:
-      setPendingApprovals([]);
-      setApprovedItems([]);
-      setRejectedItems([]);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Xəta baş verdi');
-    } finally {
-      setIsLoading(false);
+  const approveItem = (id: string, comment?: string) => {
+    console.log('Approving item:', id, comment);
+    // Move item from pending to approved
+    const item = pendingApprovals.find(p => p.id === id);
+    if (item) {
+      setPendingApprovals(prev => prev.filter(p => p.id !== id));
+      setApprovedItems(prev => [...prev, { ...item, status: DataEntryStatus.APPROVED }]);
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  const rejectItem = (id: string, reason: string) => {
+    console.log('Rejecting item:', id, reason);
+    // Move item from pending to rejected
+    const item = pendingApprovals.find(p => p.id === id);
+    if (item) {
+      setPendingApprovals(prev => prev.filter(p => p.id !== id));
+      setRejectedItems(prev => [...prev, { ...item, status: DataEntryStatus.REJECTED }]);
+    }
+  };
+
+  const viewItem = (item: ApprovalItem) => {
+    console.log('Viewing item:', item);
+  };
 
   return {
     pendingApprovals,
     approvedItems,
     rejectedItems,
-    stats,
     isLoading,
-    error,
-    refetch: fetchData
+    approveItem,
+    rejectItem,
+    viewItem,
   };
 };

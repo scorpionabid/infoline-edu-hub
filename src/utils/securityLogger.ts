@@ -11,15 +11,8 @@ export interface LogContext {
   details?: Record<string, any>;
   field?: string;
   fileName?: string;
-  fileSize?: number;
   error?: string;
   metadata?: Record<string, any>;
-  value?: any;
-  severity?: string;
-  original?: any;
-  sanitized?: any;
-  categoryId?: string;
-  fileType?: string;
 }
 
 export interface SecurityEvent {
@@ -31,31 +24,27 @@ export interface SecurityEvent {
 }
 
 export const securityLogger = {
-  logSecurityEvent: (event: string | SecurityEvent, context?: LogContext) => {
-    if (typeof event === 'string') {
-      console.log('[SECURITY]', event, context);
-    } else {
-      console.log('[SECURITY]', event);
-    }
+  logSecurityEvent: (event: SecurityEvent) => {
+    console.log('[SECURITY]', event);
   },
   
-  logRateLimit: (action: string, context?: LogContext) => {
-    console.log('[RATE_LIMIT]', action, context);
+  logRateLimit: (context: LogContext) => {
+    console.log('[RATE_LIMIT]', context);
   },
   
-  logError: (error: Error | string, context?: LogContext) => {
+  logError: (error: string, context: LogContext) => {
     console.error('[SECURITY_ERROR]', error, context);
   },
   
-  logValidationFailure: (field: string, value?: string, context?: LogContext) => {
-    console.warn('[VALIDATION_FAILURE]', field, value, context);
+  logValidationFailure: (field: string, context: LogContext) => {
+    console.warn('[VALIDATION_FAILURE]', field, context);
   },
   
-  logSuspiciousActivity: (activity: string, context?: LogContext) => {
+  logSuspiciousActivity: (activity: string, context: LogContext) => {
     console.warn('[SUSPICIOUS_ACTIVITY]', activity, context);
   },
 
-  logAuthEvent: (event: string, context?: LogContext) => {
+  logAuthEvent: (event: string, context: LogContext) => {
     console.log('[AUTH_EVENT]', event, context);
   }
 };
