@@ -81,6 +81,7 @@ export interface UserFormData {
   schoolId?: string;
   language?: string;
   status?: UserStatus;
+  password?: string; // Added for form data
 }
 
 export interface UserFilter {

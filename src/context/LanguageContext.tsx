@@ -88,3 +88,15 @@ export const useLanguage = () => {
   }
   return context;
 };
+
+export const useLanguageSafe = () => {
+  try {
+    return useLanguage();
+  } catch (error) {
+    return {
+      t: (key: string) => key,
+      language: 'az' as const,
+      setLanguage: () => {}
+    };
+  }
+};

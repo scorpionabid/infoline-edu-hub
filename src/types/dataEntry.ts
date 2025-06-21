@@ -1,71 +1,49 @@
 
-// Enhanced data entry types with proper status enums
-export enum DataEntryStatus {
-  DRAFT = 'draft',
-  PENDING = 'pending', 
-  APPROVED = 'approved',
-  REJECTED = 'rejected'
-}
+export type DataEntryStatus = 'pending' | 'approved' | 'rejected' | 'draft';
 
-export interface ProxyDataEntryOptions {
-  schoolId: string;
-  categoryId: string;
-  reason?: string;
-  autoApprove?: boolean;
-  notifySchoolAdmin?: boolean;
-}
-
-export interface DataEntryFormData {
-  [columnId: string]: any;
-}
-
-export interface BulkDataEntry {
-  schoolId: string;
-  data: DataEntryFormData;
-  status?: DataEntryStatus;
-}
-
-export interface ProxyDataEntryResult {
-  success: boolean;
-  entryId?: string;
-  message?: string;
-  error?: string; // Add error field
-  errors?: Record<string, string>;
-  autoApproved?: boolean;
-}
-
-export interface DataEntryValidation {
-  isValid: boolean;
-  errors: Record<string, string>;
+export interface DataEntry {
+  id: string;
+  category_id: string;
+  school_id: string;
+  column_id: string;
+  value: string;
+  status: DataEntryStatus;
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
+  approved_by?: string;
+  approved_at?: string;
+  rejected_by?: string;
+  rejected_at?: string;
+  rejection_reason?: string;
+  approval_comment?: string;
+  proxy_created_by?: string;
+  proxy_reason?: string;
+  proxy_original_entity?: string;
 }
 
 export interface DataEntryTableData {
+  columns: Array<{
+    id: string;
+    name: string;
+    type: string;
+  }>;
+  values: Record<string, string>;
+}
+
+export interface DataEntryFormData {
+  [columnId: string]: string;
+}
+
+export interface ApprovalSubmission {
   id: string;
-  school_name: string;
-  category_name: string;
+  categoryId: string;
+  categoryName: string;
+  schoolId: string;
+  schoolName: string;
+  submittedBy: string;
+  submittedAt: string;
   status: DataEntryStatus;
-  created_at: string;
-  updated_at: string;
-  submitted_by: string;
-}
-
-// Additional interfaces needed for proxy data entry
-export interface SaveProxyFormDataOptions {
-  categoryId: string;
-  schoolId: string;
-  userId: string;
-  proxyUserId: string;
-  proxyUserRole: string;
-  originalSchoolId: string;
-  proxyReason: string;
-  status: string;
-}
-
-export interface SubmitProxyDataOptions {
-  categoryId: string;
-  schoolId: string;
-  proxyUserId: string;
-  proxyUserRole: string;
-  proxyReason: string;
-  autoApprove: boolean;
+  entries: DataEntry[];
+  completionRate: number;
 }
