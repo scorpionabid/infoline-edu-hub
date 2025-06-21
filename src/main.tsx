@@ -5,6 +5,7 @@ import App from "./App.tsx";
 import "./index.css";
 import { BrowserRouter } from "react-router-dom";
 import { TranslationProvider } from "./contexts/TranslationContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
 import { AppQueryProvider } from "./contexts/QueryClientProvider";
 import "./utils/cleanupUtils";
 
@@ -19,10 +20,12 @@ if (!rootElement) {
 // Production-ready render without StrictMode for better performance
 ReactDOM.createRoot(rootElement).render(
   <BrowserRouter>
-    <AppQueryProvider>
-      <TranslationProvider>
-        <App />
-      </TranslationProvider>
-    </AppQueryProvider>
+    <ThemeProvider>
+      <AppQueryProvider>
+        <TranslationProvider>
+          <App />
+        </TranslationProvider>
+      </AppQueryProvider>
+    </ThemeProvider>
   </BrowserRouter>
 );

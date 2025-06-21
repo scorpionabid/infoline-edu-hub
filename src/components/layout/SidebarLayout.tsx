@@ -53,8 +53,8 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
         <div className="flex flex-col flex-1 w-full min-w-0">
           {/* Header */}
           <Header 
-            onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}
-            isSidebarOpen={sidebarOpen}
+            sidebarOpen={sidebarOpen}
+            setSidebarOpen={setSidebarOpen}
           />
           
           {/* Page content with responsive padding and animation */}
