@@ -46,28 +46,28 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
 
   const statsGridData: StatsGridItem[] = [
     {
-      title: t("status.approved"),
+      title: t("dashboard.totalApproved"),
       value: formStats.approved || 0,
       color: "text-green-600",
       description: t("status.approved"),
       icon: "check-circle"
     },
     {
-      title: t("status.pending"),
+      title: t("dashboard.totalPending"),
       value: formStats.pending || 0,
       color: "text-yellow-600", 
       description: t("status.pending"),
       icon: "clock"
     },
     {
-      title: t("status.rejected"),
+      title: t("dashboard.totalRejected"),
       value: formStats.rejected || 0,
       color: "text-red-600",
       description: t("status.rejected"),
       icon: "x-circle"
     },
     {
-      title: t("dashboard.stats.completion_rate"),
+      title: t("dashboard.completion"),
       value: `${Math.round(formStats.percentage || 0)}%`,
       color: "text-blue-600",
       description: t("dashboard.stats.completion_rate"),

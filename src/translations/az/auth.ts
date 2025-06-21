@@ -1,8 +1,8 @@
 // Authentication translation module
-export const auth = {
+export default {
   // Login
   login: {
-    title: 'Giriş',
+    title: 'Təhlükəsiz giriş',
     email: 'Email',
     emailPlaceholder: 'Email ünvanınızı daxil edin',
     password: 'Şifrə',
@@ -215,6 +215,5 @@ export const auth = {
     unknownLocation: 'Naməlum yer',
     currentSession: 'Cari sessiya'
   }
-} as const;
+}
 
-export type Auth = typeof auth;

@@ -119,5 +119,20 @@ export default {
     theme: "Theme",
     light: "Light",
     dark: "Dark",
-    system: "System"
+    system: "System",
+    
+    // Statistics
+    formStatistics: "Form Statistics",
+    
+    // Region filters
+    filterByStatus: "Filter by status",
+    allStatuses: "All statuses",
+    blocked: "Blocked",
+    resetFilters: "Reset filters",
+
+    // Stats Grid
+    totalApproved: "Approved",
+    totalPending: "Pending",
+    totalRejected: "Rejected",
+    completion: "Completion Rate"
 };

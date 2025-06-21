@@ -1,6 +1,6 @@
 
 // Dashboard translation module
-export const dashboard = {
+export default {
   title: 'İdarə Paneli',
   subtitle: 'Sistem məlumatlarına ümumi baxış',
   welcome: 'Xoş gəlmisiniz',
@@ -192,6 +192,20 @@ export const dashboard = {
   // Form statistics
   formStatistics: 'Form Statistikaları',
   recentActivity: 'Son Fəaliyyət',
+  
+  // Region filters
+  filterByStatus: "Status üzrə filtrlə",
+  allStatuses: "Bütün statuslar",
+  active: "Aktiv",
+  inactive: "Deaktiv",
+  blocked: "Bloklanıb",
+  resetFilters: "Filtrləri sıfırla",
+
+  // Stats Grid
+  totalApproved: "Təsdiqlənmiş",
+  totalPending: "Gözləyən",
+  totalRejected: "Rədd edilmiş",
+  completion: "Tamamlanma dərəcəsi",
 
   // States
   states: {
@@ -203,7 +217,4 @@ export const dashboard = {
     retry: 'Yenidən cəhd et',
     reload: 'Yenidən yüklə'
   }
-} as const;
-
-export type Dashboard = typeof dashboard;
-export default dashboard;
+}

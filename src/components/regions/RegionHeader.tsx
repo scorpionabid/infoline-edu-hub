@@ -51,19 +51,19 @@ const RegionHeader: React.FC<RegionHeaderProps> = ({
             }
           >
             <SelectTrigger>
-              <SelectValue placeholder={t("filterByStatus")} />
+              <SelectValue placeholder={t("dashboard.filterByStatus")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">{t("allStatuses")}</SelectItem>
-              <SelectItem value="active">{t("active")}</SelectItem>
-              <SelectItem value="inactive">{t("inactive")}</SelectItem>
-              <SelectItem value="blocked">{t("blocked")}</SelectItem>
+              <SelectItem value="all">{t("dashboard.allStatuses")}</SelectItem>
+              <SelectItem value="active">{t("dashboard.active")}</SelectItem>
+              <SelectItem value="inactive">{t("dashboard.inactive")}</SelectItem>
+              <SelectItem value="blocked">{t("dashboard.blocked")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <Button variant="outline" onClick={onResetFilters}>
-          {t("resetFilters")}
+          {t("dashboard.resetFilters")}
         </Button>
       </div>
     </div>

@@ -28,7 +28,7 @@ const DashboardChart: React.FC<DashboardChartProps> = ({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t("formStatistics")}</CardTitle>
+        <CardTitle>{t("dashboard.formStatistics")}</CardTitle>
       </CardHeader>
       <CardContent>
         <div style={{ height }}>

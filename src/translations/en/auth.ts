@@ -1,8 +1,8 @@
 // Auto-generated file - do not edit manually
 
-export const auth = {
+export default {
   login: {
-    title: 'Login',
+    title: 'Secure Login',
     email: 'Email',
     password: 'Password',
     submit: 'Log in',
@@ -42,6 +42,4 @@ export const auth = {
   'updating': 'Updating...',
   'updatePassword': 'Update Password',
   'passwordResetSuccess': 'Password updated successfully'
-} as const;
-
-export type Auth = typeof auth;
+}
