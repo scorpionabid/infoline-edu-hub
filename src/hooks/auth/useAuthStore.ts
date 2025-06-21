@@ -1,192 +1,108 @@
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { supabase } from '@/integrations/supabase/client';
+import { securityLogger } from '@/utils/securityLogger';
+import type { User, Session } from '@supabase/supabase-js';
 
-interface User {
-  id: string;
-  email: string;
-  full_name: string;
-  role?: string;
-  region_id?: string;
-  sector_id?: string;
-  school_id?: string;
-  regionId?: string;
-  sectorId?: string;
-  schoolId?: string;
-  phone?: string;
-  position?: string;
-  avatar?: string;
-  preferences?: Record<string, any>;
-}
-
-interface AuthState {
+export interface AuthState {
   user: User | null;
-  session: any;
+  session: Session | null;
   isLoading: boolean;
-  error: string | null;
-  isAuthenticated: boolean;
   initialized: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signOut: () => Promise<void>;
-  logout: () => void;
-  initializeAuth: (loginOnly?: boolean) => Promise<void>;
-  updateProfile: (updates: Partial<User>) => Promise<void>;
-  updatePassword: (newPassword: string) => Promise<void>;
+  signOut: (loginOnly?: boolean) => Promise<void>;
+  initializeAuth: () => void;
 }
 
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set, get) => ({
-      user: null,
-      session: null,
-      isLoading: false,
-      error: null,
-      isAuthenticated: false,
-      initialized: false,
+export const useAuthStore = create<AuthState>((set, get) => ({
+  user: null,
+  session: null,
+  isLoading: true,
+  initialized: false,
 
-      signIn: async (email: string, password: string) => {
-        set({ isLoading: true, error: null });
-        
-        try {
-          // Mock authentication - replace with real implementation
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          const mockUser: User = {
-            id: '1',
-            email,
-            full_name: 'Test User',
-            role: 'admin',
-            region_id: '1',
-            sector_id: '1',
-            school_id: '1',
-            regionId: '1',
-            sectorId: '1',
-            schoolId: '1',
-            phone: '+994501234567',
-            position: 'Administrator',
-            avatar: '',
-            preferences: {}
-          };
-          
-          const mockSession = {
-            user: mockUser,
-            access_token: 'mock-token',
-            refresh_token: 'mock-refresh-token'
-          };
-          
-          set({ 
-            user: mockUser, 
-            session: mockSession,
-            isAuthenticated: true, 
-            isLoading: false,
-            initialized: true
-          });
-        } catch (error: any) {
-          set({ 
-            error: error.message || 'Authentication failed', 
-            isLoading: false 
-          });
-          throw error;
-        }
-      },
+  signIn: async (email: string, password: string) => {
+    try {
+      set({ isLoading: true });
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-      signOut: async () => {
-        set({ isLoading: true });
-        
-        try {
-          // Mock sign out
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-          set({ 
-            user: null, 
-            session: null,
-            isAuthenticated: false, 
-            isLoading: false,
-            error: null
-          });
-        } catch (error: any) {
-          set({ 
-            error: error.message || 'Sign out failed', 
-            isLoading: false 
-          });
-        }
-      },
+      if (error) throw error;
 
-      logout: () => {
-        set({ 
-          user: null, 
-          session: null,
-          isAuthenticated: false, 
-          isLoading: false,
-          error: null
-        });
-      },
+      securityLogger.logAuthEvent('User signed in', { 
+        userId: data.user?.id, 
+        email: data.user?.email 
+      });
 
-      initializeAuth: async (loginOnly?: boolean) => {
-        // Check if user is already authenticated from persisted state
-        const state = get();
-        if (state.user) {
-          set({ isAuthenticated: true, initialized: true });
-        } else {
-          set({ initialized: true });
-        }
-      },
-
-      updateProfile: async (updates: Partial<User>) => {
-        const currentUser = get().user;
-        if (!currentUser) return;
-
-        set({ isLoading: true });
-        
-        try {
-          // Mock profile update
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-          const updatedUser = { ...currentUser, ...updates };
-          set({ 
-            user: updatedUser,
-            isLoading: false 
-          });
-        } catch (error: any) {
-          set({ 
-            error: error.message || 'Profile update failed', 
-            isLoading: false 
-          });
-        }
-      },
-
-      updatePassword: async (newPassword: string) => {
-        set({ isLoading: true });
-        
-        try {
-          // Mock password update
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-          set({ isLoading: false });
-        } catch (error: any) {
-          set({ 
-            error: error.message || 'Password update failed', 
-            isLoading: false 
-          });
-        }
-      }
-    }),
-    {
-      name: 'auth-storage',
+      set({ 
+        user: data.user, 
+        session: data.session, 
+        isLoading: false 
+      });
+    } catch (error) {
+      securityLogger.logError('Sign in failed', { error: error.message });
+      set({ isLoading: false });
+      throw error;
     }
-  )
-);
+  },
+
+  signOut: async (loginOnly = false) => {
+    try {
+      set({ isLoading: true });
+      
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+
+      securityLogger.logAuthEvent('User signed out');
+      
+      set({ 
+        user: null, 
+        session: null, 
+        isLoading: false 
+      });
+    } catch (error) {
+      securityLogger.logError('Sign out failed', { error: error.message });
+      set({ isLoading: false });
+      throw error;
+    }
+  },
+
+  initializeAuth: () => {
+    if (get().initialized) return;
+    
+    set({ isLoading: true });
+    
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      set({ 
+        user: session?.user ?? null, 
+        session, 
+        isLoading: false,
+        initialized: true 
+      });
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        console.log('[AuthStore] Auth state changed:', event, session?.user?.id);
+        set({ 
+          user: session?.user ?? null, 
+          session,
+          isLoading: false 
+        });
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  },
+}));
 
 // Selectors
 export const selectUser = (state: AuthState) => state.user;
-export const selectIsAuthenticated = (state: AuthState) => state.isAuthenticated;
-export const selectIsLoading = (state: AuthState) => state.isLoading;
-export const selectError = (state: AuthState) => state.error;
 export const selectSession = (state: AuthState) => state.session;
-export const selectUserRole = (state: AuthState) => state.user?.role;
-export const selectRegionId = (state: AuthState) => state.user?.region_id || state.user?.regionId;
-export const selectSectorId = (state: AuthState) => state.user?.sector_id || state.user?.sectorId;
-export const selectSchoolId = (state: AuthState) => state.user?.school_id || state.user?.schoolId;
-export const selectUpdateProfile = (state: AuthState) => state.updateProfile;
-export const selectUpdatePassword = (state: AuthState) => state.updatePassword;
+export const selectIsLoading = (state: AuthState) => state.isLoading;
+export const selectIsAuthenticated = (state: AuthState) => !!state.user;
 export const selectSignOut = (state: AuthState) => state.signOut;
+export const selectSignIn = (state: AuthState) => state.signIn;
+export const selectInitializeAuth = (state: AuthState) => state.initializeAuth;
