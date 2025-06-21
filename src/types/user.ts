@@ -4,6 +4,18 @@ export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladm
 
 export type UserStatus = 'active' | 'inactive';
 
+export interface NotificationSettings {
+  email: boolean;
+  sms: boolean;
+  inApp: boolean;
+  system: boolean;
+  deadlineReminders: boolean;
+  email_notifications?: boolean;
+  sms_notifications?: boolean;
+  push_notifications?: boolean;
+  notification_frequency?: 'daily' | 'weekly' | 'monthly';
+}
+
 export interface FullUserData {
   id: string;
   email: string;
@@ -27,6 +39,8 @@ export interface FullUserData {
   createdAt?: string;
   updated_at?: string;
   updatedAt?: string;
+  entity_name?: string;
+  entityName?: string;
 }
 
 // Legacy aliases for backward compatibility
@@ -60,8 +74,20 @@ export interface UserFormData {
   position?: string;
   role: UserRole;
   region_id?: string;
+  regionId?: string;
   sector_id?: string;
+  sectorId?: string;
   school_id?: string;
+  schoolId?: string;
   language?: string;
   status?: UserStatus;
+}
+
+export interface UserFilter {
+  role?: UserRole | UserRole[];
+  status?: UserStatus | UserStatus[];
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
+  search?: string;
 }

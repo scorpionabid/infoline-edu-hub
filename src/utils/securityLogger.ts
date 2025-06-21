@@ -13,6 +13,9 @@ export interface LogContext {
   fileName?: string;
   error?: string;
   metadata?: Record<string, any>;
+  value?: any;
+  severity?: string;
+  original?: any;
 }
 
 export interface SecurityEvent {
@@ -32,19 +35,19 @@ export const securityLogger = {
     console.log('[RATE_LIMIT]', context);
   },
   
-  logError: (error: string, context: LogContext) => {
+  logError: (error: string, context?: LogContext) => {
     console.error('[SECURITY_ERROR]', error, context);
   },
   
-  logValidationFailure: (field: string, context: LogContext) => {
+  logValidationFailure: (field: string, context?: LogContext) => {
     console.warn('[VALIDATION_FAILURE]', field, context);
   },
   
-  logSuspiciousActivity: (activity: string, context: LogContext) => {
+  logSuspiciousActivity: (activity: string, context?: LogContext) => {
     console.warn('[SUSPICIOUS_ACTIVITY]', activity, context);
   },
 
-  logAuthEvent: (event: string, context: LogContext) => {
+  logAuthEvent: (event: string, context?: LogContext) => {
     console.log('[AUTH_EVENT]', event, context);
   }
 };
