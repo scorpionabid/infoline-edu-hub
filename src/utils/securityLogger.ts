@@ -16,6 +16,7 @@ export interface LogContext {
   value?: any;
   severity?: string;
   original?: any;
+  sanitized?: any;
 }
 
 export interface SecurityEvent {
@@ -27,20 +28,24 @@ export interface SecurityEvent {
 }
 
 export const securityLogger = {
-  logSecurityEvent: (event: SecurityEvent) => {
-    console.log('[SECURITY]', event);
+  logSecurityEvent: (event: string | SecurityEvent, context?: LogContext) => {
+    if (typeof event === 'string') {
+      console.log('[SECURITY]', event, context);
+    } else {
+      console.log('[SECURITY]', event);
+    }
   },
   
-  logRateLimit: (context: LogContext) => {
-    console.log('[RATE_LIMIT]', context);
+  logRateLimit: (action: string, context?: LogContext) => {
+    console.log('[RATE_LIMIT]', action, context);
   },
   
-  logError: (error: string, context?: LogContext) => {
+  logError: (error: Error | string, context?: LogContext) => {
     console.error('[SECURITY_ERROR]', error, context);
   },
   
-  logValidationFailure: (field: string, context?: LogContext) => {
-    console.warn('[VALIDATION_FAILURE]', field, context);
+  logValidationFailure: (field: string, value?: string, context?: LogContext) => {
+    console.warn('[VALIDATION_FAILURE]', field, value, context);
   },
   
   logSuspiciousActivity: (activity: string, context?: LogContext) => {

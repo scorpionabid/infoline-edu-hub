@@ -1,4 +1,3 @@
-export { UnifiedSectorDataEntry } from './UnifiedSectorDataEntry';
 
-// Export hook if needed later
-// export { useUnifiedDataEntry } from './hooks/useUnifiedDataEntry';
+export { UnifiedSectorDataEntry } from './UnifiedSectorDataEntry';
+export { default } from './UnifiedSectorDataEntry';

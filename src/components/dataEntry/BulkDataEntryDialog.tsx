@@ -2,7 +2,7 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
-interface BulkDataEntryDialogProps {
+export interface BulkDataEntryDialogProps {
   open: boolean;
   onClose: () => void;
   selectedSchools?: string[];
