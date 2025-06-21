@@ -1,346 +1,69 @@
-import React, { useState } from 'react';
+
+import React from "react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { 
-  Menu, 
-  X, 
-  Bell, 
-  Search, 
-  Home,
-  Users,
-  BarChart3,
-  Calendar,
-  BookOpen,
-  Settings,
-  Globe,
-  Moon,
-  Sun,
-  Monitor,
-  FileText,
-  CheckSquare
-} from "lucide-react";
-import UserProfile from './UserProfile';
-import LanguageSwitcher from './LanguageSwitcher';
-import ThemeToggle from '@/components/ThemeToggle';
-import { useMobile } from '@/hooks/common/useMobile';
-import { useTranslation } from '@/contexts/TranslationContext';
-import { usePermissions } from '@/hooks/auth/usePermissions';
-import { Input } from '@/components/ui/input';
-import { NavLink } from 'react-router-dom';
-import { 
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger 
-} from '@/components/ui/tooltip';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { useTheme } from '@/components/ui/theme-provider';
+import { Menu, Bell, Search, User } from "lucide-react";
+import { useTranslation } from "@/contexts/TranslationContext";
+import { ModeToggle } from "@/components/ui/theme-toggle";
 
 interface HeaderProps {
-  onSidebarToggle?: () => void;
-  isSidebarOpen?: boolean;
+  sidebarOpen: boolean;
+  setSidebarOpen: (open: boolean) => void;
+  children?: React.ReactNode;
 }
 
-const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }) => {
-  const isMobile = useMobile();
-  const { t, language, setLanguage } = useTranslation();
-  const { userRole } = usePermissions();
-  const { theme, setTheme } = useTheme();
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-
-  // Quick access navigation items with icons
-  const quickNavItems = [
-    {
-      id: 'home',
-      icon: Home,
-      href: '/dashboard',
-      tooltip: t('navigation.dashboard'),
-      visible: true,
-    },
-    {
-      id: 'data-entry',
-      icon: FileText,
-      href: userRole === 'schooladmin' ? '/school-data-entry' : '/data-entry',
-      tooltip: t('navigation.dataEntry'),
-      visible: true,
-    },
-    {
-      id: 'schools',
-      icon: BookOpen,
-      href: '/schools',
-      tooltip: t('navigation.schools'),
-      visible: ['superadmin', 'regionadmin', 'sectoradmin'].includes(userRole || ''),
-    },
-    {
-      id: 'users',
-      icon: Users,
-      href: '/users',
-      tooltip: t('navigation.users'),
-      visible: ['superadmin', 'regionadmin', 'sectoradmin'].includes(userRole || ''),
-    },
-    {
-      id: 'reports',
-      icon: BarChart3,
-      href: '/reports',
-      tooltip: t('navigation.reports'),
-      visible: ['superadmin', 'regionadmin', 'sectoradmin'].includes(userRole || ''),
-    },
-    {
-      id: 'approvals',
-      icon: CheckSquare,
-      href: '/approvals',
-      tooltip: t('navigation.approvals'),
-      visible: ['superadmin', 'regionadmin', 'sectoradmin'].includes(userRole || ''),
-    }
-  ].filter(item => item.visible);
+const Header: React.FC<HeaderProps> = ({
+  sidebarOpen,
+  setSidebarOpen,
+  children,
+}) => {
+  const { t } = useTranslation();
 
   return (
-    <TooltipProvider>
-      <header className="sticky top-0 z-50 border-b border-border/40 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
-        <div className="w-full flex h-16 items-center justify-between px-3 md:px-4 lg:px-6 max-w-full">
-          
-          {/* Left Section */}
-          <div className="flex items-center gap-4 min-w-0 flex-1">
-            {/* Mobile Menu Toggle */}
-            {isMobile && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="shrink-0 h-8 w-8 hover:bg-accent/50 transition-all duration-200 hover:scale-105"
-                onClick={onSidebarToggle}
-                aria-label={isSidebarOpen ? 'Menyunu bağla' : 'Menyunu aç'}
-              >
-                {isSidebarOpen ? (
-                  <X className="h-4 w-4" />
-                ) : (
-                  <Menu className="h-4 w-4" />
-                )}
-              </Button>
-            )}
-            
-            {/* Logo/Brand - Mobile */}
-            {isMobile && (
-              <div className="flex items-center gap-2 animate-fade-in-left">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/80">
-                  <span className="text-sm font-bold text-primary-foreground">I</span>
-                </div>
-                <span className="font-bold text-lg bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
-                  InfoLine
-                </span>
-              </div>
-            )}
-
-            {/* Desktop Search - Icon with expandable input */}
-            {!isMobile && (
-              <div className="relative">
-                {!isSearchOpen ? (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 hover:bg-accent/50 transition-all duration-200"
-                        onClick={() => setIsSearchOpen(true)}
-                      >
-                        <Search className="h-3 w-3" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Axtarış</p>
-                    </TooltipContent>
-                  </Tooltip>
-                ) : (
-                  <div className="flex items-center gap-2 animate-fade-in-left">
-                    <div className="relative">
-                      <Search className="absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        placeholder="Axtar..."
-                        className="pl-7 h-8 w-64 bg-muted/30 border-none focus-visible:ring-1 focus-visible:ring-primary/50 transition-all duration-200 text-xs"
-                        autoFocus
-                        onBlur={() => setIsSearchOpen(false)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Escape') {
-                            setIsSearchOpen(false);
-                          }
-                        }}
-                      />
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 hover:bg-accent/50 transition-all duration-200"
-                      onClick={() => setIsSearchOpen(false)}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Center Section - Quick Navigation (Always visible) */}
-          <div className="flex items-center gap-1 px-2 lg:px-4 overflow-x-auto">
-            {quickNavItems.slice(0, isMobile ? 4 : quickNavItems.length).map((item) => {
-              const Icon = item.icon;
-              return (
-                <Tooltip key={item.id}>
-                  <TooltipTrigger asChild>
-                    <NavLink to={item.href}>
-                      {({ isActive }) => (
-                        <Button
-                          variant={isActive ? "default" : "ghost"}
-                          size="icon"
-                          className={`h-8 w-8 transition-all duration-200 flex-shrink-0 ${
-                            isActive 
-                              ? 'bg-primary shadow-lg scale-105' 
-                              : 'hover:bg-accent/50 hover:scale-105'
-                          }`}
-                        >
-                          <Icon className="h-3 w-3" />
-                        </Button>
-                      )}
-                    </NavLink>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{item.tooltip}</p>
-                  </TooltipContent>
-                </Tooltip>
-              );
-            })}
-          </div>
-
-          {/* Right Section */}
-          <div className="flex items-center gap-1 flex-shrink-0 animate-fade-in-right">
-            {/* Mobile Search */}
-            {isMobile && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 hover:bg-accent/50 transition-all duration-200"
-                  >
-                    <Search className="h-3 w-3" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Axtar</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
-            
-            {/* Notifications */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="relative h-8 w-8 hover:bg-accent/50 transition-all duration-200"
-                >
-                  <Bell className="h-3 w-3" />
-                  <Badge 
-                    variant="destructive" 
-                    className="absolute -top-1 -right-1 h-4 w-4 rounded-full p-0 text-[10px] flex items-center justify-center"
-                  >
-                    3
-                  </Badge>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Bildirişlər</p>
-              </TooltipContent>
-            </Tooltip>
-            
-            {/* Settings Dropdown (Language + Theme) */}
-            <DropdownMenu open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 hover:bg-accent/50 transition-all duration-200"
-                >
-                  <Settings className="h-3 w-3" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuLabel className="text-xs">Tənzimləmələr</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                
-                {/* Language Section */}
-                <DropdownMenuLabel className="text-xs text-muted-foreground flex items-center gap-2">
-                  <Globe className="h-3 w-3" />
-                  Dil
-                </DropdownMenuLabel>
-                <DropdownMenuItem 
-                  onClick={() => setLanguage?.('az')}
-                  className="text-xs cursor-pointer"
-                >
-                  {language === 'az' && '✓ '}Azərbaycan
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => setLanguage?.('en')}
-                  className="text-xs cursor-pointer"
-                >
-                  {language === 'en' && '✓ '}English
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => setLanguage?.('ru')}
-                  className="text-xs cursor-pointer"
-                >
-                  {language === 'ru' && '✓ '}Русский
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => setLanguage?.('tr')}
-                  className="text-xs cursor-pointer"
-                >
-                  {language === 'tr' && '✓ '}Türkçe
-                </DropdownMenuItem>
-                
-                <DropdownMenuSeparator />
-                
-                {/* Theme Section */}
-                <DropdownMenuLabel className="text-xs text-muted-foreground flex items-center gap-2">
-                  <Monitor className="h-3 w-3" />
-                  Tema
-                </DropdownMenuLabel>
-                <DropdownMenuItem 
-                  onClick={() => setTheme('light')}
-                  className="text-xs cursor-pointer flex items-center gap-2"
-                >
-                  <Sun className="h-3 w-3" />
-                  {theme === 'light' && '✓ '}Açıq
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => setTheme('dark')}
-                  className="text-xs cursor-pointer flex items-center gap-2"
-                >
-                  <Moon className="h-3 w-3" />
-                  {theme === 'dark' && '✓ '}Qaranlıq
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => setTheme('system')}
-                  className="text-xs cursor-pointer flex items-center gap-2"
-                >
-                  <Monitor className="h-3 w-3" />
-                  {theme === 'system' && '✓ '}Sistem
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            
-            <UserProfile />
-          </div>
+    <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background">
+      <div className="w-full flex h-16 items-center justify-between px-3 md:px-4 lg:px-6 max-w-full">
+        {/* Left side - Menu button */}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+          >
+            <Menu className="h-5 w-5" />
+            <span className="sr-only">Toggle Menu</span>
+          </Button>
         </div>
-      </header>
-    </TooltipProvider>
+
+        {/* Center - Search (compressed to make room for icons) */}
+        <div className="flex-1 max-w-sm mx-4">
+          <form className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <input
+              type="search"
+              placeholder={t("search") || "Axtar..."}
+              className="w-full bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring h-9 rounded-md border border-input px-4 py-2 text-sm pl-8 shadow-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-offset-0"
+            />
+          </form>
+        </div>
+
+        {/* Right side - Icons extended towards search area */}
+        <div className="flex items-center gap-1 ml-2">
+          <Button variant="ghost" size="icon" className="h-9 w-9">
+            <Bell className="h-4 w-4" />
+            <span className="sr-only">{t("notifications") || "Bildirişlər"}</span>
+          </Button>
+
+          <ModeToggle />
+
+          <Button variant="ghost" size="icon" className="h-9 w-9">
+            <User className="h-4 w-4" />
+            <span className="sr-only">User Profile</span>
+          </Button>
+
+          {children}
+        </div>
+      </div>
+    </header>
   );
 };
 
