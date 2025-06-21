@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
-import { ThemeProvider } from '@/components/ui/theme-provider';
+import { ThemeProvider } from '@/contexts/ThemeContext';
 import { TranslationProvider } from '@/contexts/TranslationContext';
 import { NotificationProvider } from '@/components/notifications/NotificationProvider';
 import { useAuthStore } from '@/hooks/auth/useAuthStore';
@@ -28,7 +28,7 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
+      <ThemeProvider>
         <TranslationProvider>
           <NotificationProvider userId={user?.id}>
             <div className="min-h-screen bg-background">
