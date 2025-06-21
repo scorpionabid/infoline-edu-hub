@@ -13,6 +13,7 @@ interface TemplateEmailRequest {
   recipients: string[]
   fromName?: string
   replyTo?: string
+  isTest?: boolean
 }
 
 serve(async (req) => {
@@ -46,10 +47,6 @@ serve(async (req) => {
     const request: TemplateEmailRequest = await req.json()
 
     // Validate required fields
-    if (!request.recipients || request.recipients.length === 0) {
-      throw new Error('Recipients list is required')
-    }
-
     if (!request.templateId && !request.templateName) {
       throw new Error('Template ID or name is required')
     }
@@ -76,33 +73,44 @@ serve(async (req) => {
       throw new Error(`Template not found: ${request.templateId || request.templateName}`)
     }
 
-    // Get user details for each recipient
-    const { data: users, error: usersError } = await supabaseClient
-      .from('profiles')
-      .select('id, full_name, email')
-      .in('id', request.recipients)
+    // Handle test email vs regular email recipients
+    let users = []
+    
+    if (request.isTest && request.recipients.length === 1 && request.recipients[0].includes('@')) {
+      // Test email with direct email address
+      users = [{
+        id: 'test-user',
+        full_name: 'Test İstifadəçi',
+        email: request.recipients[0]
+      }]
+    } else {
+      // Regular recipients (user IDs)
+      if (!request.recipients || request.recipients.length === 0) {
+        throw new Error('Recipients list is required')
+      }
 
-    if (usersError) {
-      throw new Error(`Error fetching user details: ${usersError.message}`)
+      const { data: userData, error: usersError } = await supabaseClient
+        .from('profiles')
+        .select('id, full_name, email')
+        .in('id', request.recipients)
+
+      if (usersError) {
+        throw new Error(`Error fetching user details: ${usersError.message}`)
+      }
+
+      if (!userData || userData.length === 0) {
+        throw new Error('No valid recipients found')
+      }
+
+      users = userData
     }
 
-    if (!users || users.length === 0) {
-      throw new Error('No valid recipients found')
-    }
-
-    // Get email service configuration
-    const emailServiceUrl = Deno.env.get('EMAIL_SERVICE_URL')
-    const emailServiceApiKey = Deno.env.get('EMAIL_SERVICE_API_KEY')
-    const emailServiceFromEmail = Deno.env.get('EMAIL_SERVICE_FROM_EMAIL') || 'noreply@infoline.edu.az'
-
-    if (!emailServiceUrl || !emailServiceApiKey) {
-      throw new Error('Email service not configured')
-    }
-
-    // Process each recipient individually for personalization
+    // Initialize email service
+    const emailService = new EmailService()
     const emailResults = []
     const deliveryLogs = []
 
+    // Process each recipient individually for personalization
     for (const user of users) {
       try {
         // Prepare personalized template data
@@ -110,79 +118,46 @@ serve(async (req) => {
           ...request.templateData,
           full_name: user.full_name,
           email: user.email,
-          data_entry_url: `${Deno.env.get('FRONTEND_URL') || 'https://infoline.edu.az'}/data-entry`
+          data_entry_url: `${Deno.env.get('FRONTEND_URL') || 'https://infoline.edu.az'}/data-entry`,
+          approved_date: new Date().toLocaleDateString('az-AZ'),
+          current_date: new Date().toLocaleDateString('az-AZ')
         }
 
         // Render templates
         const renderedTitle = renderTemplate(template.title_template, personalizedData)
         const renderedMessage = renderTemplate(template.message_template, personalizedData)
         
-        // Get email template HTML
-        const emailHtml = await getEmailTemplate(template.email_template || template.name, personalizedData)
-        const finalHtmlContent = emailHtml || `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <h2>${renderedTitle}</h2>
-            <p>${renderedMessage}</p>
-            <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
-              Bu email İnfoLine sistemi tərəfindən avtomatik göndərilib.
-            </p>
-          </div>
-        `
-
-        // Prepare email data
-        const emailData = {
-          from: `${request.fromName || 'İnfoLine Sistem'} <${emailServiceFromEmail}>`,
-          to: [user.email],
-          subject: renderedTitle,
-          html: finalHtmlContent,
-          text: stripHtml(renderedMessage),
-          reply_to: request.replyTo || emailServiceFromEmail
-        }
+        // Get HTML template
+        const htmlContent = template.email_template 
+          ? renderTemplate(template.email_template, { ...personalizedData, subject: renderedTitle, message: renderedMessage })
+          : getDefaultEmailHTML(renderedTitle, renderedMessage, personalizedData)
 
         // Send email
-        const emailResponse = await fetch(emailServiceUrl, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${emailServiceApiKey}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(emailData)
+        const emailResult = await emailService.sendEmail({
+          to: user.email,
+          subject: renderedTitle,
+          html: htmlContent,
+          text: stripHtml(renderedMessage),
+          fromName: request.fromName || 'İnfoLine Sistem',
+          replyTo: request.replyTo
         })
 
-        if (emailResponse.ok) {
-          const emailResult = await emailResponse.json()
-          emailResults.push({
-            userId: user.id,
-            email: user.email,
-            success: true,
-            messageId: emailResult.id
-          })
+        emailResults.push({
+          userId: user.id,
+          email: user.email,
+          success: emailResult.success,
+          messageId: emailResult.messageId,
+          error: emailResult.error
+        })
 
-          // Log successful delivery
+        // Log delivery (skip for test emails)
+        if (!request.isTest) {
           deliveryLogs.push({
             delivery_method: 'email',
-            status: 'sent',
+            status: emailResult.success ? 'sent' : 'failed',
             attempt_count: 1,
-            delivered_at: new Date().toISOString(),
-            created_at: new Date().toISOString(),
-            recipient_email: user.email,
-            template_id: template.id
-          })
-        } else {
-          const errorText = await emailResponse.text()
-          emailResults.push({
-            userId: user.id,
-            email: user.email,
-            success: false,
-            error: errorText
-          })
-
-          // Log failed delivery
-          deliveryLogs.push({
-            delivery_method: 'email',
-            status: 'failed',
-            attempt_count: 1,
-            error_message: errorText,
+            delivered_at: emailResult.success ? new Date().toISOString() : null,
+            error_message: emailResult.error,
             created_at: new Date().toISOString(),
             recipient_email: user.email,
             template_id: template.id
@@ -221,7 +196,8 @@ serve(async (req) => {
         failureCount,
         totalRecipients: users.length,
         results: emailResults,
-        templateUsed: template.name
+        templateUsed: template.name,
+        isTest: request.isTest || false
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -246,6 +222,77 @@ serve(async (req) => {
 })
 
 /**
+ * Email Service Class
+ */
+class EmailService {
+  private resendApiKey: string
+  private emailServiceUrl: string
+  private fromEmail: string
+
+  constructor() {
+    this.resendApiKey = Deno.env.get('RESEND_API_KEY') ?? ''
+    this.emailServiceUrl = 'https://api.resend.com/emails'
+    this.fromEmail = Deno.env.get('FROM_EMAIL') ?? 'noreply@infoline.edu.az'
+
+    if (!this.resendApiKey) {
+      throw new Error('RESEND_API_KEY environment variable is required')
+    }
+  }
+
+  async sendEmail(emailData: {
+    to: string
+    subject: string
+    html: string
+    text: string
+    fromName?: string
+    replyTo?: string
+  }): Promise<{
+    success: boolean
+    messageId?: string
+    error?: string
+  }> {
+    try {
+      const payload = {
+        from: `${emailData.fromName || 'İnfoLine Sistem'} <${this.fromEmail}>`,
+        to: [emailData.to],
+        subject: emailData.subject,
+        html: emailData.html,
+        text: emailData.text,
+        reply_to: emailData.replyTo || this.fromEmail
+      }
+
+      const response = await fetch(this.emailServiceUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.resendApiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        return {
+          success: true,
+          messageId: result.id
+        }
+      } else {
+        const errorText = await response.text()
+        return {
+          success: false,
+          error: `Email service error: ${errorText}`
+        }
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: `Email send failed: ${error.message}`
+      }
+    }
+  }
+}
+
+/**
  * Render template with data substitution
  */
 function renderTemplate(template: string, data: Record<string, any>): string {
@@ -255,170 +302,125 @@ function renderTemplate(template: string, data: Record<string, any>): string {
 }
 
 /**
- * Get email template HTML
+ * Get default HTML email template
  */
-async function getEmailTemplate(templateName: string, data: Record<string, any>): Promise<string | null> {
-  const emailTemplates: Record<string, string> = {
-    deadline_warning_3_days: `
-      <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; line-height: 1.6;">
-        <div style="background: linear-gradient(135deg, #f59e0b, #d97706); padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
-          <h1 style="color: white; margin: 0; font-size: 24px;">⚠️ Son Tarix Xəbərdarlığı</h1>
-          <p style="color: #fef3c7; margin: 10px 0 0 0; font-size: 16px;">3 gün qalıb</p>
+function getDefaultEmailHTML(subject: string, message: string, data: Record<string, any>): string {
+  return `
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${subject}</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .email-container {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .email-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .email-header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        .email-body {
+            padding: 30px 20px;
+        }
+        .email-footer {
+            background-color: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            font-size: 14px;
+            color: #666666;
+        }
+        .message-content {
+            margin: 20px 0;
+            line-height: 1.8;
+        }
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 6px;
+            margin: 20px 0;
+            font-weight: 600;
+        }
+        .alert-box {
+            background-color: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .success-box {
+            background-color: #ecfdf5;
+            border-left: 4px solid #10b981;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .error-box {
+            background-color: #fef2f2;
+            border-left: 4px solid #ef4444;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="email-header">
+            <h1>📚 İnfoLine</h1>
+            <p style="margin: 10px 0 0 0; opacity: 0.9;">Təhsil Məlumat Sistemi</p>
         </div>
         
-        <div style="background: white; padding: 30px; border-radius: 0 0 8px 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-          <p style="font-size: 18px; color: #1f2937; margin: 0 0 20px 0;">Hörmətli <strong>{{full_name}}</strong>,</p>
-          
-          <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 4px;">
-            <p style="margin: 0; color: #92400e; font-weight: 500;">
-              "{{category_name}}" kateqoriyası üçün məlumat daxil etmə müddəti <strong>3 gün</strong> sonra bitəcək.
-            </p>
-          </div>
-          
-          <p style="color: #374151; font-size: 16px;"><strong>Son tarix:</strong> {{deadline_date}}</p>
-          
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="{{data_entry_url}}" style="background: #3b82f6; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 500; font-size: 16px; transition: background 0.3s;">
-              📝 Məlumatları Daxil Et
-            </a>
-          </div>
-          
-          <div style="background: #f3f4f6; padding: 15px; border-radius: 6px; margin-top: 30px;">
-            <p style="margin: 0; color: #6b7280; font-size: 14px; text-align: center;">
-              Bu bildiriş İnfoLine sistemi tərəfindən avtomatik göndərilib.
-              <br>
-              Bildiriş parametrlərini dəyişmək üçün sistem tənzimlərinə daxil olun.
-            </p>
-          </div>
-        </div>
-      </div>
-    `,
-    
-    deadline_warning_1_day: `
-      <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; line-height: 1.6;">
-        <div style="background: linear-gradient(135deg, #ef4444, #dc2626); padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
-          <h1 style="color: white; margin: 0; font-size: 24px;">🚨 TƏCİLİ: Son Tarix Xəbərdarlığı</h1>
-          <p style="color: #fecaca; margin: 10px 0 0 0; font-size: 16px;">1 gün qalıb!</p>
+        <div class="email-body">
+            <p style="font-size: 18px; margin-bottom: 20px;">Hörmətli <strong>${data.full_name || 'İstifadəçi'}</strong>,</p>
+            
+            <div class="message-content">
+                ${message.replace(/\n/g, '<br>')}
+            </div>
+            
+            ${data.data_entry_url ? `
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="${data.data_entry_url}" class="cta-button">
+                    📝 Sistemə Daxil Ol
+                </a>
+            </div>
+            ` : ''}
         </div>
         
-        <div style="background: white; padding: 30px; border-radius: 0 0 8px 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-          <p style="font-size: 18px; color: #1f2937; margin: 0 0 20px 0;">Hörmətli <strong>{{full_name}}</strong>,</p>
-          
-          <div style="background: #fef2f2; border-left: 4px solid #ef4444; padding: 15px; margin: 20px 0; border-radius: 4px;">
-            <p style="margin: 0; color: #991b1b; font-weight: 600; font-size: 16px;">
-              "{{category_name}}" kateqoriyası üçün məlumat daxil etmə müddəti <strong>sabah bitəcək!</strong>
+        <div class="email-footer">
+            <p>
+                Bu email avtomatik olaraq göndərilmişdir.<br>
+                Suallar üçün <a href="mailto:support@infoline.edu.az">support@infoline.edu.az</a> ünvanına müraciət edin.
             </p>
-          </div>
-          
-          <p style="color: #374151; font-size: 16px;"><strong>Son tarix:</strong> {{deadline_date}}</p>
-          
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="{{data_entry_url}}" style="background: #ef4444; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 600; font-size: 16px; animation: pulse 2s infinite;">
-              ⚡ TƏCİLİ: Məlumatları Daxil Et
-            </a>
-          </div>
-          
-          <div style="background: #f3f4f6; padding: 15px; border-radius: 6px; margin-top: 30px;">
-            <p style="margin: 0; color: #6b7280; font-size: 14px; text-align: center;">
-              Bu bildiriş İnfoLine sistemi tərəfindən avtomatik göndərilib.
+            <p style="margin-top: 15px;">
+                <small>© 2024 İnfoLine Təhsil Sistemi. Bütün hüquqlar qorunur.</small>
             </p>
-          </div>
         </div>
-      </div>
-    `,
-    
-    deadline_expired: `
-      <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; line-height: 1.6;">
-        <div style="background: linear-gradient(135deg, #dc2626, #991b1b); padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
-          <h1 style="color: white; margin: 0; font-size: 24px;">❌ Son Tarix Keçib</h1>
-        </div>
-        
-        <div style="background: white; padding: 30px; border-radius: 0 0 8px 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-          <p style="font-size: 18px; color: #1f2937; margin: 0 0 20px 0;">Hörmətli <strong>{{full_name}}</strong>,</p>
-          
-          <div style="background: #fef2f2; border-left: 4px solid #dc2626; padding: 15px; margin: 20px 0; border-radius: 4px;">
-            <p style="margin: 0; color: #991b1b; font-weight: 500;">
-              "{{category_name}}" kateqoriyası üçün məlumat daxil etmə müddəti bitib.
-            </p>
-            <p style="margin: 10px 0 0 0; color: #991b1b;">
-              Mövcud məlumatlar avtomatik təsdiqlənəcək.
-            </p>
-          </div>
-          
-          <p style="color: #374151; font-size: 16px;"><strong>Son tarix idi:</strong> {{deadline_date}}</p>
-          
-          <div style="background: #f3f4f6; padding: 15px; border-radius: 6px; margin-top: 30px;">
-            <p style="margin: 0; color: #6b7280; font-size: 14px; text-align: center;">
-              Bu bildiriş İnfoLine sistemi tərəfindən avtomatik göndərilib.
-            </p>
-          </div>
-        </div>
-      </div>
-    `,
-    
-    data_approved: `
-      <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; line-height: 1.6;">
-        <div style="background: linear-gradient(135deg, #10b981, #059669); padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
-          <h1 style="color: white; margin: 0; font-size: 24px;">✅ Məlumatlar Təsdiqləndi</h1>
-        </div>
-        
-        <div style="background: white; padding: 30px; border-radius: 0 0 8px 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-          <p style="font-size: 18px; color: #1f2937; margin: 0 0 20px 0;">Hörmətli <strong>{{full_name}}</strong>,</p>
-          
-          <div style="background: #ecfdf5; border-left: 4px solid #10b981; padding: 15px; margin: 20px 0; border-radius: 4px;">
-            <p style="margin: 0; color: #065f46; font-weight: 500;">
-              "{{category_name}}" kateqoriyası üçün təqdim etdiyiniz məlumatlar uğurla təsdiqləndi.
-            </p>
-          </div>
-          
-          <p style="color: #374151; font-size: 16px;"><strong>Təsdiqləyən:</strong> {{approved_by}}</p>
-          <p style="color: #374151; font-size: 16px;"><strong>Təsdiq tarixi:</strong> {{approved_date}}</p>
-          
-          <div style="background: #f3f4f6; padding: 15px; border-radius: 6px; margin-top: 30px;">
-            <p style="margin: 0; color: #6b7280; font-size: 14px; text-align: center;">
-              Bu bildiriş İnfoLine sistemi tərəfindən avtomatik göndərilib.
-            </p>
-          </div>
-        </div>
-      </div>
-    `,
-    
-    data_rejected: `
-      <div style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif; line-height: 1.6;">
-        <div style="background: linear-gradient(135deg, #ef4444, #dc2626); padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
-          <h1 style="color: white; margin: 0; font-size: 24px;">❌ Məlumatlar Rədd Edildi</h1>
-        </div>
-        
-        <div style="background: white; padding: 30px; border-radius: 0 0 8px 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-          <p style="font-size: 18px; color: #1f2937; margin: 0 0 20px 0;">Hörmətli <strong>{{full_name}}</strong>,</p>
-          
-          <div style="background: #fef2f2; border-left: 4px solid #ef4444; padding: 15px; margin: 20px 0; border-radius: 4px;">
-            <p style="margin: 0; color: #991b1b; font-weight: 500;">
-              "{{category_name}}" kateqoriyası üçün təqdim etdiyiniz məlumatlar rədd edildi.
-            </p>
-            <p style="margin: 10px 0 0 0; color: #991b1b;">
-              <strong>Səbəb:</strong> {{rejection_reason}}
-            </p>
-          </div>
-          
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="{{data_entry_url}}" style="background: #3b82f6; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: 500; font-size: 16px;">
-              🔄 Məlumatları Yenidən Daxil Et
-            </a>
-          </div>
-          
-          <div style="background: #f3f4f6; padding: 15px; border-radius: 6px; margin-top: 30px;">
-            <p style="margin: 0; color: #6b7280; font-size: 14px; text-align: center;">
-              Bu bildiriş İnfoLine sistemi tərəfindən avtomatik göndərilib.
-            </p>
-          </div>
-        </div>
-      </div>
-    `
-  }
-
-  const template = emailTemplates[templateName]
-  return template ? renderTemplate(template, data) : null
+    </div>
+</body>
+</html>`
 }
 
 /**

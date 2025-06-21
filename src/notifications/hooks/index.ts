@@ -431,5 +431,146 @@ export function useSystemNotifications() {
   };
 }
 
+/**
+ * Hook for notification preferences management
+ */
+export function useNotificationPreferences(userId?: string) {
+  const queryClient = useQueryClient();
+  const [isTestingNotification, setIsTestingNotification] = useState(false);
+
+  // Get user preferences
+  const {
+    data: preferences,
+    isLoading,
+    error,
+    refetch
+  } = useQuery({
+    queryKey: ['notification-preferences', userId],
+    queryFn: async () => {
+      if (!userId) return null;
+      const { NotificationPreferencesService } = await import('@/services/NotificationPreferencesService');
+      return NotificationPreferencesService.getUserPreferences(userId);
+    },
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Get notification statistics
+  const {
+    data: stats,
+    refetch: refetchStats
+  } = useQuery({
+    queryKey: ['notification-stats', userId],
+    queryFn: async () => {
+      if (!userId) return null;
+      const { NotificationPreferencesService } = await import('@/services/NotificationPreferencesService');
+      return NotificationPreferencesService.getUserNotificationStats(userId);
+    },
+    enabled: !!userId,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+
+  // Update preferences mutation
+  const updatePreferencesMutation = useMutation({
+    mutationFn: async (updates: any) => {
+      if (!userId) return false;
+      const { NotificationPreferencesService } = await import('@/services/NotificationPreferencesService');
+      return NotificationPreferencesService.updateUserPreferences(userId, updates);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notification-preferences', userId] });
+    }
+  });
+
+  // Send test notification mutation
+  const sendTestNotificationMutation = useMutation({
+    mutationFn: async () => {
+      if (!userId) return false;
+      const { NotificationPreferencesService } = await import('@/services/NotificationPreferencesService');
+      return NotificationPreferencesService.sendTestNotification(userId);
+    },
+    onSuccess: (success) => {
+      if (success) {
+        // Refresh notification stats after test
+        setTimeout(() => refetchStats(), 2000);
+      }
+    }
+  });
+
+  // Convenience functions
+  const toggleEmailNotifications = useCallback((enabled: boolean) => {
+    updatePreferencesMutation.mutate({ email_enabled: enabled });
+  }, [updatePreferencesMutation]);
+
+  const togglePushNotifications = useCallback((enabled: boolean) => {
+    updatePreferencesMutation.mutate({ push_enabled: enabled });
+  }, [updatePreferencesMutation]);
+
+  const updateDeadlineReminders = useCallback((setting: '3_1' | '1' | 'none') => {
+    updatePreferencesMutation.mutate({ deadline_reminders: setting });
+  }, [updatePreferencesMutation]);
+
+  const updateDigestFrequency = useCallback((frequency: 'immediate' | 'daily' | 'weekly') => {
+    updatePreferencesMutation.mutate({ digest_frequency: frequency });
+  }, [updatePreferencesMutation]);
+
+  const updateCategoryPreferences = useCallback((categoryPreferences: Record<string, boolean>) => {
+    updatePreferencesMutation.mutate({ category_preferences: categoryPreferences });
+  }, [updatePreferencesMutation]);
+
+  const sendTestNotification = useCallback(async () => {
+    setIsTestingNotification(true);
+    try {
+      await sendTestNotificationMutation.mutateAsync();
+    } finally {
+      setIsTestingNotification(false);
+    }
+  }, [sendTestNotificationMutation]);
+
+  // Update all preferences at once
+  const updatePreferences = useCallback((updates: any) => {
+    updatePreferencesMutation.mutate(updates);
+  }, [updatePreferencesMutation]);
+
+  // Reset to default preferences
+  const resetToDefaults = useCallback(async () => {
+    if (userId) {
+      const { NotificationPreferencesService } = await import('@/services/NotificationPreferencesService');
+      const defaults = NotificationPreferencesService.getDefaultPreferences(userId);
+      updatePreferencesMutation.mutate(defaults);
+    }
+  }, [userId, updatePreferencesMutation]);
+
+  return {
+    // Data
+    preferences,
+    stats,
+    isLoading,
+    error,
+    
+    // Actions
+    toggleEmailNotifications,
+    togglePushNotifications,
+    updateDeadlineReminders,
+    updateDigestFrequency,
+    updateCategoryPreferences,
+    updatePreferences,
+    resetToDefaults,
+    sendTestNotification,
+    refetch,
+    refetchStats,
+    
+    // States
+    isUpdating: updatePreferencesMutation.isPending,
+    isTestingNotification: isTestingNotification || sendTestNotificationMutation.isPending,
+    
+    // Computed values
+    hasUnsavedChanges: false,
+    canReceiveEmail: preferences?.email_enabled ?? true,
+    canReceivePush: preferences?.push_enabled ?? true,
+    deadlineRemindersEnabled: preferences?.deadline_reminders !== 'none',
+  };
+}
+
 // Legacy compatibility exports
 export default useNotifications;

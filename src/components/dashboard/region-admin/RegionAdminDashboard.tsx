@@ -4,6 +4,7 @@ import { DashboardFormStats } from "@/types/dashboard";
 import StatsGrid from "../StatsGrid";
 import DashboardChart from "../DashboardChart";
 import SectorStatsTable from "./SectorStatsTable";
+import NotificationCard from "@/components/dashboard/NotificationCard";
 
 interface RegionAdminDashboardProps {
   dashboardData?: any;
@@ -81,10 +82,12 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({
     <div className="space-y-6">
       <StatsGrid stats={statsGridData} />
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <DashboardChart stats={formStats} />
-        <SectorStatsTable sectors={sectors} />
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <DashboardChart stats={formStats} className="lg:col-span-2" />
+        <NotificationCard maxItems={5} />
       </div>
+      
+      <SectorStatsTable sectors={sectors} />
     </div>
   );
 };

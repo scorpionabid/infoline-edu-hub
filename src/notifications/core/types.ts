@@ -335,17 +335,5 @@ export const DEFAULT_NOTIFICATION_CONFIG: NotificationManagerConfig = {
   enablePerformanceTracking: true
 };
 
-export default {
-  UnifiedNotification,
-  NotificationSettings,
-  NotificationTemplate,
-  BulkNotificationRequest,
-  NotificationAnalytics,
-  NotificationEvent,
-  NotificationManagerConfig,
-  NOTIFICATION_PRIORITIES,
-  NOTIFICATION_TYPES,
-  NOTIFICATION_CHANNELS,
-  NOTIFICATION_STATUS,
-  DEFAULT_NOTIFICATION_CONFIG
-};
+// No default export to avoid circular dependency issues
+// Use named exports instead

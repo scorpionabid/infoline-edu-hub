@@ -16,6 +16,7 @@ import {
 import { Loader2 } from "lucide-react";
 import AccountSettings from "@/components/settings/AccountSettings";
 import SecuritySettings from "@/components/settings/SecuritySettings";
+import NotificationPreferences from "@/components/settings/NotificationPreferences";
 import { useTranslation } from "@/contexts/TranslationContext";
 
 const Profile = () => {
@@ -75,13 +76,18 @@ const Profile = () => {
       </Card>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="w-full max-w-md mx-auto grid grid-cols-2">
+        <TabsList className="w-full max-w-lg mx-auto grid grid-cols-3">
           <TabsTrigger value="account">{t("accountSettings")}</TabsTrigger>
+          <TabsTrigger value="notifications">Bildirişlər</TabsTrigger>
           <TabsTrigger value="security">{t("security")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="account">
           <AccountSettings />
+        </TabsContent>
+
+        <TabsContent value="notifications">
+          <NotificationPreferences />
         </TabsContent>
 
         <TabsContent value="security">

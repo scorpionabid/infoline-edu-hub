@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DashboardFormStats, StatsGridItem } from "@/types/dashboard";
 import StatsGrid from "./StatsGrid";
 import DashboardChart from "./DashboardChart";
+import NotificationCard from "@/components/dashboard/NotificationCard";
 import { BarChart3, Users, School, MapPin } from "lucide-react";
 
 interface SuperAdminDashboardProps {
@@ -157,35 +158,42 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
             <DashboardChart stats={formStats} />
           </CardContent>
         </Card>
-        <Card className="col-span-3">
-          <CardHeader>
-            <CardTitle>{t("general.recent_activity")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {dashboardData.regions?.slice(0, 3).map((region: any) => (
-                <div key={region.id} className="flex items-center">
-                  <div className="ml-4 space-y-1">
-                    <p className="text-sm font-medium leading-none">
-                      {region.name}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {region.sectorCount} sektor •{" "}
-                      {region.adminEmail || t("user.admin_not_assigned")}
-                    </p>
+        
+        {/* Notification Card */}
+        <div className="col-span-3 space-y-4">
+          <NotificationCard maxItems={6} />
+          
+          {/* Recent Activity Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("general.recent_activity")}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {dashboardData.regions?.slice(0, 3).map((region: any) => (
+                  <div key={region.id} className="flex items-center">
+                    <div className="ml-4 space-y-1">
+                      <p className="text-sm font-medium leading-none">
+                        {region.name}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {region.sectorCount} sektor •{" "}
+                        {region.adminEmail || t("user.admin_not_assigned")}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
 
-              {(!dashboardData.regions ||
-                dashboardData.regions.length === 0) && (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  {t("dashboard.superadmin.no_activity_yet")}
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+                {(!dashboardData.regions ||
+                  dashboardData.regions.length === 0) && (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    {t("dashboard.superadmin.no_activity_yet")}
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       <StatsGrid stats={statsGridData} />

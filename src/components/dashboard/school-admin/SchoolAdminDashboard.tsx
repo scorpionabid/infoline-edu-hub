@@ -14,6 +14,7 @@ import { FilesCard } from "./FilesCard";
 import { LinksCard } from "./LinksCard";
 import FormStatusSection from "./FormStatusSection";
 import { NotificationList } from "./NotificationList";
+import NotificationCard from "@/components/dashboard/NotificationCard";
 import EnhancedCard from "@/components/ui/enhanced-card";
 import { EnhancedStatsGrid } from "../enhanced/EnhancedStatsGrid";
 import { TranslationWrapper } from "@/components/translation/TranslationWrapper";
@@ -89,6 +90,12 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
             </EnhancedCard>
           </div>
 
+          {/* Notification Card */}
+          <NotificationCard maxItems={4} className="lg:row-span-1" />
+        </div>
+
+        {/* Secondary Grid */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {/* Quick Actions */}
           <EnhancedCard 
             title={t('navigation.dashboard')}
@@ -122,20 +129,22 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
               </Button>
             </div>
           </EnhancedCard>
-        </div>
 
-        {/* Files and Links Section */}
-        <div className="grid gap-6 md:grid-cols-2">
+          {/* Files and Links Section */}
           <FilesCard />
           <LinksCard />
         </div>
 
-        {/* Recent Notifications */}
+        {/* Recent Notifications - Legacy (keeping for backwards compatibility) */}
         <EnhancedCard 
-          title={t('notifications.notifications')}
+          title="Köhnə bildirişlər"
           variant="outlined"
+          className="opacity-50"
         >
           <NotificationList notifications={dashboardData?.notifications || []} />
+          <p className="text-xs text-muted-foreground mt-2">
+            Bu bölmə notification system yenilənməsi ilə əvəz ediləcək
+          </p>
         </EnhancedCard>
       </div>
     </TranslationWrapper>

@@ -13,7 +13,8 @@ export {
   useNotificationAnalytics,
   useDeadlineNotifications,
   useApprovalNotifications,
-  useSystemNotifications
+  useSystemNotifications,
+  useNotificationPreferences
 } from './hooks';
 
 // Component exports
@@ -41,14 +42,22 @@ export type {
   NotificationManagerConfig
 } from './core/types';
 
-// Constants exports
-export {
+// Constants exports - Explicit import and re-export to avoid circular dependency
+import {
   NOTIFICATION_PRIORITIES,
   NOTIFICATION_TYPES,
   NOTIFICATION_CHANNELS,
   NOTIFICATION_STATUS,
   DEFAULT_NOTIFICATION_CONFIG
 } from './core/types';
+
+export {
+  NOTIFICATION_PRIORITIES,
+  NOTIFICATION_TYPES,
+  NOTIFICATION_CHANNELS,
+  NOTIFICATION_STATUS,
+  DEFAULT_NOTIFICATION_CONFIG
+};
 
 // Utility functions for easy migration from old notification systems
 export const NotificationUtils = {
@@ -62,7 +71,7 @@ export const NotificationUtils = {
   ) => {
     console.warn('[DEPRECATED] Old NotificationContext usage. Use notificationManager.createNotification instead.');
     
-    const notificationType = type as NotificationType;
+    const notificationType = type;
     
     return {
       title,
@@ -102,7 +111,7 @@ export const NotificationUtils = {
       userId: string,
       title: string,
       message: string,
-      type: NotificationType = 'info',
+      type: 'info' | 'success' | 'warning' | 'error' | 'deadline' | 'approval' | 'rejection' | 'reminder' | 'system' | 'category_update' | 'data_entry' | 'school_update' | 'region_update' | 'sector_update' = 'info',
       relatedEntityId?: string,
       relatedEntityType?: string
     ) => {
@@ -291,7 +300,7 @@ export const NotificationHelpers = {
     userIds: string[],
     title: string,
     message: string,
-    priority: NotificationPriority = 'normal'
+    priority: 'low' | 'normal' | 'high' | 'critical' = 'normal'
   ) => {
     return notificationManager.sendBulkNotifications({
       type: 'system',
@@ -416,31 +425,9 @@ export const NotificationPerformance = {
   }
 };
 
-// Default export with commonly used functions
+// Default export with commonly used functions - Lazy loaded to avoid circular deps
 export default {
-  // Main manager
-  notificationManager,
-  
-  // Hooks
-  useNotifications,
-  useBulkNotifications,
-  useNotificationAnalytics,
-  useDeadlineNotifications,
-  useApprovalNotifications,
-  useSystemNotifications,
-  
-  // Components
-  UnifiedNotificationProvider,
-  NotificationProvider,
-  useNotificationContext,
-  
-  // Utilities
-  NotificationUtils,
-  NotificationHelpers,
-  NotificationDebug,
-  NotificationPerformance,
-  
-  // Constants
+  // Constants only (safe to export)
   NOTIFICATION_TYPES,
   NOTIFICATION_PRIORITIES,
   NOTIFICATION_CHANNELS,

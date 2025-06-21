@@ -5,6 +5,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { cacheManager, CACHE_TTL } from '@/cache';
+import { DEFAULT_NOTIFICATION_CONFIG } from './types';
 import type { 
   UnifiedNotification,
   NotificationSettings,
@@ -15,7 +16,6 @@ import type {
   NotificationAnalytics,
   NotificationEvent,
   NotificationManagerConfig,
-  DEFAULT_NOTIFICATION_CONFIG,
   NotificationMetadata
 } from './types';
 
