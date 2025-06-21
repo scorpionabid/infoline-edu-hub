@@ -1,6 +1,6 @@
 
 import React, { useEffect } from "react";
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation, Outlet } from "react-router-dom";
 import { useAuthStore, selectIsAuthenticated, selectIsLoading } from "@/hooks/auth/useAuthStore";
 import { usePermissions } from "@/hooks/auth/usePermissions";
 import AccessDenied from "@/components/AccessDenied";
@@ -147,47 +147,35 @@ const AppRoutes = () => (
       </PublicRoute>
     } />
 
-    {/* Protected Routes with SidebarLayout */}
-    <Route element={
+    {/* Protected Routes with SidebarLayout wrapper */}
+    <Route path="/" element={
       <ProtectedRoute>
-        <SidebarLayout />
+        <SidebarLayout>
+          <Outlet />
+        </SidebarLayout>
       </ProtectedRoute>
     }>
-      {/* Dashboard və digər səhifələr */}
-      <Route path="/dashboard" element={<Dashboard />} />
+      <Route index element={<Navigate to="/dashboard" replace />} />
+      <Route path="dashboard" element={<Dashboard />} />
+      <Route path="sectors" element={<Sectors />} />
+      <Route path="regions" element={<Regions />} />
+      <Route path="schools" element={<Schools />} />
+      <Route path="categories" element={<Categories />} />
+      <Route path="categories/:id" element={<Categories />} />
+      <Route path="columns" element={<Columns />} />
+      <Route path="columns/:id" element={<Columns />} />
+      <Route path="users" element={<Users />} />
+      <Route path="reports" element={<Reports />} />
+      <Route path="settings" element={<Settings />} />
+      <Route path="profile" element={<Profile />} />
+      <Route path="approvals" element={<ApprovalPage />} />
       
-      <Route path="/sectors" element={<Sectors />} />
-      
-      <Route path="/regions" element={<Regions />} />
-      
-      <Route path="/schools" element={<Schools />} />
-      
-      <Route path="/categories" element={<Categories />} />
-      
-      <Route path="/categories/:id" element={<Categories />} />
-      
-      <Route path="/columns" element={<Columns />} />
-      
-      <Route path="/columns/:id" element={<Columns />} />
-      
-      <Route path="/users" element={<Users />} />
-      
-      <Route path="/reports" element={<Reports />} />
-      
-      <Route path="/settings" element={<Settings />} />
-      
-      <Route path="/profile" element={<Profile />} />
-      
-      <Route path="/approvals" element={<ApprovalPage />} />
-      
-      {/* ✅ YENİ: Ayrı məlumat daxil etmə route-ları */}
-      <Route path="/data-entry" element={<DataEntry />} />
-      <Route path="/data-entry/:categoryId" element={<DataEntry />} />
-      <Route path="/data-entry/:categoryId/:schoolId" element={<DataEntry />} />
+      <Route path="data-entry" element={<DataEntry />} />
+      <Route path="data-entry/:categoryId" element={<DataEntry />} />
+      <Route path="data-entry/:categoryId/:schoolId" element={<DataEntry />} />
 
-      {/* ✅ YENİ: Məktəb admini məlumat daxil etmə route-u */}
       <Route 
-        path="/school-data-entry" 
+        path="school-data-entry" 
         element={
           <ProtectedRoute allowedRoles={['schooladmin']}>
             <SchoolAdminDataEntry />
@@ -195,9 +183,8 @@ const AppRoutes = () => (
         } 
       />
       
-      {/* ✅ YENİ: Sektor məlumat daxil etmə - yalnız sektor adminləri üçün */}
       <Route 
-        path="/sector-data-entry" 
+        path="sector-data-entry" 
         element={
           <ProtectedRoute allowedRoles={['sectoradmin']}>
             <SectorDataEntry />
@@ -205,9 +192,8 @@ const AppRoutes = () => (
         } 
       />
       
-      {/* ✅ YENİ: Statistics - Region və Sektor adminləri üçün */}
       <Route 
-        path="/statistics" 
+        path="statistics" 
         element={
           <ProtectedRoute allowedRoles={['regionadmin', 'sectoradmin']}>
             <Statistics />
@@ -215,9 +201,8 @@ const AppRoutes = () => (
         } 
       />
       
-      {/* ✅ YENİ: Progress Tracking - Region və Sektor adminləri üçün */}
       <Route 
-        path="/progress" 
+        path="progress" 
         element={
           <ProtectedRoute allowedRoles={['regionadmin', 'sectoradmin']}>
             <ProgressTracking />
@@ -225,9 +210,8 @@ const AppRoutes = () => (
         } 
       />
       
-      {/* ✅ YENİ: Performance - SuperAdmin üçün */}
       <Route 
-        path="/performance" 
+        path="performance" 
         element={
           <ProtectedRoute allowedRoles={['superadmin']}>
             <Performance />
@@ -235,9 +219,8 @@ const AppRoutes = () => (
         } 
       />
       
-      {/* ✅ YENİ: Advanced User Management - SuperAdmin üçün */}
       <Route 
-        path="/user-management" 
+        path="user-management" 
         element={
           <ProtectedRoute allowedRoles={['superadmin']}>
             <UserManagement />
@@ -246,8 +229,7 @@ const AppRoutes = () => (
       />
     </Route>
     
-    {/* Default Routes */}
-    <Route path="/" element={<Navigate to="/dashboard" replace />} />
+    {/* 404 Route */}
     <Route path="*" element={<NotFound />} />
   </Routes>
 );

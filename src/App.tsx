@@ -1,13 +1,11 @@
 
-import { useEffect } from "react";
-import { Toaster } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useAuthStore, selectUser } from "@/hooks/auth/useAuthStore";
-import { ThemeProvider } from "@/contexts/ThemeContext";
-import { TranslationProvider } from "@/contexts/TranslationContext";
-import { NotificationProvider } from "@/components/notifications/NotificationProvider";
-import { AppRoutes } from "@/routes/AppRoutes";
+import React, { useEffect } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from 'sonner';
+import { ThemeProvider } from '@/components/ui/theme-provider';
+import { TranslationProvider } from '@/contexts/TranslationContext';
+import { useAuthStore } from '@/hooks/auth/useAuthStore';
+import AppRoutes from '@/routes/AppRoutes';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -20,24 +18,20 @@ const queryClient = new QueryClient({
 
 function App() {
   const initializeAuth = useAuthStore((state) => state.initializeAuth);
-  const user = useAuthStore(selectUser);
 
   useEffect(() => {
+    console.log('[App] Initializing auth on app mount');
     initializeAuth();
   }, [initializeAuth]);
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
+      <ThemeProvider defaultTheme="light" storageKey="infoline-theme">
         <TranslationProvider>
-          <NotificationProvider userId={user?.id}>
-            <TooltipProvider>
-              <div className="min-h-screen bg-background font-sans antialiased">
-                <AppRoutes />
-              </div>
-              <Toaster position="top-right" />
-            </TooltipProvider>
-          </NotificationProvider>
+          <div className="min-h-screen bg-background">
+            <AppRoutes />
+            <Toaster position="top-right" />
+          </div>
         </TranslationProvider>
       </ThemeProvider>
     </QueryClientProvider>

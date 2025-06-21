@@ -18,6 +18,8 @@ export interface LogContext {
   severity?: string;
   original?: any;
   sanitized?: any;
+  categoryId?: string;
+  fileType?: string;
 }
 
 export interface SecurityEvent {
