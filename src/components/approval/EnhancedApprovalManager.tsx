@@ -4,13 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CheckCircle, XCircle, Clock, Eye } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, Eye, Filter } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
+import { EnhancedApprovalItem } from '@/types/approval';
 
 export interface EnhancedApprovalManagerProps {
-  pendingApprovals?: any[];
-  approvedItems?: any[];
-  rejectedItems?: any[];
+  pendingApprovals?: EnhancedApprovalItem[];
+  approvedItems?: EnhancedApprovalItem[];
+  rejectedItems?: EnhancedApprovalItem[];
   isLoading?: boolean;
   onApprove?: (id: string) => void;
   onReject?: (id: string, reason?: string) => void;
@@ -29,7 +30,7 @@ export const EnhancedApprovalManager: React.FC<EnhancedApprovalManagerProps> = (
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'rejected'>('pending');
 
-  const renderApprovalItem = (item: any) => (
+  const renderApprovalItem = (item: EnhancedApprovalItem) => (
     <Card key={item.id} className="mb-4">
       <CardHeader>
         <div className="flex justify-between items-start">
@@ -48,7 +49,7 @@ export const EnhancedApprovalManager: React.FC<EnhancedApprovalManagerProps> = (
       <CardContent>
         <div className="flex justify-between items-center">
           <div className="text-xs text-muted-foreground">
-            Completion: {item.completionRate}%
+            Tamamlanma: {item.completionRate}%
           </div>
           <div className="flex gap-2">
             {onView && (
@@ -56,12 +57,12 @@ export const EnhancedApprovalManager: React.FC<EnhancedApprovalManagerProps> = (
                 <Eye className="h-3 w-3" />
               </Button>
             )}
-            {item.status === 'pending' && onApprove && (
+            {item.status === 'pending' && item.canApprove && onApprove && (
               <Button size="sm" variant="default" onClick={() => onApprove(item.id)}>
                 <CheckCircle className="h-3 w-3" />
               </Button>
             )}
-            {item.status === 'pending' && onReject && (
+            {item.status === 'pending' && item.canApprove && onReject && (
               <Button size="sm" variant="destructive" onClick={() => onReject(item.id)}>
                 <XCircle className="h-3 w-3" />
               </Button>
@@ -76,7 +77,9 @@ export const EnhancedApprovalManager: React.FC<EnhancedApprovalManagerProps> = (
     return (
       <Alert>
         <Clock className="h-4 w-4" />
-        <AlertDescription>Loading approval data...</AlertDescription>
+        <AlertDescription>
+          <div data-testid="loading-spinner">Təsdiq məlumatları yüklənir...</div>
+        </AlertDescription>
       </Alert>
     );
   }
@@ -86,31 +89,33 @@ export const EnhancedApprovalManager: React.FC<EnhancedApprovalManagerProps> = (
 
   return (
     <div className="space-y-4">
+      <h2 className="text-lg font-semibold">Təkmilləşdirilmiş Təsdiq Meneceri</h2>
+      
       <div className="flex gap-2 border-b">
         <Button
           variant={activeTab === 'pending' ? 'default' : 'ghost'}
           onClick={() => setActiveTab('pending')}
         >
-          Pending ({pendingApprovals.length})
+          Gözləyən: {pendingApprovals.length}
         </Button>
         <Button
           variant={activeTab === 'approved' ? 'default' : 'ghost'}
           onClick={() => setActiveTab('approved')}
         >
-          Approved ({approvedItems.length})
+          Təsdiqlənmiş: {approvedItems.length}
         </Button>
         <Button
           variant={activeTab === 'rejected' ? 'default' : 'ghost'}
           onClick={() => setActiveTab('rejected')}
         >
-          Rejected ({rejectedItems.length})
+          Rədd edilmiş: {rejectedItems.length}
         </Button>
       </div>
 
       <div className="space-y-2">
         {currentItems.length === 0 ? (
           <Alert>
-            <AlertDescription>No items in this category.</AlertDescription>
+            <AlertDescription>Bu kateqoriyada heç bir element yoxdur.</AlertDescription>
           </Alert>
         ) : (
           currentItems.map(renderApprovalItem)
