@@ -112,6 +112,16 @@ export const useResponsiveLayout = (): UseResponsiveLayoutReturn => {
     return true; // Default to open for SSR
   });
 
+  // Ensure sidebar stays open on desktop after first load
+  useEffect(() => {
+    if (isDesktop && !sidebarOpen) {
+      const savedState = localStorage.getItem('sidebar-open');
+      if (savedState === null || savedState === 'true') {
+        setSidebarOpenState(true);
+      }
+    }
+  }, [isDesktop]);
+
   // Update sidebar open state in localStorage for desktop
   useEffect(() => {
     if (isDesktop) {

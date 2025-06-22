@@ -94,24 +94,16 @@ const UserMenu: React.FC = () => {
       <DropdownMenuTrigger asChild>
         <Button 
           variant="ghost" 
-          className="flex items-center space-x-2 px-2 hover:bg-accent min-h-[44px] touch-manipulation"
+          size="icon"
+          className="h-9 w-9 hover:bg-accent touch-manipulation"
           disabled={isButtonDisabled}
         >
-          <Avatar className="h-8 w-8">
+          <Avatar className="h-6 w-6">
             <AvatarImage src={user.avatar} alt={displayName} />
             <AvatarFallback className="text-xs font-medium">
               {initials}
             </AvatarFallback>
           </Avatar>
-          <div className="hidden md:flex flex-col items-start max-w-[120px]">
-            <span className="text-sm font-medium truncate w-full">
-              {displayName}
-            </span>
-            <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${getRoleBadgeColor(userRole || '')}`}>
-              {getRoleDisplayName(userRole || '')}
-            </span>
-          </div>
-          <ChevronDown className="h-4 w-4 opacity-50" />
         </Button>
       </DropdownMenuTrigger>
       

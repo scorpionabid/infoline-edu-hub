@@ -103,8 +103,8 @@ const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
           ],
           
           variant === 'desktop' && [
-            "flex relative flex-shrink-0",
-            !isOpen && "hidden"
+            "flex relative flex-shrink-0"
+            // Desktop sidebar always visible - removed the hidden condition
           ]
         )}
         style={{

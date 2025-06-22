@@ -71,10 +71,10 @@ const UnifiedLayout: React.FC<UnifiedLayoutProps> = memo(({
         {/* Unified Sidebar - Responsive variants */}
         {showSidebar && (
           <>
-            {/* Desktop sidebar */}
+            {/* Desktop sidebar - Always visible */}
             {isDesktop && (
               <UnifiedSidebar 
-                isOpen={sidebarOpen}
+                isOpen={true} // Always open on desktop
                 onToggle={toggleSidebar}
                 userName={user?.full_name || user?.email}
                 variant="desktop"
