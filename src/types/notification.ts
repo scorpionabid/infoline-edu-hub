@@ -1,4 +1,3 @@
-
 // Notification types
 export type NotificationType = 
   | 'info' 
@@ -43,4 +42,11 @@ export interface NotificationsCardProps {
   onMarkAsRead?: (id: string) => void;
   onMarkAllAsRead?: () => void;
   title?: string;
+}
+
+export interface NotificationStats {
+  totalCount: number;
+  unreadCount: number;
+  todayCount: number;
+  weekCount: number;
 }

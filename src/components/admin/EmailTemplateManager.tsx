@@ -1,147 +1,133 @@
-
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Edit2, Trash2, Eye, Mail, Settings, BarChart3 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle,
+  DialogTrigger 
+} from '@/components/ui/dialog';
+import { 
+  Plus, 
+  Edit, 
+  Trash2, 
+  Eye, 
+  Mail, 
+  FileText,
+  BarChart3 
+} from 'lucide-react';
 
 interface EmailTemplate {
   id: string;
   name: string;
-  subject: string;
-  body: string;
-  type: 'notification' | 'welcome' | 'reminder' | 'approval';
+  type: string;
+  title_template: string;
+  message_template: string;
+  email_template?: string;
   is_active: boolean;
+  is_system: boolean;
   created_at: string;
-  updated_at: string;
+  variables: string[];
+  default_priority: string;
+  default_channels: string[];
 }
 
-interface TemplateStats {
-  totalSent: number;
-  delivered: number;
-  opened: number;
-  clicked: number;
-  lastUsed: string | null;
+interface EmailTemplateStats {
+  total: number;
+  active: number;
+  system: number;
+  custom: number;
+  lastWeekUsage: number;
 }
 
 const EmailTemplateManager: React.FC = () => {
-  const [templates, setTemplates] = useState<EmailTemplate[]>([
-    {
-      id: '1',
-      name: 'Xoş gəldin mesajı',
-      subject: 'İnfoLine-a xoş gəldiniz',
-      body: 'Hörmətli {{name}}, sistemə xoş gəldiniz...',
-      type: 'welcome',
-      is_active: true,
-      created_at: '2024-01-01',
-      updated_at: '2024-01-01'
-    },
-    {
-      id: '2',
-      name: 'Təsdiq bildirişi',
-      subject: 'Məlumatlarınız təsdiqləndi',
-      body: 'Təbrik edirik! {{category}} kateqoriyası üzrə məlumatlarınız təsdiqləndi.',
-      type: 'approval',
-      is_active: true,
-      created_at: '2024-01-01',
-      updated_at: '2024-01-01'
-    }
-  ]);
-
+  const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isPreviewDialogOpen, setIsPreviewDialogOpen] = useState(false);
-  const [isStatsDialogOpen, setIsStatsDialogOpen] = useState(false);
-
-  const [newTemplate, setNewTemplate] = useState<Partial<EmailTemplate>>({
-    name: '',
-    subject: '',
-    body: '',
-    type: 'notification',
-    is_active: true
+  const [stats, setStats] = useState<EmailTemplateStats>({
+    total: 0,
+    active: 0,
+    system: 0,
+    custom: 0,
+    lastWeekUsage: 0
   });
 
-  const templateStats: TemplateStats = {
-    totalSent: 1247,
-    delivered: 1223,
-    opened: 856,
-    clicked: 234,
-    lastUsed: '2024-01-15'
-  };
+  const [formData, setFormData] = useState({
+    name: '',
+    type: '',
+    title_template: '',
+    message_template: '',
+    email_template: '',
+    variables: '',
+    default_priority: 'normal',
+    default_channels: 'inApp'
+  });
 
-  const handleCreateTemplate = () => {
-    const template: EmailTemplate = {
-      id: Date.now().toString(),
-      name: newTemplate.name || '',
-      subject: newTemplate.subject || '',
-      body: newTemplate.body || '',
-      type: newTemplate.type as EmailTemplate['type'] || 'notification',
-      is_active: newTemplate.is_active || true,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-
-    setTemplates([...templates, template]);
-    setNewTemplate({
-      name: '',
-      subject: '',
-      body: '',
-      type: 'notification',
-      is_active: true
-    });
+  const handleCreate = () => {
+    // Template creation logic
+    console.log('Creating template:', formData);
     setIsCreateDialogOpen(false);
+    resetForm();
   };
 
-  const handleEditTemplate = () => {
-    if (!selectedTemplate) return;
+  const handleEdit = (template: EmailTemplate) => {
+    setSelectedTemplate(template);
+    setFormData({
+      name: template.name,
+      type: template.type,
+      title_template: template.title_template,
+      message_template: template.message_template,
+      email_template: template.email_template || '',
+      variables: template.variables.join(', '),
+      default_priority: template.default_priority,
+      default_channels: template.default_channels.join(', ')
+    });
+    setIsEditDialogOpen(true);
+  };
 
-    setTemplates(templates.map(t => 
-      t.id === selectedTemplate.id 
-        ? { ...selectedTemplate, updated_at: new Date().toISOString() }
-        : t
-    ));
+  const handleUpdate = () => {
+    // Template update logic
+    console.log('Updating template:', selectedTemplate?.id, formData);
     setIsEditDialogOpen(false);
+    resetForm();
+  };
+
+  const handleDelete = (templateId: string) => {
+    // Template deletion logic
+    console.log('Deleting template:', templateId);
+  };
+
+  const handleStatusToggle = (templateId: string, isActive: boolean) => {
+    // Status toggle logic
+    console.log('Toggling status:', templateId, isActive);
+  };
+
+  const handlePreview = (template: EmailTemplate) => {
+    setSelectedTemplate(template);
+    setIsPreviewDialogOpen(true);
+  };
+
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      type: '',
+      title_template: '',
+      message_template: '',
+      email_template: '',
+      variables: '',
+      default_priority: 'normal',
+      default_channels: 'inApp'
+    });
     setSelectedTemplate(null);
-  };
-
-  const handleDeleteTemplate = (id: string) => {
-    if (window.confirm('Bu template-i silmək istədiyinizə əminsiniz?')) {
-      setTemplates(templates.filter(t => t.id !== id));
-    }
-  };
-
-  const toggleTemplateStatus = (id: string) => {
-    setTemplates(templates.map(t => 
-      t.id === id ? { ...t, is_active: !t.is_active } : t
-    ));
-  };
-
-  const getTypeColor = (type: EmailTemplate['type']) => {
-    switch (type) {
-      case 'welcome': return 'bg-green-100 text-green-800';
-      case 'notification': return 'bg-blue-100 text-blue-800';
-      case 'reminder': return 'bg-yellow-100 text-yellow-800';
-      case 'approval': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getTypeLabel = (type: EmailTemplate['type']) => {
-    switch (type) {
-      case 'welcome': return 'Xoş gəldin';
-      case 'notification': return 'Bildiriş';
-      case 'reminder': return 'Xatırlatma';
-      case 'approval': return 'Təsdiq';
-      default: return 'Digər';
-    }
   };
 
   return (
@@ -149,92 +135,92 @@ const EmailTemplateManager: React.FC = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Email Template-lər</h2>
+          <h1 className="text-2xl font-bold">Email Template Manager</h1>
           <p className="text-muted-foreground">
-            Sistem bildirişləri üçün email template-lərini idarə edin
+            Manage notification and email templates
           </p>
         </div>
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="h-4 w-4 mr-2" />
-              Template Yarat
+              Create Template
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Yeni Email Template</DialogTitle>
-              <DialogDescription>
-                Yeni email template yaradın və konfiqurasiya edin
-              </DialogDescription>
+              <DialogTitle>Create Email Template</DialogTitle>
             </DialogHeader>
-            
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Template Adı</Label>
+                <div>
+                  <Label htmlFor="name">Template Name</Label>
                   <Input
                     id="name"
-                    value={newTemplate.name}
-                    onChange={(e) => setNewTemplate({...newTemplate, name: e.target.value})}
-                    placeholder="Template adını daxil edin"
+                    value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    placeholder="Enter template name"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="type">Template Tipi</Label>
-                  <Select 
-                    value={newTemplate.type} 
-                    onValueChange={(value) => setNewTemplate({...newTemplate, type: value as EmailTemplate['type']})}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Tip seçin" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="notification">Bildiriş</SelectItem>
-                      <SelectItem value="welcome">Xoş gəldin</SelectItem>
-                      <SelectItem value="reminder">Xatırlatma</SelectItem>
-                      <SelectItem value="approval">Təsdiq</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div>
+                  <Label htmlFor="type">Type</Label>
+                  <Input
+                    id="type"
+                    value={formData.type}
+                    onChange={(e) => setFormData({...formData, type: e.target.value})}
+                    placeholder="notification, email, etc."
+                  />
                 </div>
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="subject">Mövzu</Label>
+              
+              <div>
+                <Label htmlFor="title">Title Template</Label>
                 <Input
-                  id="subject"
-                  value={newTemplate.subject}
-                  onChange={(e) => setNewTemplate({...newTemplate, subject: e.target.value})}
-                  placeholder="Email mövzusunu daxil edin"
+                  id="title"
+                  value={formData.title_template}
+                  onChange={(e) => setFormData({...formData, title_template: e.target.value})}
+                  placeholder="Email subject template"
                 />
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="body">Məzmun</Label>
+              
+              <div>
+                <Label htmlFor="message">Message Template</Label>
                 <Textarea
-                  id="body"
-                  value={newTemplate.body}
-                  onChange={(e) => setNewTemplate({...newTemplate, body: e.target.value})}
-                  placeholder="Email məzmununu daxil edin. {{name}}, {{category}} kimi placeholder-lərdən istifadə edə bilərsiniz."
-                  rows={8}
+                  id="message"
+                  value={formData.message_template}
+                  onChange={(e) => setFormData({...formData, message_template: e.target.value})}
+                  placeholder="Message content template"
+                  rows={4}
                 />
               </div>
-
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="active"
-                  checked={newTemplate.is_active}
-                  onCheckedChange={(checked) => setNewTemplate({...newTemplate, is_active: checked})}
+              
+              <div>
+                <Label htmlFor="email">Email Template</Label>
+                <Textarea
+                  id="email"
+                  value={formData.email_template}
+                  onChange={(e) => setFormData({...formData, email_template: e.target.value})}
+                  placeholder="HTML email template"
+                  rows={6}
                 />
-                <Label htmlFor="active">Template aktiv et</Label>
               </div>
-
+              
+              <div>
+                <Label htmlFor="variables">Variables (comma-separated)</Label>
+                <Input
+                  id="variables"
+                  value={formData.variables}
+                  onChange={(e) => setFormData({...formData, variables: e.target.value})}
+                  placeholder="user_name, school_name, date"
+                />
+              </div>
+              
               <div className="flex justify-end space-x-2">
                 <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                  Ləğv et
+                  Cancel
                 </Button>
-                <Button onClick={handleCreateTemplate}>
-                  Template Yarat
+                <Button onClick={handleCreate}>
+                  Create Template
                 </Button>
               </div>
             </div>
@@ -242,257 +228,211 @@ const EmailTemplateManager: React.FC = () => {
         </Dialog>
       </div>
 
-      {/* Templates Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {templates.map((template) => (
-          <Card key={template.id} className="relative">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <Badge className={getTypeColor(template.type)}>
-                  {getTypeLabel(template.type)}
-                </Badge>
-                <div className="flex items-center space-x-1">
-                  <Dialog open={isStatsDialogOpen} onOpenChange={setIsStatsDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <BarChart3 className="h-4 w-4" />
-                      </Button>
-                    </DialogTrigger>
-                  </Dialog>
-                  
-                  <Dialog open={isPreviewDialogOpen} onOpenChange={setIsPreviewDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </DialogTrigger>
-                  </Dialog>
-
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => {
-                      setSelectedTemplate(template);
-                      setIsEditDialogOpen(true);
-                    }}
-                  >
-                    <Edit2 className="h-4 w-4" />
-                  </Button>
-
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => handleDeleteTemplate(template.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <FileText className="h-4 w-4 text-blue-500" />
+              <div>
+                <p className="text-sm text-muted-foreground">Total Templates</p>
+                <p className="text-2xl font-bold">{stats.total}</p>
               </div>
-              <CardTitle className="text-lg">{template.name}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Mövzu:</p>
-                <p className="text-sm text-muted-foreground">{template.subject}</p>
-                
-                <div className="flex items-center justify-between mt-4">
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      checked={template.is_active}
-                      onCheckedChange={() => toggleTemplateStatus(template.id)}
-                      size="sm"
-                    />
-                    <span className="text-sm">
-                      {template.is_active ? 'Aktiv' : 'Deaktiv'}
-                    </span>
-                  </div>
-                  <span className="text-xs text-muted-foreground">
-                    {new Date(template.updated_at).toLocaleDateString('az-AZ')}
-                  </span>
-                </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <Mail className="h-4 w-4 text-green-500" />
+              <div>
+                <p className="text-sm text-muted-foreground">Active</p>
+                <p className="text-2xl font-bold">{stats.active}</p>
               </div>
-            </CardContent>
-          </Card>
-        ))}
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <BarChart3 className="h-4 w-4 text-orange-500" />
+              <div>
+                <p className="text-sm text-muted-foreground">System</p>
+                <p className="text-2xl font-bold">{stats.system}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-2">
+              <Plus className="h-4 w-4 text-purple-500" />
+              <div>
+                <p className="text-sm text-muted-foreground">Custom</p>
+                <p className="text-2xl font-bold">{stats.custom}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Templates List */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Email Templates</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {templates.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No templates found. Create your first template to get started.
+              </div>
+            ) : (
+              templates.map((template) => (
+                <div key={template.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2">
+                      <h3 className="font-medium">{template.name}</h3>
+                      <Badge variant={template.is_active ? "default" : "secondary"}>
+                        {template.is_active ? "Active" : "Inactive"}
+                      </Badge>
+                      {template.is_system && (
+                        <Badge variant="outline">System</Badge>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground">{template.type}</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {template.title_template}
+                    </p>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-2">
+                      <Label htmlFor={`status-${template.id}`} className="text-sm">
+                        Active
+                      </Label>
+                      <Switch
+                        id={`status-${template.id}`}
+                        checked={template.is_active}
+                        onCheckedChange={(checked) => handleStatusToggle(template.id, checked)}
+                      />
+                    </div>
+                    
+                    <Separator orientation="vertical" className="h-6" />
+                    
+                    <Button
+                      variant="ghost"
+                      onClick={() => handlePreview(template)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    
+                    <Button
+                      variant="ghost"
+                      onClick={() => handleEdit(template)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    
+                    {!template.is_system && (
+                      <Button
+                        variant="ghost"
+                        onClick={() => handleDelete(template.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Template Düzənlə</DialogTitle>
-            <DialogDescription>
-              Email template-ini düzənləyin
-            </DialogDescription>
+            <DialogTitle>Edit Email Template</DialogTitle>
           </DialogHeader>
-          
-          {selectedTemplate && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="edit-name">Template Adı</Label>
-                  <Input
-                    id="edit-name"
-                    value={selectedTemplate.name}
-                    onChange={(e) => setSelectedTemplate({...selectedTemplate, name: e.target.value})}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-type">Template Tipi</Label>
-                  <Select 
-                    value={selectedTemplate.type} 
-                    onValueChange={(value) => setSelectedTemplate({...selectedTemplate, type: value as EmailTemplate['type']})}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="notification">Bildiriş</SelectItem>
-                      <SelectItem value="welcome">Xoş gəldin</SelectItem>
-                      <SelectItem value="reminder">Xatırlatma</SelectItem>
-                      <SelectItem value="approval">Təsdiq</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="edit-subject">Mövzu</Label>
+          <div className="space-y-4">
+            {/* Same form fields as create dialog */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit-name">Template Name</Label>
                 <Input
-                  id="edit-subject"
-                  value={selectedTemplate.subject}
-                  onChange={(e) => setSelectedTemplate({...selectedTemplate, subject: e.target.value})}
+                  id="edit-name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  placeholder="Enter template name"
                 />
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="edit-body">Məzmun</Label>
-                <Textarea
-                  id="edit-body"
-                  value={selectedTemplate.body}
-                  onChange={(e) => setSelectedTemplate({...selectedTemplate, body: e.target.value})}
-                  rows={8}
+              <div>
+                <Label htmlFor="edit-type">Type</Label>
+                <Input
+                  id="edit-type"
+                  value={formData.type}
+                  onChange={(e) => setFormData({...formData, type: e.target.value})}
+                  placeholder="notification, email, etc."
                 />
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="edit-active"
-                  checked={selectedTemplate.is_active}
-                  onCheckedChange={(checked) => setSelectedTemplate({...selectedTemplate, is_active: checked})}
-                />
-                <Label htmlFor="edit-active">Template aktiv et</Label>
-              </div>
-
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                  Ləğv et
-                </Button>
-                <Button onClick={handleEditTemplate}>
-                  Dəyişiklikləri Saxla
-                </Button>
               </div>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Preview Dialog */}
-      <Dialog open={isPreviewDialogOpen} onOpenChange={setIsPreviewDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Email Önizləmə</DialogTitle>
-            <DialogDescription>
-              Email template-inin görünüşü
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="border rounded-lg p-4">
-            <div className="border-b pb-2 mb-4">
-              <h3 className="font-semibold">Mövzu: Xoş gəldin mesajı</h3>
-            </div>
-            <div className="space-y-2">
-              <p>Hörmətli İstifadəçi,</p>
-              <p>İnfoLine sistemə xoş gəldiniz...</p>
-              <p>Hörmətlə,<br />İnfoLine Komandası</p>
+            
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleUpdate}>
+                Update Template
+              </Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Stats Dialog */}
-      <Dialog open={isStatsDialogOpen} onOpenChange={setIsStatsDialogOpen}>
-        <DialogContent>
+      {/* Preview Dialog */}
+      <Dialog open={isPreviewDialogOpen} onOpenChange={setIsPreviewDialogOpen}>
+        <DialogContent className="max-w-4xl">
           <DialogHeader>
-            <DialogTitle>Template Statistikası</DialogTitle>
-            <DialogDescription>
-              Email template performans məlumatları
-            </DialogDescription>
+            <DialogTitle>Template Preview</DialogTitle>
           </DialogHeader>
-          
-          {templateStats && (
+          {selectedTemplate && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">Ümumi Göndərilən</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{templateStats.totalSent}</div>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">Çatdırılan</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{templateStats.delivered}</div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">Açılan</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{templateStats.opened}</div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">Son İstifadə</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-sm text-muted-foreground">
-                      {templateStats.lastUsed 
-                        ? new Date(templateStats.lastUsed).toLocaleDateString('az-AZ')
-                        : 'Heç vaxt'
-                      }
-                    </div>
-                  </CardContent>
-                </Card>
+              <div>
+                <Label>Template Name</Label>
+                <p className="font-medium">{selectedTemplate.name}</p>
               </div>
               
-              {templateStats.totalSent > 0 && (
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Çatdırılma faizi:</span>
-                    <span className="font-medium">
-                      {Math.round((templateStats.delivered / templateStats.totalSent) * 100)}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div 
-                      className="bg-green-600 h-2 rounded-full" 
-                      style={{ 
-                        width: `${Math.round((templateStats.delivered / templateStats.totalSent) * 100)}%` 
-                      }}
-                    ></div>
+              <div>
+                <Label>Title</Label>
+                <p className="p-2 bg-muted rounded">{selectedTemplate.title_template}</p>
+              </div>
+              
+              <div>
+                <Label>Message</Label>
+                <div className="p-4 bg-muted rounded min-h-[100px]">
+                  {selectedTemplate.message_template}
+                </div>
+              </div>
+              
+              {selectedTemplate.email_template && (
+                <div>
+                  <Label>Email HTML</Label>
+                  <div className="p-4 bg-muted rounded max-h-[200px] overflow-auto">
+                    <pre className="text-sm">{selectedTemplate.email_template}</pre>
                   </div>
                 </div>
               )}
+              
+              <div className="flex justify-end">
+                <Button onClick={() => setIsPreviewDialogOpen(false)}>
+                  Close
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>
