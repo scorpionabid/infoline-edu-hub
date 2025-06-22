@@ -1,10 +1,9 @@
-
 import React, { useEffect } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useAuthStore, selectIsAuthenticated, selectIsLoading } from "@/hooks/auth/useAuthStore";
 import { usePermissions } from "@/hooks/auth/usePermissions";
 import AccessDenied from "@/components/AccessDenied";
-import SidebarLayout from "@/components/layout/SidebarLayout";
+import { UnifiedLayout } from "@/components/layout/unified";
 import LoadingScreen from "@/components/auth/LoadingScreen";
 
 import Login from "@/pages/Login";
@@ -147,10 +146,10 @@ const AppRoutes = () => (
       </PublicRoute>
     } />
 
-    {/* Protected Routes with SidebarLayout */}
+    {/* Protected Routes with UnifiedLayout */}
     <Route element={
       <ProtectedRoute>
-        <SidebarLayout />
+        <UnifiedLayout />
       </ProtectedRoute>
     }>
       {/* Dashboard və digər səhifələr */}

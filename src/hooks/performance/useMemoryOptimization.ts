@@ -1,6 +1,6 @@
 
 import { useCallback, useEffect, useRef } from 'react';
-import { cacheManager } from '@/cache';
+import { cacheManager } from '../../../cache';
 
 interface MemoryStats {
   memory?: {

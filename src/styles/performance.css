@@ -1,0 +1,249 @@
+/* Performance-focused CSS optimizations */
+
+/* GPU acceleration for heavy animations */
+.gpu-accelerated {
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+/* Optimized transitions */
+.transition-optimized {
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Prevent layout thrashing */
+.prevent-layout-shift {
+  contain: layout style paint;
+}
+
+/* Virtual scrolling optimizations */
+.virtual-scrolling-container {
+  overflow: auto;
+  will-change: scroll-position;
+  -webkit-overflow-scrolling: touch;
+}
+
+.virtual-item {
+  contain: layout style paint;
+  transform: translateZ(0);
+}
+
+/* Memory efficient animations */
+@keyframes fadeInOptimized {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes slideInOptimized {
+  from {
+    transform: translate3d(-100%, 0, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes scaleInOptimized {
+  from {
+    opacity: 0;
+    transform: scale3d(0.95, 0.95, 1);
+  }
+  to {
+    opacity: 1;
+    transform: scale3d(1, 1, 1);
+  }
+}
+
+/* Performance animation classes */
+.animate-fade-in-optimized {
+  animation: fadeInOptimized 0.3s ease-out;
+}
+
+.animate-slide-in-optimized {
+  animation: slideInOptimized 0.3s ease-out;
+}
+
+.animate-scale-in-optimized {
+  animation: scaleInOptimized 0.2s ease-out;
+}
+
+/* Efficient loading states */
+.skeleton-optimized {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--muted)) 25%,
+    hsl(var(--muted-foreground) / 0.3) 50%,
+    hsl(var(--muted)) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeletonWave 2s infinite;
+}
+
+@keyframes skeletonWave {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Intersection observer optimization */
+.lazy-load-placeholder {
+  min-height: 200px;
+  background: hsl(var(--muted));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Table performance optimizations */
+.performance-table {
+  table-layout: fixed;
+  contain: layout style;
+}
+
+.performance-table th,
+.performance-table td {
+  contain: layout style paint;
+}
+
+/* Navigation performance */
+.nav-item-optimized {
+  contain: layout style paint;
+  transform: translateZ(0);
+  transition: background-color 0.15s ease-out;
+}
+
+.nav-item-optimized:hover {
+  background-color: hsl(var(--muted));
+}
+
+/* Card optimizations */
+.card-optimized {
+  contain: layout style;
+  transform: translateZ(0);
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+}
+
+.card-optimized:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Button performance */
+.button-optimized {
+  contain: layout style;
+  transform: translateZ(0);
+  transition: transform 0.1s ease-out;
+}
+
+.button-optimized:active {
+  transform: scale(0.98);
+}
+
+/* Scroll performance */
+.scroll-smooth-optimized {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in-optimized,
+  .animate-slide-in-optimized,
+  .animate-scale-in-optimized,
+  .transition-optimized,
+  .card-optimized,
+  .button-optimized {
+    animation: none;
+    transition: none;
+  }
+}
+
+/* Dark mode performance optimizations */
+.dark .skeleton-optimized {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--muted)) 25%,
+    hsl(var(--muted-foreground) / 0.3) 50%,
+    hsl(var(--muted)) 75%
+  );
+}
+
+/* Loading spinner optimization */
+.spinner-optimized {
+  animation: spin 1s linear infinite;
+  will-change: transform;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Image loading optimization */
+.image-optimized {
+  content-visibility: auto;
+  contain-intrinsic-size: 300px 200px;
+}
+
+/* Form performance */
+.form-optimized {
+  contain: layout style;
+}
+
+.form-field-optimized {
+  contain: layout style paint;
+  transition: border-color 0.15s ease-out;
+}
+
+/* Performance utilities */
+.will-change-transform {
+  will-change: transform;
+}
+
+.will-change-opacity {
+  will-change: opacity;
+}
+
+.will-change-scroll {
+  will-change: scroll-position;
+}
+
+/* Content visibility for large lists */
+.content-visibility-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 200px;
+}
+
+/* Efficient backdrop blur */
+.backdrop-blur-optimized {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Performance-focused focus states */
+.focus-optimized:focus {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
+  transition: outline-offset 0.1s ease-out;
+}
+
+/* Layout containment for widgets */
+.widget-contained {
+  contain: layout style paint;
+  isolation: isolate;
+}

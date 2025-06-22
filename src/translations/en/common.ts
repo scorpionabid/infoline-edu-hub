@@ -12,6 +12,9 @@ export default {
   // Form validation
   email: 'Email',
   password: 'Password',
+  page: 'Page',
+  previous: 'Previous',
+  next: 'Next',
   emailRequired: 'Email address is required',
   passwordRequired: 'Password is required',
   invalidEmail: 'Please enter a valid email address',
@@ -21,6 +24,7 @@ export default {
   // Dashboard related
   dashboard: 'Dashboard',
   overview: 'Overview',
+  view: 'View',
   statistics: 'Statistics',
   
   // User roles
@@ -70,6 +74,13 @@ export default {
   lastWeek: 'Last Week',
   lastMonth: 'Last Month',
   custom: 'Custom',
+  
+  // Data & Tables
+  noData: 'No data available',
+  noResults: 'No results found',
+  showing: 'Showing',
+  of: 'of',
+  showingEntries: 'Showing {start} - {end} of {total}',
   
   // Notifications
   notifications: 'Notifications',
@@ -130,5 +141,8 @@ export default {
   schoolDeleted: 'School Deleted',
   schoolDeletionFailed: 'School Deletion Failed',
   adminAssigned: 'Administrator Assigned',
-  adminAssignmentFailed: 'Administrator Assignment Failed'
+  adminAssignmentFailed: 'Administrator Assignment Failed',
+  
+  // Stats
+  schoolCount: 'School Count'
 };

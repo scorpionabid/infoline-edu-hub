@@ -64,7 +64,7 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
   filters,
   onFilterChange
 }) => {
-  const { tSafe: t } = useSmartTranslation();
+  const { tSafe: t, tContext } = useSmartTranslation();
   const user = useAuthStore(selectUser);
   
   // Dialog states
@@ -212,7 +212,11 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
       {totalCount !== undefined && pageSize !== undefined && currentPage !== undefined && onPageChange && (
         <div className="flex items-center justify-between mt-4">
           <div className="text-sm text-muted-foreground">
-            {t('showing')} {((currentPage - 1) * pageSize) + 1} - {Math.min(currentPage * pageSize, totalCount)} {t('of')} {totalCount} {t('schools')}
+            {tContext('common.showingEntries', { 
+              start: ((currentPage - 1) * pageSize) + 1, 
+              end: Math.min(currentPage * pageSize, totalCount), 
+              total: totalCount 
+            })}
           </div>
           <div className="flex items-center space-x-2">
             <button

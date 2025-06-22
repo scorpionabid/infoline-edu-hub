@@ -41,10 +41,17 @@ export default {
     noData: "No data available",
 
     // Status
-    active: "Active",
-    inactive: "Inactive",
-    pending: "Pending",
     completed: "Completed",
+    rejected: "Rejected",
+    pending: "Pending",
+
+    // Status types for charts
+    statusTypes: {
+        approved: "Approved",
+        pending: "Pending",
+        rejected: "Rejected",
+        draft: "Draft",
+    },
     failed: "Failed",
 
     // Date/Time
@@ -131,8 +138,14 @@ export default {
     resetFilters: "Reset filters",
 
     // Stats Grid
-    totalApproved: "Approved",
-    totalPending: "Pending",
-    totalRejected: "Rejected",
-    completion: "Completion Rate"
+    totalApproved: "Total Approved",
+    totalPending: "Total Pending",
+    totalRejected: "Total Rejected",
+    completion: "Completion Rate",
+
+    // Table headers
+    sectorLabel: "Sector",
+    progress: "Progress",
+    tableProgress: "Progress",
+    actionsLabel: "Actions",
 };

@@ -27,6 +27,10 @@ export const common = {
   refresh: 'Yenilə',
   continue: 'Davam et',
   submit: 'Təsdiq et',
+  results: 'Nəticələr',
+  of: '-dən',
+  schools: 'məktəb',
+  showing: 'Göstərilir',
   
   // ===== System & Status =====
   success: 'Uğurlu',
@@ -61,9 +65,7 @@ export const common = {
   
   // ===== Data & Tables =====
   noData: 'Məlumat yoxdur',
-  noResults: 'Nəticə tapılmadı',
-  showing: 'Göstərilir',
-  items: 'məhsul',
+  showingEntries: 'Göstərilir {start} - {end} cəmi {total}',
   page: 'səhifə',
   goToPage: 'Səhifəyə keç',
   nextPage: 'Növbəti səhifə',

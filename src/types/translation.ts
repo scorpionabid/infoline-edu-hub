@@ -66,13 +66,14 @@ export type AllTranslationKeys = {
 
 // Enhanced translation hook return type
 export interface TranslationHookReturn {
-  t: (key: string, options?: TranslationInterpolationOptions) => string;
-  tSafe: (key: string, fallback?: string) => string;
+  t: (key: string, interpolation?: Record<string, any>) => string;
+  tSafe: (key: string, fallback?: string | null, options?: SmartTranslationOptions) => string;
   tContext: (key: string, context: Record<string, any>) => string;
   language: SupportedLanguage;
   setLanguage: (language: SupportedLanguage) => Promise<void>;
   isLoading: boolean;
   error: Error | null;
+  isReady: boolean;
 }
 
 // Translation validation and coverage types

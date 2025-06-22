@@ -1,25 +1,26 @@
-
 // Sectors translation module
 export const sectors = {
   // Basic terms
   sector: 'Sektor',
   sectors: 'Sektorlar',
+  title: 'Sektorlar',
   
   // Actions
-  add_sector: 'Sektor əlavə et',
-  edit_sector: 'Sektoru redaktə et',
-  delete_sector: 'Sektoru sil',
+  addSector: 'Sektor əlavə et',
+  editSector: 'Sektoru redaktə et',
+  deleteSector: 'Sektoru sil',
   
   // Properties
   name: 'Ad',
   code: 'Kod',
   region: 'Region',
   status: 'Status',
+  completion: 'Tamamlanma',
   
   // Messages
-  sector_created: 'Sektor yaradıldı',
-  sector_updated: 'Sektor yeniləndi',
-  sector_deleted: 'Sektor silindi'
+  sectorCreated: 'Sektor yaradıldı',
+  sectorUpdated: 'Sektor yeniləndi',
+  sectorDeleted: 'Sektor silindi'
 } as const;
 
 export type Sectors = typeof sectors;

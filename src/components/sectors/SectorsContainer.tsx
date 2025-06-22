@@ -288,18 +288,18 @@ const SectorsContainer: React.FC<SectorsContainerProps> = React.memo(function Se
                     </div>
                   )}
                   <div className="flex items-center justify-between text-sm">
-                    <span>Status:</span>
+                    <span>{t('sectors.status')}:</span>
                     <span className={`px-2 py-1 rounded text-xs ${
                       sector.status === 'active' 
                         ? 'bg-green-100 text-green-800' 
                         : 'bg-gray-100 text-gray-800'
                     }`}>
-                      {sector.status === 'active' ? 'Aktiv' : 'Qeyri-aktiv'}
+                      {t(`common.${sector.status}`)}
                     </span>
                   </div>
                   {sector.completion_rate !== undefined && (
                     <div className="flex items-center justify-between text-sm">
-                      <span>Tamamlanma:</span>
+                      <span>{t('sectors.completion')}:</span>
                       <span>{sector.completion_rate}%</span>
                     </div>
                   )}

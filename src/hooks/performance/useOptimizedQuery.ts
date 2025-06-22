@@ -1,6 +1,6 @@
 
 import { useQuery, UseQueryOptions } from '@tanstack/react-query';
-import { memoryCache } from '@/utils/performance/caching';
+import { memoryCache } from '../../utils/performance/caching';
 
 interface OptimizedQueryOptions<T> extends Omit<UseQueryOptions<T>, 'queryKey' | 'queryFn'> {
   cacheTime?: number;

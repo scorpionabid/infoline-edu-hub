@@ -52,11 +52,11 @@ const SectorStatsTable: React.FC<SectorStatsTableProps> = ({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>{t("sectorLabel") || "Sektor"}</TableHead>
-            <TableHead className="text-right">{t("dashboard.progress") || "İrəliləyiş"}</TableHead>
-            <TableHead className="text-center">{t("dashboard.schoolCount") || "Məktəb sayı"}</TableHead>
+            <TableHead>{t("dashboard.sectorLabel")}</TableHead>
+            <TableHead className="text-right">{t("dashboard.tableProgress")}</TableHead>
+            <TableHead className="text-center">{t("common.schoolCount")}</TableHead>
             {showActions && (
-              <TableHead className="text-right">{t("actionsLabel") || "Əməliyyatlar"}</TableHead>
+              <TableHead className="text-right">{t("dashboard.actionsLabel")}</TableHead>
             )}
           </TableRow>
         </TableHeader>
@@ -100,7 +100,7 @@ const SectorStatsTable: React.FC<SectorStatsTableProps> = ({
                       onClick={() => handleViewSector(sector.id)}
                     >
                       <BarChart className="mr-2 h-4 w-4" />
-                      {t("view")}
+                      {t("common.view")}
                     </Button>
                   </TableCell>
                 )}

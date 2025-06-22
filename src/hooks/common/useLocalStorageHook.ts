@@ -1,13 +1,4 @@
-/**
- * @deprecated This file has been deprecated. Please use useLocalStorageHook.ts instead.
- * This file exists only for backward compatibility. All existing imports should be updated.
- */
-
-import { useLocalStorage as useLocalStorageImpl } from './useLocalStorageHook';
-export const useLocalStorage = useLocalStorageImpl;
-
-/* Original implementation commented out to prevent direct usage
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 /**
  * Custom hook for working with localStorage
@@ -15,7 +6,7 @@ import { useState, useEffect } from 'react';
  * @param initialValue Initial value if key doesn't exist
  * @returns [storedValue, setValue]
  */
-/*export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T | ((val: T) => T)) => void] {
+export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T | ((val: T) => T)) => void] {
   // Get from local storage then parse stored json or return initialValue
   const readValue = (): T => {
     // Prevent build error "window is undefined" but keep working
@@ -25,7 +16,7 @@ import { useState, useEffect } from 'react';
 
     try {
       const item = window.localStorage.getItem(key);
-      return item ? JSON.parse(item) : initialValue;
+      return item ? (JSON.parse(item) as T) : initialValue;
     } catch (error) {
       console.warn(`Error reading localStorage key "${key}":`, error);
       return initialValue;
@@ -33,49 +24,43 @@ import { useState, useEffect } from 'react';
   };
 
   // State to store our value
+  // Pass initial state function to useState so logic is only executed once
   const [storedValue, setStoredValue] = useState<T>(readValue);
 
   // Return a wrapped version of useState's setter function that persists the new value to localStorage
-  const setValue = (value: T | ((val: T) => T)) => {
+  const setValue = useCallback((value: T | ((val: T) => T)) => {
+    // Prevent build error "window is undefined" but keeps working
+    if (typeof window === 'undefined') {
+      console.warn(
+        `Tried setting localStorage key "${key}" even though environment is not a client`,
+      );
+    }
+
     try {
       // Allow value to be a function so we have the same API as useState
       const valueToStore =
         value instanceof Function ? value(storedValue) : value;
-      
-      // Save to state
+
+      // Save to local state
       setStoredValue(valueToStore);
-      
+
       // Save to local storage
-      if (typeof window !== 'undefined') {
-        window.localStorage.setItem(key, JSON.stringify(valueToStore));
-      }
+      window.localStorage.setItem(key, JSON.stringify(valueToStore));
     } catch (error) {
       console.warn(`Error setting localStorage key "${key}":`, error);
     }
-  };
+  }, [key, storedValue]);
 
-  // Listen for changes to this localStorage key from other tabs/windows
+  // Listen for changes to the key in other tabs/windows
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === key && e.newValue) {
-        try {
-          setStoredValue(JSON.parse(e.newValue));
-        } catch (error) {
-          console.warn(`Error parsing localStorage key "${key}":`, error);
-        }
+        setStoredValue(JSON.parse(e.newValue) as T);
       }
     };
-
-    // This only works for other documents/tabs, not the current one
     window.addEventListener('storage', handleStorageChange);
-    
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-    };
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, [key]);
 
   return [storedValue, setValue];
 }
-
-// Only use named export
-*/

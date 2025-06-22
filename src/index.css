@@ -1,6 +1,12 @@
 /* Enhanced Data Entry Styles */
 @import url('./styles/enhanced-data-entry.css');
 
+/* Mobile-specific enhancements */
+@import url('./styles/mobile.css');
+
+/* Performance optimizations */
+@import url('./styles/performance.css');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

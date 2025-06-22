@@ -201,11 +201,28 @@ export default {
   blocked: "Bloklanıb",
   resetFilters: "Filtrləri sıfırla",
 
+  // States
+  reviewNeeded: "Yoxlanış lazımdır",
+  inReview: "Nəzərdən keçirilir",
+
+  // Status types for charts
+  statusTypes: {
+    approved: "Təsdiqlənib",
+    pending: "Gözləyir",
+    rejected: "Rədd edilib",
+    draft: "Qaralama",
+  },
+
   // Stats Grid
   totalApproved: "Təsdiqlənmiş",
   totalPending: "Gözləyən",
   totalRejected: "Rədd edilmiş",
   completion: "Tamamlanma dərəcəsi",
+  
+  // Table headers
+  sectorLabel: "Sektor",
+  tableProgress: "İrəliləyiş",
+  actionsLabel: "Əməliyyatlar",
 
   // States
   states: {

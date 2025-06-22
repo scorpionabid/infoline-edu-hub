@@ -19,10 +19,10 @@ const DashboardChart: React.FC<DashboardChartProps> = ({
   const { t } = useTranslation();
 
   const data = [
-    { name: t("approved"), value: stats.approved || 0, color: "#10b981" },
-    { name: t("pending"), value: stats.pending || 0, color: "#f59e0b" },
-    { name: t("rejected"), value: stats.rejected || 0, color: "#ef4444" },
-    { name: t("draft"), value: stats.draft || 0, color: "#6b7280" },
+    { name: t("dashboard.statusTypes.approved"), value: stats.approved || 0, color: "#10b981" },
+    { name: t("dashboard.statusTypes.pending"), value: stats.pending || 0, color: "#f59e0b" },
+    { name: t("dashboard.statusTypes.rejected"), value: stats.rejected || 0, color: "#ef4444" },
+    { name: t("dashboard.statusTypes.draft"), value: stats.draft || 0, color: "#6b7280" },
   ];
 
   return (
