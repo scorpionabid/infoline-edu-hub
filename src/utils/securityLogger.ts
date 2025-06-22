@@ -1,56 +1,32 @@
 
 export interface LogContext {
-  userAgent?: string;
-  timestamp?: string;
-  clientId?: string;
   userId?: string;
-  sessionId?: string;
-  ipAddress?: string;
   action?: string;
-  resource?: string;
-  details?: Record<string, any>;
-  field?: string;
-  fileName?: string;
-  error?: string;
-  metadata?: Record<string, any>;
-}
-
-export interface SecurityEvent {
-  type: 'authentication' | 'authorization' | 'data_access' | 'system' | 'user_action';
-  level: 'info' | 'warning' | 'error' | 'critical';
-  message: string;
-  context: LogContext;
-  timestamp: string;
+  timestamp?: number;
+  userAgent?: string;
+  ip?: string;
 }
 
 export const securityLogger = {
-  logSecurityEvent: (event: SecurityEvent) => {
-    console.log('[SECURITY]', event);
+  logRateLimit: (action: string, context: LogContext) => {
+    console.warn(`[SECURITY] Rate limit: ${action}`, context);
   },
   
-  logRateLimit: (context: LogContext) => {
-    console.log('[RATE_LIMIT]', context);
+  logValidationFailure: (field: string, value: string, context: LogContext) => {
+    console.warn(`[SECURITY] Validation failed: ${field}`, { field, value: value.substring(0, 50), ...context });
   },
   
-  logError: (error: string, context: LogContext) => {
-    console.error('[SECURITY_ERROR]', error, context);
+  logSuspiciousActivity: (type: string, details: any) => {
+    console.warn(`[SECURITY] Suspicious activity: ${type}`, details);
   },
   
-  logValidationFailure: (field: string, context: LogContext) => {
-    console.warn('[VALIDATION_FAILURE]', field, context);
-  },
-  
-  logSuspiciousActivity: (activity: string, context: LogContext) => {
-    console.warn('[SUSPICIOUS_ACTIVITY]', activity, context);
-  },
-
   logAuthEvent: (event: string, context: LogContext) => {
-    console.log('[AUTH_EVENT]', event, context);
+    console.info(`[AUTH] ${event}`, context);
   }
 };
 
 export const getClientContext = (): LogContext => ({
-  userAgent: navigator?.userAgent || 'unknown',
-  timestamp: new Date().toISOString(),
-  clientId: 'web-client'
+  timestamp: Date.now(),
+  userAgent: navigator.userAgent,
+  ip: 'client'
 });

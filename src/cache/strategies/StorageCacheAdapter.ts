@@ -1,14 +1,15 @@
 
 import { BaseCacheAdapter } from '../core/BaseCacheAdapter';
+import { CacheOptions } from '../core/types';
 
 export class StorageCacheAdapter<T> extends BaseCacheAdapter<T> {
-  protected hitCount = 0; // Make it protected instead of private
+  protected hitCount = 0;
   
-  constructor(private storage: Storage, private keyPrefix: string = '') {
-    super();
+  constructor(private storage: Storage = localStorage, private keyPrefix: string = '') {
+    super(keyPrefix, 100, '1.0');
   }
 
-  async get(key: string): Promise<T | null> {
+  get(key: string): T | null {
     try {
       const fullKey = this.getFullKey(key);
       const item = this.storage.getItem(fullKey);
@@ -17,8 +18,8 @@ export class StorageCacheAdapter<T> extends BaseCacheAdapter<T> {
       
       const parsed = JSON.parse(item);
       
-      if (this.isExpired(parsed.expiresAt)) {
-        await this.delete(key);
+      if (this.isExpired(parsed)) {
+        this.delete(key);
         return null;
       }
       
@@ -30,10 +31,10 @@ export class StorageCacheAdapter<T> extends BaseCacheAdapter<T> {
     }
   }
 
-  async set(key: string, value: T, ttl?: number): Promise<void> {
+  set(key: string, value: T, options: CacheOptions = {}): void {
     try {
       const fullKey = this.getFullKey(key);
-      const expiresAt = ttl ? Date.now() + ttl : undefined;
+      const expiresAt = options.ttl ? Date.now() + options.ttl : undefined;
       
       const item = {
         data: value,
@@ -47,7 +48,7 @@ export class StorageCacheAdapter<T> extends BaseCacheAdapter<T> {
     }
   }
 
-  async delete(key: string): Promise<void> {
+  delete(key: string): void {
     try {
       const fullKey = this.getFullKey(key);
       this.storage.removeItem(fullKey);
@@ -56,7 +57,7 @@ export class StorageCacheAdapter<T> extends BaseCacheAdapter<T> {
     }
   }
 
-  async clear(): Promise<void> {
+  clear(): void {
     try {
       const keys = Object.keys(this.storage);
       const prefixedKeys = keys.filter(key => key.startsWith(this.keyPrefix));
@@ -69,15 +70,16 @@ export class StorageCacheAdapter<T> extends BaseCacheAdapter<T> {
     }
   }
 
-  async has(key: string): Promise<boolean> {
-    const value = await this.get(key);
-    return value !== null;
+  evict(): void {
+    this.cleanupExpired();
   }
 
   getStats() {
     return {
       hitCount: this.hitCount,
-      type: 'storage'
+      type: 'storage',
+      size: this.cache.size,
+      hitRate: this.hitCount / (this.hitCount + this.missCount || 1)
     };
   }
 
@@ -85,8 +87,8 @@ export class StorageCacheAdapter<T> extends BaseCacheAdapter<T> {
     return this.keyPrefix ? `${this.keyPrefix}:${key}` : key;
   }
 
-  private isExpired(expiresAt?: number): boolean {
-    if (!expiresAt) return false;
-    return Date.now() > expiresAt;
+  private isExpired(entry: any): boolean {
+    if (!entry.expiresAt) return false;
+    return Date.now() > entry.expiresAt;
   }
 }

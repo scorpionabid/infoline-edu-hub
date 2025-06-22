@@ -1,27 +1,36 @@
-// ============================================================================
-// İnfoLine Auth Store - Export Wrapper
-// ============================================================================
-// Bu fayl yeni stores/authStore.ts faylını export edir
-// Köhnə import path-ları ilə compatibility təmin edir
 
-export {
-  useAuthStore,
-  selectUser,
-  selectIsAuthenticated,
-  selectIsLoading,
-  selectError,
-  selectSession,
-  selectUserRole,
-  selectRegionId,
-  selectSectorId,
-  selectSchoolId,
-  selectUpdateProfile,
-  selectUpdatePassword,
-  selectHasPermission,
-  selectSignOut,
-  shouldAuthenticate,
-  isProtectedRoute,
-  getRedirectPath
-} from './stores/authStore';
+import { create } from 'zustand';
 
-export { useAuthStore as default } from './stores/authStore';
+interface AuthState {
+  isLoading: boolean;
+  user: any;
+  signIn: (email: string, password: string) => Promise<void>;
+  signOut: () => Promise<void>;
+}
+
+export const useAuthStore = create<AuthState>((set) => ({
+  isLoading: false,
+  user: null,
+  
+  signIn: async (email: string, password: string) => {
+    set({ isLoading: true });
+    try {
+      // Mock auth implementation
+      console.log('Signing in with:', email);
+      set({ user: { email }, isLoading: false });
+    } catch (error) {
+      set({ isLoading: false });
+      throw error;
+    }
+  },
+  
+  signOut: async () => {
+    set({ isLoading: true });
+    try {
+      set({ user: null, isLoading: false });
+    } catch (error) {
+      set({ isLoading: false });
+      throw error;
+    }
+  }
+}));

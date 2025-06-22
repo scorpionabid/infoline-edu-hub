@@ -1,4 +1,6 @@
 
+import { Column } from './column';
+
 export interface DataEntryTableData {
   columns: Column[];
   values: Record<string, any>;

@@ -19,6 +19,18 @@ export const useLanguage = () => {
   return context;
 };
 
+export const useLanguageSafe = () => {
+  const context = useContext(LanguageContext);
+  if (!context) {
+    return {
+      language: 'az' as Language,
+      setLanguage: () => {},
+      t: (key: string) => key
+    };
+  }
+  return context;
+};
+
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguage] = useState<Language>('az');
 
