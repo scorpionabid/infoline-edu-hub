@@ -7,6 +7,7 @@ export const sectors = {
   
   // Actions
   addSector: 'Sektor əlavə et',
+  add_sector: 'Sektor əlavə et',
   editSector: 'Sektoru redaktə et',
   deleteSector: 'Sektoru sil',
   

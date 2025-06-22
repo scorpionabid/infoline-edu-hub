@@ -14,6 +14,7 @@ export type LanguageTranslations = {
   app: TranslationModule;
   auth: TranslationModule;
   categories: TranslationModule;
+  columns: TranslationModule;
   core: TranslationModule;
   dashboard: TranslationModule;
   dataEntry: TranslationModule;
@@ -31,6 +32,7 @@ export type LanguageTranslations = {
   user: TranslationModule;
   userManagement: TranslationModule;
   validation: TranslationModule;
+  approval: TranslationModule;
 };
 
 // Type for the translation modules

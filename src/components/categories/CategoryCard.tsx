@@ -101,7 +101,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
             onClick={() => onView && onView(category.id)}
           >
             <EyeIcon className="h-4 w-4 mr-1" />
-            {t("view")}
+            {t("ui.view_details")}
           </Button>
 
           <div className="flex gap-2">
@@ -116,7 +116,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
                 }}
               >
                 <PenIcon className="h-4 w-4 mr-1" />
-                {t('edit')}
+                {t('ui.edit')}
               </Button>
             )}
             {canDeleteCategory && (
@@ -127,7 +127,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
                 className="text-destructive hover:text-destructive"
               >
                 <Trash2Icon className="h-4 w-4" />
-                <span className="sr-only">{t("delete")}</span>
+                <span className="sr-only">{t("ui.delete")}</span>
               </Button>
             )}
           </div>

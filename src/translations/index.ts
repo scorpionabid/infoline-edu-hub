@@ -29,7 +29,8 @@ const MODULE_NAMES = [
   'ui',
   'user',
   'userManagement',
-  'validation'
+  'validation',
+  'approval'
 ] as const;
 
 type ModuleName = typeof MODULE_NAMES[number];
@@ -84,7 +85,8 @@ const loadTranslations = async (
       ui: translations.ui || {},
       user: translations.user || {},
       userManagement: translations.userManagement || {},
-      validation: translations.validation || {}
+      validation: translations.validation || {},
+      approval: translations.approval || {}
     };
 
     // Cache the loaded translations

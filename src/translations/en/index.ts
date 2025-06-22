@@ -19,6 +19,7 @@ import { ui } from './ui';
 import { user } from './user';
 import { userManagement } from './userManagement';
 import { validation } from './validation';
+import approval from './approval';
 
 export default {
   app,
@@ -41,4 +42,5 @@ export default {
   user,
   userManagement,
   validation,
+  approval,
 };

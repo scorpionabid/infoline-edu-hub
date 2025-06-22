@@ -46,98 +46,98 @@ const COLUMN_TYPES: {
 }[] = [
   {
     value: "text",
-    label: "Text",
-    description: "Single line text input",
+    label: "Mətn",
+    description: "Tək sətir mətn daxiletməsi",
     supportsOptions: false,
   },
   {
     value: "textarea",
-    label: "Textarea",
-    description: "Multi-line text input",
+    label: "Çox sətirli mətn",
+    description: "Çox sətirli mətn daxiletməsi",
     supportsOptions: false,
   },
   {
     value: "number",
-    label: "Number",
-    description: "Numeric input",
+    label: "Rəqəm",
+    description: "Rəqəm daxiletməsi",
     supportsOptions: false,
   },
   {
     value: "email",
-    label: "Email",
-    description: "Email address input",
+    label: "E-poçt",
+    description: "E-poçt ünvanı daxiletməsi",
     supportsOptions: false,
   },
   {
     value: "tel",
-    label: "Phone",
-    description: "Phone number input",
+    label: "Telefon",
+    description: "Telefon nömrəsi daxiletməsi",
     supportsOptions: false,
   },
   {
     value: "url",
     label: "URL",
-    description: "Website URL input",
+    description: "Veb səhifə ünvanı daxiletməsi",
     supportsOptions: false,
   },
   {
     value: "password",
-    label: "Password",
-    description: "Password input",
+    label: "Şifrə",
+    description: "Şifrə daxiletməsi",
     supportsOptions: false,
   },
   {
     value: "date",
-    label: "Date",
-    description: "Date picker",
+    label: "Tarix",
+    description: "Tarix seçici",
     supportsOptions: false,
   },
   {
     value: "datetime-local",
-    label: "DateTime",
-    description: "Date and time picker",
+    label: "Tarix və Vaxt",
+    description: "Tarix və vaxt seçici",
     supportsOptions: false,
   },
   {
     value: "time",
-    label: "Time",
-    description: "Time picker",
+    label: "Vaxt",
+    description: "Vaxt seçici",
     supportsOptions: false,
   },
   {
     value: "select",
-    label: "Select",
-    description: "Dropdown selection",
+    label: "Seçim",
+    description: "Açılan siyahı seçimi",
     supportsOptions: true,
   },
   {
     value: "radio",
-    label: "Radio",
-    description: "Radio button group",
+    label: "Radio düymələr",
+    description: "Radio düymə qrupu",
     supportsOptions: true,
   },
   {
     value: "checkbox",
-    label: "Checkbox",
-    description: "Single checkbox or multiple checkboxes",
+    label: "Qutu işarələri",
+    description: "Tək və ya çoxlu qutu işarələri",
     supportsOptions: true,
   },
   {
     value: "switch",
-    label: "Switch",
-    description: "Toggle switch",
+    label: "Aç/Bağla",
+    description: "Aç/bağla düyməsi",
     supportsOptions: false,
   },
   {
     value: "file",
-    label: "File",
-    description: "File upload",
+    label: "Fayl",
+    description: "Fayl yükləməsi",
     supportsOptions: false,
   },
   {
     value: "boolean",
-    label: "Boolean",
-    description: "True/false value",
+    label: "Bəli/Xeyr",
+    description: "Doğru/yalan dəyər",
     supportsOptions: false,
   },
 ];
@@ -285,7 +285,7 @@ const ColumnDialog: React.FC<ColumnDialogProps> = ({
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {mode === "create" ? t("createColumn") : t("editColumn")}
+            {mode === "create" ? t("columns.createColumn") : t("columns.editColumn")}
           </DialogTitle>
         </DialogHeader>
 
@@ -293,25 +293,25 @@ const ColumnDialog: React.FC<ColumnDialogProps> = ({
           {/* Basic Fields */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="name">{t("columnName")} *</Label>
+              <Label htmlFor="name">{t("columns.columnName")} *</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={(e) => updateField("name", e.target.value)}
-                placeholder={t("enterColumnName")}
+                placeholder={t("columns.enterColumnName")}
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="category">{t("category")} *</Label>
+              <Label htmlFor="category">{t("columns.category")} *</Label>
               <Select
                 value={formData.category_id}
                 onValueChange={(value) => updateField("category_id", value)}
                 disabled={mode === "edit"} // Don't allow category change in edit mode
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={t("selectCategory")} />
+                  <SelectValue placeholder={t("columns.selectCategory")} />
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((category) => (
@@ -326,7 +326,7 @@ const ColumnDialog: React.FC<ColumnDialogProps> = ({
 
           {/* Column Type */}
           <div className="space-y-2">
-            <Label htmlFor="type">{t("columnType")} *</Label>
+            <Label htmlFor="type">{t("columns.columnType")} *</Label>
             <Select value={formData.type} onValueChange={handleTypeChange}>
               <SelectTrigger>
                 <SelectValue />
@@ -354,7 +354,7 @@ const ColumnDialog: React.FC<ColumnDialogProps> = ({
           {/* Options for select/radio/checkbox types */}
           {supportsOptions && (
             <div className="space-y-4">
-              <Label>{t("options")}</Label>
+              <Label>{t("columns.options")}</Label>
 
               {/* Existing options */}
               {formData.options && formData.options.length > 0 && (
@@ -382,14 +382,14 @@ const ColumnDialog: React.FC<ColumnDialogProps> = ({
               {/* Add new option */}
               <div className="flex gap-2">
                 <Input
-                  placeholder={t("optionValue")}
+                  placeholder={t("columns.optionValue")}
                   value={newOption.value}
                   onChange={(e) =>
                     setNewOption((prev) => ({ ...prev, value: e.target.value }))
                   }
                 />
                 <Input
-                  placeholder={t("optionLabel")}
+                  placeholder={t("columns.optionLabel")}
                   value={newOption.label}
                   onChange={(e) =>
                     setNewOption((prev) => ({ ...prev, label: e.target.value }))
@@ -410,33 +410,33 @@ const ColumnDialog: React.FC<ColumnDialogProps> = ({
           {/* Additional Fields */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="placeholder">{t("placeholder")}</Label>
+              <Label htmlFor="placeholder">{t("columns.placeholder")}</Label>
               <Input
                 id="placeholder"
                 value={formData.placeholder}
                 onChange={(e) => updateField("placeholder", e.target.value)}
-                placeholder={t("enterPlaceholder")}
+                placeholder={t("columns.enterPlaceholder")}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="default_value">{t("defaultValue")}</Label>
+              <Label htmlFor="default_value">{t("columns.defaultValue")}</Label>
               <Input
                 id="default_value"
                 value={formData.default_value}
                 onChange={(e) => updateField("default_value", e.target.value)}
-                placeholder={t("enterDefaultValue")}
+                placeholder={t("columns.enterDefaultValue")}
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="help_text">{t("helpText")}</Label>
+            <Label htmlFor="help_text">{t("columns.helpText")}</Label>
             <Textarea
               id="help_text"
               value={formData.help_text}
               onChange={(e) => updateField("help_text", e.target.value)}
-              placeholder={t("enterHelpText")}
+              placeholder={t("columns.enterHelpText")}
               rows={3}
             />
           </div>
@@ -448,7 +448,7 @@ const ColumnDialog: React.FC<ColumnDialogProps> = ({
               checked={formData.is_required}
               onCheckedChange={(checked) => updateField("is_required", checked)}
             />
-            <Label htmlFor="is_required">{t("required")}</Label>
+            <Label htmlFor="is_required">{t("columns.required")}</Label>
           </div>
 
           {/* Form Actions */}
@@ -459,7 +459,7 @@ const ColumnDialog: React.FC<ColumnDialogProps> = ({
               onClick={() => onOpenChange(false)}
               disabled={isLoading}
             >
-              {t("cancel")}
+              {t("columns.cancel")}
             </Button>
             <Button
               type="submit"
@@ -470,12 +470,12 @@ const ColumnDialog: React.FC<ColumnDialogProps> = ({
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {mode === "create" ? t("creating") : t("updating")}
+                  {mode === "create" ? t("columns.creating") : t("columns.updating")}
                 </>
               ) : mode === "create" ? (
-                t("create")
+                t("columns.create")
               ) : (
-                t("update")
+                t("columns.update")
               )}
             </Button>
           </div>

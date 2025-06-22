@@ -14,7 +14,7 @@ const ApprovalPage: React.FC = () => {
     <div className="container mx-auto py-4 px-2">
       <div className="flex flex-col space-y-4">
         <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">{t("dataApproval")}</h1>
+          <h1 className="text-2xl font-bold">{t("approval.page_title")}</h1>
         </div>
 
         {/* Enhanced Approval Manager - Real data integration */}

@@ -78,6 +78,18 @@ export const common = {
   selectAll: 'Hamısını seç',
   clearSelection: 'Seçimi təmizlə',
   
+  // ===== Common Navigation and Page Labels =====
+  categoriesList: 'Kateqoriyalar Siyahısı',
+  allAssignments: 'Bütün təyinatlar',
+  allEntities: 'Bütün qurumlar',
+  sectorsOnly: 'Yalnız sektorlar',
+  schoolsOnly: 'Yalnız məktəblər',
+  assignment: 'Təyinat',
+  resetFilters: 'Filtrləri sıfırla',
+  
+  // ===== Approval Specific Keys =====
+  dataApproval: 'Təsdiq Prosesi',
+  
   // ===== Actions =====
   actionsLabel: 'Əməliyyatlar',
   create: 'Yarat',

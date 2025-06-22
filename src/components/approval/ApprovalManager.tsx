@@ -19,6 +19,7 @@ import {
   Loader2,
   FileEdit
 } from 'lucide-react';
+import { useTranslation } from '@/contexts/TranslationContext';
 import { useEnhancedApprovalData } from '@/hooks/approval/useEnhancedApprovalData';
 import { ApprovalItem, ApprovalFilter } from '@/services/approval/enhancedApprovalService';
 import { DataEntryStatus } from '@/types/core/dataEntry';
@@ -32,6 +33,7 @@ export const EnhancedApprovalManager: React.FC<EnhancedApprovalManagerProps> = (
   initialFilter,
   className
 }) => {
+  const { t } = useTranslation();
   const {
     items,
     stats,
@@ -170,15 +172,15 @@ export const EnhancedApprovalManager: React.FC<EnhancedApprovalManagerProps> = (
   const getStatusBadge = (status: DataEntryStatus) => {
     switch (status) {
       case DataEntryStatus.PENDING:
-        return { variant: 'secondary' as const, icon: Clock, text: 'Gözləyir' };
+        return { variant: 'secondary' as const, icon: Clock, text: t('ui.pending') };
       case DataEntryStatus.APPROVED:
-        return { variant: 'default' as const, icon: CheckCircle, text: 'Təsdiqləndi' };
+        return { variant: 'default' as const, icon: CheckCircle, text: t('ui.approved') };
       case DataEntryStatus.REJECTED:
-        return { variant: 'destructive' as const, icon: XCircle, text: 'Rədd edildi' };
+        return { variant: 'destructive' as const, icon: XCircle, text: t('ui.rejected') };
       case DataEntryStatus.DRAFT:
-        return { variant: 'outline' as const, icon: FileEdit, text: 'Hazırlanır' };
+        return { variant: 'outline' as const, icon: FileEdit, text: t('ui.draft') };
       default:
-        return { variant: 'outline' as const, icon: FileEdit, text: 'Naməlum' };
+        return { variant: 'outline' as const, icon: FileEdit, text: t('approval.status_unknown') };
     }
   };
 
@@ -186,7 +188,7 @@ export const EnhancedApprovalManager: React.FC<EnhancedApprovalManagerProps> = (
     return (
       <div className="flex items-center justify-center p-8">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <span className="ml-2">Məlumatlar yüklənir...</span>
+        <span className="ml-2">{t('approval.loading_data')}</span>
       </div>
     );
   }
@@ -196,17 +198,17 @@ export const EnhancedApprovalManager: React.FC<EnhancedApprovalManagerProps> = (
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Təsdiq Meneceri</h2>
-          <p className="text-muted-foreground">Məktəb məlumatlarını nəzərdən keçirin və təsdiq edin</p>
+          <h2 className="text-2xl font-bold">{t('approval.title')}</h2>
+          <p className="text-muted-foreground">{t('approval.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={loadItems} disabled={isLoading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            Yenilə
+            {t('ui.refresh')}
           </Button>
           <Button variant="outline" size="sm" onClick={resetFilter}>
             <Filter className="h-4 w-4 mr-2" />
-            Filtri sıfırla
+            {t('approval.filter_reset')}
           </Button>
         </div>
       </div>
@@ -223,7 +225,7 @@ export const EnhancedApprovalManager: React.FC<EnhancedApprovalManagerProps> = (
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Məktəb və ya kateqoriya axtar..."
+          placeholder={t('approval.search_placeholder')}
           value={searchTerm}
           onChange={(e) => handleSearch(e.target.value)}
           className="pl-10"
@@ -234,7 +236,7 @@ export const EnhancedApprovalManager: React.FC<EnhancedApprovalManagerProps> = (
       <div className="grid grid-cols-5 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ümumi</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('approval.stats_total')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.total}</div>
@@ -242,7 +244,7 @@ export const EnhancedApprovalManager: React.FC<EnhancedApprovalManagerProps> = (
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Gözləyən</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('approval.stats_pending')}</CardTitle>
             <Clock className="h-4 w-4 text-yellow-600" />
           </CardHeader>
           <CardContent>
@@ -251,7 +253,7 @@ export const EnhancedApprovalManager: React.FC<EnhancedApprovalManagerProps> = (
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Təsdiqlənmiş</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('approval.stats_approved')}</CardTitle>
             <CheckCircle className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
@@ -260,7 +262,7 @@ export const EnhancedApprovalManager: React.FC<EnhancedApprovalManagerProps> = (
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Rədd edilmiş</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('approval.stats_rejected')}</CardTitle>
             <XCircle className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
@@ -269,7 +271,7 @@ export const EnhancedApprovalManager: React.FC<EnhancedApprovalManagerProps> = (
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Hazırlanır</CardTitle>
+            <CardTitle className="text-sm font-medium">{t('approval.stats_draft')}</CardTitle>
             <FileEdit className="h-4 w-4 text-gray-600" />
           </CardHeader>
           <CardContent>
@@ -284,15 +286,15 @@ export const EnhancedApprovalManager: React.FC<EnhancedApprovalManagerProps> = (
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <span className="text-sm font-medium">{selectedItems.length} element seçildi</span>
-                <Button variant="outline" size="sm" onClick={selectNone}>Seçimi ləğv et</Button>
+              <span className="text-sm font-medium">{t('approval.items_selected', { count: selectedItems.length })}</span>
+              <Button variant="outline" size="sm" onClick={selectNone}>{t('ui.select_none')}</Button>
               </div>
               <div className="flex items-center gap-2">
                 <Button size="sm" onClick={() => { setBulkAction('approve'); setShowBulkDialog(true); }}>
-                  <CheckCircle className="h-4 w-4 mr-2" />Təsdiq et
+                  <CheckCircle className="h-4 w-4 mr-2" />{t('ui.approve')}
                 </Button>
                 <Button variant="destructive" size="sm" onClick={() => { setBulkAction('reject'); setShowBulkDialog(true); }}>
-                  <XCircle className="h-4 w-4 mr-2" />Rədd et
+                  <XCircle className="h-4 w-4 mr-2" />{t('ui.reject')}
                 </Button>
               </div>
             </div>
@@ -303,10 +305,10 @@ export const EnhancedApprovalManager: React.FC<EnhancedApprovalManagerProps> = (
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={handleTabChange}>
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="pending">Gözləyən ({stats.pending})</TabsTrigger>
-          <TabsTrigger value="approved">Təsdiqlənmiş ({stats.approved})</TabsTrigger>
-          <TabsTrigger value="rejected">Rədd edilmiş ({stats.rejected})</TabsTrigger>
-          <TabsTrigger value="draft">Hazırlanır ({stats.draft})</TabsTrigger>
+          <TabsTrigger value="pending">{t('approval.pending_tab', { count: stats.pending })}</TabsTrigger>
+          <TabsTrigger value="approved">{t('approval.approved_tab', { count: stats.approved })}</TabsTrigger>
+          <TabsTrigger value="rejected">{t('approval.rejected_tab', { count: stats.rejected })}</TabsTrigger>
+          <TabsTrigger value="draft">{t('approval.draft_tab', { count: stats.draft })}</TabsTrigger>
         </TabsList>
 
         <TabsContent value={activeTab} className="mt-6">
@@ -314,8 +316,8 @@ export const EnhancedApprovalManager: React.FC<EnhancedApprovalManagerProps> = (
             <Card>
               <CardContent className="p-8 text-center">
                 <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p className="text-lg font-medium mb-2">Heç bir element tapılmadı</p>
-                <p className="text-sm text-muted-foreground">Bu statusda məlumat yoxdur</p>
+                <p className="text-lg font-medium mb-2">{t('approval.no_items_found')}</p>
+                <p className="text-sm text-muted-foreground">{t('approval.empty_state_message')}</p>
               </CardContent>
             </Card>
           ) : (
@@ -326,7 +328,7 @@ export const EnhancedApprovalManager: React.FC<EnhancedApprovalManagerProps> = (
                     checked={isAllSelected}
                     onCheckedChange={(checked) => checked ? selectAll() : selectNone()}
                   />
-                  <span className="text-sm font-medium">Bütün elementləri seç</span>
+                  <span className="text-sm font-medium">{t('approval.select_all_items')}</span>
                 </div>
               )}
 
@@ -348,10 +350,10 @@ export const EnhancedApprovalManager: React.FC<EnhancedApprovalManagerProps> = (
                           )}
                           <div>
                             <CardTitle className="text-lg">{item.schoolName}</CardTitle>
-                            <p className="text-sm text-muted-foreground">Kateqoriya: {item.categoryName}</p>
+                            <p className="text-sm text-muted-foreground">{t('approval.item_category', { category: item.categoryName })}</p>
                             {item.submittedAt && (
                               <p className="text-xs text-muted-foreground">
-                                Göndərildi: {new Date(item.submittedAt).toLocaleDateString('az-AZ')}
+                                {t('approval.item_submitted', { date: new Date(item.submittedAt).toLocaleDateString('az-AZ') })}
                               </p>
                             )}
                           </div>
@@ -362,7 +364,7 @@ export const EnhancedApprovalManager: React.FC<EnhancedApprovalManagerProps> = (
                             {statusInfo.text}
                           </Badge>
                           <div className="text-right text-sm">
-                            <div className="font-medium">{item.completionRate}% tamamlandı</div>
+                            <div className="font-medium">{t('approval.item_completion', { rate: item.completionRate })}</div>
                           </div>
                           <TooltipProvider>
                             <Tooltip>
@@ -371,7 +373,7 @@ export const EnhancedApprovalManager: React.FC<EnhancedApprovalManagerProps> = (
                                   <Eye className="h-4 w-4" />
                                 </Button>
                               </TooltipTrigger>
-                              <TooltipContent>Ətraflı bax</TooltipContent>
+                              <TooltipContent>{t('approval.tooltip_view')}</TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
                         </div>

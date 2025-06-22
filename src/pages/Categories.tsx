@@ -143,10 +143,10 @@ const Categories = () => {
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder={t("search")}
-                  className="w-[200px] pl-8"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={t("ui.search")}
+                className="w-[200px] pl-8"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
               <Button
@@ -155,7 +155,7 @@ const Categories = () => {
                 onClick={() => setIsFilterOpen(!isFilterOpen)}
               >
                 <SlidersHorizontal className="mr-2 h-4 w-4" />
-                {t("filters")}
+                {t("ui.filters")}
               </Button>
             </div>
           </div>

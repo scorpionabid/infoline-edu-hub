@@ -25,6 +25,7 @@ import userManagement from './userManagement';
 import validation from './validation';
 import statistics from './statistics';
 import settings from './settings';
+import approval from './approval';
 
 export default {
   app,
@@ -52,6 +53,7 @@ export default {
   validation,
   statistics,
   settings,
+  approval,
   // Keep common module accessible as well
   common,
 };

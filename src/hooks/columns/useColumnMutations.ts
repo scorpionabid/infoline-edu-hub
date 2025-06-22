@@ -88,21 +88,66 @@ export const useColumnMutations = () => {
     }
   });
 
-  // Add missing bulk operations
+  const bulkToggleStatus = useMutation({
+    mutationFn: async ({ columnIds, status }: { columnIds: string[], status: 'active' | 'inactive' }) => {
+      const { error } = await supabase
+        .from('columns')
+        .update({ status })
+        .in('id', columnIds);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['columns'] });
+      toast.success('Sütun statusu uğurla dəyişdirildi');
+    },
+    onError: (error: Error) => {
+      toast.error('Sütun statusu dəyişdirilikən xəta baş verdi');
+      console.error('Error toggling column status:', error);
+    }
+  });
+
+  const moveColumnsToCategory = useMutation({
+    mutationFn: async ({ columnIds, categoryId }: { columnIds: string[], categoryId: string }) => {
+      const { error } = await supabase
+        .from('columns')
+        .update({ category_id: categoryId })
+        .in('id', columnIds);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['columns'] });
+      toast.success('Sütunlar kateqoriyaya köçürüldü');
+    },
+    onError: (error: Error) => {
+      toast.error('Sütunlar köçürülərkən xəta baş verdi');
+      console.error('Error moving columns:', error);
+    }
+  });
+
+  const bulkDelete = useMutation({
+    mutationFn: async (columnIds: string[]) => {
+      const { error } = await supabase
+        .from('columns')
+        .update({ status: 'deleted' })
+        .in('id', columnIds);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['columns'] });
+      toast.success('Sütunlar arxivləşdirildi');
+    },
+    onError: (error: Error) => {
+      toast.error('Sütunlar arxivləşdirilikən xəta baş verdi');
+      console.error('Error archiving columns:', error);
+    }
+  });
+
+  // Add missing duplicate column implementation
   const duplicateColumn = (columnId: string) => {
     console.log('Duplicate column not implemented:', columnId);
-  };
-
-  const bulkToggleStatus = (columnIds: string[], status: 'active' | 'inactive') => {
-    console.log('Bulk toggle status not implemented:', columnIds, status);
-  };
-
-  const moveColumnsToCategory = (columnIds: string[], categoryId: string) => {
-    console.log('Move columns to category not implemented:', columnIds, categoryId);
-  };
-
-  const bulkDelete = (columnIds: string[]) => {
-    console.log('Bulk delete not implemented:', columnIds);
   };
 
   return {
@@ -111,23 +156,26 @@ export const useColumnMutations = () => {
     deleteColumn: deleteColumn.mutate,
     restoreColumn: restoreColumn.mutate,
     duplicateColumn,
-    bulkToggleStatus,
-    moveColumnsToCategory,
-    bulkDelete,
+    bulkToggleStatus: bulkToggleStatus.mutate,
+    moveColumnsToCategory: moveColumnsToCategory.mutate,
+    bulkDelete: bulkDelete.mutate,
     // Add async versions
     createColumnAsync: createColumn.mutateAsync,
     updateColumnAsync: updateColumn.mutateAsync,
     deleteColumnAsync: deleteColumn.mutateAsync,
     restoreColumnAsync: restoreColumn.mutateAsync,
     duplicateColumnAsync: async (columnId: string) => duplicateColumn(columnId),
-    bulkToggleStatusAsync: async (columnIds: string[], status: 'active' | 'inactive') => bulkToggleStatus(columnIds, status),
-    moveColumnsToCategoryAsync: async (columnIds: string[], categoryId: string) => moveColumnsToCategory(columnIds, categoryId),
-    bulkDeleteAsync: async (columnIds: string[]) => bulkDelete(columnIds),
+    bulkToggleStatusAsync: bulkToggleStatus.mutateAsync,
+    moveColumnsToCategoryAsync: moveColumnsToCategory.mutateAsync,
+    bulkDeleteAsync: bulkDelete.mutateAsync,
     // Add loading states
     isCreating: createColumn.isPending,
     isUpdating: updateColumn.isPending,
     isDeleting: deleteColumn.isPending,
     isRestoring: restoreColumn.isPending,
+    isBulkToggling: bulkToggleStatus.isPending,
+    isBulkMoving: moveColumnsToCategory.isPending,
+    isBulkDeleting: bulkDelete.isPending,
     // Add error states
     createError: createColumn.error,
     updateError: updateColumn.error,

@@ -154,7 +154,7 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
           <div className="flex flex-col sm:flex-row gap-2">
             <input
               type="text"
-              placeholder={t('search')}
+              placeholder={t('ui.search')}
               className="px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               value={filters?.search || ''}
               onChange={(e) => onFilterChange?.({ ...filters, search: e.target.value })}
@@ -164,7 +164,7 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
               value={filters?.regionId || ''}
               onChange={(e) => onFilterChange?.({ ...filters, regionId: e.target.value })}
             >
-              <option value="">{t('allRegions')}</option>
+              <option value="">{t('ui.all_regions')}</option>
               {regions.map((region) => (
                 <option key={region.id} value={region.id}>
                   {region.name}
@@ -176,7 +176,7 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
               value={filters?.sectorId || ''}
               onChange={(e) => onFilterChange?.({ ...filters, sectorId: e.target.value })}
             >
-              <option value="">{t('allSectors')}</option>
+              <option value="">{t('ui.all_sectors')}</option>
               {sectors.map((sector) => (
                 <option key={sector.id} value={sector.id}>
                   {sector.name}
@@ -188,9 +188,9 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
               value={filters?.status || ''}
               onChange={(e) => onFilterChange?.({ ...filters, status: e.target.value })}
             >
-              <option value="">{t('allStatuses')}</option>
-              <option value="active">{t('active')}</option>
-              <option value="inactive">{t('inactive')}</option>
+              <option value="">{t('ui.all_statuses')}</option>
+              <option value="active">{t('common.active')}</option>
+              <option value="inactive">{t('common.inactive')}</option>
             </select>
           </div>
         </div>
@@ -224,7 +224,7 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
               disabled={currentPage === 1}
               onClick={() => onPageChange(currentPage - 1)}
             >
-              {t('previous')}
+              {t('ui.previous')}
             </button>
             <span className="px-3 py-2">{currentPage}</span>
             <button
@@ -232,7 +232,7 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
               disabled={currentPage * pageSize >= totalCount}
               onClick={() => onPageChange(currentPage + 1)}
             >
-              {t('next')}
+              {t('ui.next')}
             </button>
             <select
               className="px-3 py-2 border rounded-md text-sm"

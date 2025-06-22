@@ -160,7 +160,7 @@ const ColumnItem: React.FC<ColumnItemProps> = React.memo(({
                 Bərpa et
               </Button>
             )}
-            {onPermanentDelete && canManage && column.status === 'deleted' && (
+            {onPermanentDelete && canManage && (column.status === 'deleted' || column.status === 'inactive') && (
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -168,7 +168,7 @@ const ColumnItem: React.FC<ColumnItemProps> = React.memo(({
                 className="text-red-600 hover:text-red-700 border-red-200 hover:bg-red-50"
               >
                 <AlertTriangle className="h-4 w-4 mr-1" />
-                Tam sil
+                Təmamən sil
               </Button>
             )}
           </div>
@@ -204,13 +204,13 @@ const ColumnItem: React.FC<ColumnItemProps> = React.memo(({
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator />
-                  {onDelete && (
+                  {onToggleStatus && (
                     <DropdownMenuItem 
-                      onClick={() => onDelete(column.id, column.name)}
-                      className="text-red-600"
+                      onClick={() => onToggleStatus(column.id, 'inactive')}
+                      className="text-orange-600"
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
-                      Sil
+                      Arxivləşdir
                     </DropdownMenuItem>
                   )}
                 </DropdownMenuContent>

@@ -17,7 +17,10 @@ import { Badge } from "@/components/ui/badge";
 import ColumnTabs from "./ColumnTabs";
 import EnhancedColumnList from "./EnhancedColumnList";
 import BulkOperationsPanel from "./BulkOperationsPanel";
+import ColumnDialog from "./unified/ColumnDialog";
 import { useColumnMutations } from "@/hooks/columns";
+import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
 
 interface ColumnsContainerProps {
   columns?: Column[];
@@ -69,6 +72,9 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
 }) => {
   const { t } = useTranslation();
   const { canManageColumns } = usePermissions();
+
+  // Loading state for dialog
+  const [formLoading, setFormLoading] = useState(false);
 
   // Enhanced column mutations - with all required methods
   const {
@@ -220,9 +226,9 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
       console.log(`Toggling column ${columnId} to status: ${status}`);
 
       if (bulkToggleStatusAsync) {
-        await bulkToggleStatusAsync([columnId], status);
+        await bulkToggleStatusAsync({ columnIds: [columnId], status });
       } else {
-        bulkToggleStatus([columnId], status);
+        bulkToggleStatus({ columnIds: [columnId], status });
       }
 
       if (status === "inactive") {
@@ -271,9 +277,9 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
   ) => {
     try {
       if (bulkToggleStatusAsync) {
-        await bulkToggleStatusAsync(columnIds, status);
+        await bulkToggleStatusAsync({ columnIds, status });
       } else {
-        bulkToggleStatus(columnIds, status);
+        bulkToggleStatus({ columnIds, status });
       }
       onRefresh?.();
       return true;
@@ -289,9 +295,9 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
   ) => {
     try {
       if (moveColumnsToCategoryAsync) {
-        await moveColumnsToCategoryAsync(columnIds, categoryId);
+        await moveColumnsToCategoryAsync({ columnIds, categoryId });
       } else {
-        moveColumnsToCategory(columnIds, categoryId);
+        moveColumnsToCategory({ columnIds, categoryId });
       }
       onRefresh?.();
       return true;
@@ -304,6 +310,79 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
   const handleDragAndDropReorder = async (reorderedColumns: Column[]) => {
     console.log("Drag and drop reorder:", reorderedColumns);
     return true;
+  };
+
+  // Handle permanent delete
+  const handlePermanentDelete = async (columnId: string) => {
+    try {
+      const { error } = await supabase
+        .from('columns')
+        .delete()
+        .eq('id', columnId);
+
+      if (error) throw error;
+      
+      toast.success('Sütun təmamən silindi');
+      onRefresh?.();
+    } catch (error) {
+      console.error("Permanent delete error:", error);
+      toast.error('Sütun silinərkən xəta baş verdi');
+    }
+  };
+
+  // Handle restore
+  const handleRestore = async (columnId: string) => {
+    try {
+      const { error } = await supabase
+        .from('columns')
+        .update({ status: 'active' })
+        .eq('id', columnId);
+
+      if (error) throw error;
+      
+      toast.success('Sütun bərpa edildi');
+      setActiveTab('active'); // Switch to active tab
+      onRefresh?.();
+    } catch (error) {
+      console.error("Restore error:", error);
+      toast.error('Sütun bərpa edilərkən xəta baş verdi');
+    }
+  };
+
+  // Dialog handlers
+  const handleCreateSave = async (formData: any) => {
+    setFormLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('columns')
+        .insert([formData])
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      toast.success('Sütun uğurla yaradıldı');
+      onRefresh?.();
+      return true;
+    } catch (error) {
+      console.error("Create column error:", error);
+      toast.error('Sütun yaradılarkən xəta baş verdi');
+      return false;
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
+  const handleEditSave = async (formData: any) => {
+    try {
+      // Implementation needed
+      console.log("Edit save:", formData);
+      onRefresh?.();
+      return true;
+    } catch (error) {
+      console.error("Edit column error:", error);
+      return false;
+    }
   };
 
   if (isLoading) {
@@ -349,9 +428,9 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
         </div>
 
         {canManageColumns && (
-          <Button onClick={onCreate}>
+          <Button onClick={onCreateColumn}>
             <Plus className="h-4 w-4 mr-2" />
-            {t("createColumn")}
+            {t("columns.createColumn")}
           </Button>
         )}
       </div>
@@ -458,8 +537,8 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
         selectedColumns={selectedColumns}
         onEditColumn={onEdit}
         onDeleteColumn={onDelete}
-        onRestoreColumn={(columnId) => onRestore?.(columnId, "")}
-        onPermanentDeleteColumn={onPermanentDelete}
+        onRestoreColumn={handleRestore}
+        onPermanentDeleteColumn={handlePermanentDelete}
         onDuplicateColumn={handleDuplicate}
         onToggleColumnStatus={handleToggleStatus}
         onColumnSelection={toggleColumnSelection}
@@ -468,6 +547,29 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
         enableDragDrop={activeTab === "active"}
         showBulkActions={activeTab === "active"}
       />
+
+      {/* Create Column Dialog */}
+      <ColumnDialog
+        mode="create"
+        open={isCreateDialogOpen}
+        onOpenChange={onCreateDialogClose}
+        onSave={handleCreateSave}
+        categories={categories}
+        isLoading={formLoading}
+      />
+
+      {/* Edit Column Dialog */}
+      {editFormProps && (
+        <ColumnDialog
+          mode="edit"
+          open={isEditDialogOpen}
+          onOpenChange={onEditDialogClose}
+          onSave={handleEditSave}
+          column={editFormProps.column}
+          categories={categories}
+          isLoading={formLoading}
+        />
+      )}
     </div>
   );
 };

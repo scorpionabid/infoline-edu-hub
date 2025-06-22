@@ -221,7 +221,7 @@ const SectorsContainer: React.FC<SectorsContainerProps> = React.memo(function Se
             size="sm"
           >
             <Plus className="mr-2 h-4 w-4" />
-            {t('sectors.addSector')}
+            {t('sectors.add_sector')}
           </Button>
         </div>
       </div>
@@ -283,8 +283,8 @@ const SectorsContainer: React.FC<SectorsContainerProps> = React.memo(function Se
                   )}
                   {sector.region_name && (
                     <div className="flex items-center justify-between text-sm">
-                      <span>Region:</span>
-                      <span className="text-primary font-medium">{sector.region_name}</span>
+                    <span>{t('sectors.region')}:</span>
+                    <span className="text-primary font-medium">{sector.region_name}</span>
                     </div>
                   )}
                   <div className="flex items-center justify-between text-sm">
@@ -299,7 +299,7 @@ const SectorsContainer: React.FC<SectorsContainerProps> = React.memo(function Se
                   </div>
                   {sector.completion_rate !== undefined && (
                     <div className="flex items-center justify-between text-sm">
-                      <span>{t('sectors.completion')}:</span>
+                      <span>{t('ui.completion_rate')}:</span>
                       <span>{sector.completion_rate}%</span>
                     </div>
                   )}

@@ -4,6 +4,7 @@ export const categories = {
   // Basic category terms
   category: 'Kateqoriya',
   categories: 'Kateqoriyalar',
+  title: 'Kateqoriyalar',
   
   // Category management
   create_category: 'Kateqoriya yarat',

@@ -32,12 +32,10 @@ const Columns = () => {
   }, []);
 
   const handleCreateColumn = useCallback(() => {
-    if (!selectedCategoryId) {
-      toast.error(t("columns.selectCategoryFirst"));
-      return;
-    }
+    // Allow opening dialog without pre-selected category
+    // User can select category in the dialog
     setIsCreateDialogOpen(true);
-  }, [selectedCategoryId, t]);
+  }, [t]);
 
   const handleEditColumn = useCallback((column: Column) => {
     setSelectedColumn(column);

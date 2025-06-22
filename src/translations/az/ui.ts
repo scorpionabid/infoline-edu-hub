@@ -94,7 +94,38 @@ export const ui = {
   progress: 'İrəliləyiş',
   completed: 'Tamamlandı',
   in_progress: 'Davam edir',
-  pending: 'Gözləyir'
+  pending: 'Gözləyir',
+  
+  // Approval və Status
+  approve: 'Təsdiq et',
+  reject: 'Rədd et',
+  approved: 'Təsdiqlənmiş',
+  rejected: 'Rədd edilmiş',
+  draft: 'Hazırlanır',
+  
+  // Filters
+  filters: 'Filtrlər',
+  all_regions: 'Bütün regionlar',
+  all_sectors: 'Bütün sektorlar',
+  all_statuses: 'Bütün statuslar',
+  all_categories: 'Bütün kateqoriyalar',
+  apply_filters: 'Filtrləri tətbiq et',
+  clear_filters: 'Filtrləri təmizlə',
+  
+  // Selection
+  select_all: 'Hamısını seç',
+  select_none: 'Seçimi ləğv et',
+  selected: 'seçildi',
+  
+  // Table və Pagination
+  showing_entries: 'Göstərilir {{start}} - {{end}} cəmi {{total}}',
+  no_results: 'Nəticə tapılmadı',
+  empty_state: 'Bu statusda məlumat yoxdur',
+  
+  // Common Actions
+  view_details: 'Ətraflı bax',
+  assign_admin: 'Admin təyin et',
+  completion_rate: 'Tamamlanma faizi'
 } as const;
 
 export type UI = typeof ui;
