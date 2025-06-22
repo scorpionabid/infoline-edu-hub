@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import { SchoolTable } from './SchoolTable';
 import { EditSchoolDialog } from './EditSchoolDialog';
 import { SchoolFilesDialog } from './SchoolFilesDialog';
-import { SchoolLinksDialog } from './SchoolLinksDialog';
+import SchoolLinksDialog from './SchoolLinksDialog';
 import { AssignAdminDialog } from './AssignAdminDialog';
 import { DeleteSchoolDialog } from './DeleteSchoolDialog';
 import { Loader2 } from 'lucide-react';
