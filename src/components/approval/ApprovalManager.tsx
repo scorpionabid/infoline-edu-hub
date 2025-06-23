@@ -17,12 +17,16 @@ import {
   RefreshCw,
   AlertCircle,
   Loader2,
-  FileEdit
+  FileEdit,
+  FileSearch
 } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useEnhancedApprovalData } from '@/hooks/approval/useEnhancedApprovalData';
 import { ApprovalItem, ApprovalFilter } from '@/services/approval/enhancedApprovalService';
 import { DataEntryStatus } from '@/types/core/dataEntry';
+import { DataReviewDialog } from '@/components/approval/enhanced/DataReviewDialog';
+import { BulkReviewPanel } from '@/components/approval/enhanced/BulkReviewPanel';
+import { useBulkOperations } from '@/hooks/approval/useBulkOperations';
 
 interface EnhancedApprovalManagerProps {
   initialFilter?: ApprovalFilter;
@@ -67,12 +71,48 @@ export const EnhancedApprovalManager: React.FC<EnhancedApprovalManagerProps> = (
   const [bulkAction, setBulkAction] = useState<'approve' | 'reject'>('approve');
   const [bulkReason, setBulkReason] = useState('');
   const [bulkComment, setBulkComment] = useState('');
-  const [isBulkProcessing, setIsBulkProcessing] = useState(false);
+  const [isLocalBulkProcessing, setIsLocalBulkProcessing] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [rejectingItem, setRejectingItem] = useState<ApprovalItem | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [rejectionComment, setRejectionComment] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  // Data Review Dialog state
+  const [showDataReviewDialog, setShowDataReviewDialog] = useState(false);
+  const [reviewingItem, setReviewingItem] = useState<ApprovalItem | null>(null);
+  
+  // Bulk Review Panel state
+  const [showBulkPanel, setShowBulkPanel] = useState(false);
+  
+  // Bulk Operations Hook
+  const {
+    bulkData,
+    isLoadingData: isBulkLoading,
+    isProcessing: isBulkProcessing,
+    error: bulkError,
+    executeBulkApproval,
+    executeBulkRejection,
+    clearData: clearBulkData,
+    clearError: clearBulkError
+  } = useBulkOperations({
+    selectedItems: selectedItems.map(id => items.find(item => item.id === id)!).filter(Boolean),
+    autoLoadData: selectedItems.length > 0,
+    onOperationComplete: (result) => {
+      // Refresh data and clear selection after bulk operation
+      loadItems();
+      setSelectedItems([]);
+      setShowBulkPanel(false);
+      
+      // Show success message
+      const successCount = result.processedCount;
+      const totalCount = result.summary.totalRequested;
+      alert(`${successCount}/${totalCount} element uğurla emal edildi`);
+    },
+    onError: (error) => {
+      console.error('Bulk operation error:', error);
+    }
+  });
 
   const handleSearch = (term: string) => {
     setSearchTerm(term);
@@ -133,10 +173,61 @@ export const EnhancedApprovalManager: React.FC<EnhancedApprovalManagerProps> = (
     }
   };
 
+  // Handle review data dialog
+  const handleReviewData = (item: ApprovalItem) => {
+    console.log('Opening review dialog for item:', item.id);
+    setReviewingItem(item);
+    setShowDataReviewDialog(true);
+  };
+
+  const handleCloseReviewDialog = () => {
+    console.log('Closing review dialog');
+    setShowDataReviewDialog(false);
+    setReviewingItem(null);
+  };
+
+  const handleDataUpdated = () => {
+    // Refresh the approval data after approve/reject from review dialog
+    console.log('Data updated, refreshing items');
+    loadItems();
+  };
+  
+  // Handle bulk panel toggle
+  const handleBulkPanelToggle = () => {
+    if (selectedItems.length === 0) {
+      setShowBulkPanel(false);
+      return;
+    }
+    setShowBulkPanel(!showBulkPanel);
+  };
+  
+  // Handle bulk operations from panel
+  const handleBulkApprove = async (comment?: string) => {
+    try {
+      await executeBulkApproval({ comment, notifyUsers: true });
+    } catch (error) {
+      console.error('Bulk approval failed:', error);
+    }
+  };
+  
+  const handleBulkReject = async (reason: string, comment?: string) => {
+    try {
+      await executeBulkRejection(reason, { comment, notifyUsers: true });
+    } catch (error) {
+      console.error('Bulk rejection failed:', error);
+    }
+  };
+  
+  const handleClearSelection = () => {
+    setSelectedItems([]);
+    setShowBulkPanel(false);
+    clearBulkData();
+  };
+
   const handleBulkAction = async () => {
     if (selectedItems.length === 0) return;
 
-    setIsBulkProcessing(true);
+    setIsLocalBulkProcessing(true);
     try {
       const params = {
         reason: bulkAction === 'reject' ? bulkReason : undefined,
@@ -153,7 +244,7 @@ export const EnhancedApprovalManager: React.FC<EnhancedApprovalManagerProps> = (
     } catch (error) {
       console.error('Bulk action failed:', error);
     } finally {
-      setIsBulkProcessing(false);
+      setIsLocalBulkProcessing(false);
     }
   };
 
@@ -286,10 +377,19 @@ export const EnhancedApprovalManager: React.FC<EnhancedApprovalManagerProps> = (
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-              <span className="text-sm font-medium">{t('approval.items_selected', { count: selectedItems.length })}</span>
-              <Button variant="outline" size="sm" onClick={selectNone}>{t('ui.select_none')}</Button>
+                <span className="text-sm font-medium">{t('approval.items_selected', { count: selectedItems.length })}</span>
+                <Button variant="outline" size="sm" onClick={handleClearSelection}>{t('ui.select_none')}</Button>
               </div>
               <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleBulkPanelToggle}
+                  className={showBulkPanel ? 'bg-blue-100' : ''}
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  {showBulkPanel ? 'Sadə görünüş' : 'Detallı baxış'}
+                </Button>
                 <Button size="sm" onClick={() => { setBulkAction('approve'); setShowBulkDialog(true); }}>
                   <CheckCircle className="h-4 w-4 mr-2" />{t('ui.approve')}
                 </Button>
@@ -300,6 +400,17 @@ export const EnhancedApprovalManager: React.FC<EnhancedApprovalManagerProps> = (
             </div>
           </CardContent>
         </Card>
+      )}
+      
+      {/* Bulk Review Panel */}
+      {selectedItems.length > 0 && showBulkPanel && (
+        <BulkReviewPanel
+          selectedItems={selectedItems.map(id => items.find(item => item.id === id)!).filter(Boolean)}
+          onBulkApprove={handleBulkApprove}
+          onBulkReject={handleBulkReject}
+          onClearSelection={handleClearSelection}
+          className="mt-6"
+        />
       )}
 
       {/* Tabs */}
@@ -366,16 +477,36 @@ export const EnhancedApprovalManager: React.FC<EnhancedApprovalManagerProps> = (
                           <div className="text-right text-sm">
                             <div className="font-medium">{t('approval.item_completion', { rate: item.completionRate })}</div>
                           </div>
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button variant="ghost" size="sm">
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>{t('approval.tooltip_view')}</TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+                          
+                          <div className="flex items-center gap-1">
+                            {/* Review Data Button */}
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => handleReviewData(item)}
+                                  >
+                                    <FileSearch className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Məlumatları İncelə</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            
+                            {/* Legacy View Button */}
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button variant="ghost" size="sm">
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>{t('approval.tooltip_view')}</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
                         </div>
                       </div>
                     </CardHeader>
@@ -470,17 +601,17 @@ export const EnhancedApprovalManager: React.FC<EnhancedApprovalManagerProps> = (
                     setBulkReason('');
                     setBulkComment('');
                   }}
-                  disabled={isBulkProcessing}
+                  disabled={isLocalBulkProcessing}
                   className="flex-1"
                 >
                   Ləğv et
                 </Button>
                 <Button
                   onClick={handleBulkAction}
-                  disabled={isBulkProcessing || (bulkAction === 'reject' && !bulkReason.trim())}
+                  disabled={isLocalBulkProcessing || (bulkAction === 'reject' && !bulkReason.trim())}
                   className="flex-1"
                 >
-                  {isBulkProcessing ? (
+                  {isLocalBulkProcessing ? (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   ) : bulkAction === 'approve' ? (
                     <CheckCircle className="h-4 w-4 mr-2" />
@@ -563,6 +694,24 @@ export const EnhancedApprovalManager: React.FC<EnhancedApprovalManagerProps> = (
             </CardContent>
           </Card>
         </div>
+      )}
+      
+      {/* Data Review Dialog */}
+      {reviewingItem && (
+        <DataReviewDialog
+          entryId={reviewingItem.id}
+          schoolName={reviewingItem.schoolName}
+          categoryName={reviewingItem.categoryName}
+          isOpen={showDataReviewDialog}
+          onClose={handleCloseReviewDialog}
+          onApprove={async (entryId, comment) => {
+            await approveItem(entryId, comment);
+          }}
+          onReject={async (entryId, reason, comment) => {
+            await rejectItem(entryId, reason, comment);
+          }}
+          onDataUpdated={handleDataUpdated}
+        />
       )}
     </div>
   );

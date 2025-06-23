@@ -26,6 +26,7 @@ import SectorDataEntry from "@/pages/SectorDataEntry";
 import SchoolAdminDataEntry from "@/components/dataEntry/SchoolAdminDataEntry";
 import Profile from "@/pages/Profile";
 import ApprovalPage from "@/pages/Approval";
+import ColumnBasedApprovalPage from "@/pages/ColumnBasedApproval";
 import Statistics from "@/pages/Statistics";
 import ProgressTracking from "@/pages/ProgressTracking";
 import Performance from "@/pages/Performance";
@@ -178,6 +179,16 @@ const AppRoutes = () => (
       <Route path="/profile" element={<Profile />} />
       
       <Route path="/approvals" element={<ApprovalPage />} />
+      
+      {/* ✅ YENİ: Column-Based Approval - Sektor və Region adminləri üçün */}
+      <Route 
+        path="/column-approvals" 
+        element={
+          <ProtectedRoute allowedRoles={['sectoradmin', 'regionadmin', 'superadmin']}>
+            <ColumnBasedApprovalPage />
+          </ProtectedRoute>
+        } 
+      />
       
       {/* ✅ YENİ: Ayrı məlumat daxil etmə route-ları */}
       <Route path="/data-entry" element={<DataEntry />} />

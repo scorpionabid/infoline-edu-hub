@@ -38,27 +38,15 @@ export interface StatusHistoryServiceResponse {
 export class StatusHistoryService {
   
   /**
-   * Status tarixçəsini secure function vasitəsilə əldə edir
+   * Status tarixçəsini secure function vasitəsilə əldə edir - FIXED: Removed RPC
    */
   static async getStatusHistory(options: StatusHistoryOptions = {}): Promise<StatusHistoryServiceResponse> {
     try {
-      const { data, error } = await supabase
-        .rpc('get_status_history_secure', {
-          entry_id: options.entryId || null,
-          limit_count: options.limit || 50
-        });
-
-      if (error) {
-        console.error('Error fetching status history:', error);
-        // Fallback to view method
-        return this.getStatusHistoryFromView(options);
-      }
-
-      return {
-        success: true,
-        data: data || [],
-        message: 'Status history retrieved successfully'
-      };
+      console.log('Getting status history with options:', options);
+      
+      // FIXED: Birbaşa view/table istifadə et, RPC function istifadə etmə
+      return this.getStatusHistoryFromView(options);
+      
     } catch (error: any) {
       console.error('StatusHistoryService error:', error);
       // Try fallback method
@@ -134,7 +122,7 @@ export class StatusHistoryService {
   }
 
   /**
-   * Status dəyişikliyi qeydə alır
+   * Status dəyişikliyi qeydə alır - FIXED: Removed RPC
    */
   static async logStatusChange(
     dataEntryId: string,
@@ -143,25 +131,11 @@ export class StatusHistoryService {
     comment?: string
   ): Promise<StatusHistoryServiceResponse> {
     try {
-      const { data, error } = await supabase
-        .rpc('log_status_change', {
-          p_data_entry_id: dataEntryId,
-          p_old_status: oldStatus,
-          p_new_status: newStatus,
-          p_comment: comment || null
-        });
-
-      if (error) {
-        console.error('Error logging status change:', error);
-        // Fallback to direct insert
-        return this.logStatusChangeDirect(dataEntryId, oldStatus, newStatus, comment);
-      }
-
-      return {
-        success: true,
-        data: [{ id: data } as StatusHistoryEntry],
-        message: 'Status change logged successfully'
-      };
+      console.log('Logging status change:', { dataEntryId, oldStatus, newStatus, comment });
+      
+      // FIXED: Birbaşa direct insert istifadə et, RPC function-dan qaçın
+      return this.logStatusChangeDirect(dataEntryId, oldStatus, newStatus, comment);
+      
     } catch (error: any) {
       console.error('Error in logStatusChange:', error);
       return this.logStatusChangeDirect(dataEntryId, oldStatus, newStatus, comment);
@@ -395,35 +369,30 @@ export class StatusHistoryService {
   }
 
   /**
-   * Database connection test
+   * Database connection test - FIXED: No RPC
    */
   static async testConnection(): Promise<StatusHistoryServiceResponse> {
     try {
-      // Test function availability
-      const { data: functionTest, error: functionError } = await supabase
-        .rpc('get_status_history_secure', {
-          entry_id: null,
-          limit_count: 1
-        });
-
-      // Test view availability
+      console.log('Testing database connection...');
+      
+      // FIXED: Yalnız view əldə edilib olmasını test et, RPC function test etmə
       const { data: viewTest, error: viewError } = await supabase
         .from('status_history_view')
         .select('count')
         .limit(1);
 
       const tests = {
-        function_available: !functionError,
         view_available: !viewError,
-        function_data: functionTest?.length || 0,
         view_data: viewTest?.length || 0,
+        function_available: false, // RPC functions deactivated
+        function_data: 0,
         timestamp: new Date().toISOString()
       };
 
       return {
         success: true,
         data: [tests] as any,
-        message: 'Connection test completed'
+        message: 'Connection test completed (RPC functions disabled)'
       };
     } catch (error: any) {
       console.error('Error testing connection:', error);

@@ -175,11 +175,33 @@ export class EnhancedApprovalService {
         .order('created_at', { ascending: false })
         .limit(50); // Reasonable limit
 
-      console.log('Data entries query result:', { 
+      console.log('Data entries query result - DETAILED:', { 
         count: dataEntries?.length || 0, 
         error: dataError,
         userRole: userRole.role,
-        filter 
+        userPermissions: {
+          role: userRole.role,
+          regionId: userRole.region_id,
+          sectorId: userRole.sector_id
+        },
+        appliedFilters: {
+          status: filter.status || 'none',
+          regionId: filter.regionId || 'none',
+          sectorId: filter.sectorId || 'none',
+          categoryId: filter.categoryId || 'none',
+          searchTerm: filter.searchTerm || 'none'
+        },
+        queryComponents: {
+          schoolStatusFilter: 'active',
+          categoryStatusFilter: 'active',
+          userPermissionApplied: userRole.role !== 'superadmin'
+        },
+        sampleEntries: dataEntries?.slice(0, 3).map(e => ({
+          schoolId: e.school_id,
+          categoryId: e.category_id,
+          status: e.status,
+          schoolName: e.schools?.name
+        }))
       });
 
       if (dataError) {
@@ -308,43 +330,48 @@ export class EnhancedApprovalService {
   }
 
   /**
-   * Approve a single entry - FIXED UUID handling
+   * Approve a single entry - IMPROVED UUID handling
    */
   static async approveEntry(entryId: string, comment?: string): Promise<ServiceResponse> {
     try {
-      console.log('Approving entry (FIXED):', entryId, comment);
+      console.log('Approving entry (IMPROVED):', entryId, comment);
 
-      const [schoolId, categoryId] = entryId.split('-');
-      if (!schoolId || !categoryId) {
+      // IMPROVED: Better UUID parsing for compound IDs
+      let schoolId: string, categoryId: string;
+      
+      if (entryId.includes('-') && entryId.length > 36) {
+        // Complex UUID format like: "2c8337a3-1855-44d5-a616-453cdd3935d9-dce49724-49e6-4526-8be8-4f641dfce162"
+        const parts = entryId.split('-');
+        if (parts.length >= 8) {
+          // Split at the middle point to get two UUIDs
+          const midIndex = Math.floor(parts.length / 2);
+          schoolId = parts.slice(0, midIndex).join('-');
+          categoryId = parts.slice(midIndex).join('-');
+        } else {
+          // Simple format: "schoolId-categoryId"
+          [schoolId, categoryId] = entryId.split('-', 2);
+        }
+      } else {
         return {
           success: false,
-          error: 'Yanlış entry ID formatı',
+          error: 'Yanlış entry ID formatı. Gözlənilən: uuid-uuid',
           code: 'INVALID_ENTRY_ID'
         };
       }
 
-      console.log('Parsed IDs:', { schoolId, categoryId });
+      console.log('Parsed approval IDs:', { entryId, schoolId, categoryId });
 
-      // MÜVƏQQƏTİ DEBUG: UUID validation temporarily disabled
-      const isValidUUID = (str: string): boolean => {
-        if (!str || typeof str !== 'string') return false;
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        return uuidRegex.test(str);
-      };
+      // UUID format validation
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
       
-      console.log('UUID Validation Check:', {
-        schoolId: { value: schoolId, valid: isValidUUID(schoolId), length: schoolId?.length },
-        categoryId: { value: categoryId, valid: isValidUUID(categoryId), length: categoryId?.length }
-      });
-      
-      // MÜVƏQQƏTİ: Validation-u skip edək ki, əsas flow işləsin
-      // if (!isValidUUID(schoolId) || !isValidUUID(categoryId)) {
-      //   return {
-      //     success: false,
-      //     error: 'UUID formatı düzgün deyil',
-      //     code: 'INVALID_UUID_FORMAT'
-      //   };
-      // }
+      if (!uuidRegex.test(schoolId) || !uuidRegex.test(categoryId)) {
+        console.warn('Invalid UUID format for approval:', { schoolId, categoryId });
+        return {
+          success: false,
+          error: 'UUID formatı düzgün deyil',
+          code: 'INVALID_UUID_FORMAT'
+        };
+      }
 
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
@@ -420,11 +447,11 @@ export class EnhancedApprovalService {
   }
 
   /**
-   * Reject a single entry
+   * Reject a single entry - IMPROVED UUID handling
    */
   static async rejectEntry(entryId: string, reason: string, comment?: string): Promise<ServiceResponse> {
     try {
-      console.log('Rejecting entry:', entryId, reason, comment);
+      console.log('Rejecting entry (IMPROVED):', entryId, reason, comment);
 
       if (!reason || reason.trim().length === 0) {
         return {
@@ -434,14 +461,28 @@ export class EnhancedApprovalService {
         };
       }
 
-      const [schoolId, categoryId] = entryId.split('-');
-      if (!schoolId || !categoryId) {
+      // IMPROVED: Better UUID parsing for compound IDs
+      let schoolId: string, categoryId: string;
+      
+      if (entryId.includes('-') && entryId.length > 36) {
+        // Complex UUID format
+        const parts = entryId.split('-');
+        if (parts.length >= 8) {
+          const midIndex = Math.floor(parts.length / 2);
+          schoolId = parts.slice(0, midIndex).join('-');
+          categoryId = parts.slice(midIndex).join('-');
+        } else {
+          [schoolId, categoryId] = entryId.split('-', 2);
+        }
+      } else {
         return {
           success: false,
-          error: 'Yanlış entry ID formatı',
+          error: 'Yanlış entry ID formatı. Gözlənilən: uuid-uuid',
           code: 'INVALID_ENTRY_ID'
         };
       }
+
+      console.log('Parsed rejection IDs:', { entryId, schoolId, categoryId });
 
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
