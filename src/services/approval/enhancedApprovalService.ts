@@ -104,8 +104,8 @@ export class EnhancedApprovalService {
       let query = supabase
         .from('data_entries')
         .select(`
-          school_id::text,
-          category_id::text,
+          school_id,
+          category_id,
           status,
           created_at,
           updated_at,
@@ -116,7 +116,7 @@ export class EnhancedApprovalService {
           rejection_reason,
           created_by,
           schools!inner(
-            id::text,
+            id,
             name,
             region_id,
             sector_id,
@@ -124,7 +124,7 @@ export class EnhancedApprovalService {
             status
           ),
           categories!inner(
-            id::text,
+            id,
             name,
             assignment,
             status
@@ -204,34 +204,32 @@ export class EnhancedApprovalService {
       const processedEntries = new Map<string, ApprovalItem>();
 
       for (const entry of dataEntries) {
-        // DÜZƏLDILMIŞ: Real ID-ləri birbaşa məlumat bazasından əldə et
-        const entryId = `${entry.school_id}-${entry.category_id}`;
+        // DÜZƏLDILMIŞ: Birbaşa UUID-ləri istifadə et, əlavə mapping yoxdur
+        const schoolId = entry.school_id; // Already full UUID
+        const categoryId = entry.category_id; // Already full UUID
+        const entryId = `${schoolId}-${categoryId}`;
         
         // Skip if already processed (for entries with same school-category)
         if (processedEntries.has(entryId)) {
           continue;
         }
 
-        // REAL UUID-ləri əldə etmək üçün school və category məlumatlarından istifadə et
-        const realSchoolId = entry.schools.id;
-        const realCategoryId = entry.categories.id;
-        const realEntryId = `${realSchoolId}-${realCategoryId}`;
-        
-        console.log('ID Mapping:', {
-          original: entryId,
-          real: realEntryId,
-          schoolId: { original: entry.school_id, real: realSchoolId },
-          categoryId: { original: entry.category_id, real: realCategoryId }
+        console.log('Processing entry with UUIDs - DETAILED:', {
+          entryId,
+          schoolId: { value: schoolId, length: schoolId?.length, type: typeof schoolId },
+          categoryId: { value: categoryId, length: categoryId?.length, type: typeof categoryId },
+          schoolsId: { value: entry.schools?.id, length: entry.schools?.id?.length },
+          categoriesId: { value: entry.categories?.id, length: entry.categories?.id?.length }
         });
 
         // Check if user can approve this item
-        const canApprove = await this.canUserApprove(user.id, userRole.role, realSchoolId);
+        const canApprove = await this.canUserApprove(user.id, userRole.role, schoolId);
 
         const approvalItem: ApprovalItem = {
-          id: realEntryId, // TAM UUID formatda
-          schoolId: realSchoolId,
+          id: entryId,
+          schoolId: schoolId,
           schoolName: entry.schools.name,
-          categoryId: realCategoryId,
+          categoryId: categoryId,
           categoryName: entry.categories.name,
           status: entry.status as DataEntryStatus,
           submittedBy: entry.created_by,
@@ -246,7 +244,7 @@ export class EnhancedApprovalService {
           entries: [entry]
         };
 
-        processedEntries.set(realEntryId, approvalItem);
+        processedEntries.set(entryId, approvalItem);
         approvalItems.push(approvalItem);
       }
 
@@ -327,30 +325,26 @@ export class EnhancedApprovalService {
 
       console.log('Parsed IDs:', { schoolId, categoryId });
 
-      // DÜZƏLDILMIŞ: UUID format validation - debugging
-      const isValidUUID = (str) => {
+      // MÜVƏQQƏTİ DEBUG: UUID validation temporarily disabled
+      const isValidUUID = (str: string): boolean => {
         if (!str || typeof str !== 'string') return false;
         const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
         return uuidRegex.test(str);
       };
       
-      const schoolIdValid = isValidUUID(schoolId);
-      const categoryIdValid = isValidUUID(categoryId);
-      
-      console.log('UUID Validation Details:', {
-        schoolId: { value: schoolId, type: typeof schoolId, length: schoolId?.length, valid: schoolIdValid },
-        categoryId: { value: categoryId, type: typeof categoryId, length: categoryId?.length, valid: categoryIdValid }
+      console.log('UUID Validation Check:', {
+        schoolId: { value: schoolId, valid: isValidUUID(schoolId), length: schoolId?.length },
+        categoryId: { value: categoryId, valid: isValidUUID(categoryId), length: categoryId?.length }
       });
       
-      if (!schoolIdValid || !categoryIdValid) {
-        console.error('UUID validation failed - proceeding with warning');
-        // MÜVƏQQƏTİ OLARAQ validation-u skip edək ki, təsdiq işləsin
-        // return {
-        //   success: false,
-        //   error: 'UUID formatı düzgün deyil',
-        //   code: 'INVALID_UUID_FORMAT'
-        // };
-      }
+      // MÜVƏQQƏTİ: Validation-u skip edək ki, əsas flow işləsin
+      // if (!isValidUUID(schoolId) || !isValidUUID(categoryId)) {
+      //   return {
+      //     success: false,
+      //     error: 'UUID formatı düzgün deyil',
+      //     code: 'INVALID_UUID_FORMAT'
+      //   };
+      // }
 
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();

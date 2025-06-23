@@ -2,7 +2,7 @@ import React from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import SchoolAdminDataEntry from '@/components/dataEntry/SchoolAdminDataEntry';
-import { UnifiedSectorDataEntry } from '@/components/dataEntry/unified/UnifiedSectorDataEntry';
+import UnifiedSectorDataEntry from '@/components/dataEntry/unified/UnifiedSectorDataEntry';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 

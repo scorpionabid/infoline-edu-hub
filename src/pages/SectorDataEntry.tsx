@@ -25,10 +25,9 @@ const SectorDataEntryPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto py-6 px-4">
-        <UnifiedSectorDataEntry 
-          onComplete={handleComplete}
-          className="max-w-6xl mx-auto"
-        />
+        <div className="max-w-6xl mx-auto">
+          <UnifiedSectorDataEntry />
+        </div>
       </div>
     </div>
   );

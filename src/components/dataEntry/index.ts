@@ -1,8 +1,8 @@
 
 // Main data entry components
-export { DataEntryContainer } from './DataEntryContainer';
-export { SectorAdminProxyDataEntry } from './SectorAdminProxyDataEntry';
-export { BulkDataEntryDialog } from './BulkDataEntryDialog';
+export { default as DataEntryContainer } from './DataEntryContainer';
+export { default as SectorAdminProxyDataEntry } from './SectorAdminProxyDataEntry';
+export { default as BulkDataEntryDialog } from './BulkDataEntryDialog';
 
 // 🆕 Unified components (New & Recommended)
 export { UnifiedSectorDataEntry } from './unified';
