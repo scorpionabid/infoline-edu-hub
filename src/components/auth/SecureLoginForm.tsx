@@ -1,18 +1,14 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import { useAuthStore } from '@/hooks/auth/useAuthStore';
-import { useRateLimit } from '@/hooks/auth/useRateLimit';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { validateInput, sanitizeInput, generateCSRFToken } from '@/config/security';
-import { securityLogger, getClientContext } from '@/utils/securityLogger';
-import { secureConsole } from '@/utils/productionUtils';
-import { Shield, Lock, AlertTriangle } from 'lucide-react';
 
 interface SecureLoginFormProps {
   error?: string | null;
@@ -28,89 +24,15 @@ const SecureLoginForm: React.FC<SecureLoginFormProps> = ({ error, clearError }) 
     email: '',
     password: ''
   });
-
-  const [csrfToken] = useState(() => generateCSRFToken());
-  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
   const { t } = useTranslation();
-
-  // Enhanced rate limiting with user context
-  const { isBlocked, remainingAttempts, resetTime, checkRateLimit, recordAttempt } = useRateLimit(
-    `login_${formData.email || 'anonymous'}`,
-    5, // max attempts
-    15 * 60 * 1000 // 15 minutes
-  );
-
-  useEffect(() => {
-    if (isBlocked && resetTime) {
-      securityLogger.logRateLimit('login', {
-        ...getClientContext(),
-        action: 'login_blocked',
-        userId: formData.email
-      });
-      
-      const timer = setInterval(() => {
-        if (new Date() > resetTime) {
-          window.location.reload();
-        }
-      }, 1000);
-      return () => clearInterval(timer);
-    }
-  }, [isBlocked, resetTime, formData.email]);
-
-  const validateForm = (): boolean => {
-    const errors: Record<string, string> = {};
-    
-    // Enhanced email validation
-    if (!formData.email) {
-      errors.email = t?.('auth.validation.email.required') || 'Email is required';
-    } else if (!validateInput.email(formData.email)) {
-      errors.email = t?.('auth.validation.email.invalid') || 'Invalid email format';
-      securityLogger.logValidationFailure('email', formData.email, getClientContext());
-    }
-    
-    // Enhanced password validation
-    if (!formData.password) {
-      errors.password = t?.('auth.validation.password.required') || 'Password is required';
-    } else if (formData.password.length < 6) {
-      errors.password = t?.('auth.validation.password.minLength') || 'Password must be at least 6 characters';
-    }
-    
-    // Check for suspicious patterns
-    if (formData.email && !validateInput.text(formData.email)) {
-      errors.email = 'Invalid characters detected';
-      securityLogger.logSuspiciousActivity('malicious_input', {
-        field: 'email',
-        value: formData.email.substring(0, 50)
-      });
-    }
-    
-    setValidationErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (isSubmitting || isBlocked) return;
-    
-    // Log login attempt
-    securityLogger.logAuthEvent('login_attempt', {
-      ...getClientContext(),
-      userId: formData.email
-    });
-    
-    // Validate form
-    if (!validateForm()) {
-      return;
-    }
-    
-    // Check rate limit
-    const rateLimitAllowed = await checkRateLimit();
-    if (!rateLimitAllowed) {
-      toast.error(t?.('auth.error.rateLimited') || 'Too many login attempts. Please try again later.');
-      return;
-    }
+    if (isSubmitting) return;
     
     setIsSubmitting(true);
     
@@ -119,41 +41,15 @@ const SecureLoginForm: React.FC<SecureLoginFormProps> = ({ error, clearError }) 
     }
     
     try {
-      // Sanitize inputs
-      const sanitizedEmail = sanitizeInput(formData.email.toLowerCase());
-      const sanitizedPassword = formData.password; // Don't sanitize password, just validate
-      
-      secureConsole.log('[SecureLoginForm] Starting secure login process...');
-      await signIn(sanitizedEmail, sanitizedPassword);
-      
-      // Log successful login
-      securityLogger.logAuthEvent('login_success', {
-        ...getClientContext(),
-        userId: sanitizedEmail
-      });
-      
-      secureConsole.log('[SecureLoginForm] Login successful, navigating...');
+      console.log('[SecureLoginForm] Starting login process...');
+      await signIn(formData.email, formData.password);
+      console.log('[SecureLoginForm] Login successful, navigating...');
       navigate('/dashboard');
-      toast.success(t?.('auth.login.success') || 'Login successful');
-      
+      toast.success(t?.('auth.login.success') || 'Uğurla daxil oldunuz');
     } catch (error: any) {
-      secureConsole.error('[SecureLoginForm] Login error:', error);
-      
-      // Log failed login attempt
-      securityLogger.logAuthEvent('login_failure', {
-        ...getClientContext(),
-        userId: formData.email,
-        severity: 'high'
-      });
-      
-      // Record failed attempt for rate limiting
-      await recordAttempt();
-      
-      // Sanitize error message to prevent XSS
-      const errorMessage = sanitizeInput(error.message || 'Login failed');
-      
-      toast.error(t?.('auth.login.error.title') || 'Login failed', {
-        description: errorMessage || t?.('auth.login.error.default') || 'Incorrect email or password'
+      console.error('[SecureLoginForm] Login error:', error);
+      toast.error(t?.('auth.login.error.title') || 'Giriş uğursuz oldu', {
+        description: error.message || t?.('auth.login.error.default') || 'Email və ya şifrə yanlışdır'
       });
     } finally {
       setIsSubmitting(false);
@@ -161,137 +57,122 @@ const SecureLoginForm: React.FC<SecureLoginFormProps> = ({ error, clearError }) 
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    
-    // Enhanced input sanitization
-    const sanitizedValue = sanitizeInput(value);
-    
-    // Detect suspicious input patterns
-    if (value !== sanitizedValue) {
-      securityLogger.logSuspiciousActivity('input_sanitized', {
-        field: name,
-        original: value.substring(0, 50),
-        sanitized: sanitizedValue.substring(0, 50)
-      });
-    }
-    
     setFormData(prev => ({
       ...prev,
-      [name]: sanitizedValue
+      [e.target.name]: e.target.value
     }));
-    
-    // Clear validation error when user starts typing
-    if (validationErrors[name]) {
-      setValidationErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
-    }
   };
 
-  if (isBlocked) {
-    return (
-      <Card className="w-full max-w-md mx-auto">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-red-600">
-            <Shield className="h-5 w-5" />
-            {t?.('auth.security.blocked.title') || 'Account Temporarily Blocked'}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Alert variant="destructive">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              {t?.('auth.security.blocked.message') || 'Too many failed login attempts. Please try again later.'}
-              {resetTime && (
-                <div className="mt-2 text-sm">
-                  Reset time: {resetTime.toLocaleTimeString()}
-                </div>
-              )}
-            </AlertDescription>
-          </Alert>
-        </CardContent>
-      </Card>
-    );
-  }
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Lock className="h-5 w-5" />
-          {t?.('auth.login.title') || 'Secure Login'}
+    <Card className="w-full max-w-md mx-auto shadow-lg">
+      <CardHeader className="space-y-1 pb-4">
+        <CardTitle className="text-2xl font-bold text-center text-gray-900">
+          {t?.('auth.login.title') || 'Təhlükəsiz giriş'}
         </CardTitle>
-        {remainingAttempts < 5 && (
-          <Alert variant="destructive">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              {remainingAttempts} attempts remaining before temporary lockout
-            </AlertDescription>
-          </Alert>
-        )}
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-4">
         <form onSubmit={handleSubmit} className="space-y-4">
-          <input type="hidden" name="csrf_token" value={csrfToken} />
-          
-          <div>
-            <Input
-              name="email"
-              type="email"
-              placeholder={t?.('auth.login.email') || 'Email'}
-              value={formData.email}
-              onChange={handleChange}
-              required
-              disabled={isLoading || isSubmitting}
-              className={validationErrors.email ? 'border-red-500' : ''}
-              autoComplete="email"
-              maxLength={100}
-            />
-            {validationErrors.email && (
-              <p className="text-red-500 text-sm mt-1">{validationErrors.email}</p>
-            )}
+          {/* Email Field */}
+          <div className="space-y-2">
+            <label htmlFor="email" className="text-sm font-medium text-gray-700">
+              {t?.('auth.login.email') || 'Email'}
+            </label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                placeholder={t?.('auth.login.emailPlaceholder') || 'Email ünvanınızı daxil edin'}
+                value={formData.email}
+                onChange={handleChange}
+                required
+                disabled={isLoading || isSubmitting}
+                className="pl-10 h-11 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                autoComplete="email"
+              />
+            </div>
           </div>
-          
-          <div>
-            <Input
-              name="password"
-              type="password"
-              placeholder={t?.('auth.login.password') || 'Password'}
-              value={formData.password}
-              onChange={handleChange}
-              required
-              disabled={isLoading || isSubmitting}
-              className={validationErrors.password ? 'border-red-500' : ''}
-              autoComplete="current-password"
-              maxLength={100}
-            />
-            {validationErrors.password && (
-              <p className="text-red-500 text-sm mt-1">{validationErrors.password}</p>
-            )}
+
+          {/* Password Field */}
+          <div className="space-y-2">
+            <label htmlFor="password" className="text-sm font-medium text-gray-700">
+              {t?.('auth.login.password') || 'Şifrə'}
+            </label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                id="password"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                placeholder={t?.('auth.login.passwordPlaceholder') || 'Şifrənizi daxil edin'}
+                value={formData.password}
+                onChange={handleChange}
+                required
+                disabled={isLoading || isSubmitting}
+                className="pl-10 pr-10 h-11 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                autoComplete="current-password"
+              />
+              <button
+                type="button"
+                onClick={togglePasswordVisibility}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                disabled={isLoading || isSubmitting}
+                aria-label={showPassword ? 'Şifrəni gizlə' : 'Şifrəni göstər'}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+            </div>
           </div>
-          
+
+          {/* Error Message */}
           {error && (
-            <Alert variant="destructive">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>{sanitizeInput(error)}</AlertDescription>
-            </Alert>
+            <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
+              {error}
+            </div>
           )}
-          
+
+          {/* Forgot Password Link */}
+          <div className="flex justify-end">
+            <Link
+              to="/forgot-password"
+              className="text-sm text-blue-600 hover:text-blue-800 hover:underline focus:outline-none focus:underline"
+            >
+              {t?.('auth.login.forgotPassword') || 'Şifrəni unutdunuz?'}
+            </Link>
+          </div>
+
+          {/* Submit Button */}
           <Button 
             type="submit" 
-            disabled={isLoading || isSubmitting || isBlocked} 
-            className="w-full"
+            disabled={isLoading || isSubmitting} 
+            className="w-full h-11 bg-blue-600 hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 font-medium"
           >
             {isLoading || isSubmitting 
-              ? t?.('auth.login.submitting') || 'Logging in...' 
-              : t?.('auth.login.submit') || 'Log in'}
+              ? t?.('auth.login.submitting') || 'Daxil olunur...' 
+              : t?.('auth.login.submit') || 'Daxil ol'}
           </Button>
         </form>
-        
-        <div className="mt-4 text-xs text-gray-500 text-center">
-          <Shield className="h-3 w-3 inline mr-1" />
-          Secured with rate limiting and input validation
+
+        {/* Sign Up Link */}
+        <div className="text-center pt-4 border-t border-gray-200">
+          <p className="text-sm text-gray-600">
+            {t?.('auth.login.noAccount') || 'Hesabınız yoxdur?'}{' '}
+            <Link
+              to="/register"
+              className="text-blue-600 hover:text-blue-800 font-medium hover:underline focus:outline-none focus:underline"
+            >
+              {t?.('auth.login.signUp') || 'Qeydiyyatdan keçin'}
+            </Link>
+          </p>
         </div>
       </CardContent>
     </Card>

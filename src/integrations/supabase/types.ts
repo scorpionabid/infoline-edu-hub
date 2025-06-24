@@ -1204,7 +1204,21 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      status_history_view: {
+        Row: {
+          changed_at: string | null
+          changed_by: string | null
+          changed_by_email: string | null
+          changed_by_name: string | null
+          comment: string | null
+          data_entry_id: string | null
+          id: string | null
+          metadata: Json | null
+          new_status: string | null
+          old_status: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       approval_permission_check: {
@@ -1292,6 +1306,10 @@ export type Database = {
         Args: { target_school_id: string; data_type?: string }
         Returns: boolean
       }
+      check_data_entry_exists: {
+        Args: { entry_id: string }
+        Returns: boolean
+      }
       check_proxy_data_entry_permission: {
         Args: { user_id: string; user_role: string; target_school_id: string }
         Returns: boolean
@@ -1338,6 +1356,10 @@ export type Database = {
         Returns: string
       }
       current_user_profile: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      debug_status_history: {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
@@ -1388,6 +1410,28 @@ export type Database = {
       get_dashboard_statistics: {
         Args: { p_region_id?: string; p_sector_id?: string }
         Returns: Json
+      }
+      get_data_entries_safe: {
+        Args: {
+          p_school_id?: string
+          p_category_id?: string
+          p_status?: string
+        }
+        Returns: {
+          id: string
+          school_id: string
+          category_id: string
+          column_id: string
+          value: string
+          status: string
+          created_at: string
+          updated_at: string
+          created_by: string
+          approved_by: string
+          approved_at: string
+          rejected_by: string
+          rejection_reason: string
+        }[]
       }
       get_filtered_users: {
         Args: {
@@ -1527,6 +1571,21 @@ export type Database = {
           total_approved: number
           total_rejected: number
           completion_rate: number
+        }[]
+      }
+      get_status_history_secure: {
+        Args: { entry_id?: string; limit_count?: number }
+        Returns: {
+          id: string
+          data_entry_id: string
+          old_status: string
+          new_status: string
+          comment: string
+          changed_at: string
+          changed_by: string
+          metadata: Json
+          changed_by_name: string
+          changed_by_email: string
         }[]
       }
       get_user_emails_by_ids: {
@@ -1671,6 +1730,15 @@ export type Database = {
       is_valid_json: {
         Args: { input_text: string }
         Returns: boolean
+      }
+      log_status_change: {
+        Args: {
+          p_data_entry_id: string
+          p_old_status: string
+          p_new_status: string
+          p_comment?: string
+        }
+        Returns: string
       }
       region_access_check: {
         Args: { target_region_id: string }

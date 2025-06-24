@@ -21,6 +21,10 @@ export const navigation = {
   userManagement: 'İstifadəçi İdarəetməsi',
   progress: 'Tərəqqi',
   performance: 'Performans',
+  organization: 'Təşkilat',
+  content: 'Məzmun',
+  analytics: 'Analitika',
+  administration: 'İdarəetmə',
   
   // Breadcrumb navigation
   home: 'Ana səhifə',
