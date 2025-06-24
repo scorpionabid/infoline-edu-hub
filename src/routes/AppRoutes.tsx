@@ -22,15 +22,13 @@ import Reports from "@/pages/Reports";
 import Settings from "@/pages/Settings";
 import NotFound from "@/pages/NotFound";
 import DataEntry from "@/pages/DataEntry";
-import SectorDataEntry from "@/pages/SectorDataEntry";
 import SchoolAdminDataEntry from "@/components/dataEntry/SchoolAdminDataEntry";
 import Profile from "@/pages/Profile";
-import ApprovalPage from "@/pages/Approval";
-import ColumnBasedApprovalPage from "@/pages/ColumnBasedApproval";
 import Statistics from "@/pages/Statistics";
 import ProgressTracking from "@/pages/ProgressTracking";
 import Performance from "@/pages/Performance";
 import UserManagement from "@/pages/UserManagement";
+import DataManagement from "@/pages/DataManagement";
 
 import { UserRole } from "@/types/supabase";
 
@@ -178,22 +176,13 @@ const AppRoutes = () => (
       
       <Route path="/profile" element={<Profile />} />
       
-      <Route path="/approvals" element={<ApprovalPage />} />
-      
-      {/* Column-Based Approval - Sektor və Region adminləri üçün */}
-      <Route 
-        path="/column-approvals" 
-        element={
-          <ProtectedRoute allowedRoles={['sectoradmin', 'regionadmin', 'superadmin']}>
-            <ColumnBasedApprovalPage />
-          </ProtectedRoute>
-        } 
-      />
-      
-      {/* Ayrı məlumat daxil etmə route-ları */}
-      <Route path="/data-entry" element={<DataEntry />} />
-      <Route path="/data-entry/:categoryId" element={<DataEntry />} />
-      <Route path="/data-entry/:categoryId/:schoolId" element={<DataEntry />} />
+      {/* Köhnə route-ların yönləndirilməsi */}
+      <Route path="/data-entry" element={<Navigate to="/data-management" replace />} />
+      <Route path="/data-entry/:categoryId" element={<Navigate to="/data-management" replace />} />
+      <Route path="/data-entry/:categoryId/:schoolId" element={<Navigate to="/data-management" replace />} />
+      <Route path="/sector-data-entry" element={<Navigate to="/data-management" replace />} />
+      <Route path="/approvals" element={<Navigate to="/data-management" replace />} />
+      <Route path="/column-approvals" element={<Navigate to="/data-management" replace />} />
 
       {/* Məktəb admini məlumat daxil etmə route-u */}
       <Route 
@@ -201,16 +190,6 @@ const AppRoutes = () => (
         element={
           <ProtectedRoute allowedRoles={['schooladmin']}>
             <SchoolAdminDataEntry />
-          </ProtectedRoute>
-        } 
-      />
-      
-      {/* Sektor məlumat daxil etmə - yalnız sektor adminləri üçün */}
-      <Route 
-        path="/sector-data-entry" 
-        element={
-          <ProtectedRoute allowedRoles={['sectoradmin']}>
-            <SectorDataEntry />
           </ProtectedRoute>
         } 
       />
@@ -251,6 +230,16 @@ const AppRoutes = () => (
         element={
           <ProtectedRoute allowedRoles={['superadmin']}>
             <UserManagement />
+          </ProtectedRoute>
+        } 
+      />
+      
+      {/* Unified Data Management - Bütün adminlər üçün */}
+      <Route 
+        path="/data-management" 
+        element={
+          <ProtectedRoute allowedRoles={['regionadmin', 'sectoradmin', 'schooladmin']}>
+            <DataManagement />
           </ProtectedRoute>
         } 
       />

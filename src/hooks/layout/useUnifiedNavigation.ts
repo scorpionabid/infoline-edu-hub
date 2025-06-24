@@ -6,11 +6,8 @@ import { useLocalStorage } from '@/hooks/common/useLocalStorageHook';
 import {
   LayoutDashboard,
   FileText,
-  CheckSquare,
   BarChart,
-  Building,
   Users,
-  Settings,
   BookOpen,
   Columns,
   MapPin,
@@ -21,8 +18,7 @@ import {
   LineChart,
   UserCog,
   ChevronDown,
-  Database,
-  TrendingUp
+  Settings as SettingsIcon
 } from 'lucide-react';
 
 interface NavigationItem {
@@ -104,31 +100,15 @@ export const useUnifiedNavigation = () => {
         href: isSchoolAdmin ? "/school-data-entry" : "/data-entry",
         icon: FileText,
         gradient: "from-teal-500 to-teal-600",
-        visible: isSchoolAdmin || isSectorAdmin
+        visible: isSchoolAdmin
       },
       {
-        id: "sector-data-entry",
-        label: t("navigation.sectorDataEntry") || "Sektor Məlumatları",
-        href: "/sector-data-entry",
-        icon: Database,
-        gradient: "from-cyan-500 to-cyan-600",
-        visible: isSectorAdmin
-      },
-      {
-        id: "approvals",
-        label: t("navigation.approvals") || "Təsdiqlər",
-        href: "/approvals",
-        icon: CheckSquare,
-        gradient: "from-amber-500 to-amber-600",
-        visible: canApproveData
-      },
-      {
-        id: "column-approvals",
-        label: t("navigation.columnApprovals") || "Sütun Təsdiqləri",
-        href: "/column-approvals",
-        icon: TrendingUp,
-        gradient: "from-yellow-500 to-orange-600",
-        visible: isSectorAdmin || isRegionAdmin || isSuperAdmin
+        id: "data-management",
+        label: t("navigation.dataManagement") || "Data İdarəetməsi",
+        href: "/data-management",
+        icon: SettingsIcon,
+        gradient: "from-emerald-500 to-emerald-600",
+        visible: isRegionAdmin || isSectorAdmin
       },
       {
         id: "reports",

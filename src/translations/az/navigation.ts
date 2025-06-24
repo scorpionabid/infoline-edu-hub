@@ -3,10 +3,7 @@
 export const navigation = {
   // Main navigation
   dashboard: 'İdarə Paneli',
-  dataEntry: 'Məlumat Daxil Etmə',
-  sectorDataEntry: 'Sektor Məlumat Girişi',
-  approvals: 'Təsdiqlər',
-  columnApprovals: 'Sütun Təsdiqləri',
+  dataEntry: 'Məlumat İdarəetməsi',
   categories: 'Kateqoriyalar',
   columns: 'Sütunlar',
   users: 'İstifadəçilər',
@@ -25,6 +22,7 @@ export const navigation = {
   content: 'Məzmun',
   analytics: 'Analitika',
   administration: 'İdarəetmə',
+  dataManagement: 'Məlumat İdarəetməsi',
   
   // Breadcrumb navigation
   home: 'Ana səhifə',

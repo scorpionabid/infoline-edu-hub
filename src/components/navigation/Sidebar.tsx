@@ -179,31 +179,13 @@ const Sidebar: React.FC<SidebarProps> = ({
       title: 'Məlumat Prosesləri',
       items: [
         {
-          id: "data-entry",
-          label: t("navigation.dataEntry"),
-          href: isSchoolAdmin ? "/school-data-entry" : "/data-entry",
-          icon: FileText,
-          visible: isSchoolAdmin,
+          id: "data-management",
+          label: t("navigation.dataManagement"),
+          href: "/data-management",
+          icon: Workflow,
+          visible: isSchoolAdmin || isRegionAdmin || isSectorAdmin,
           badge: null,
-          gradient: "from-teal-500 to-teal-600",
-        },
-        {
-          id: "sector-data-entry",
-          label: t("navigation.sectorDataEntry"),
-          href: "/sector-data-entry",
-          icon: Database,
-          visible: isSectorAdmin,
-          badge: null,
-          gradient: "from-cyan-500 to-cyan-600",
-        },
-        {
-          id: "approvals",
-          label: t("navigation.approvals"),
-          href: "/approvals",
-          icon: CheckSquare,
-          visible: isAdmin,
-          badge: null,
-          gradient: "from-amber-500 to-amber-600",
+          gradient: "from-emerald-500 to-emerald-600",
         }
       ]
     },

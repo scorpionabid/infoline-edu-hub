@@ -17,23 +17,26 @@ interface UseSchoolDataForColumnResult {
   schoolData: SchoolDataEntry[];
   isLoadingSchoolData: boolean;
   error: string | null;
-  loadSchoolData: (columnId: string, sectorId: string) => Promise<void>;
+  loadSchoolData: (columnId: string, entityId: string, entityType?: 'sector' | 'region' | 'school') => Promise<void>;
+  refreshSchoolData: () => Promise<void>;
 }
 
 export const useSchoolDataForColumn = (): UseSchoolDataForColumnResult => {
   const [schoolData, setSchoolData] = useState<SchoolDataEntry[]>([]);
   const [isLoadingSchoolData, setIsLoadingSchoolData] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastLoadParams, setLastLoadParams] = useState<{ columnId: string; sectorId: string; entityType?: 'sector' | 'region' | 'school' } | null>(null);
 
-  const loadSchoolData = useCallback(async (columnId: string, sectorId: string) => {
+  const loadSchoolData = useCallback(async (columnId: string, entityId: string, entityType: 'sector' | 'region' | 'school' = 'sector') => {
     setIsLoadingSchoolData(true);
     setError(null);
+    setLastLoadParams({ columnId, sectorId: entityId, entityType });
 
     try {
-      console.log('Loading school data for column:', columnId, 'sector:', sectorId);
+      console.log('Loading school data for column:', columnId, 'entity:', entityId, 'type:', entityType);
 
-      // First, get all schools in the sector WITH better debugging
-      const { data: schools, error: schoolsError } = await supabase
+      // Build the query based on entity type
+      let schoolsQuery = supabase
         .from('schools')
         .select(`
           id,
@@ -50,8 +53,18 @@ export const useSchoolDataForColumn = (): UseSchoolDataForColumnResult => {
             )
           )
         `)
-        .eq('sector_id', sectorId)
         .eq('status', 'active');
+
+      // Filter by sector, region or specific school
+      if (entityType === 'sector') {
+        schoolsQuery = schoolsQuery.eq('sector_id', entityId);
+      } else if (entityType === 'region') {
+        schoolsQuery = schoolsQuery.eq('region_id', entityId);
+      } else if (entityType === 'school') {
+        schoolsQuery = schoolsQuery.eq('id', entityId);
+      }
+
+      const { data: schools, error: schoolsError } = await schoolsQuery;
 
       if (schoolsError) {
         console.error('Schools query error:', schoolsError);
@@ -60,8 +73,9 @@ export const useSchoolDataForColumn = (): UseSchoolDataForColumnResult => {
 
       console.log('Schools query result:', {
         found: schools?.length || 0,
-        sectorId,
-        schools: schools?.map(s => ({ id: s.id, name: s.name, sector_id: s.sector_id })) || []
+        entityId,
+        entityType,
+        schools: schools?.map(s => ({ id: s.id, name: s.name, sector_id: s.sector_id, region_id: s.region_id })) || []
       });
 
       if (!schools || schools.length === 0) {
@@ -76,9 +90,11 @@ export const useSchoolDataForColumn = (): UseSchoolDataForColumnResult => {
           schools: allSchools?.map(s => ({ 
             id: s.id, 
             name: s.name, 
-            sector_id: s.sector_id, 
+            sector_id: s.sector_id,
+            region_id: s.region_id, 
             status: s.status,
-            matches: s.sector_id === sectorId
+            matchesSector: s.sector_id === entityId,
+            matchesRegion: s.region_id === entityId
           })) || []
         });
         
@@ -163,10 +179,17 @@ export const useSchoolDataForColumn = (): UseSchoolDataForColumnResult => {
     }
   }, []);
 
+  const refreshSchoolData = useCallback(async () => {
+    if (lastLoadParams) {
+      await loadSchoolData(lastLoadParams.columnId, lastLoadParams.sectorId, lastLoadParams.entityType);
+    }
+  }, [lastLoadParams, loadSchoolData]);
+
   return {
     schoolData,
     isLoadingSchoolData,
     error,
-    loadSchoolData
+    loadSchoolData,
+    refreshSchoolData
   };
 };
