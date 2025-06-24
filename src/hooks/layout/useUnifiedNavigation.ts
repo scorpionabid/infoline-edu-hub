@@ -123,6 +123,14 @@ export const useUnifiedNavigation = () => {
         visible: canApproveData
       },
       {
+        id: "column-approvals",
+        label: t("navigation.columnApprovals") || "Sütun Təsdiqləri",
+        href: "/column-approvals",
+        icon: TrendingUp,
+        gradient: "from-yellow-500 to-orange-600",
+        visible: isSectorAdmin || isRegionAdmin || isSuperAdmin
+      },
+      {
         id: "reports",
         label: t("navigation.reports") || "Hesabatlar",
         href: "/reports",

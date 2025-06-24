@@ -6,6 +6,7 @@ export const navigation = {
   dataEntry: 'Məlumat Daxil Etmə',
   sectorDataEntry: 'Sektor Məlumat Girişi',
   approvals: 'Təsdiqlər',
+  columnApprovals: 'Sütun Təsdiqləri',
   categories: 'Kateqoriyalar',
   columns: 'Sütunlar',
   users: 'İstifadəçilər',
