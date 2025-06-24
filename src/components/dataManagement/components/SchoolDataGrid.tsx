@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import { Category, Column, SchoolDataEntry, DataStats } from '@/hooks/dataManagement/useDataManagement';
 import { DataActions } from './DataActions';
+import { SectorDataEntry } from './SectorDataEntry';
 
 interface SchoolDataGridProps {
   category: Category;
@@ -85,6 +86,19 @@ export const SchoolDataGrid: React.FC<SchoolDataGridProps> = ({
   onBulkReject,
   onBack
 }) => {
+  // 🆕 Əgər sektor kateqoriyasıdırsa, SectorDataEntry render et
+  if (category.assignment === 'sectors') {
+    return (
+      <SectorDataEntry
+        category={category}
+        column={column}
+        onDataSave={onDataSave}
+        onBack={onBack}
+        loading={loading}
+        permissions={permissions}
+      />
+    );
+  }
   // Local state for editing and selection
   const [editingValues, setEditingValues] = useState<{[key: string]: string}>({});
   const [selectedSchools, setSelectedSchools] = useState<string[]>([]);

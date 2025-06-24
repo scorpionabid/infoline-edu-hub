@@ -46,19 +46,59 @@ export const CategorySelector: React.FC<CategorySelectorProps> = memo(({
 }) => {
   // Filter categories based on role
   const filteredCategories = categories.filter(category => {
-    // SuperAdmin and RegionAdmin can see all categories
-    if (permissions.canViewAll) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Filtering category:', {
+        name: category.name,
+        assignment: category.assignment,
+        role: permissions.role,
+        canViewAll: permissions.canViewAll
+      });
+    }
+    
+    // Get actual role from multiple sources (fallback strategy)
+    const actualRole = permissions.role || permissions.sectorId ? 'sectoradmin' : permissions.regionId ? 'regionadmin' : 'schooladmin';
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Actual role determined:', actualRole);
+    }
+    
+    // SuperAdmin can see all categories
+    if (permissions.canViewAll || actualRole === 'superadmin') {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('superadmin/canViewAll = true, including category');
+      }
+      return true;
+    }
+    
+    // RegionAdmin can see all categories but NOT select sector categories
+    if (actualRole === 'regionadmin') {
+      // RegionAdmin can see all categories for overview
+      if (process.env.NODE_ENV === 'development') {
+        console.log('regionadmin check:', { assignment: category.assignment, included: true });
+      }
       return true;
     }
     
     // SectorAdmin can see 'all' and 'sectors' categories
-    if (permissions.role === 'sectoradmin') {
-      return category.assignment === 'all' || category.assignment === 'sectors';
+    if (actualRole === 'sectoradmin') {
+      const shouldInclude = category.assignment === 'all' || category.assignment === 'sectors';
+      if (process.env.NODE_ENV === 'development') {
+        console.log('sectoradmin check:', { shouldInclude, assignment: category.assignment });
+      }
+      return shouldInclude;
     }
     
     // SchoolAdmin can only see 'all' categories
-    return category.assignment === 'all';
+    const shouldInclude = category.assignment === 'all';
+    if (process.env.NODE_ENV === 'development') {
+      console.log('schooladmin/default check:', { shouldInclude, assignment: category.assignment });
+    }
+    return shouldInclude;
   });
+
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Final filtered categories:', filteredCategories.length, filteredCategories);
+  }
 
   if (loading) {
     return (
@@ -125,63 +165,91 @@ export const CategorySelector: React.FC<CategorySelectorProps> = memo(({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredCategories.map((category) => (
-          <Card 
-            key={category.id}
-            className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-[1.02] group focus-within:ring-2 focus-within:ring-blue-500"
-            onClick={() => onCategorySelect(category)}
-            role="button"
-            tabIndex={0}
-            aria-label={`${category.name} kateqoriyasını seç`}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                onCategorySelect(category);
-              }
-            }}
-          >
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg flex items-center gap-2 group-hover:text-blue-600 transition-colors">
-                  {category.assignment === 'sectors' ? (
-                    <Database className="h-5 w-5 text-blue-600" />
-                  ) : (
-                    <Building2 className="h-5 w-5 text-green-600" />
-                  )}
-                  {category.name}
-                </CardTitle>
-                <Badge 
-                  variant={category.assignment === 'sectors' ? 'default' : 'secondary'}
-                  className="text-xs"
-                >
-                  {category.assignment === 'sectors' ? 'Sektor' : 'Məktəb'}
-                </Badge>
-              </div>
-              {category.description && (
-                <p className="text-sm text-muted-foreground mt-2">
-                  {category.description}
-                </p>
-              )}
-            </CardHeader>
-            
-            {category.completion_rate !== undefined && (
-              <CardContent className="pt-0">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Tamamlanma</span>
-                    <span className="font-medium">
-                      {category.completion_rate}%
-                    </span>
+        {filteredCategories.map((category) => {
+          // Get actual role for RegionAdmin restriction
+          const actualRole = permissions.role || permissions.sectorId ? 'sectoradmin' : permissions.regionId ? 'regionadmin' : 'schooladmin';
+          
+          // RegionAdmin cannot select sector categories (but can see them)
+          const isDisabled = actualRole === 'regionadmin' && category.assignment === 'sectors';
+          
+          return (
+            <Card 
+              key={category.id}
+              className={`cursor-pointer transition-all duration-200 group focus-within:ring-2 focus-within:ring-blue-500 ${
+                isDisabled 
+                  ? 'opacity-50 cursor-not-allowed hover:shadow-none' 
+                  : 'hover:shadow-lg hover:scale-[1.02]'
+              }`}
+              onClick={() => {
+                if (!isDisabled) {
+                  onCategorySelect(category);
+                }
+              }}
+              role="button"
+              tabIndex={isDisabled ? -1 : 0}
+              aria-label={`${category.name} kateqoriyasını seç`}
+              aria-disabled={isDisabled}
+              onKeyDown={(e) => {
+                if (!isDisabled && (e.key === 'Enter' || e.key === ' ')) {
+                  e.preventDefault();
+                  onCategorySelect(category);
+                }
+              }}
+            >
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className={`text-lg flex items-center gap-2 transition-colors ${
+                    isDisabled ? 'text-gray-400' : 'group-hover:text-blue-600'
+                  }`}>
+                    {category.assignment === 'sectors' ? (
+                      <Database className="h-5 w-5 text-blue-600" />
+                    ) : (
+                      <Building2 className="h-5 w-5 text-green-600" />
+                    )}
+                    {category.name}
+                  </CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Badge 
+                      variant={category.assignment === 'sectors' ? 'default' : 'secondary'}
+                      className="text-xs"
+                    >
+                      {category.assignment === 'sectors' ? 'Sektor' : 'Məktəb'}
+                    </Badge>
+                    {isDisabled && (
+                      <Badge variant="destructive" className="text-xs">
+                        Giriş yoxdur
+                      </Badge>
+                    )}
                   </div>
-                  <Progress 
-                    value={category.completion_rate} 
-                    className="h-2"
-                  />
                 </div>
-              </CardContent>
-            )}
-          </Card>
-        ))}
+                {category.description && (
+                  <p className={`text-sm mt-2 ${
+                    isDisabled ? 'text-gray-400' : 'text-muted-foreground'
+                  }`}>
+                    {category.description}
+                  </p>
+                )}
+              </CardHeader>
+              
+              {category.completion_rate !== undefined && (
+                <CardContent className="pt-0">
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Tamamlanma</span>
+                      <span className="font-medium">
+                        {category.completion_rate}%
+                      </span>
+                    </div>
+                    <Progress 
+                      value={category.completion_rate} 
+                      className="h-2"
+                    />
+                  </div>
+                </CardContent>
+              )}
+            </Card>
+          );
+        })}}
       </div>
 
       {/* Role-based help text */}

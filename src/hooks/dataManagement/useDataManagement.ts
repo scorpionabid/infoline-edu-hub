@@ -81,10 +81,23 @@ export interface DataManagementState {
  */
 export const useDataManagement = () => {
   // Auth and permissions
-  const { user, userRole } = useAuthStore();
+  const { user } = useAuthStore();
+  const userRole = useAuthStore(state => state.user?.role);
   const sectorId = useAuthStore(state => state.user?.sector_id);
   const regionId = useAuthStore(state => state.user?.region_id);
   const { hasRole, canApproveData, canEditData } = usePermissions();
+
+  // Debug user and role (remove in production)
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔍 useDataManagement Debug:', {
+      user: user,
+      userRole: userRole,
+      userRoleDirect: user?.role,
+      sectorId: sectorId,
+      regionId: regionId,
+      userFromState: useAuthStore.getState().user
+    });
+  }
 
   // State
   const [state, setState] = useState<DataManagementState>({
@@ -107,7 +120,10 @@ export const useDataManagement = () => {
     categories = [], 
     isLoading: categoriesLoading,
     refetch: refetchCategories 
-  } = useCategoriesQuery();
+  } = useCategoriesQuery({
+    // Get all categories - no assignment filtering
+    // Role-based filtering will be done in CategorySelector component
+  });
 
   const { 
     columns = [], 
@@ -210,6 +226,28 @@ export const useDataManagement = () => {
 
   // Category selection
   const handleCategorySelect = useCallback(async (category: Category) => {
+    // Permission check: RegionAdmin cannot select sector categories
+    const actualRole = userRole || (sectorId ? 'sectoradmin' : regionId ? 'regionadmin' : 'schooladmin');
+    
+    if (actualRole === 'regionadmin' && category.assignment === 'sectors') {
+      toast.error('Region adminləri sektor kateqoriyalarını seçə bilməz');
+      setState(prev => ({
+        ...prev,
+        error: 'Bu kateqoriya üçün icazəniz yoxdur'
+      }));
+      return;
+    }
+    
+    // SectorAdmin can only select if they have a sectorId
+    if (category.assignment === 'sectors' && actualRole === 'sectoradmin' && !sectorId) {
+      toast.error('Sektor məlumatı əlavə etmək üçün sektor təyinatınız olmalıdır');
+      setState(prev => ({
+        ...prev,
+        error: 'Sektor təyinatı tapılmadı'
+      }));
+      return;
+    }
+
     setState(prev => ({
       ...prev,
       selectedCategory: category,
@@ -230,7 +268,7 @@ export const useDataManagement = () => {
         error: 'Sütunlar yüklənərkən xəta baş verdi'
       }));
     }
-  }, [refetchColumns]);
+  }, [userRole, sectorId, regionId, refetchColumns]);
 
   // Column selection
   const handleColumnSelect = useCallback(async (column: Column) => {
