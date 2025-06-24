@@ -1,8 +1,0 @@
-{
-  "name": "translation-validator",
-  "version": "1.0.0",
-  "type": "module",
-  "dependencies": {
-    "@types/node": "^20.11.0"
-  }
-}
