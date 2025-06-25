@@ -89,18 +89,53 @@ export const useRealDashboardData = () => {
         throw new Error('Region ID not found for region admin');
       }
 
-      // Fetch sectors in this region
+      // Fetch sectors in this region with enhanced statistics
       const { data: sectorsData } = await supabase
         .from('sectors')
         .select(`
           id,
           name,
           completion_rate,
-          schools(id)
+          schools(id, completion_rate)
         `)
         .eq('region_id', user.region_id);
 
-      // Fetch form statistics for this region
+      // Fetch form statistics for each sector
+      const sectorsWithStats = await Promise.all(
+        (sectorsData || []).map(async (sector) => {
+          const { data: sectorFormStats } = await supabase
+            .from('data_entries')
+            .select(`
+              status,
+              schools!inner(sector_id)
+            `)
+            .eq('schools.sector_id', sector.id);
+
+          const totalEntries = sectorFormStats?.length || 0;
+          const approvedEntries = sectorFormStats?.filter(f => f.status === 'approved').length || 0;
+          const pendingEntries = sectorFormStats?.filter(f => f.status === 'pending').length || 0;
+          
+          const sectorCompletionRate = totalEntries > 0 
+            ? Math.round((approvedEntries / totalEntries) * 100)
+            : 0;
+
+          return {
+            id: sector.id,
+            name: sector.name,
+            schoolCount: sector.schools?.length || 0,
+            totalSchools: sector.schools?.length || 0,
+            activeSchools: sector.schools?.length || 0,
+            completionRate: sectorCompletionRate,
+            completion_rate: sectorCompletionRate,
+            completion: sectorCompletionRate,
+            status: 'active',
+            created_at: '',
+            updated_at: ''
+          };
+        })
+      );
+
+      // Fetch overall form statistics for this region
       const { data: formStatsData } = await supabase
         .from('data_entries')
         .select(`
@@ -138,17 +173,7 @@ export const useRealDashboardData = () => {
       return {
         completionRate,
         formStats,
-        sectors: sectorsData?.map(sector => ({
-          id: sector.id,
-          name: sector.name,
-          schoolCount: sector.schools?.length || 0,
-          totalSchools: sector.schools?.length || 0,
-          activeSchools: sector.schools?.length || 0,
-          completionRate: sector.completion_rate || 0,
-          status: 'active',
-          created_at: '',
-          updated_at: ''
-        })) || [],
+        sectors: sectorsWithStats,
         categories: [],
         deadlines: [],
         pendingItems: [],
