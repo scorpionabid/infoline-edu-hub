@@ -1,35 +1,10 @@
 
 import { useState, useEffect } from 'react';
-
-export interface EnhancedDashboardData {
-  totalCategories: number;
-  completedCategories: number;
-  totalColumns: number;
-  filledColumns: number;
-  overallProgress: number;
-  categoryProgress: CategoryProgress[];
-  columnStatuses: ColumnStatus[];
-  totalForms: number;
-  completedForms: number;
-  pendingForms: number;
-  completionRate: number;
-}
-
-export interface CategoryProgress {
-  id: string;
-  name: string;
-  progress: number;
-  status: string;
-  completionRate: number;
-}
-
-export interface ColumnStatus {
-  id: string;
-  name: string;
-  status: 'completed' | 'pending' | 'empty';
-  categoryId: string;
-  categoryName: string;
-}
+import { 
+  EnhancedDashboardData, 
+  CategoryProgress, 
+  ColumnStatus 
+} from '@/types/dashboard';
 
 interface UseDashboardDataOptions {
   enhanced?: boolean;
@@ -107,5 +82,3 @@ export const useDashboardData = (options: UseDashboardDataOptions = {}) => {
     isEmpty: !data || (data.totalCategories === 0)
   };
 };
-
-export type { EnhancedDashboardData, CategoryProgress, ColumnStatus };

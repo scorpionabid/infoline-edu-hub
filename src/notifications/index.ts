@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from 'react';
 import { notificationManager, UnifiedNotification } from './notificationManager';
 
@@ -23,20 +22,8 @@ export const useNotifications = (userId?: string) => {
   const [realTimeEnabled, setRealTimeEnabled] = useState(false);
 
   useEffect(() => {
-    // Simulate fetching notifications for a user
     const initialNotifications = notificationManager.getAll().filter(n => n.user_id === userId);
     setNotifications(initialNotifications);
-
-    // Subscribe to notification changes
-    const handleNotificationChange = () => {
-      const updatedNotifications = notificationManager.getAll().filter(n => n.user_id === userId);
-      setNotifications(updatedNotifications);
-    };
-
-    // You might need a more robust event system
-    return () => {
-      // Clean up the subscription
-    };
   }, [userId]);
 
   const addNotification = useCallback((notification: Omit<UnifiedNotification, 'id' | 'timestamp'>) => {
@@ -102,7 +89,8 @@ export const useNotifications = (userId?: string) => {
   };
 };
 
-export { notificationManager, UnifiedNotification };
+export { notificationManager };
+export type { UnifiedNotification };
 
 export const useNotificationPreferences = (userId?: string) => {
   const [preferences, setPreferences] = useState({

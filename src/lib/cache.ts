@@ -1,13 +1,11 @@
-import { CacheManager } from '@/cache';
 
-const cacheManager = new CacheManager();
+import { cacheManager } from '@/cache';
 
 export const cache = {
   get: (key: string) => cacheManager.get(key),
   set: (key: string, value: any, ttl?: number) => cacheManager.set(key, value, ttl),
   delete: (key: string) => cacheManager.delete(key),
   clear: () => cacheManager.clear(),
-  // Add missing method
   clearStorage: () => cacheManager.clear()
 };
 
