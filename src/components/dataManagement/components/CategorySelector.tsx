@@ -1,4 +1,3 @@
-
 import React, { memo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -50,13 +49,13 @@ export const CategorySelector: React.FC<CategorySelectorProps> = memo(({
     }
     
     // Get actual role from multiple sources (fallback strategy)
-    const actualRole = permissions.role || permissions.sectorId ? 'sectoradmin' : permissions.regionId ? 'regionadmin' : 'schooladmin';
+    const actualRole = permissions.role || (permissions.sectorId ? 'sectoradmin' : permissions.regionId ? 'regionadmin' : 'schooladmin');
     
     if (process.env.NODE_ENV === 'development') {
       console.log('Actual role determined:', actualRole);
     }
     
-    // SuperAdmin can see all categories
+    // SuperAdmin can see all categories - fixed comparison
     if (permissions.canViewAll || actualRole === 'superadmin') {
       if (process.env.NODE_ENV === 'development') {
         console.log('superadmin/canViewAll = true, including category');
@@ -160,7 +159,7 @@ export const CategorySelector: React.FC<CategorySelectorProps> = memo(({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredCategories.map((category) => {
           // Get actual role for RegionAdmin restriction
-          const actualRole = permissions.role || permissions.sectorId ? 'sectoradmin' : permissions.regionId ? 'regionadmin' : 'schooladmin';
+          const actualRole = permissions.role || (permissions.sectorId ? 'sectoradmin' : permissions.regionId ? 'regionadmin' : 'schooladmin');
           
           // RegionAdmin cannot select sector categories (but can see them)
           const isDisabled = actualRole === 'regionadmin' && category.assignment === 'sectors';

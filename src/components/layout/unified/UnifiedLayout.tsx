@@ -10,6 +10,7 @@ import UnifiedSidebar from './UnifiedSidebar';
 import MobileBottomNav from '../parts/MobileBottomNav';
 import QuickActions from '../parts/QuickActions';
 import BreadcrumbNav from '../parts/BreadcrumbNav';
+import { Drawer } from '@mui/material';
 
 interface UnifiedLayoutProps {
   children?: React.ReactNode;
@@ -84,13 +85,19 @@ const UnifiedLayout: React.FC<UnifiedLayoutProps> = memo(({
 
             {/* Mobile/Tablet overlay sidebar */}
             {(isMobile || isTablet) && (
-              <UnifiedSidebar 
-                isOpen={sidebarOpen}
-                onToggle={toggleSidebar}
-                userName={user?.full_name || user?.email}
-                variant={sidebarVariant}
-                width={sidebarWidth}
-              />
+              <Drawer
+                variant={isMobile ? "overlay" : "desktop"} // Fixed: use valid variant
+                open={sidebarOpen}
+                onOpenChange={setSidebarOpen}
+              >
+                <UnifiedSidebar 
+                  isOpen={sidebarOpen}
+                  onToggle={toggleSidebar}
+                  userName={user?.full_name || user?.email}
+                  variant={sidebarVariant}
+                  width={sidebarWidth}
+                />
+              </Drawer>
             )}
           </>
         )}

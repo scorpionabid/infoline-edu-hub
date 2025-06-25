@@ -1,100 +1,89 @@
-
-import React from 'react';
-import { School } from '@/types/supabase';
-import VirtualTable from '@/components/performance/VirtualTable';
-import { Button } from '@/components/ui/button';
-import { Edit, Trash2, User, Link, FileText } from 'lucide-react';
+import React, { memo } from 'react';
+import { School } from '@/types';
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import VirtualTable, { VirtualItem } from '@/components/performance/VirtualTable';
 
 interface OptimizedSchoolTableProps {
   schools: School[];
-  onEdit: (school: School) => void;
-  onDelete: (school: School) => void;
-  onAdmin: (school: School) => void;
-  onLinks: (school: School) => void;
-  onFiles: (school: School) => void;
-  regionNames: { [key: string]: string };
-  sectorNames: { [key: string]: string };
+  selectedSchools: string[];
+  onSchoolSelect: (schoolId: string, checked: boolean) => void;
+  onSelectAll: (checked: boolean) => void;
 }
 
-const OptimizedSchoolTable: React.FC<OptimizedSchoolTableProps> = ({
+const rowHeight = 60;
+
+export const OptimizedSchoolTable: React.FC<OptimizedSchoolTableProps> = memo(({
   schools,
-  onEdit,
-  onDelete,
-  onAdmin,
-  onLinks,
-  onFiles,
-  regionNames,
-  sectorNames,
+  selectedSchools,
+  onSchoolSelect,
+  onSelectAll
 }) => {
-  const renderSchoolRow = (school: School, index: number) => (
-    <div className="flex items-center justify-between p-4 hover:bg-gray-50">
-      <div className="flex-1 grid grid-cols-4 gap-4">
-        <div>
-          <p className="font-medium">{school.name}</p>
-          <p className="text-sm text-gray-500">{school.email}</p>
-        </div>
-        
-        <div>
-          <p className="text-sm">{regionNames[school.region_id] || 'N/A'}</p>
-        </div>
-        
-        <div>
-          <p className="text-sm">{sectorNames[school.sector_id] || 'N/A'}</p>
-        </div>
-        
-        <div>
-          <span className={`inline-flex px-2 py-1 text-xs rounded-full ${
-            school.status === 'active' 
-              ? 'bg-green-100 text-green-800' 
-              : 'bg-gray-100 text-gray-800'
-          }`}>
-            {school.status}
-          </span>
-        </div>
-      </div>
-      
-      <div className="flex gap-2">
-        <Button size="sm" variant="outline" onClick={() => onEdit(school)}>
-          <Edit className="h-4 w-4" />
-        </Button>
-        <Button size="sm" variant="outline" onClick={() => onAdmin(school)}>
-          <User className="h-4 w-4" />
-        </Button>
-        <Button size="sm" variant="outline" onClick={() => onLinks(school)}>
-          <Link className="h-4 w-4" />
-        </Button>
-        <Button size="sm" variant="outline" onClick={() => onFiles(school)}>
-          <FileText className="h-4 w-4" />
-        </Button>
-        <Button size="sm" variant="destructive" onClick={() => onDelete(school)}>
-          <Trash2 className="h-4 w-4" />
-        </Button>
-      </div>
-    </div>
-  );
+  const handleSchoolSelect = (schoolId: string, checked: boolean) => {
+    onSchoolSelect(schoolId, checked);
+  };
+
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onSelectAll(e.target.checked);
+  };
+
+  const isAllSelected = schools.length > 0 && selectedSchools.length === schools.length;
 
   return (
-    <div className="border rounded-lg">
-      {/* Header */}
-      <div className="bg-gray-50 p-4 border-b">
-        <div className="grid grid-cols-4 gap-4 font-medium text-sm text-gray-700">
-          <div>Məktəb</div>
-          <div>Region</div>
-          <div>Sektor</div>
-          <div>Status</div>
-        </div>
+    <div className="space-y-4">
+      {/* Select All Checkbox */}
+      <div className="flex items-center space-x-2 p-4 bg-muted/50 rounded">
+        <Checkbox
+          id="select-all"
+          checked={isAllSelected}
+          onCheckedChange={handleSelectAll}
+        />
+        <Label htmlFor="select-all" className="text-sm font-medium cursor-pointer">
+          Bütün məktəbləri seç ({schools.length} məktəb)
+        </Label>
       </div>
-      
-      {/* Virtual Table */}
-      <VirtualTable
+
+      {/* Virtualized School List */}
+      <VirtualTable<School>
         items={schools}
-        itemHeight={80}
+        itemHeight={rowHeight}
         height={600}
-        renderItem={renderSchoolRow}
-        className="w-full"
+        renderItem={({ item: school, index }) => (
+          <div
+            key={school.id}
+            className={`
+              grid grid-cols-7 gap-4 p-4 border-b hover:bg-muted/50 transition-colors
+              ${selectedSchools.includes(school.id) ? 'bg-blue-50' : ''}
+            `}
+          >
+            {/* Checkbox */}
+            <div className="col-span-1 flex items-center">
+              <Checkbox
+                id={`school-${school.id}`}
+                checked={selectedSchools.includes(school.id)}
+                onCheckedChange={(checked) => handleSchoolSelect(school.id, checked as boolean)}
+              />
+            </div>
+
+            {/* School Name */}
+            <div className="col-span-3 flex items-center">
+              <Label htmlFor={`school-${school.id}`} className="cursor-pointer font-medium">
+                {school.name}
+              </Label>
+            </div>
+
+            {/* Region */}
+            <div className="col-span-2 flex items-center text-muted-foreground">
+              {school.region?.name || 'Region yoxdur'}
+            </div>
+
+            {/* Sector */}
+            <div className="col-span-1 flex items-center text-muted-foreground">
+              {school.sector?.name || 'Sektor yoxdur'}
+            </div>
+          </div>
+        )}
       />
     </div>
   );
-};
-
-export default OptimizedSchoolTable;
+});

@@ -1,77 +1,49 @@
-import React, { useState, useMemo, memo, useCallback } from 'react';
+
+import React, { useState, memo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
 } from '@/components/ui/table';
 import { 
   ArrowLeft,
-  School,
   Save,
-  CheckCircle,
-  XCircle,
-  Clock,
-  AlertCircle,
+  Check,
+  X,
   Loader2,
-  Filter,
-  Download,
-  Users,
-  Search
+  AlertCircle,
+  Building2,
+  Users
 } from 'lucide-react';
-import { Category, Column, SchoolDataEntry, DataStats } from '@/hooks/dataManagement/useDataManagement';
-import { DataActions } from './DataActions';
-import { SectorDataEntry } from './SectorDataEntry';
+import { Category, Column, SchoolDataEntry, DataStats, DataManagementPermissions } from '@/hooks/dataManagement/useDataManagement';
 
 interface SchoolDataGridProps {
   category: Category;
   column: Column;
   schoolData: SchoolDataEntry[];
-  stats: DataStats | null;
+  stats: DataStats;
   loading: boolean;
   saving: boolean;
-  permissions: {
-    canApprove: boolean;
-    canEdit: boolean;
-    canViewAll: boolean;
-    role: string;
-    sectorId?: string;
-    regionId?: string;
-  };
+  permissions: DataManagementPermissions;
   onDataSave: (schoolId: string, value: string) => Promise<boolean>;
   onDataApprove: (schoolId: string, comment?: string) => Promise<boolean>;
   onDataReject: (schoolId: string, reason: string, comment?: string) => Promise<boolean>;
   onBulkApprove: (schoolIds: string[]) => Promise<boolean>;
   onBulkReject: (schoolIds: string[], reason: string) => Promise<boolean>;
   onBack: () => void;
+  compactMode?: boolean;
 }
 
-type FilterStatus = 'all' | 'empty' | 'pending' | 'approved' | 'rejected';
-
-/**
- * School Data Grid Component
- * 
- * Displays school data in a table format with inline editing capabilities
- * and approval/rejection actions. Supports bulk operations and filtering.
- * 
- * Features:
- * - Inline data editing
- * - Individual and bulk approval/rejection
- * - Status filtering
- * - Progress tracking
- * - Export functionality
- */
-export const SchoolDataGrid: React.FC<SchoolDataGridProps> = ({
+export const SchoolDataGrid: React.FC<SchoolDataGridProps> = memo(({
   category,
   column,
   schoolData,
@@ -84,183 +56,64 @@ export const SchoolDataGrid: React.FC<SchoolDataGridProps> = ({
   onDataReject,
   onBulkApprove,
   onBulkReject,
-  onBack
+  onBack,
+  compactMode = false
 }) => {
-  // 🆕 Əgər sektor kateqoriyasıdırsa, SectorDataEntry render et
-  if (category.assignment === 'sectors') {
-    return (
-      <SectorDataEntry
-        category={category}
-        column={column}
-        onDataSave={onDataSave}
-        onBack={onBack}
-        loading={loading}
-        permissions={permissions}
-      />
-    );
-  }
-  // Local state for editing and selection
-  const [editingValues, setEditingValues] = useState<{[key: string]: string}>({});
+  const [editingSchool, setEditingSchool] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState<string>('');
   const [selectedSchools, setSelectedSchools] = useState<string[]>([]);
-  const [statusFilter, setStatusFilter] = useState<FilterStatus>('all');
-  const [searchTerm, setSearchTerm] = useState('');
 
-  // Filter and search logic
-  const filteredData = useMemo(() => {
-    let filtered = schoolData;
-
-    // Apply status filter
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(school => school.status === statusFilter);
-    }
-
-    // Apply search filter
-    if (searchTerm.trim()) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(school => 
-        school.schoolName.toLowerCase().includes(term) ||
-        school.sectorName.toLowerCase().includes(term) ||
-        school.regionName.toLowerCase().includes(term)
-      );
-    }
-
-    return filtered;
-  }, [schoolData, statusFilter, searchTerm]);
-
-  // Handle value change for inline editing - Memoized
-  const handleValueChange = useCallback((schoolId: string, value: string) => {
-    setEditingValues(prev => ({
-      ...prev,
-      [schoolId]: value
-    }));
-  }, []);
-
-  // Handle individual save
-  const handleSave = async (schoolId: string) => {
-    const value = editingValues[schoolId];
-    if (value === undefined) return;
-
-    const success = await onDataSave(schoolId, value);
-    if (success) {
-      // Clear editing value
-      setEditingValues(prev => {
-        const updated = { ...prev };
-        delete updated[schoolId];
-        return updated;
-      });
-    }
+  const handleStartEdit = (schoolId: string, currentValue: string) => {
+    setEditingSchool(schoolId);
+    setEditValue(currentValue || '');
   };
 
-  // Handle bulk save
-  const handleBulkSave = async () => {
-    const entries = Object.entries(editingValues).filter(([_, value]) => value?.trim());
-    if (entries.length === 0) return;
-
-    let successCount = 0;
-    for (const [schoolId, value] of entries) {
-      const success = await onDataSave(schoolId, value);
-      if (success) successCount++;
-    }
-
-    if (successCount > 0) {
-      // Clear successful edits
-      setEditingValues({});
-    }
-  };
-
-  // Selection handlers
-  const handleSelectSchool = (schoolId: string) => {
-    setSelectedSchools(prev => 
-      prev.includes(schoolId) 
-        ? prev.filter(id => id !== schoolId)
-        : [...prev, schoolId]
-    );
-  };
-
-  const handleSelectAll = () => {
-    const selectableSchools = filteredData
-      .filter(school => school.canApprove || school.canEdit)
-      .map(school => school.schoolId);
+  const handleSaveEdit = async () => {
+    if (!editingSchool) return;
     
-    setSelectedSchools(prev => 
-      prev.length === selectableSchools.length ? [] : selectableSchools
-    );
-  };
-
-  // Render input field based on column type
-  const renderInputField = (school: SchoolDataEntry) => {
-    const currentValue = editingValues[school.schoolId] ?? school.currentValue ?? '';
-    const isDisabled = !school.canEdit || saving;
-
-    if (!school.canEdit) {
-      return (
-        <span className="text-muted-foreground">
-          {school.currentValue || '-'}
-        </span>
-      );
-    }
-
-    if (column.type === 'textarea') {
-      return (
-        <Textarea
-          placeholder={column.placeholder || 'Məlumatı daxil edin...'}
-          value={currentValue}
-          onChange={(e) => handleValueChange(school.schoolId, e.target.value)}
-          disabled={isDisabled}
-          rows={2}
-          className="min-w-[200px]"
-        />
-      );
-    } else if (column.type === 'select' && column.options) {
-      return (
-        <Select 
-          value={currentValue} 
-          onValueChange={(value) => handleValueChange(school.schoolId, value)}
-          disabled={isDisabled}
-        >
-          <SelectTrigger className="min-w-[200px]">
-            <SelectValue placeholder="Seçim edin..." />
-          </SelectTrigger>
-          <SelectContent>
-            {column.options.map((option: any) => (
-              <SelectItem key={option.value || option} value={option.value || option}>
-                {option.label || option.value || option}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      );
-    } else {
-      return (
-        <Input
-          type={column.type === 'number' ? 'number' : 'text'}
-          placeholder={column.placeholder || 'Məlumatı daxil edin...'}
-          value={currentValue}
-          onChange={(e) => handleValueChange(school.schoolId, e.target.value)}
-          disabled={isDisabled}
-          className="min-w-[200px]"
-        />
-      );
+    try {
+      await onDataSave(editingSchool, editValue);
+      setEditingSchool(null);
+      setEditValue('');
+    } catch (error) {
+      console.error('Save failed:', error);
     }
   };
 
-  // Render status badge
-  const renderStatusBadge = (status: string) => {
-    const statusConfig = {
-      approved: { variant: 'default' as const, icon: CheckCircle, text: 'Təsdiqlənmiş' },
-      pending: { variant: 'secondary' as const, icon: Clock, text: 'Gözləyir' },
-      rejected: { variant: 'destructive' as const, icon: XCircle, text: 'Rədd edilmiş' },
-      empty: { variant: 'outline' as const, icon: AlertCircle, text: 'Boş' }
+  const handleCancelEdit = () => {
+    setEditingSchool(null);
+    setEditValue('');
+  };
+
+  const handleApprove = async (schoolId: string) => {
+    try {
+      await onDataApprove(schoolId);
+    } catch (error) {
+      console.error('Approve failed:', error);
+    }
+  };
+
+  const handleReject = async (schoolId: string, reason: string) => {
+    try {
+      await onDataReject(schoolId, reason);
+    } catch (error) {
+      console.error('Reject failed:', error);
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    const config = {
+      'approved': { variant: 'default' as const, label: 'Təsdiqlənmiş', className: 'bg-green-100 text-green-800' },
+      'pending': { variant: 'secondary' as const, label: 'Gözləmədə', className: 'bg-yellow-100 text-yellow-800' },
+      'rejected': { variant: 'destructive' as const, label: 'Rədd edilmiş', className: 'bg-red-100 text-red-800' },
+      'empty': { variant: 'outline' as const, label: 'Boş', className: 'bg-gray-100 text-gray-600' }
     };
-
-    const config = statusConfig[status as keyof typeof statusConfig];
-    if (!config) return null;
-
-    const Icon = config.icon;
+    
+    const statusConfig = config[status] || config.pending;
+    
     return (
-      <Badge variant={config.variant} className="flex items-center gap-1">
-        <Icon className="h-3 w-3" />
-        {config.text}
+      <Badge variant={statusConfig.variant} className={statusConfig.className}>
+        {statusConfig.label}
       </Badge>
     );
   };
@@ -269,22 +122,24 @@ export const SchoolDataGrid: React.FC<SchoolDataGridProps> = ({
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={onBack}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Geri
-          </Button>
+          <Skeleton className="h-9 w-20" />
           <div>
-            <h3 className="text-2xl font-bold">Məktəb Məlumatları</h3>
-            <p className="text-muted-foreground">Məlumatlar yüklənir...</p>
+            <Skeleton className="h-8 w-32 mb-2" />
+            <Skeleton className="h-4 w-48" />
           </div>
         </div>
 
-        <div className="text-center py-12">
-          <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-blue-600" />
-          <h3 className="text-lg font-semibold mb-2">Məktəb məlumatları yüklənir...</h3>
-          <p className="text-muted-foreground">
-            {column.name} sütunu üçün məlumatlar hazırlanır
-          </p>
+        <div className="space-y-4">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Card key={i} className="animate-pulse">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <Skeleton className="h-5 w-48" />
+                  <Skeleton className="h-5 w-24" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
     );
@@ -299,237 +154,166 @@ export const SchoolDataGrid: React.FC<SchoolDataGridProps> = ({
           Geri
         </Button>
         <div>
-          <h3 className="text-2xl font-bold flex items-center gap-2">
-            <School className="h-6 w-6" />
-            Məktəb Məlumatları
-          </h3>
+          <h3 className="text-2xl font-bold">Məlumat İdarəetməsi</h3>
           <p className="text-muted-foreground">
-            {column.name} sütunu üçün məlumatları idarə edin
+            {category.name} • {column.name}
           </p>
         </div>
       </div>
 
-      {/* Column Info */}
-      <Card>
+      {/* Category and Column Info */}
+      <Card className="border-blue-200 bg-blue-50">
         <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="font-medium text-lg">{column.name}</div>
-              <div className="text-sm text-muted-foreground">
-                Kateqoriya: {category.name} • Tip: {column.type}
-                {column.is_required && ' • Məcburi'}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex items-center gap-3">
+              <Building2 className="h-5 w-5 text-blue-600" />
+              <div>
+                <div className="font-medium">{category.name}</div>
+                <div className="text-sm text-muted-foreground">
+                  {category.assignment === 'sectors' ? 'Sektor Məlumatı' : 'Məktəb Məlumatları'}
+                </div>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              {column.is_required && (
-                <Badge variant="destructive">Məcburi</Badge>
-              )}
-              <Badge variant="outline">{column.type}</Badge>
+            <div className="flex items-center gap-3">
+              <Users className="h-5 w-5 text-green-600" />
+              <div>
+                <div className="font-medium">{column.name}</div>
+                <div className="text-sm text-muted-foreground">
+                  {column.type} • {column.is_required ? 'Məcburi' : 'İxtiyari'}
+                </div>
+              </div>
             </div>
           </div>
-          {column.help_text && (
-            <Alert className="mt-3">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{column.help_text}</AlertDescription>
-            </Alert>
-          )}
         </CardContent>
       </Card>
 
-      {/* Filters and Actions */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-          <div className="flex items-center gap-2">
-            <Search className="h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Məktəb axtar..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-64"
-            />
-          </div>
-          
-          <Select value={statusFilter} onValueChange={(value: FilterStatus) => setStatusFilter(value)}>
-            <SelectTrigger className="w-48">
-              <Filter className="h-4 w-4 mr-2" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Bütün statuslar</SelectItem>
-              <SelectItem value="empty">Boş</SelectItem>
-              <SelectItem value="pending">Gözləyən</SelectItem>
-              <SelectItem value="approved">Təsdiqlənmiş</SelectItem>
-              <SelectItem value="rejected">Rədd edilmiş</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {Object.keys(editingValues).length > 0 && (
-            <Button 
-              onClick={handleBulkSave}
-              disabled={saving}
-              className="flex items-center gap-2"
-            >
-              {saving ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Save className="h-4 w-4" />
-              )}
-              Hamısını Saxla ({Object.keys(editingValues).length})
-            </Button>
-          )}
-          
-          <Button variant="outline" disabled>
-            <Download className="h-4 w-4 mr-2" />
-            İxrac Et
-          </Button>
-        </div>
-      </div>
-
-      {/* Selection Actions */}
-      {selectedSchools.length > 0 && permissions.canApprove && (
-        <Card className="border-blue-200 bg-blue-50">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-blue-600" />
-                <span className="font-medium">
-                  {selectedSchools.length} məktəb seçilib
-                </span>
-              </div>
-              
-              <DataActions
-                selectedSchools={selectedSchools}
-                onBulkApprove={onBulkApprove}
-                onBulkReject={onBulkReject}
-                disabled={saving}
-              />
-            </div>
+      {/* Stats Summary */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold">{stats.totalSchools || 0}</div>
+            <div className="text-sm text-muted-foreground">Ümumi Məktəb</div>
           </CardContent>
         </Card>
-      )}
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-yellow-600">{stats.pendingCount || 0}</div>
+            <div className="text-sm text-muted-foreground">Gözləyən</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-green-600">{stats.approvedCount || 0}</div>
+            <div className="text-sm text-muted-foreground">Təsdiqlənmiş</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-blue-600">{stats.completionRate || 0}%</div>
+            <div className="text-sm text-muted-foreground">Tamamlanma</div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Data Table */}
-      {filteredData.length === 0 ? (
-        <div className="text-center py-12">
-          <School className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-          <h3 className="text-xl font-semibold mb-2">Məktəb tapılmadı</h3>
-          <p className="text-muted-foreground mb-4">
-            {searchTerm || statusFilter !== 'all' 
-              ? 'Filtr şərtlərinə uyğun məktəb tapılmadı'
-              : 'Bu sütun üçün heç bir məktəb məlumatı tapılmadı'
-            }
-          </p>
-          {(searchTerm || statusFilter !== 'all') && (
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setSearchTerm('');
-                setStatusFilter('all');
-              }}
-            >
-              Filtirləri sıfırla
-            </Button>
-          )}
-        </div>
+      {schoolData.length === 0 ? (
+        <Card>
+          <CardContent className="text-center py-12">
+            <AlertCircle className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+            <h3 className="text-xl font-semibold mb-2">Məlumat tapılmadı</h3>
+            <p className="text-muted-foreground">
+              Bu kateqoriya və sütun üçün heç bir məktəb məlumatı tapılmadı
+            </p>
+          </CardContent>
+        </Card>
       ) : (
         <Card>
-          <div className="overflow-x-auto">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>Məktəb Məlumatları</span>
+              {saving && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Yadda saxlanır...
+                </div>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  {permissions.canApprove && (
-                    <TableHead className="w-12">
-                      <Checkbox
-                        checked={selectedSchools.length === filteredData.filter(s => s.canApprove || s.canEdit).length}
-                        onCheckedChange={handleSelectAll}
-                      />
-                    </TableHead>
-                  )}
-                  <TableHead>Məktəb</TableHead>
-                  <TableHead>Mövcud Dəyər</TableHead>
-                  <TableHead>Yeni Dəyər</TableHead>
+                  <TableHead>Məktəb Adı</TableHead>
+                  <TableHead>Məlumat</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Əməliyyatlar</TableHead>
+                  <TableHead>Əməliyyatlar</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredData.map((school) => (
-                  <TableRow key={school.schoolId}>
-                    {permissions.canApprove && (
-                      <TableCell>
-                        {(school.canApprove || school.canEdit) && (
-                          <Checkbox
-                            checked={selectedSchools.includes(school.schoolId)}
-                            onCheckedChange={() => handleSelectSchool(school.schoolId)}
-                          />
-                        )}
-                      </TableCell>
-                    )}
-                    
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{school.schoolName}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {school.sectorName}
-                        </div>
-                      </div>
+                {schoolData.map((school) => (
+                  <TableRow key={school.id}>
+                    <TableCell className="font-medium">
+                      {school.school_name}
                     </TableCell>
-                    
                     <TableCell>
-                      {school.currentValue ? (
-                        <span className="font-medium">{school.currentValue}</span>
+                      {editingSchool === school.school_id ? (
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            placeholder={column.placeholder || `${column.name} daxil edin`}
+                            className="flex-1"
+                          />
+                          <Button 
+                            size="sm" 
+                            onClick={handleSaveEdit}
+                            disabled={saving}
+                          >
+                            <Save className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={handleCancelEdit}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
                       ) : (
-                        <Badge variant="outline" className="text-gray-500">
-                          Boş
-                        </Badge>
+                        <div 
+                          className="cursor-pointer hover:bg-muted p-2 rounded"
+                          onClick={() => handleStartEdit(school.school_id, school.value || '')}
+                        >
+                          {school.value || (
+                            <span className="text-muted-foreground italic">
+                              Məlumat daxil edin
+                            </span>
+                          )}
+                        </div>
                       )}
                     </TableCell>
-                    
                     <TableCell>
-                      {renderInputField(school)}
+                      {getStatusBadge(school.status)}
                     </TableCell>
-                    
                     <TableCell>
-                      {renderStatusBadge(school.status)}
-                    </TableCell>
-                    
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        {school.canEdit && editingValues[school.schoolId] !== undefined && (
-                          <Button
-                            size="sm"
-                            onClick={() => handleSave(school.schoolId)}
-                            disabled={saving || !editingValues[school.schoolId]?.trim()}
-                          >
-                            <Save className="h-3 w-3 mr-1" />
-                            Saxla
-                          </Button>
-                        )}
-                        
-                        {school.canApprove && school.status === 'pending' && (
+                      <div className="flex items-center gap-2">
+                        {permissions.canApprove && school.status === 'pending' && (
                           <>
                             <Button
                               size="sm"
-                              variant="default"
-                              onClick={() => onDataApprove(school.schoolId)}
-                              disabled={saving}
+                              variant="outline"
+                              className="text-green-600 hover:text-green-700"
+                              onClick={() => handleApprove(school.school_id)}
                             >
-                              <CheckCircle className="h-3 w-3 mr-1" />
-                              Təsdiqlə
+                              <Check className="h-4 w-4" />
                             </Button>
                             <Button
                               size="sm"
-                              variant="destructive"
-                              onClick={() => {
-                                const reason = window.prompt('Rədd səbəbi:');
-                                if (reason) onDataReject(school.schoolId, reason);
-                              }}
-                              disabled={saving}
+                              variant="outline"
+                              className="text-red-600 hover:text-red-700"
+                              onClick={() => handleReject(school.school_id, 'Məlumat düzgün deyil')}
                             >
-                              <XCircle className="h-3 w-3 mr-1" />
-                              Rədd et
+                              <X className="h-4 w-4" />
                             </Button>
                           </>
                         )}
@@ -539,22 +323,19 @@ export const SchoolDataGrid: React.FC<SchoolDataGridProps> = ({
                 ))}
               </TableBody>
             </Table>
-          </div>
+          </CardContent>
         </Card>
       )}
 
-      {/* Summary */}
-      {filteredData.length > 0 && (
-        <div className="text-center">
-          <div className="inline-flex items-center gap-2 text-sm text-muted-foreground bg-slate-50 px-3 py-2 rounded-lg">
-            <span>
-              {filteredData.length} məktəb göstərilir
-              {statusFilter !== 'all' && ` • Filtr: ${statusFilter}`}
-              {searchTerm && ` • Axtarış: "${searchTerm}"`}
-            </span>
-          </div>
-        </div>
+      {/* Help Text */}
+      {column.help_text && (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {column.help_text}
+          </AlertDescription>
+        </Alert>
       )}
     </div>
   );
-};
+});

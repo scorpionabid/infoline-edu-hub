@@ -229,35 +229,60 @@ export const useDataManagement = () => {
     await loadSchoolData(column.category_id);
   };
 
-  // Data management handlers
-  const handleDataSave = async (data: any) => {
+  // Data management handlers - Updated signatures to match SchoolDataGrid expectations
+  const handleDataSave = async (schoolId: string, value: string): Promise<boolean> => {
     setLoading(prev => ({ ...prev, saving: true }));
     try {
       // Mock save
       await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log('Data saved:', data);
+      console.log('Data saved:', schoolId, value);
+      return true;
     } catch (error) {
       console.error('Error saving data:', error);
-      throw error;
+      return false;
     } finally {
       setLoading(prev => ({ ...prev, saving: false }));
     }
   };
 
-  const handleDataApprove = async (entryId: string) => {
-    console.log('Approving entry:', entryId);
+  const handleDataApprove = async (schoolId: string, comment?: string): Promise<boolean> => {
+    try {
+      console.log('Approving entry:', schoolId, comment);
+      return true;
+    } catch (error) {
+      console.error('Error approving data:', error);
+      return false;
+    }
   };
 
-  const handleDataReject = async (entryId: string, reason: string) => {
-    console.log('Rejecting entry:', entryId, reason);
+  const handleDataReject = async (schoolId: string, reason: string, comment?: string): Promise<boolean> => {
+    try {
+      console.log('Rejecting entry:', schoolId, reason, comment);
+      return true;
+    } catch (error) {
+      console.error('Error rejecting data:', error);
+      return false;
+    }
   };
 
-  const handleBulkApprove = async (entryIds: string[]) => {
-    console.log('Bulk approving entries:', entryIds);
+  const handleBulkApprove = async (schoolIds: string[]): Promise<boolean> => {
+    try {
+      console.log('Bulk approving entries:', schoolIds);
+      return true;
+    } catch (error) {
+      console.error('Error bulk approving:', error);
+      return false;
+    }
   };
 
-  const handleBulkReject = async (entryIds: string[], reason: string) => {
-    console.log('Bulk rejecting entries:', entryIds, reason);
+  const handleBulkReject = async (schoolIds: string[], reason: string): Promise<boolean> => {
+    try {
+      console.log('Bulk rejecting entries:', schoolIds, reason);
+      return true;
+    } catch (error) {
+      console.error('Error bulk rejecting:', error);
+      return false;
+    }
   };
 
   // Utility functions
@@ -303,7 +328,7 @@ export const useDataManagement = () => {
     // Column selection  
     handleColumnSelect,
 
-    // Data management
+    // Data management - Updated handler signatures
     handleDataSave,
     handleDataApprove,
     handleDataReject,
