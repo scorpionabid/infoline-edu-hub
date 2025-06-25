@@ -23,12 +23,12 @@ export const useNotifications = (userId?: string) => {
 
   useEffect(() => {
     // Simulate fetching notifications for a user
-    const initialNotifications = notificationManager.getAll().filter(n => n.userId === userId);
+    const initialNotifications = notificationManager.getAll().filter(n => n.user_id === userId);
     setNotifications(initialNotifications);
 
     // Subscribe to notification changes
     const handleNotificationChange = () => {
-      const updatedNotifications = notificationManager.getAll().filter(n => n.userId === userId);
+      const updatedNotifications = notificationManager.getAll().filter(n => n.user_id === userId);
       setNotifications(updatedNotifications);
     };
 
@@ -69,10 +69,14 @@ export const useNotifications = (userId?: string) => {
     removeNotification(id);
   }, [removeNotification]);
 
+  const clearAll = useCallback(() => {
+    clearNotifications();
+  }, [clearNotifications]);
+
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
   const refetch = useCallback(() => {
-    const updatedNotifications = notificationManager.getAll().filter(n => n.userId === userId);
+    const updatedNotifications = notificationManager.getAll().filter(n => n.user_id === userId);
     setNotifications(updatedNotifications);
   }, [userId]);
 
@@ -81,6 +85,7 @@ export const useNotifications = (userId?: string) => {
     addNotification,
     removeNotification,
     clearNotifications,
+    clearAll,
     markAsRead,
     markAllAsRead,
     deleteNotification,
@@ -168,6 +173,7 @@ export const useNotificationPreferences = (userId?: string) => {
     setIsTestingNotification(true);
     try {
       notificationManager.add({
+        user_id: userId || '',
         title: 'Test Notification',
         message: 'This is a test notification',
         type: 'info'
@@ -175,7 +181,7 @@ export const useNotificationPreferences = (userId?: string) => {
     } finally {
       setIsTestingNotification(false);
     }
-  }, []);
+  }, [userId]);
 
   const canReceiveEmail = preferences.email_notifications;
   const canReceivePush = preferences.push_notifications;

@@ -1,16 +1,16 @@
 
-
 export interface UnifiedNotification {
   id: string;
+  user_id: string;
   title: string;
   message: string;
   type: 'info' | 'success' | 'warning' | 'error' | 'deadline' | 'approval' | 'rejection';
   timestamp: string;
-  userId?: string;
-  user_id?: string;
   is_read?: boolean;
   priority?: 'normal' | 'high' | 'critical';
   created_at?: string;
+  related_entity_id?: string;
+  related_entity_type?: string;
 }
 
 class NotificationManager {
@@ -53,4 +53,3 @@ class NotificationManager {
 }
 
 export const notificationManager = new NotificationManager();
-

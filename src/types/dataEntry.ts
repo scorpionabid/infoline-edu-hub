@@ -38,3 +38,18 @@ export type DataEntryStatus = 'draft' | 'pending' | 'approved' | 'rejected';
 export interface DataEntryFormData {
   [key: string]: any;
 }
+
+// Status constants for use in components
+export const DATA_ENTRY_STATUS = {
+  DRAFT: 'draft' as const,
+  PENDING: 'pending' as const,
+  APPROVED: 'approved' as const,
+  REJECTED: 'rejected' as const
+};
+
+export const DATA_ENTRY_STATUS_TRANSITIONS = {
+  [DATA_ENTRY_STATUS.DRAFT]: [DATA_ENTRY_STATUS.PENDING],
+  [DATA_ENTRY_STATUS.PENDING]: [DATA_ENTRY_STATUS.APPROVED, DATA_ENTRY_STATUS.REJECTED],
+  [DATA_ENTRY_STATUS.APPROVED]: [],
+  [DATA_ENTRY_STATUS.REJECTED]: [DATA_ENTRY_STATUS.PENDING]
+};

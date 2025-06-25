@@ -1,5 +1,4 @@
 
-
 export interface SuperAdminDashboardData {
   totalSchools: number;
   totalUsers: number;
@@ -29,6 +28,7 @@ export interface RegionAdminDashboardData {
   forms: DashboardFormStats;
   deadlines?: any[];
   formStats?: DashboardFormStats;
+  sectors?: any[];
 }
 
 export interface SectorAdminDashboardData {
@@ -38,6 +38,7 @@ export interface SectorAdminDashboardData {
   stats: DashboardStats;
   forms: DashboardFormStats;
   formStats?: DashboardFormStats;
+  schools?: any[];
 }
 
 export interface SchoolAdminDashboardData {
@@ -55,6 +56,7 @@ export interface DashboardStats {
   approvedEntries: number;
   rejectedEntries: number;
   completed?: number;
+  pending?: number;
 }
 
 export interface DashboardFormStats {
@@ -169,6 +171,7 @@ export interface SchoolStat {
   completedForms?: number;
   completed?: number;
   total?: number;
+  percentage?: number;
 }
 
 export interface SectorStat {
@@ -206,4 +209,3 @@ export interface FormTabsProps {
   handleFormClick?: (formId: string) => void;
   onCategoryChange?: (categoryId: string) => void;
 }
-

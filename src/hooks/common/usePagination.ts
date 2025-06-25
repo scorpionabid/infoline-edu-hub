@@ -1,5 +1,4 @@
 
-
 import React from 'react';
 
 export interface UsePaginationOptions {
@@ -78,4 +77,3 @@ export function usePagination<T>(
     paginatedItems
   };
 }
-
