@@ -25,13 +25,13 @@ const DataManagementPage: React.FC = () => {
 
   return (
     <RequireRole 
-      roles={['regionadmin', 'sectoradmin', 'schooladmin']} 
+      roles={['regionadmin', 'sectoradmin']} 
       fallback={
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
             <h2 className="text-2xl font-bold mb-2">Giriş İcazəsi Yoxdur</h2>
             <p className="text-muted-foreground">
-              Bu səhifəyə giriş üçün RegionAdmin, SectorAdmin və ya SchoolAdmin rolunuz olmalıdır.
+              Bu səhifəyə giriş üçün RegionAdmin və ya SectorAdmin rolunuz olmalıdır.
             </p>
           </div>
         </div>

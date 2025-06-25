@@ -234,11 +234,11 @@ const AppRoutes = () => (
         } 
       />
       
-      {/* Unified Data Management - Bütün adminlər üçün */}
+      {/* Unified Data Management - Region və Sektor adminləri üçün */}
       <Route 
         path="/data-management" 
         element={
-          <ProtectedRoute allowedRoles={['regionadmin', 'sectoradmin', 'schooladmin']}>
+          <ProtectedRoute allowedRoles={['regionadmin', 'sectoradmin']}>
             <DataManagement />
           </ProtectedRoute>
         } 

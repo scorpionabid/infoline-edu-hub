@@ -97,7 +97,7 @@ export const useUnifiedNavigation = () => {
       {
         id: "data-entry",
         label: t("navigation.dataEntry") || "Məlumat Girişi",
-        href: isSchoolAdmin ? "/school-data-entry" : "/data-entry",
+        href: "/school-data-entry",
         icon: FileText,
         gradient: "from-teal-500 to-teal-600",
         visible: isSchoolAdmin
