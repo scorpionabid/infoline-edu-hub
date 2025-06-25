@@ -1,3 +1,4 @@
+
 import React, { memo } from 'react';
 import { School } from '@/types';
 import { Checkbox } from "@/components/ui/checkbox";
@@ -23,8 +24,8 @@ export const OptimizedSchoolTable: React.FC<OptimizedSchoolTableProps> = memo(({
     onSchoolSelect(schoolId, checked);
   };
 
-  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onSelectAll(e.target.checked);
+  const handleSelectAll = (checked: boolean) => {
+    onSelectAll(checked);
   };
 
   const isAllSelected = schools.length > 0 && selectedSchools.length === schools.length;
@@ -36,7 +37,7 @@ export const OptimizedSchoolTable: React.FC<OptimizedSchoolTableProps> = memo(({
         <Checkbox
           id="select-all"
           checked={isAllSelected}
-          onCheckedChange={handleSelectAll}
+          onCheckedChange={(checked) => handleSelectAll(checked as boolean)}
         />
         <Label htmlFor="select-all" className="text-sm font-medium cursor-pointer">
           Bütün məktəbləri seç ({schools.length} məktəb)
@@ -48,7 +49,7 @@ export const OptimizedSchoolTable: React.FC<OptimizedSchoolTableProps> = memo(({
         items={schools}
         itemHeight={rowHeight}
         height={600}
-        renderItem={({ item: school, index }) => (
+        renderItem={({ item: school }) => (
           <div
             key={school.id}
             className={`
@@ -74,12 +75,12 @@ export const OptimizedSchoolTable: React.FC<OptimizedSchoolTableProps> = memo(({
 
             {/* Region */}
             <div className="col-span-2 flex items-center text-muted-foreground">
-              {school.region?.name || 'Region yoxdur'}
+              {school.region_id || 'Region yoxdur'}
             </div>
 
             {/* Sector */}
             <div className="col-span-1 flex items-center text-muted-foreground">
-              {school.sector?.name || 'Sektor yoxdur'}
+              {school.sector_id || 'Sektor yoxdur'}
             </div>
           </div>
         )}

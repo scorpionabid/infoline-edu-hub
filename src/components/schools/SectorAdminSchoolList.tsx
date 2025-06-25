@@ -1,38 +1,22 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableCaption,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import {
-  DotsHorizontalIcon,
-  Plus,
-  Building,
-  Search,
-  ArrowDown,
-  ArrowUp,
-  ArrowUpDown,
-  Loader2,
-  AlertCircle,
+import { Checkbox } from '@/components/ui/checkbox';
+import { 
+  Search, 
+  Plus, 
+  MoreHorizontal,
+  Filter,
+  Download,
+  Upload,
+  Users,
+  BookOpen,
+  TrendingUp,
+  AlertCircle
 } from 'lucide-react';
-import { useTranslation } from '@/contexts/TranslationContext';
-import { useToast } from '@/components/ui/use-toast';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,608 +26,279 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
-} from '@/components/ui/command';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
-import { CalendarIcon } from '@radix-ui/react-icons';
-import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
-import { z } from "zod"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-
+import { useTranslation } from '@/contexts/TranslationContext';
+import { School } from '@/types/school';
 import BulkDataEntryDialog from '@/components/dataEntry/BulkDataEntryDialog';
-import {
-  useSchools,
-  School,
-  SchoolFilters,
-  SchoolSort,
-  useSchoolActions,
-  useSchoolBulkActions,
-} from '@/hooks/schools/useSchools';
-import { usePagination } from '@/hooks/common/usePagination';
-import { useDebounce } from '@/hooks/common/useDebounce';
-import { useBulkDataEntry } from '@/hooks/dataEntry/useBulkDataEntry';
 
-const schoolSchema = z.object({
-  name: z.string().min(2, {
-    message: "Məktəb adı ən azı 2 simvol olmalıdır.",
-  }),
-  address: z.string().min(5, {
-    message: "Ünvan ən azı 5 simvol olmalıdır.",
-  }),
-})
+interface SectorAdminSchoolListProps {
+  schools: School[];
+  onSchoolSelect?: (school: School) => void;
+  onBulkAction?: (action: string, schools: School[]) => void;
+  showActions?: boolean;
+  compactMode?: boolean;
+}
 
-const SectorAdminSchoolList: React.FC = () => {
+const SectorAdminSchoolList: React.FC<SectorAdminSchoolListProps> = ({
+  schools = [],
+  onSchoolSelect,
+  onBulkAction,
+  showActions = true,
+  compactMode = false
+}) => {
   const { t } = useTranslation();
-  const { toast } = useToast();
-
-  // UI State
+  
+  // Local state
+  const [selectedSchools, setSelectedSchools] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sort, setSort] = useState<SchoolSort>({ field: 'name', order: 'asc' });
-  const [filters, setFilters] = useState<SchoolFilters>({ sectorId: '' });
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [selectedSchool, setSelectedSchool] = useState<School | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
-  const [deleteSchoolId, setDeleteSchoolId] = useState<string | null>(null);
-  const [editSchool, setEditSchool] = useState<School | null>(null);
+  const [selectedSchoolForEntry, setSelectedSchoolForEntry] = useState<string | null>(null);
 
-  // Custom Hooks
-  const debouncedSearchQuery = useDebounce(searchQuery, 300);
-  const {
-    schools,
-    sectors,
-    loading,
-    error,
-    refreshData,
-  } = useSchools(debouncedSearchQuery, sort, filters);
-  const {
-    createSchool,
-    updateSchool,
-    deleteSchool,
-    creating,
-    updating,
-    deleting,
-  } = useSchoolActions();
-  const { bulkApproveSchools, bulkRejectSchools, bulkApproving, bulkRejecting } =
-    useSchoolBulkActions();
-  const { currentPage, pageSize, totalPages, setPageSize, goToPage } =
-    usePagination(schools, 10);
-  const { handleBulkDataEntry } = useBulkDataEntry();
+  // Filter schools based on search and status
+  const filteredSchools = schools.filter(school => {
+    const matchesSearch = school.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         school.principal_name?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || school.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
 
-  // Form
-  const form = useForm<z.infer<typeof schoolSchema>>({
-    resolver: zodResolver(schoolSchema),
-    defaultValues: {
-      name: "",
-      address: "",
-    },
-  })
-
-  // Derived Data
-  const paginatedSchools = React.useMemo(
-    () => schools.slice((currentPage - 1) * pageSize, currentPage * pageSize),
-    [schools, currentPage, pageSize],
-  );
-  const selectedSchools = React.useMemo(() => paginatedSchools.filter(school => school.selected), [paginatedSchools]);
-
-  // Handlers
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
+  // Handle school selection
+  const handleSchoolToggle = (schoolId: string) => {
+    setSelectedSchools(prev => 
+      prev.includes(schoolId) 
+        ? prev.filter(id => id !== schoolId)
+        : [...prev, schoolId]
+    );
   };
 
-  const handleSort = (field: string) => {
-    setSort((prev) => ({
-      field,
-      order: prev.field === field && prev.order === 'asc' ? 'desc' : 'asc',
-    }));
+  // Handle select all
+  const handleSelectAll = () => {
+    if (selectedSchools.length === filteredSchools.length) {
+      setSelectedSchools([]);
+    } else {
+      setSelectedSchools(filteredSchools.map(school => school.id));
+    }
   };
 
-  const handleFilterChange = (filter: Partial<SchoolFilters>) => {
-    setFilters((prev) => ({ ...prev, ...filter }));
+  // Handle bulk actions
+  const handleBulkAction = (action: string) => {
+    const selectedSchoolObjects = schools.filter(school => 
+      selectedSchools.includes(school.id)
+    );
+    
+    if (onBulkAction) {
+      onBulkAction(action, selectedSchoolObjects);
+    }
+    
+    // Reset selection after action
+    setSelectedSchools([]);
   };
 
-  const handlePageSizeChange = (size: number) => {
-    setPageSize(size);
-    goToPage(1);
-  };
-
-  const handleSchoolSelect = (school: School) => {
-    setSelectedSchool(school);
-  };
-
-  const handleBulkDataEntryClick = (school: School) => {
-    setSelectedSchool(school);
+  // Handle data entry for school
+  const handleDataEntry = (schoolId: string) => {
+    setSelectedSchoolForEntry(schoolId);
     setBulkDialogOpen(true);
   };
 
-  const handleCreateDialog = () => {
-    setCreateDialogOpen(true);
-  };
-
-  const handleCreateSchool = async (values: z.infer<typeof schoolSchema>) => {
-    try {
-      await createSchool(values);
-      toast({
-        title: "Məktəb uğurla yaradıldı!",
-        description: "Yeni məktəb siyahıya əlavə edildi.",
-      })
-      form.reset()
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Xəta baş verdi!",
-        description: "Məktəb yaradılarkən xəta baş verdi.",
-      })
-    } finally {
-      setCreateDialogOpen(false);
-      refreshData();
-    }
-  };
-
-  const handleEditSchool = (school: School) => {
-    setEditSchool(school);
-    form.setValue("name", school.name);
-    form.setValue("address", school.address);
-  };
-
-  const handleUpdateSchool = async (schoolId: string, values: z.infer<typeof schoolSchema>) => {
-    try {
-      await updateSchool(schoolId, values);
-      toast({
-        title: "Məktəb uğurla yeniləndi!",
-        description: "Məktəb məlumatları yeniləndi.",
-      })
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Xəta baş verdi!",
-        description: "Məktəb yenilənərkən xəta baş verdi.",
-      })
-    } finally {
-      setEditSchool(null);
-      refreshData();
-    }
-  };
-
-  const handleDeleteSchool = (schoolId: string) => {
-    setDeleteSchoolId(schoolId);
-  };
-
-  const confirmDeleteSchool = async () => {
-    if (deleteSchoolId) {
-      try {
-        await deleteSchool(deleteSchoolId);
-        toast({
-          title: "Məktəb uğurla silindi!",
-          description: "Məktəb siyahıdan silindi.",
-        })
-      } catch (error) {
-        toast({
-          variant: "destructive",
-          title: "Xəta baş verdi!",
-          description: "Məktəb silinərkən xəta baş verdi.",
-        })
-      } finally {
-        setDeleteSchoolId(null);
-        refreshData();
-      }
-    }
-  };
-
-  const handleBulkApprove = async () => {
-    try {
-      await bulkApproveSchools(selectedSchools.map(s => s.id));
-      toast({
-        title: "Məktəblər təsdiqləndi!",
-        description: "Seçilmiş məktəblər təsdiqləndi.",
-      })
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Xəta baş verdi!",
-        description: "Məktəblər təsdiqlənərkən xəta baş verdi.",
-      })
-    } finally {
-      refreshData();
-    }
-  };
-
-  const handleBulkReject = async () => {
-    try {
-      await bulkRejectSchools(selectedSchools.map(s => s.id));
-      toast({
-        title: "Məktəblər rədd edildi!",
-        description: "Seçilmiş məktəblər rədd edildi.",
-      })
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Xəta baş verdi!",
-        description: "Məktəblər rədd edilərkən xəta baş verdi.",
-      })
-    } finally {
-      refreshData();
-    }
-  };
-
-  const handleSelectSchool = (schoolId: string) => {
-    const updatedSchools = schools.map(school =>
-      school.id === schoolId ? { ...school, selected: !school.selected } : school
-    );
-    // Update the schools state with the new selected state
-    // This assumes you have a function to update the schools state
-  };
-
-  const handleSelectAllSchools = () => {
-    const allSelected = schools.every(school => school.selected);
-    const updatedSchools = schools.map(school => ({ ...school, selected: !allSelected }));
-    // Update the schools state with the new selected state
-    // This assumes you have a function to update the schools state
-  };
-
-  // Render Functions
-  const renderSortIcon = (field: string) => {
-    if (sort.field === field) {
-      return sort.order === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />;
-    }
-    return <ArrowUpDown className="h-4 w-4 text-muted-foreground" />;
-  };
-
-  if (loading) {
+  if (schools.length === 0) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-6 w-6 animate-spin" />
-      </div>
+      <Card>
+        <CardContent className="py-8 text-center">
+          <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+          <h3 className="text-lg font-semibold mb-2">Məktəb tapılmadı</h3>
+          <p className="text-muted-foreground">
+            Bu sektorda hələlik məktəb qeydiyyatdan keçməyib.
+          </p>
+        </CardContent>
+      </Card>
     );
   }
 
-  if (error) {
+  if (typeof schools[0] === 'string') {
     return (
-      <div className="flex items-center justify-center h-64">
-        <AlertCircle className="h-6 w-6 text-destructive" />
-        <span className="ml-2 text-destructive">{error}</span>
-      </div>
+      <Card>
+        <CardContent className="py-8 text-center">
+          <AlertCircle className="h-12 w-12 mx-auto text-destructive mb-4" />
+          <h3 className="text-lg font-semibold mb-2">Məlumat xətası</h3>
+          <p className="text-muted-foreground">
+            Məktəb məlumatları düzgün formatda deyil.
+          </p>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <CardTitle className="text-2xl font-bold flex items-center gap-2">
-          <Building className="h-6 w-6" />
-          Məktəblər
-        </CardTitle>
-        <div className="flex items-center space-x-2">
-          <Button onClick={handleCreateDialog}>
-            <Plus className="h-4 w-4 mr-2" />
-            Məktəb yarat
-          </Button>
-          {selectedSchools.length > 0 && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline">
-                  Əməliyyatlar ({selectedSchools.length})
-                  <ArrowDown className="h-4 w-4 ml-2" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Toplu Əməliyyatlar</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleBulkApprove} disabled={bulkApproving}>
-                  Təsdiqlə
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleBulkReject} disabled={bulkRejecting}>
-                  Rədd et
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-        </div>
-      </div>
-
-      {/* Search and Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="col-span-1 md:col-span-2">
-          <div className="relative">
+    <div className="space-y-4">
+      {/* Header with Search and Filters */}
+      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+        <div className="flex-1 flex flex-col sm:flex-row gap-2">
+          {/* Search */}
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
-              type="search"
-              placeholder="Məktəb axtar..."
+              placeholder="Məktəb adı və ya direktor adı ilə axtarın..."
               value={searchQuery}
-              onChange={handleSearchChange}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
             />
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           </div>
-        </div>
-        <div>
-          <Select onValueChange={(value) => handleFilterChange({ sectorId: value })}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Sektor seçin" />
+
+          {/* Status Filter */}
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Bütün Sektorlar</SelectItem>
-              {sectors.map((sector) => (
-                <SelectItem key={sector.id} value={sector.id}>
-                  {sector.name}
-                </SelectItem>
-              ))}
+              <SelectItem value="all">Bütün statuslar</SelectItem>
+              <SelectItem value="active">Aktiv</SelectItem>
+              <SelectItem value="inactive">Qeyri-aktiv</SelectItem>
+              <SelectItem value="pending">Gözləyən</SelectItem>
             </SelectContent>
           </Select>
         </div>
+
+        {/* Bulk Actions */}
+        {showActions && selectedSchools.length > 0 && (
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">
+              {selectedSchools.length} seçilib
+            </span>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  Toplu əməliyyat
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuLabel>Əməliyyatlar</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => handleBulkAction('export')}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Export
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleBulkAction('data-entry')}>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Məlumat daxil et
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )}
       </div>
 
-      {/* School Table */}
+      {/* Schools List */}
       <Card>
-        <CardHeader>
-          <CardTitle>Məktəb Siyahısı</CardTitle>
-          <CardDescription>
-            {schools.length} məktəb tapıldı
-          </CardDescription>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg">
+              Məktəblər ({filteredSchools.length})
+            </CardTitle>
+            
+            {showActions && (
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={selectedSchools.length === filteredSchools.length && filteredSchools.length > 0}
+                  onCheckedChange={handleSelectAll}
+                />
+                <span className="text-sm text-muted-foreground">Hamısını seç</span>
+              </div>
+            )}
+          </div>
         </CardHeader>
-        <CardContent>
-          <ScrollArea className="h-[500px]">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[50px]">
-                    <input
-                      type="checkbox"
-                      onChange={handleSelectAllSchools}
-                      checked={schools.every(school => school.selected)}
-                    />
-                  </TableHead>
-                  <TableHead className="cursor-pointer" onClick={() => handleSort('name')}>
-                    Adı {renderSortIcon('name')}
-                  </TableHead>
-                  <TableHead>Sektor</TableHead>
-                  <TableHead>Ünvan</TableHead>
-                  <TableHead className="text-right">Əməliyyatlar</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paginatedSchools.map((school) => (
-                  <TableRow key={school.id}>
-                    <TableCell className="font-medium">
-                      <input
-                        type="checkbox"
-                        onChange={() => handleSelectSchool(school.id)}
-                        checked={school.selected}
+        
+        <CardContent className="p-0">
+          <div className="divide-y">
+            {filteredSchools.map((school) => (
+              <div
+                key={school.id}
+                className={`p-4 hover:bg-muted/50 transition-colors ${
+                  selectedSchools.includes(school.id) ? 'bg-blue-50' : ''
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 flex-1">
+                    {showActions && (
+                      <Checkbox
+                        checked={selectedSchools.includes(school.id)}
+                        onCheckedChange={() => handleSchoolToggle(school.id)}
                       />
-                    </TableCell>
-                    <TableCell className="font-medium">{school.name}</TableCell>
-                    <TableCell>{school.sectorName}</TableCell>
-                    <TableCell>{school.address}</TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Menyunu aç</span>
-                            <DotsHorizontalIcon className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Əməliyyatlar</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => handleEditSchool(school)}>
-                            Redaktə et
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDeleteSchool(school.id)}>
-                            Sil
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleBulkDataEntryClick(school)}>
-                            Məlumat daxil et
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </ScrollArea>
+                    )}
+                    
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="font-medium">{school.name}</h4>
+                        <Badge 
+                          variant={school.status === 'active' ? 'default' : 'secondary'}
+                          className="text-xs"
+                        >
+                          {school.status}
+                        </Badge>
+                      </div>
+                      
+                      <div className="text-sm text-muted-foreground space-y-1">
+                        {school.principal_name && (
+                          <div>Direktor: {school.principal_name}</div>
+                        )}
+                        <div className="flex items-center gap-4">
+                          {school.student_count && (
+                            <span className="flex items-center gap-1">
+                              <Users className="h-3 w-3" />
+                              {school.student_count} şagird
+                            </span>
+                          )}
+                          {school.completion_rate !== undefined && (
+                            <span className="flex items-center gap-1">
+                              <TrendingUp className="h-3 w-3" />
+                              {school.completion_rate}% tamamlanıb
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {showActions && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Əməliyyatlar</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => onSchoolSelect?.(school)}>
+                          Məktəbi seç
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDataEntry(school.id)}>
+                          Məlumat daxil et
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
 
-      {/* Pagination */}
-      <div className="flex justify-between items-center">
-        <Select value={pageSize.toString()} onValueChange={(value) => handlePageSizeChange(parseInt(value))}>
-          <SelectTrigger>
-            <SelectValue placeholder="Səhifə ölçüsü" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="5">5</SelectItem>
-            <SelectItem value="10">10</SelectItem>
-            <SelectItem value="20">20</SelectItem>
-            <SelectItem value="50">50</SelectItem>
-          </SelectContent>
-        </Select>
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            onClick={() => goToPage(currentPage - 1)}
-            disabled={currentPage === 1}
-          >
-            Əvvəlki
-          </Button>
-          <span>{currentPage} / {totalPages}</span>
-          <Button
-            variant="outline"
-            onClick={() => goToPage(currentPage + 1)}
-            disabled={currentPage === totalPages}
-          >
-            Sonrakı
-          </Button>
-        </div>
-      </div>
-
-      {/* Create School Dialog */}
-      <AlertDialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Məktəb yarat</AlertDialogTitle>
-            <AlertDialogDescription>
-              Yeni məktəb yaratmaq üçün məlumatları daxil edin.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleCreateSchool)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Adı</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Məktəb adı" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Ünvan</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Məktəb ünvanı" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <AlertDialogFooter>
-                <AlertDialogCancel onClick={() => form.reset()}>Ləğv et</AlertDialogCancel>
-                <Button type="submit" disabled={creating}>
-                  Yarat
-                </Button>
-              </AlertDialogFooter>
-            </form>
-          </Form>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Edit School Dialog */}
-      <AlertDialog open={!!editSchool} onOpenChange={() => setEditSchool(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Məktəbi redaktə et</AlertDialogTitle>
-            <AlertDialogDescription>
-              Məktəb məlumatlarını redaktə etmək üçün məlumatları dəyişdirin.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit((values) => handleUpdateSchool(editSchool?.id || '', values))} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Adı</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Məktəb adı" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Ünvan</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Məktəb ünvanı" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <AlertDialogFooter>
-                <AlertDialogCancel onClick={() => setEditSchool(null)}>Ləğv et</AlertDialogCancel>
-                <Button type="submit" disabled={updating}>
-                  Yenilə
-                </Button>
-              </AlertDialogFooter>
-            </form>
-          </Form>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Delete School Dialog */}
-      <AlertDialog open={!!deleteSchoolId} onOpenChange={() => setDeleteSchoolId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Məktəbi sil</AlertDialogTitle>
-            <AlertDialogDescription>
-              Bu məktəbi silmək istədiyinizə əminsiniz? Bu əməliyyat geri alına bilməz.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDeleteSchoolId(null)}>Ləğv et</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDeleteSchool} disabled={deleting}>
-              Sil
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
       {/* Bulk Data Entry Dialog */}
-      
-        <BulkDataEntryDialog
-          open={bulkDialogOpen}
-          onOpenChange={setBulkDialogOpen}
-          schoolId={selectedSchool?.id || ''}
-          categoryId=""
-          onClose={() => setBulkDialogOpen(false)}
-          onComplete={() => {
-            setBulkDialogOpen(false);
-            refreshData();
-          }}
-        />
-      
+      <BulkDataEntryDialog
+        open={bulkDialogOpen}
+        onClose={() => {
+          setBulkDialogOpen(false);
+          setSelectedSchoolForEntry(null);
+        }}
+      />
     </div>
   );
 };
