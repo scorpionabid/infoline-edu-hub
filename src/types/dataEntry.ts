@@ -31,3 +31,10 @@ export interface DataEntryStats {
   draft: number;
   completion_rate: number;
 }
+
+// Add missing types
+export type DataEntryStatus = 'draft' | 'pending' | 'approved' | 'rejected';
+
+export interface DataEntryFormData {
+  [key: string]: any;
+}

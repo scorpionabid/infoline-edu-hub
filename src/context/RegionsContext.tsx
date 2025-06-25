@@ -54,3 +54,6 @@ export const useRegions = () => {
   }
   return context;
 };
+
+// Add the missing export
+export const useRegionsContext = useRegions;

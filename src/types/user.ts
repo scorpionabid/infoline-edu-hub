@@ -1,3 +1,4 @@
+
 // User types with proper enums
 export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'teacher' | 'user';
 
@@ -73,6 +74,7 @@ export interface UserFilter {
   role?: string | string[];
   status?: string | string[];
   region_id?: string;
+  regionId?: string;
   sector_id?: string;
   school_id?: string;
   dateRange?: {
