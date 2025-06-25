@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 
 export interface UsePaginationOptions {
@@ -24,14 +25,14 @@ export interface UsePaginationReturn {
   paginatedItems: <T>(items: T[]) => T[];
 }
 
-export function usePagination({
-  initialPage = 1,
-  pageSize = 10,
-  totalItems = 0
-}: UsePaginationOptions): UsePaginationReturn {
-  const [currentPage, setCurrentPage] = React.useState(initialPage);
-  const [currentPageSize, setCurrentPageSize] = React.useState(pageSize);
+export function usePagination<T>(
+  items: T[],
+  initialPageSize = 10
+): UsePaginationReturn {
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const [currentPageSize, setCurrentPageSize] = React.useState(initialPageSize);
 
+  const totalItems = items.length;
   const totalPages = Math.ceil(totalItems / currentPageSize);
   const hasNextPage = currentPage < totalPages;
   const hasPreviousPage = currentPage > 1;
@@ -77,3 +78,4 @@ export function usePagination({
     paginatedItems
   };
 }
+

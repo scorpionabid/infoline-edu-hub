@@ -1,4 +1,5 @@
 
+
 export interface SuperAdminDashboardData {
   totalSchools: number;
   totalUsers: number;
@@ -27,6 +28,7 @@ export interface RegionAdminDashboardData {
   stats: DashboardStats;
   forms: DashboardFormStats;
   deadlines?: any[];
+  formStats?: DashboardFormStats;
 }
 
 export interface SectorAdminDashboardData {
@@ -35,6 +37,7 @@ export interface SectorAdminDashboardData {
   completionRate: number;
   stats: DashboardStats;
   forms: DashboardFormStats;
+  formStats?: DashboardFormStats;
 }
 
 export interface SchoolAdminDashboardData {
@@ -51,6 +54,7 @@ export interface DashboardStats {
   pendingEntries: number;
   approvedEntries: number;
   rejectedEntries: number;
+  completed?: number;
 }
 
 export interface DashboardFormStats {
@@ -98,6 +102,9 @@ export interface CategoryItem {
   completion?: number;
   status?: string;
   deadline?: string;
+  totalFields?: number;
+  completedFields?: number;
+  lastUpdated?: string;
 }
 
 export interface StatsGridItem {
@@ -123,6 +130,8 @@ export interface FormItem {
   categoryName?: string;
   dueDate?: string;
   status: string;
+  lastModified?: string;
+  progress?: number;
 }
 
 export interface DeadlineItem {
@@ -134,6 +143,8 @@ export interface DeadlineItem {
   category?: string;
   categoryId?: string;
   categoryName?: string;
+  priority?: 'low' | 'medium' | 'high';
+  status?: string;
 }
 
 export interface SchoolStat {
@@ -155,6 +166,9 @@ export interface SchoolStat {
   phone?: string;
   email?: string;
   pendingForms?: number;
+  completedForms?: number;
+  completed?: number;
+  total?: number;
 }
 
 export interface SectorStat {
@@ -163,6 +177,8 @@ export interface SectorStat {
   schoolCount: number;
   completionRate: number;
   completion?: number;
+  completion_rate?: number;
+  totalSchools?: number;
 }
 
 export interface PendingApproval {
@@ -184,4 +200,10 @@ export interface FormTabsProps {
   categories?: CategoryItem[];
   deadlines?: DeadlineItem[];
   forms?: FormItem[];
+  upcoming?: DeadlineItem[];
+  pendingForms?: FormItem[];
+  navigateToDataEntry?: (categoryId: string) => void;
+  handleFormClick?: (formId: string) => void;
+  onCategoryChange?: (categoryId: string) => void;
 }
+
