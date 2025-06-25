@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Menu, Bell, Search, Globe } from "lucide-react";
 import { useTranslation } from "@/contexts/TranslationContext";
 import { useMobileClasses } from '@/hooks/layout/mobile';
+import { useUserContext } from '@/hooks/auth/useUserContext';
 import { ModeToggle } from "@/components/ui/theme-toggle";
 import {
   DropdownMenu,
@@ -37,6 +38,7 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
 }) => {
   const { t, setLanguage } = useTranslation();
   const mobileClasses = useMobileClasses();
+  const { displayLines, isLoading } = useUserContext();
 
   const handleLanguageChange = (langCode: string) => {
     if (setLanguage) {
@@ -82,11 +84,29 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
             <Menu className="h-5 w-5" />
           </Button>
           
-          {/* Desktop title/logo space */}
-          <div className="hidden lg:block">
-            <h1 className="text-lg font-semibold text-foreground truncate">
-              {t('app.name') || 'InfoLine'}
-            </h1>
+          {/* Desktop title/logo space - User Context */}
+          <div className="hidden lg:block min-w-0">
+            {isLoading ? (
+              <div className="space-y-1">
+                <div className="h-4 bg-gray-200 rounded animate-pulse w-32" />
+                <div className="h-3 bg-gray-200 rounded animate-pulse w-24" />
+              </div>
+            ) : (
+              <div className="min-w-0">
+                {displayLines.map((line, index) => (
+                  <div 
+                    key={index}
+                    className={cn(
+                      "truncate",
+                      index === 0 ? "text-sm font-semibold text-foreground" : "text-xs text-muted-foreground"
+                    )}
+                    title={line}
+                  >
+                    {line}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 

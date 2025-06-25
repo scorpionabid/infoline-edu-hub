@@ -117,22 +117,32 @@ const SchoolAdminDataEntry: React.FC = () => {
 
   // Handle navigation from dashboard
   useEffect(() => {
+    console.log('Navigation state changed:', navigationState);
     if (navigationState?.categoryId && categories.length > 0) {
       const category = categories.find(cat => cat.id === navigationState.categoryId);
       if (category) {
+        console.log('Setting category and focus column:', category.name, navigationState.focusColumnId);
         setSelectedCategory(category);
         setMode('data-entry');
+        // Set focus column after category is selected
+        if (navigationState.focusColumnId) {
+          setFocusColumnId(navigationState.focusColumnId);
+        }
       }
     }
   }, [navigationState, categories]);
 
-  // Clear navigation state after initial setup
+  // Clear navigation state after initial setup is complete
   useEffect(() => {
-    if (navigationState) {
-      // Replace current history entry to clear the state
-      navigate(location.pathname, { replace: true });
+    if (navigationState && selectedCategory && mode === 'data-entry') {
+      // Only clear navigation state after we've set up the component properly
+      const timer = setTimeout(() => {
+        navigate(location.pathname, { replace: true });
+      }, 100); // Small delay to ensure state is set
+      
+      return () => clearTimeout(timer);
     }
-  }, []); // Only run once on mount
+  }, [navigationState, selectedCategory, mode, navigate, location.pathname]);
 
   // Load data when category changes
   useEffect(() => {

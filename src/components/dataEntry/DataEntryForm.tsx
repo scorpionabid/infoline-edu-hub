@@ -64,6 +64,7 @@ export const DataEntryForm: React.FC<DataEntryFormProps> = ({
   
   // Fokuslanma effekti
   useEffect(() => {
+    console.log('DataEntryForm focusColumnId changed:', focusColumnId);
     if (focusColumnId && fieldRefs.current[focusColumnId]) {
       // Kiçik gecikmə əlavə edirik ki, DOM tam yüklənsin
       const timer = setTimeout(() => {
