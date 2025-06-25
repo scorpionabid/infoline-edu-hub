@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from "react";
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore, selectUser } from "@/hooks/auth/useAuthStore";
 import { useDataEntryManager } from "@/hooks/dataEntry/useDataEntryManager";
 import { DataEntryForm } from "@/components/dataEntry/DataEntryForm";
@@ -49,11 +50,23 @@ type ViewMode = 'category-selection' | 'data-entry' | 'review-submit';
  */
 const SchoolAdminDataEntry: React.FC = () => {
   const { t } = useTranslation();
+  const location = useLocation();
+  const navigate = useNavigate();
   const user = useAuthStore(selectUser);
   
+  // Navigation state from dashboard
+  const navigationState = location.state as {
+    mode?: ViewMode;
+    categoryId?: string;
+    focusColumnId?: string;
+    returnUrl?: string;
+  } | null;
+
   // View mode state
-  const [mode, setMode] = useState<ViewMode>('category-selection');
+  const [mode, setMode] = useState<ViewMode>(navigationState?.mode || 'category-selection');
   const [selectedCategory, setSelectedCategory] = useState<CategoryWithColumns | null>(null);
+  const [focusColumnId, setFocusColumnId] = useState<string | null>(navigationState?.focusColumnId || null);
+  const [returnUrl, setReturnUrl] = useState<string>(navigationState?.returnUrl || '/dashboard');
   const [autoSaveError, setAutoSaveError] = useState<string | null>(null);
   const [saveAttempts, setSaveAttempts] = useState(0);
 
@@ -101,6 +114,25 @@ const SchoolAdminDataEntry: React.FC = () => {
     resetForm,
     loadData,
   } = dataManager;
+
+  // Handle navigation from dashboard
+  useEffect(() => {
+    if (navigationState?.categoryId && categories.length > 0) {
+      const category = categories.find(cat => cat.id === navigationState.categoryId);
+      if (category) {
+        setSelectedCategory(category);
+        setMode('data-entry');
+      }
+    }
+  }, [navigationState, categories]);
+
+  // Clear navigation state after initial setup
+  useEffect(() => {
+    if (navigationState) {
+      // Replace current history entry to clear the state
+      navigate(location.pathname, { replace: true });
+    }
+  }, []); // Only run once on mount
 
   // Load data when category changes
   useEffect(() => {
@@ -202,12 +234,22 @@ const SchoolAdminDataEntry: React.FC = () => {
   const handleCategorySelect = useCallback((category: CategoryWithColumns) => {
     setSelectedCategory(category);
     setMode('data-entry');
-  }, []);
+    // Clear focus column if switching to different category
+    if (category.id !== selectedCategory?.id) {
+      setFocusColumnId(null);
+    }
+  }, [selectedCategory]);
 
   const handleBackToSelection = useCallback(() => {
-    setMode('category-selection');
-    setSelectedCategory(null);
-  }, []);
+    // If there's a return URL, navigate back to dashboard
+    if (returnUrl && returnUrl !== window.location.pathname) {
+      navigate(returnUrl);
+    } else {
+      setMode('category-selection');
+      setSelectedCategory(null);
+      setFocusColumnId(null);
+    }
+  }, [navigate, returnUrl]);
 
   const handleGoToReview = useCallback(() => {
     setMode('review-submit');
@@ -220,10 +262,16 @@ const SchoolAdminDataEntry: React.FC = () => {
   const handleFinalSubmit = useCallback(async () => {
     const success = await handleSubmit();
     if (success) {
-      setMode('category-selection');
-      setSelectedCategory(null);
+      // Navigate back to dashboard after successful submit
+      if (returnUrl && returnUrl !== window.location.pathname) {
+        navigate(returnUrl);
+      } else {
+        setMode('category-selection');
+        setSelectedCategory(null);
+        setFocusColumnId(null);
+      }
     }
-  }, [handleSubmit]);
+  }, [handleSubmit, navigate, returnUrl]);
 
   // Loading state
   if (loading || isLoading) {
@@ -358,6 +406,8 @@ const SchoolAdminDataEntry: React.FC = () => {
           onBack={handleBackToSelection}
           onNext={handleGoToReview}
           completionStats={completionStats}
+          focusColumnId={focusColumnId}
+          returnUrl={returnUrl}
         />
       )}
 
@@ -541,6 +591,8 @@ interface DataEntryModeProps {
   onBack: () => void;
   onNext: () => void;
   completionStats: any;
+  focusColumnId?: string | null;
+  returnUrl?: string;
 }
 
 const DataEntryMode: React.FC<DataEntryModeProps> = ({
@@ -561,11 +613,16 @@ const DataEntryMode: React.FC<DataEntryModeProps> = ({
   onResetAutoSaveError,
   onBack,
   onNext,
-  completionStats
+  completionStats,
+  focusColumnId,
+  returnUrl
 }) => {
   const categoryStats = completionStats.categories.find(
     (stat: any) => stat.categoryId === category.id
   );
+
+  // Determine back button text based on return URL
+  const backButtonText = returnUrl === '/dashboard' ? 'Dashboard-a qayıt' : 'Kateqoriyalara qayıt';
 
   return (
     <div className="space-y-6">
@@ -573,7 +630,7 @@ const DataEntryMode: React.FC<DataEntryModeProps> = ({
       <div className="flex items-center justify-between">
         <Button variant="ghost" onClick={onBack}>
           <ChevronLeft className="h-4 w-4 mr-2" />
-          Kateqoriyalara qayıt
+          {backButtonText}
         </Button>
         <Button onClick={onNext}>
           Yekun baxış
@@ -616,6 +673,7 @@ const DataEntryMode: React.FC<DataEntryModeProps> = ({
                 onFieldChange={onFieldChange}
                 readOnly={entryStatus === "approved"}
                 isLoading={isLoading}
+                focusColumnId={focusColumnId}
               />
             </CardContent>
           </Card>

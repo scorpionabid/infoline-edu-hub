@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, useRef } from 'react';
 import { CategoryWithColumns } from '@/types/category';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -25,6 +25,7 @@ interface DataEntryFormProps {
   isLoading?: boolean;
   showValidation?: boolean;
   compactMode?: boolean;
+  focusColumnId?: string | null; // Yeni parametr əlavə edildi
 }
 
 interface FieldValidationResult {
@@ -54,8 +55,46 @@ export const DataEntryForm: React.FC<DataEntryFormProps> = ({
   readOnly = false,
   isLoading = false,
   showValidation = true,
-  compactMode = false
+  compactMode = false,
+  focusColumnId = null // Yeni parametr əlavə edildi
 }) => {
+  
+  // Fokuslanma üçün ref-lər saxlayırıq
+  const fieldRefs = useRef<Record<string, HTMLElement | null>>({});
+  
+  // Fokuslanma effekti
+  useEffect(() => {
+    if (focusColumnId && fieldRefs.current[focusColumnId]) {
+      // Kiçik gecikmə əlavə edirik ki, DOM tam yüklənsin
+      const timer = setTimeout(() => {
+        const element = fieldRefs.current[focusColumnId];
+        if (element) {
+          element.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center' 
+          });
+          
+          // Focus etmək
+          if (element.focus) {
+            element.focus();
+          } else if (element.querySelector) {
+            // Əgər element özü focus oluna bilmirsə, içindəki input-u tapırıq
+            const input = element.querySelector('input, textarea, select, button');
+            if (input && typeof (input as HTMLElement).focus === 'function') {
+              (input as HTMLElement).focus();
+            }
+          }
+        }
+      }, 300);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [focusColumnId]);
+  
+  // Ref-i saxlamaq üçün yardımçı funksiya
+  const setFieldRef = (columnId: string, element: HTMLElement | null) => {
+    fieldRefs.current[columnId] = element;
+  };
   
   // Validation logic
   const validateField = (column: any, value: any): FieldValidationResult => {
@@ -182,6 +221,7 @@ export const DataEntryForm: React.FC<DataEntryFormProps> = ({
     const validation = fieldValidations[column.id];
     const hasError = validation && validation.errors.length > 0;
     const isValidRequired = column.is_required && value && String(value).trim() !== '' && validation?.isValid;
+    const isFocused = focusColumnId === column.id;
 
     const fieldProps = {
       disabled: readOnly || isLoading,
@@ -189,9 +229,15 @@ export const DataEntryForm: React.FC<DataEntryFormProps> = ({
         "transition-all",
         hasError && "border-red-500 focus:border-red-500",
         isValidRequired && "border-green-500",
+        isFocused && "ring-2 ring-primary/20 border-primary", // Fokuslanmış sahə üçün vurğulama
         compactMode && "h-8 text-sm"
       )
     };
+
+    // Fokuslanmış field üçün ref əlavə edirik
+    if (isFocused) {
+      (fieldProps as any).ref = (el: HTMLElement | null) => setFieldRef(column.id, el);
+    }
 
     switch (column.type) {
       case 'text':
@@ -359,55 +405,70 @@ export const DataEntryForm: React.FC<DataEntryFormProps> = ({
 
   return (
     <div className={cn("space-y-6", compactMode && "space-y-4")}>
-      {category.columns.map((column) => (
-        <div key={column.id} className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Label 
-              htmlFor={column.id} 
-              className={cn(
-                "text-sm font-medium",
-                compactMode && "text-xs"
-              )}
-            >
-              {column.name}
-              {column.is_required && <span className="text-red-500 ml-1">*</span>}
-            </Label>
-            
-            {/* Field status indicator */}
-            {showValidation && (
-              <div className="flex items-center gap-1">
-                {fieldValidations[column.id]?.isValid && formData[column.id] && (
-                  <CheckCircle2 className="h-3 w-3 text-green-600" />
-                )}
-                {fieldValidations[column.id]?.errors.length > 0 && (
-                  <AlertCircle className="h-3 w-3 text-red-600" />
-                )}
-                {column.is_required && (
-                  <Badge variant="outline" className="text-xs px-1 py-0">
-                    Məcburi
-                  </Badge>
-                )}
-              </div>
+      {category.columns.map((column) => {
+        const isFocused = focusColumnId === column.id;
+        
+        return (
+          <div 
+            key={column.id} 
+            className={cn(
+              "space-y-2 transition-all duration-200",
+              isFocused && "bg-primary/5 p-4 rounded-lg border-2 border-primary/20" // Fokuslanmış sahə üçün vurğulama
             )}
+            ref={(el) => {
+              if (isFocused) {
+                setFieldRef(column.id, el);
+              }
+            }}
+          >
+            <div className="flex items-center gap-2">
+              <Label 
+                htmlFor={column.id} 
+                className={cn(
+                  "text-sm font-medium",
+                  compactMode && "text-xs"
+                )}
+              >
+                {column.name}
+                {column.is_required && <span className="text-red-500 ml-1">*</span>}
+              </Label>
+              
+              {/* Field status indicator */}
+              {showValidation && (
+                <div className="flex items-center gap-1">
+                  {fieldValidations[column.id]?.isValid && formData[column.id] && (
+                    <CheckCircle2 className="h-3 w-3 text-green-600" />
+                  )}
+                  {fieldValidations[column.id]?.errors.length > 0 && (
+                    <AlertCircle className="h-3 w-3 text-red-600" />
+                  )}
+                  {column.is_required && (
+                    <Badge variant="outline" className="text-xs px-1 py-0">
+                      Məcburi
+                    </Badge>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Field input */}
+            {renderField(column)}
+
+            {/* Help text */}
+            {column.help_text && (
+              <p className={cn(
+                "text-sm text-muted-foreground",
+                compactMode && "text-xs"
+              )}>
+                {column.help_text}
+              </p>
+            )}
+
+            {/* Validation feedback */}
+            {renderFieldValidation(column.id)}
           </div>
-
-          {/* Field input */}
-          {renderField(column)}
-
-          {/* Help text */}
-          {column.help_text && (
-            <p className={cn(
-              "text-sm text-muted-foreground",
-              compactMode && "text-xs"
-            )}>
-              {column.help_text}
-            </p>
-          )}
-
-          {/* Validation feedback */}
-          {renderFieldValidation(column.id)}
-        </div>
-      ))}
+        );
+      })}
 
       {/* Form summary for compact mode */}
       {compactMode && (
