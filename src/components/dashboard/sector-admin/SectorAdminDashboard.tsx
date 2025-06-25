@@ -83,16 +83,16 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({
     },
   ];
 
-  // Real schools data
-  const schools = dashboardData.schools || [];
+  // No need to pass schools data since SchoolsTable fetches its own data
+  // const schools = dashboardData.schools || [];
 
   return (
     <div className="space-y-6">
       <StatsGrid stats={statsGridData} />
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="space-y-6">
         <DashboardChart stats={formStats} />
-        <SchoolsTable schools={schools} />
+        <SchoolsTable />
       </div>
     </div>
   );

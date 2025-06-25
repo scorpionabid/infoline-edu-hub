@@ -40,19 +40,7 @@ const DataManagementPage: React.FC = () => {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
         <div className="container mx-auto py-3 sm:py-6 px-2 sm:px-4">
           <div className="max-w-7xl mx-auto">
-            {/* Page Header - Mobile Optimized */}
-            <div className="mb-4 sm:mb-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900">
-                    Data İdarəetməsi
-                  </h1>
-                  <p className="text-slate-600 mt-1 text-sm sm:text-base">
-                    Məktəb məlumatlarını idarə edin, təsdiq edin və ya rədd edin
-                  </p>
-                </div>
-              </div>
-            </div>
+
 
             {/* Main Content - Mobile Responsive */}
             <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border">

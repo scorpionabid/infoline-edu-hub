@@ -1,67 +1,89 @@
+import { useState, useCallback, useMemo } from 'react';
 
-import { useState, useMemo } from 'react';
-
-export interface UsePaginationOptions {
-  totalItems: number;
-  initialPageSize?: number;
-  initialPage?: number;
-}
-
-export interface UsePaginationReturn {
+interface UsePaginationReturn<T> {
   currentPage: number;
   pageSize: number;
   totalPages: number;
-  setCurrentPage: (page: number) => void;
-  setPageSize: (size: number) => void;
+  paginatedItems: T[];
+  goToPage: (page: number) => void;
   nextPage: () => void;
   prevPage: () => void;
-  hasNextPage: boolean;
-  hasPrevPage: boolean;
+  setPageSize: (size: number) => void;
+  totalItems: number;
   startIndex: number;
   endIndex: number;
 }
 
-export const usePagination = ({
-  totalItems,
-  initialPageSize = 10,
-  initialPage = 1
-}: UsePaginationOptions): UsePaginationReturn => {
-  const [currentPage, setCurrentPage] = useState(initialPage);
+export const usePagination = <T>(
+  items: T[] = [],
+  initialPageSize: number = 10
+): UsePaginationReturn<T> => {
+  const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(initialPageSize);
-
+  
+  // Calculate total pages
   const totalPages = useMemo(() => {
-    return Math.ceil(totalItems / pageSize);
-  }, [totalItems, pageSize]);
-
-  const hasNextPage = currentPage < totalPages;
-  const hasPrevPage = currentPage > 1;
-
-  const startIndex = (currentPage - 1) * pageSize;
-  const endIndex = Math.min(startIndex + pageSize, totalItems);
-
-  const nextPage = () => {
-    if (hasNextPage) {
+    return Math.max(1, Math.ceil(items.length / pageSize));
+  }, [items.length, pageSize]);
+  
+  // Calculate start and end indices for display
+  const startIndex = useMemo(() => {
+    return (currentPage - 1) * pageSize + 1;
+  }, [currentPage, pageSize]);
+  
+  const endIndex = useMemo(() => {
+    return Math.min(currentPage * pageSize, items.length);
+  }, [currentPage, pageSize, items.length]);
+  
+  // Get current page items
+  const paginatedItems = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return items.slice(start, start + pageSize);
+  }, [items, currentPage, pageSize]);
+  
+  // Navigation functions
+  const goToPage = useCallback((page: number) => {
+    const pageNumber = Math.max(1, Math.min(page, totalPages));
+    setCurrentPage(pageNumber);
+  }, [totalPages]);
+  
+  const nextPage = useCallback(() => {
+    if (currentPage < totalPages) {
       setCurrentPage(prev => prev + 1);
     }
-  };
-
-  const prevPage = () => {
-    if (hasPrevPage) {
+  }, [currentPage, totalPages]);
+  
+  const prevPage = useCallback(() => {
+    if (currentPage > 1) {
       setCurrentPage(prev => prev - 1);
     }
-  };
-
+  }, [currentPage]);
+  
+  // Page size change handler
+  const handleSetPageSize = useCallback((size: number) => {
+    const newSize = Math.max(1, size);
+    setPageSize(newSize);
+    
+    // Adjust current page if necessary
+    const newTotalPages = Math.max(1, Math.ceil(items.length / newSize));
+    if (currentPage > newTotalPages) {
+      setCurrentPage(newTotalPages);
+    }
+  }, [items.length, currentPage]);
+  
   return {
     currentPage,
     pageSize,
     totalPages,
-    setCurrentPage,
-    setPageSize,
+    paginatedItems,
+    goToPage,
     nextPage,
     prevPage,
-    hasNextPage,
-    hasPrevPage,
+    setPageSize: handleSetPageSize,
+    totalItems: items.length,
     startIndex,
     endIndex
   };
 };
+
+export default usePagination;

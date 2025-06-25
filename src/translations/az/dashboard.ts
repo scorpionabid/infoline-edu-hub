@@ -223,6 +223,12 @@ export default {
   sectorLabel: "Sektor",
   tableProgress: "İrəliləyiş",
   actionsLabel: "Əməliyyatlar",
+  
+  // School stats
+  totalFields: "Ümumi sahələr",
+  filled: "Doldurulmuş",
+  showingResults: "Nəticələr",
+  itemsPerPage: "Səhifə başına",
 
   // States
   states: {

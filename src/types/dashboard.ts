@@ -127,6 +127,7 @@ export interface SchoolStat {
   pendingForms?: number;
   completedForms?: number;
   totalForms?: number;
+  lastUpdated?: string;
 }
 
 export interface SectorStat {
