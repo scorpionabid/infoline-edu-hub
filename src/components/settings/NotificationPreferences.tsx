@@ -380,19 +380,19 @@ const NotificationPreferences: React.FC<NotificationPreferencesProps> = ({
             <div className="grid gap-4 md:grid-cols-4">
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">Ümumi</p>
-                <p className="text-2xl font-bold">{stats.total}</p>
+                <p className="text-2xl font-bold">{stats.total || 0}</p>
               </div>
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">Oxunmamış</p>
-                <p className="text-2xl font-bold text-blue-600">{stats.unread}</p>
+                <p className="text-2xl font-bold text-blue-600">{stats.unread || 0}</p>
               </div>
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">Bu gün</p>
-                <p className="text-2xl font-bold text-green-600">{stats.today}</p>
+                <p className="text-2xl font-bold text-green-600">{stats.today || 0}</p>
               </div>
               <div className="space-y-2">
                 <p className="text-sm text-muted-foreground">Bu həftə</p>
-                <p className="text-2xl font-bold text-orange-600">{stats.thisWeek}</p>
+                <p className="text-2xl font-bold text-orange-600">{stats.thisWeek || 0}</p>
               </div>
             </div>
           </CardContent>

@@ -41,7 +41,7 @@ const UserDetailsDialog: React.FC<UserDetailsDialogProps> = ({
   };
 
   const getEntityName = () => {
-    return user.entity_name || user.entityName || "Təyin edilməyib";
+    return user.entity_name || user.entityName || (user as any).entityName || "Təyin edilməyib";
   };
 
   const getEntityType = () => {

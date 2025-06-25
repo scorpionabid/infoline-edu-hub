@@ -1,4 +1,3 @@
-
 // User types with proper enums
 export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'teacher' | 'user';
 
@@ -27,6 +26,9 @@ export interface FullUserData {
   createdAt?: string;
   updated_at?: string;
   updatedAt?: string;
+  entity_name?: string;
+  entityName?: string;
+  notification_settings?: NotificationSettings;
 }
 
 // Legacy aliases for backward compatibility
@@ -64,4 +66,29 @@ export interface UserFormData {
   school_id?: string;
   language?: string;
   status?: UserStatus;
+}
+
+export interface UserFilter {
+  search?: string;
+  role?: string | string[];
+  status?: string | string[];
+  region_id?: string;
+  sector_id?: string;
+  school_id?: string;
+  dateRange?: {
+    start: string;
+    end: string;
+  };
+}
+
+export interface NotificationSettings {
+  email: boolean;
+  sms: boolean;
+  inApp: boolean;
+  system: boolean;
+  deadlineReminders: boolean;
+  email_notifications: boolean;
+  sms_notifications: boolean;
+  push_notifications: boolean;
+  notification_frequency: 'immediate' | 'daily' | 'weekly';
 }
