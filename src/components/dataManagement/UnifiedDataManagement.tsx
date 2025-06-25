@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -92,14 +93,14 @@ const UnifiedDataManagement: React.FC<UnifiedDataManagementProps> = ({
 
   // Filter school data for preselected school
   const filteredSchoolData = preselectedSchoolId 
-    ? schoolData.filter(school => school.schoolId === preselectedSchoolId)
+    ? schoolData.filter(school => school.school_id === preselectedSchoolId)
     : schoolData;
 
   // Calculate filtered stats
   const filteredStats = React.useMemo(() => {
     if (!preselectedSchoolId || !stats) return stats;
     
-    const filteredData = schoolData.filter(school => school.schoolId === preselectedSchoolId);
+    const filteredData = schoolData.filter(school => school.school_id === preselectedSchoolId);
     if (filteredData.length === 0) return stats;
     
     const school = filteredData[0];
@@ -109,7 +110,10 @@ const UnifiedDataManagement: React.FC<UnifiedDataManagementProps> = ({
       approvedCount: school.status === 'approved' ? 1 : 0,
       rejectedCount: school.status === 'rejected' ? 1 : 0,
       emptyCount: school.status === 'empty' ? 1 : 0,
-      completionRate: school.status === 'approved' || school.status === 'pending' ? 100 : 0
+      completionRate: school.status === 'approved' || school.status === 'pending' ? 100 : 0,
+      totalEntries: stats.totalEntries,
+      completedEntries: stats.completedEntries,
+      pendingEntries: stats.pendingEntries
     };
   }, [preselectedSchoolId, stats, schoolData]);
 
@@ -298,7 +302,7 @@ const UnifiedDataManagement: React.FC<UnifiedDataManagementProps> = ({
               <div className="text-2xl font-bold text-green-600">{filteredStats.approvedCount}</div>
               <div className="text-sm text-muted-foreground flex items-center justify-center gap-1">
                 <CheckCircle className="h-3 w-3" />
-                Təsdiqlənmiš
+                Təsdiqlənmiş
               </div>
             </CardContent>
           </Card>
