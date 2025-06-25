@@ -1,4 +1,3 @@
-
 // Dashboard types with proper structure
 export interface DashboardFormStats {
   totalForms: number;
@@ -21,6 +20,20 @@ export interface DashboardFormStats {
   overdue?: number;
   total?: number;
   completed?: number;
+}
+
+export interface EnhancedDashboardData {
+  totalCategories: number;
+  completedCategories: number;
+  totalColumns: number;
+  filledColumns: number;
+  overallProgress: number;
+  categoryProgress: any[];
+  columnStatuses: any[];
+  totalForms: number;
+  completedForms: number;
+  pendingForms: number;
+  completionRate: number;
 }
 
 export interface SuperAdminDashboardData {
@@ -87,6 +100,7 @@ export interface DashboardChartProps {
   stats?: DashboardFormStats;
   showLegend?: boolean;
   height?: number;
+  className?: string;
 }
 
 export interface PendingApproval {

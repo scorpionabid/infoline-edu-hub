@@ -22,6 +22,14 @@ export const securityLogger = {
   
   logAuthEvent: (event: string, context: LogContext) => {
     console.info(`[AUTH] ${event}`, context);
+  },
+
+  logSecurityEvent: (event: string, context: LogContext & { severity?: string }) => {
+    console.info(`[SECURITY] ${event}`, context);
+  },
+
+  logError: (error: any, context: LogContext & { action?: string; fileName?: string }) => {
+    console.error(`[ERROR] ${context.action || 'Unknown action'}`, { error: error.message || error, ...context });
   }
 };
 

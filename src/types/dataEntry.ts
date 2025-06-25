@@ -1,4 +1,6 @@
 
+import { Column } from './column';
+
 // Enhanced data entry types with proper status enums
 export enum DataEntryStatus {
   DRAFT = 'draft',
@@ -29,7 +31,7 @@ export interface ProxyDataEntryResult {
   success: boolean;
   entryId?: string;
   message?: string;
-  error?: string; // Add error field
+  error?: string;
   errors?: Record<string, string>;
   autoApproved?: boolean;
 }
@@ -40,13 +42,11 @@ export interface DataEntryValidation {
 }
 
 export interface DataEntryTableData {
-  id: string;
-  school_name: string;
-  category_name: string;
-  status: DataEntryStatus;
-  created_at: string;
-  updated_at: string;
-  submitted_by: string;
+  columns: Column[];
+  values: Record<string, any>;
+  categoryId: string;
+  schoolId?: string;
+  sectorId?: string;
 }
 
 // Additional interfaces needed for proxy data entry

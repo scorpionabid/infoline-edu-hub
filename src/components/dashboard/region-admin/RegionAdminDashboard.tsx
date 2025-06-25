@@ -21,9 +21,12 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({
     );
   }
 
-  // Real Backend Data
+  // Real Backend Data with all required properties
   const formStats: DashboardFormStats = {
+    totalForms: dashboardData.formStats?.total || 0,
     completedForms: dashboardData.formStats?.completedForms || 0,
+    pendingApprovals: dashboardData.formStats?.pendingForms || 0,
+    rejectedForms: dashboardData.formStats?.rejected || 0,
     pendingForms: dashboardData.formStats?.pendingForms || 0,
     approvalRate: dashboardData.formStats?.approvalRate || 0,
     total: dashboardData.formStats?.total || 0,
@@ -83,7 +86,7 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({
       <StatsGrid stats={statsGridData} />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <DashboardChart stats={formStats} className="lg:col-span-2" />
+        <DashboardChart stats={formStats} />
         <NotificationCard maxItems={5} />
       </div>
       

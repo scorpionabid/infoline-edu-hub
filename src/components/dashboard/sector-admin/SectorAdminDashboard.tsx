@@ -46,9 +46,12 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({
 
   console.log("[SectorAdminDashboard] Dashboard data:", dashboardData);
 
-  // Real Backend Data
+  // Real Backend Data with all required properties
   const formStats: DashboardFormStats = {
+    totalForms: dashboardData.formStats?.total || 0,
     completedForms: dashboardData.formStats?.completedForms || 0,
+    pendingApprovals: dashboardData.formStats?.pendingForms || 0,
+    rejectedForms: dashboardData.formStats?.rejected || 0,
     pendingForms: dashboardData.formStats?.pendingForms || 0,
     approvalRate: dashboardData.formStats?.approvalRate || 0,
     total: dashboardData.formStats?.total || 0,

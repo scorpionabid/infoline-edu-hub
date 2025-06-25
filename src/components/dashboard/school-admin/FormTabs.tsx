@@ -74,7 +74,7 @@ const FormTabs: React.FC<FormTabsProps> = ({
     return (
       <Badge variant={config.variant} className={config.className}>
         <Icon className="w-3 h-3 mr-1" />
-        {t(status)}
+        {t(status) || status}
       </Badge>
     );
   };
@@ -95,9 +95,9 @@ const FormTabs: React.FC<FormTabsProps> = ({
   return (
     <Tabs defaultValue="categories" className="w-full">
       <TabsList className="grid w-full grid-cols-3">
-        <TabsTrigger value="categories">{t("categories")}</TabsTrigger>
-        <TabsTrigger value="deadlines">{t("upcomingDeadlines")}</TabsTrigger>
-        <TabsTrigger value="forms">{t("pendingForms")}</TabsTrigger>
+        <TabsTrigger value="categories">{t("categories") || "Kateqoriyalar"}</TabsTrigger>
+        <TabsTrigger value="deadlines">{t("upcomingDeadlines") || "Yaxınlaşan Müddətlər"}</TabsTrigger>
+        <TabsTrigger value="forms">{t("pendingForms") || "Gözləyən Formalar"}</TabsTrigger>
       </TabsList>
 
       <TabsContent value="categories" className="space-y-4">
@@ -124,7 +124,7 @@ const FormTabs: React.FC<FormTabsProps> = ({
                 <div className="space-y-3">
                   <div>
                     <div className="flex justify-between text-sm mb-1">
-                      <span>{t("progress")}</span>
+                      <span>{t("progress") || "Tərəqqi"}</span>
                       <span>
                         {category.completionRate || category.completion || 0}%
                       </span>
@@ -140,13 +140,13 @@ const FormTabs: React.FC<FormTabsProps> = ({
                   {category.totalFields && (
                     <div className="text-sm text-muted-foreground">
                       {category.completedFields || 0} / {category.totalFields}{" "}
-                      {t("fieldsCompleted")}
+                      {t("fieldsCompleted") || "sahə tamamlandı"}
                     </div>
                   )}
 
                   {category.lastUpdated && (
                     <div className="text-xs text-muted-foreground">
-                      {t("lastUpdated")}:{" "}
+                      {t("lastUpdated") || "Son yenilənmə"}:{" "}
                       {new Date(category.lastUpdated).toLocaleDateString()}
                     </div>
                   )}
@@ -154,7 +154,7 @@ const FormTabs: React.FC<FormTabsProps> = ({
                   <Button
                     onClick={() => {
                       onCategoryChange?.(category.id);
-                      navigateToDataEntry();
+                      navigateToDataEntry?.(category.id);
                     }}
                     className="w-full"
                     variant={
@@ -162,8 +162,8 @@ const FormTabs: React.FC<FormTabsProps> = ({
                     }
                   >
                     {category.status === "completed"
-                      ? t("viewData")
-                      : t("enterData")}
+                      ? t("viewData") || "Məlumatları Gör"
+                      : t("enterData") || "Məlumat Daxil Et"}
                   </Button>
                 </div>
               </CardContent>

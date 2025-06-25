@@ -87,7 +87,8 @@ export class StorageCacheAdapter<T> extends BaseCacheAdapter<T> {
     return this.keyPrefix ? `${this.keyPrefix}:${key}` : key;
   }
 
-  private isExpired(entry: any): boolean {
+  // Make this protected instead of private to match base class
+  protected isExpired(entry: any): boolean {
     if (!entry.expiresAt) return false;
     return Date.now() > entry.expiresAt;
   }
