@@ -64,7 +64,7 @@ const SchoolColumnDataTable: React.FC = () => {
 
   const { handleExport } = useSchoolColumnExport();
 
-  const { currentPage, pageSize, setCurrentPage, setPageSize, totalPages } =
+  const { currentPage, pageSize, goToPage: setCurrentPage, setPageSize, totalPages } =
     usePagination(schoolColumnData, 10);
 
   // Event handlers

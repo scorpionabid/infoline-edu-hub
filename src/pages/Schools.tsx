@@ -21,24 +21,20 @@ const Schools = () => {
   const [error, setError] = useState<string | null>(null);
 
   const { userRole, regionId, sectorId } = usePermissions();
-  // Initialize pagination with default values
+  // Initialize pagination with schools data
   const { 
     currentPage, 
     pageSize, 
     totalPages,
-    setCurrentPage,
+    paginatedItems: paginatedSchools,
+    goToPage: setCurrentPage,
     setPageSize: updatePageSize,
     nextPage,
     prevPage,
-    hasNextPage,
-    hasPrevPage
-  } = usePagination({
-    totalItems: 0, // Will be updated after first fetch
-    initialPage: 1,
-    initialPageSize: 10
-  });
-  
-  const [totalCount, setTotalCount] = useState(0);
+    totalItems,
+    startIndex,
+    endIndex
+  } = usePagination(schools, 10);
 
   const [filters, setFilters] = useState({
     search: '',
@@ -58,7 +54,7 @@ const Schools = () => {
           *,
           regions:region_id(name),
           sectors:sector_id(name)
-        `, { count: 'exact' })
+        `)
         .order('created_at', { ascending: false });
 
       // Apply role-based filtering
@@ -82,11 +78,7 @@ const Schools = () => {
         query = query.eq('status', filters.status);
       }
 
-      // Apply pagination
-      const offset = (currentPage - 1) * pageSize;
-      query = query.range(offset, offset + pageSize - 1);
-
-      const { data, error, count } = await query;
+      const { data, error } = await query;
       if (error) throw error;
 
       // Transform the data to ensure proper typing
@@ -101,10 +93,6 @@ const Schools = () => {
       }));
 
       setSchools(transformedSchools);
-      // Update total count if it has changed
-      if (count !== totalCount) {
-        setTotalCount(count || 0);
-      }
     } catch (err) {
       console.error('Error fetching schools:', err);
       setError('Failed to fetch schools');
@@ -112,7 +100,7 @@ const Schools = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, pageSize, filters, userRole, regionId, sectorId, setTotalCount]);
+  }, [filters, userRole, regionId, sectorId]);
 
   const createSchool = useCallback(async (schoolData: Omit<School, 'id' | 'created_at' | 'updated_at'>) => {
     try {
@@ -298,9 +286,9 @@ const Schools = () => {
   }, []);
 
   React.useEffect(() => {
-    // Only fetch schools when pagination or filters change
+    // Only fetch schools when filters change
     fetchSchools();
-  }, [currentPage, pageSize, filters, fetchSchools]);
+  }, [filters, fetchSchools]);
   
   // Initial data load
   React.useEffect(() => {
@@ -350,7 +338,7 @@ const Schools = () => {
 
       <div className="container mx-auto py-6">
         <SchoolsContainer
-          schools={schools}
+          schools={paginatedSchools}
           regions={regions}
           sectors={sectors}
           isLoading={loading}
@@ -364,7 +352,7 @@ const Schools = () => {
           // Pagination props
           currentPage={currentPage}
           pageSize={pageSize}
-          totalCount={totalCount}
+          totalCount={totalItems}
           onPageChange={setCurrentPage}
           onPageSizeChange={updatePageSize}
           // Filter props
