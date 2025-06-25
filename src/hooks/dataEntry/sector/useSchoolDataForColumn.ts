@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -75,14 +76,19 @@ export const useSchoolDataForColumn = (): UseSchoolDataForColumnResult => {
         found: schools?.length || 0,
         entityId,
         entityType,
-        schools: schools?.map(s => ({ id: s.id, name: s.name, sector_id: s.sector_id, region_id: s.region_id })) || []
+        schools: schools?.map(s => ({ 
+          id: s.id, 
+          name: s.name, 
+          sector_id: s.sector_id, 
+          region_id: s.region_id 
+        })) || []
       });
 
       if (!schools || schools.length === 0) {
-        // Debug: Yoxlayaq ki, hərhansı məktəblər var?
+        // Debug: Check if any schools exist
         const { data: allSchools, error: allSchoolsError } = await supabase
           .from('schools')
-          .select('id, name, sector_id, status')
+          .select('id, name, sector_id, region_id, status')
           .limit(10);
         
         console.log('Debug - All schools (first 10):', {
@@ -132,9 +138,9 @@ export const useSchoolDataForColumn = (): UseSchoolDataForColumnResult => {
       const schoolDataMap: { [key: string]: SchoolDataEntry } = {};
 
       schools.forEach(school => {
-        // Simplified sectors access
-        const sectors = school.sectors;
-        const regions = sectors?.regions;
+        // Type-safe access to nested data
+        const sectors = Array.isArray(school.sectors) ? school.sectors[0] : school.sectors;  
+        const regions = sectors && Array.isArray(sectors.regions) ? sectors.regions[0] : sectors?.regions;
 
         schoolDataMap[school.id] = {
           schoolId: school.id,
@@ -152,7 +158,7 @@ export const useSchoolDataForColumn = (): UseSchoolDataForColumnResult => {
       if (dataEntries) {
         dataEntries.forEach(entry => {
           if (schoolDataMap[entry.school_id]) {
-            const profiles = entry.profiles;
+            const profiles = Array.isArray(entry.profiles) ? entry.profiles[0] : entry.profiles;
             
             schoolDataMap[entry.school_id] = {
               ...schoolDataMap[entry.school_id],

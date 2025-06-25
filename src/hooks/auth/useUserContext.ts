@@ -34,41 +34,38 @@ export function useUserContext(): UserContextData {
 
         // Fetch region name if user has region_id
         if (user.region_id) {
-          promises.push(
-            supabase
-              .from('regions')
-              .select('name')
-              .eq('id', user.region_id)
-              .single()
-              .then(({ data }) => ({ type: 'region', name: data?.name }))
-              .catch(() => ({ type: 'region', name: null }))
-          );
+          const regionPromise = supabase
+            .from('regions')
+            .select('name')
+            .eq('id', user.region_id)
+            .single()
+            .then(({ data }) => ({ type: 'region', name: data?.name }))
+            .catch(() => ({ type: 'region', name: null }));
+          promises.push(regionPromise);
         }
 
         // Fetch sector name if user has sector_id
         if (user.sector_id) {
-          promises.push(
-            supabase
-              .from('sectors')
-              .select('name')
-              .eq('id', user.sector_id)
-              .single()
-              .then(({ data }) => ({ type: 'sector', name: data?.name }))
-              .catch(() => ({ type: 'sector', name: null }))
-          );
+          const sectorPromise = supabase
+            .from('sectors')
+            .select('name')
+            .eq('id', user.sector_id)
+            .single()
+            .then(({ data }) => ({ type: 'sector', name: data?.name }))
+            .catch(() => ({ type: 'sector', name: null }));
+          promises.push(sectorPromise);
         }
 
         // Fetch school name if user has school_id
         if (user.school_id) {
-          promises.push(
-            supabase
-              .from('schools')
-              .select('name')
-              .eq('id', user.school_id)
-              .single()
-              .then(({ data }) => ({ type: 'school', name: data?.name }))
-              .catch(() => ({ type: 'school', name: null }))
-          );
+          const schoolPromise = supabase
+            .from('schools')
+            .select('name')
+            .eq('id', user.school_id)
+            .single()
+            .then(({ data }) => ({ type: 'school', name: data?.name }))
+            .catch(() => ({ type: 'school', name: null }));
+          promises.push(schoolPromise);
         }
 
         const results = await Promise.all(promises);

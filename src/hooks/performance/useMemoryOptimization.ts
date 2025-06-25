@@ -1,136 +1,68 @@
 
-import { useCallback, useEffect, useRef } from 'react';
-import { cacheManager } from '../../../cache';
+import { useEffect, useMemo, useCallback } from 'react';
+import { cache } from '@/lib/cache';
 
-interface MemoryStats {
-  memory?: {
-    used: number;
-    total: number;
-    percentage: number;
-    limit: number;
-  };
-  performance?: {
-    navigation: number;
-    loading: number;
-  };
+interface MemoryOptimizationOptions {
+  enableGarbageCollection?: boolean;
+  memoryThreshold?: number;
+  cleanupInterval?: number;
 }
 
-interface UseMemoryOptimizationOptions {
-  onMemoryPressure?: () => void;
-  threshold?: number;
-}
+export const useMemoryOptimization = (options: MemoryOptimizationOptions = {}) => {
+  const {
+    enableGarbageCollection = true,
+    memoryThreshold = 50, // MB
+    cleanupInterval = 30000 // 30 seconds
+  } = options;
 
-export const useMemoryOptimization = (options: UseMemoryOptimizationOptions = {}) => {
-  const { onMemoryPressure, threshold = 80 } = options;
-  const lastCleanup = useRef<number>(0);
-  const isMonitoring = useRef<boolean>(false);
-
-  const getMemoryStats = useCallback((): MemoryStats => {
-    const stats: MemoryStats = {};
-
-    // Performance memory API (Chrome only)
+  const getMemoryUsage = useCallback(() => {
     if ('memory' in performance) {
-      const memory = (performance as any).memory;
-      const used = Math.round(memory.usedJSHeapSize / 1024 / 1024);
-      const total = Math.round(memory.totalJSHeapSize / 1024 / 1024);
-      const limit = Math.round(memory.jsHeapSizeLimit / 1024 / 1024);
-      
-      stats.memory = {
-        used,
-        total,
-        limit,
-        percentage: Math.round((used / limit) * 100)
+      const memoryInfo = (performance as any).memory;
+      return {
+        used: Math.round(memoryInfo.usedJSHeapSize / 1048576),
+        total: Math.round(memoryInfo.totalJSHeapSize / 1048576),
+        limit: Math.round(memoryInfo.jsHeapSizeLimit / 1048576)
       };
     }
-
-    // Performance navigation timing
-    if (performance.navigation && performance.timing) {
-      stats.performance = {
-        navigation: performance.navigation.type,
-        loading: performance.timing.loadEventEnd - performance.timing.navigationStart
-      };
-    }
-
-    return stats;
+    return null;
   }, []);
 
-  const checkMemoryUsage = useCallback(() => {
-    const stats = getMemoryStats();
-    
-    if (stats.memory && stats.memory.percentage > threshold) {
-      console.warn(`Memory usage high: ${stats.memory.percentage}%`);
-      onMemoryPressure?.();
-      return true;
-    }
-    
-    return false;
-  }, [getMemoryStats, threshold, onMemoryPressure]);
-
-  const forceCleanup = useCallback(() => {
-    const now = Date.now();
-    
-    // Prevent too frequent cleanups
-    if (now - lastCleanup.current < 30000) { // 30 seconds
-      console.log('Cleanup skipped - too recent');
-      return;
-    }
-
+  const cleanupMemory = useCallback(() => {
     try {
-      // Clear cache
-      cacheManager.clear();
-      
-      // Force garbage collection if available (development)
-      if (window.gc && typeof window.gc === 'function') {
-        window.gc();
+      // Clear cache if available
+      if (cache && typeof cache.clear === 'function') {
+        cache.clear();
       }
       
-      lastCleanup.current = now;
-      console.log('Memory cleanup completed');
+      // Force garbage collection if available
+      if (enableGarbageCollection && 'gc' in window) {
+        (window as any).gc();
+      }
     } catch (error) {
-      console.error('Cleanup failed:', error);
+      console.warn('Memory cleanup failed:', error);
     }
-  }, []);
+  }, [enableGarbageCollection]);
 
-  const startMonitoring = useCallback(() => {
-    if (isMonitoring.current) return;
-    
-    isMonitoring.current = true;
-    
-    const interval = setInterval(() => {
-      checkMemoryUsage();
-    }, 60000); // Check every minute
-
-    return () => {
-      clearInterval(interval);
-      isMonitoring.current = false;
-    };
-  }, [checkMemoryUsage]);
+  const memoryInfo = useMemo(() => {
+    return getMemoryUsage();
+  }, [getMemoryUsage]);
 
   useEffect(() => {
-    // Auto-start monitoring in development
-    if (process.env.NODE_ENV === 'development') {
-      const cleanup = startMonitoring();
-      return cleanup;
-    }
-  }, [startMonitoring]);
+    if (!enableGarbageCollection) return;
+
+    const interval = setInterval(() => {
+      const currentMemory = getMemoryUsage();
+      if (currentMemory && currentMemory.used > memoryThreshold) {
+        cleanupMemory();
+      }
+    }, cleanupInterval);
+
+    return () => clearInterval(interval);
+  }, [enableGarbageCollection, memoryThreshold, cleanupInterval, getMemoryUsage, cleanupMemory]);
 
   return {
-    getMemoryStats,
-    checkMemoryUsage,
-    forceCleanup,
-    startMonitoring
+    memoryInfo,
+    cleanupMemory,
+    getMemoryUsage
   };
 };
-
-declare global {
-  interface Window {
-    gc?: () => void;
-  }
-  interface Performance {
-    memory?: {
-      usedJSHeapSize: number;
-      totalJSHeapSize: number;
-      jsHeapSizeLimit: number;
-    };
-  }
-}
