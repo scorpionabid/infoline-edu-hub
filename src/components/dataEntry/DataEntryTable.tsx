@@ -2,7 +2,11 @@
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Column } from '@/types/column';
-import { DataEntryTableData } from '@/types/dataEntry';
+
+interface DataEntryTableData {
+  columns: Column[];
+  values: Record<string, any>;
+}
 
 interface DataEntryTableProps {
   data: DataEntryTableData;
