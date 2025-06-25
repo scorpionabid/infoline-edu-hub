@@ -1,6 +1,35 @@
 
 import { useState, useEffect } from 'react';
-import { EnhancedDashboardData } from '@/types/dashboard';
+
+export interface EnhancedDashboardData {
+  totalCategories: number;
+  completedCategories: number;
+  totalColumns: number;
+  filledColumns: number;
+  overallProgress: number;
+  categoryProgress: CategoryProgress[];
+  columnStatuses: ColumnStatus[];
+  totalForms: number;
+  completedForms: number;
+  pendingForms: number;
+  completionRate: number;
+}
+
+export interface CategoryProgress {
+  id: string;
+  name: string;
+  progress: number;
+  status: string;
+  completionRate: number;
+}
+
+export interface ColumnStatus {
+  id: string;
+  name: string;
+  status: 'completed' | 'pending' | 'empty';
+  categoryId: string;
+  categoryName: string;
+}
 
 interface UseDashboardDataOptions {
   enhanced?: boolean;
@@ -21,8 +50,38 @@ export const useDashboardData = (options: UseDashboardDataOptions = {}) => {
       totalColumns: 25,
       filledColumns: 18,
       overallProgress: 72,
-      categoryProgress: [],
-      columnStatuses: [],
+      categoryProgress: [
+        {
+          id: '1',
+          name: 'Ümumi Məlumatlar',
+          progress: 85,
+          status: 'completed',
+          completionRate: 85
+        },
+        {
+          id: '2', 
+          name: 'Müəllim Məlumatları',
+          progress: 60,
+          status: 'pending',
+          completionRate: 60
+        }
+      ],
+      columnStatuses: [
+        {
+          id: '1',
+          name: 'Məktəb Adı',
+          status: 'completed',
+          categoryId: '1',
+          categoryName: 'Ümumi Məlumatlar'
+        },
+        {
+          id: '2',
+          name: 'Müəllim Sayı',
+          status: 'pending',
+          categoryId: '2',
+          categoryName: 'Müəllim Məlumatları'
+        }
+      ],
       totalForms: 10,
       completedForms: 7,
       pendingForms: 3,
@@ -49,4 +108,4 @@ export const useDashboardData = (options: UseDashboardDataOptions = {}) => {
   };
 };
 
-export type { EnhancedDashboardData };
+export type { EnhancedDashboardData, CategoryProgress, ColumnStatus };

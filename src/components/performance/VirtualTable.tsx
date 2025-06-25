@@ -1,5 +1,11 @@
-import React, { useCallback } from 'react';
-import { useEnhancedVirtualScrolling, VirtualItem } from '../../hooks/performance/useEnhancedVirtualScrolling';
+
+import React, { useCallback, useMemo } from 'react';
+
+export interface VirtualItem<T = any> {
+  item: T;
+  index: number;
+  offsetY: number;
+}
 
 interface VirtualTableProps<T> {
   items: T[];
@@ -20,33 +26,45 @@ export function VirtualTable<T>(props: VirtualTableProps<T>) {
     onScrollEnd
   } = props;
 
-  const {
-    visibleItems,
-    totalHeight,
-    handleScroll,
-    isScrolling,
-    scrollProgress
-  } = useEnhancedVirtualScrolling(items, {
-    itemHeight,
-    containerHeight: height,
-    overscan: 3,
-    buffer: 5
-  });
+  // Simple virtual scrolling implementation
+  const [scrollTop, setScrollTop] = React.useState(0);
+  const containerRef = React.useRef<HTMLDivElement>(null);
 
-  const handleScrollWithCallback = useCallback((event: React.UIEvent<HTMLDivElement>) => {
-    handleScroll(event);
+  const visibleRange = useMemo(() => {
+    const start = Math.floor(scrollTop / itemHeight);
+    const visibleCount = Math.ceil(height / itemHeight);
+    const end = Math.min(start + visibleCount + 1, items.length);
+    
+    return { start: Math.max(0, start - 1), end };
+  }, [scrollTop, itemHeight, height, items.length]);
+
+  const visibleItems = useMemo(() => {
+    return items.slice(visibleRange.start, visibleRange.end).map((item, index) => ({
+      item,
+      index: visibleRange.start + index,
+      offsetY: (visibleRange.start + index) * itemHeight
+    }));
+  }, [items, visibleRange, itemHeight]);
+
+  const totalHeight = items.length * itemHeight;
+
+  const handleScroll = useCallback((event: React.UIEvent<HTMLDivElement>) => {
+    const scrollTop = event.currentTarget.scrollTop;
+    setScrollTop(scrollTop);
     
     // Call onScrollEnd when near bottom
+    const scrollProgress = scrollTop / (totalHeight - height);
     if (onScrollEnd && scrollProgress > 0.9) {
       onScrollEnd();
     }
-  }, [handleScroll, onScrollEnd, scrollProgress]);
+  }, [onScrollEnd, totalHeight, height]);
 
   return (
     <div
+      ref={containerRef}
       className={`relative overflow-auto ${className}`}
       style={{ height }}
-      onScroll={handleScrollWithCallback}
+      onScroll={handleScroll}
     >
       <div style={{ height: totalHeight, position: 'relative' }}>
         {visibleItems.map((virtualItem) => (
@@ -57,21 +75,13 @@ export function VirtualTable<T>(props: VirtualTableProps<T>) {
               top: virtualItem.offsetY,
               left: 0,
               right: 0,
-              height: itemHeight,
-              transform: isScrolling ? 'translateZ(0)' : undefined // GPU acceleration during scroll
+              height: itemHeight
             }}
           >
             {renderItem(virtualItem)}
           </div>
         ))}
       </div>
-      
-      {/* Scroll indicator */}
-      {isScrolling && (
-        <div className="absolute top-2 right-2 bg-primary/80 text-primary-foreground text-xs px-2 py-1 rounded">
-          {Math.round(scrollProgress * 100)}%
-        </div>
-      )}
     </div>
   );
 }

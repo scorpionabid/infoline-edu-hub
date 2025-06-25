@@ -1,52 +1,43 @@
-// Notification types
-export type NotificationType = 
-  | 'info' 
-  | 'warning' 
-  | 'error' 
-  | 'success'
-  | 'data_approval'
-  | 'deadline_reminder'
-  | 'proxy_data_entry'
-  | 'system_update'
-  | 'deadline';
-
-export type NotificationPriority = 'low' | 'normal' | 'high';
-
-export interface NotificationData {
-  id: string;
-  user_id: string;
-  type: NotificationType;
-  title: string;
-  message?: string;
-  is_read?: boolean;
-  priority?: NotificationPriority;
-  related_entity_type?: string;
-  related_entity_id?: string;
-  created_at: string;
-}
 
 export interface AppNotification {
   id: string;
   title: string;
-  message: string;
-  type: NotificationType;
-  priority: NotificationPriority;
-  created_at: string;
-  createdAt?: string; // For backward compatibility
+  message?: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  priority?: 'normal' | 'high' | 'critical';
   is_read: boolean;
+  created_at: string;
+  expires_at?: string;
   user_id: string;
-}
-
-export interface NotificationsCardProps {
-  notifications: AppNotification[];
-  onMarkAsRead?: (id: string) => void;
-  onMarkAllAsRead?: () => void;
-  title?: string;
+  related_entity_type?: string;
+  related_entity_id?: string;
+  metadata?: any;
 }
 
 export interface NotificationStats {
-  totalCount: number;
-  unreadCount: number;
-  todayCount: number;
-  weekCount: number;
+  totalNotifications: number;
+  unreadNotifications: number;
+  todayNotifications: number;
+  thisWeekNotifications: number;
+}
+
+export interface NotificationPreferences {
+  email_enabled: boolean;
+  push_enabled: boolean;
+  in_app_enabled: boolean;
+  sms_enabled: boolean;
+  daily_digest: boolean;
+  weekly_digest: boolean;
+  system_notifications: boolean;
+  data_entry_notifications: boolean;
+  approval_notifications: boolean;
+  deadline_notifications: boolean;
+  quiet_hours_start?: string;
+  quiet_hours_end?: string;
+  timezone: string;
+  language: string;
+  priority_filter: string[];
+  digest_frequency: 'immediate' | 'hourly' | 'daily' | 'weekly';
+  deadline_reminders: string;
+  category_preferences: Record<string, boolean>;
 }
