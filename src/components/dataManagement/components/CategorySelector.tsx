@@ -1,3 +1,4 @@
+
 import React, { memo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -30,13 +31,6 @@ interface CategorySelectorProps {
  * 
  * Displays available categories in a grid layout with completion indicators.
  * Categories are filtered based on user role and permissions.
- * 
- * Features:
- * - Grid layout with hover effects
- * - Assignment badges (sectors/all)
- * - Completion rate indicators
- * - Loading skeleton states
- * - Role-based filtering
  */
 export const CategorySelector: React.FC<CategorySelectorProps> = memo(({
   categories,
@@ -72,7 +66,6 @@ export const CategorySelector: React.FC<CategorySelectorProps> = memo(({
     
     // RegionAdmin can see all categories but NOT select sector categories
     if (actualRole === 'regionadmin') {
-      // RegionAdmin can see all categories for overview
       if (process.env.NODE_ENV === 'development') {
         console.log('regionadmin check:', { assignment: category.assignment, included: true });
       }
@@ -249,7 +242,7 @@ export const CategorySelector: React.FC<CategorySelectorProps> = memo(({
               )}
             </Card>
           );
-        })}}
+        })}
       </div>
 
       {/* Role-based help text */}
