@@ -1,7 +1,6 @@
 
 // Auth utility functions
 import { supabase } from '@/integrations/supabase/client';
-import useSecureAuthStore from '@/hooks/auth/useSecureAuthStore';
 
 export const getCurrentUser = async () => {
   const { data: { user }, error } = await supabase.auth.getUser();
@@ -27,9 +26,4 @@ export const isAuthenticated = async () => {
   } catch {
     return false;
   }
-};
-
-// Export the auth hook for use in components
-export const useAuth = () => {
-  return useSecureAuthStore();
 };

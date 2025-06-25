@@ -1204,7 +1204,21 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      status_history_view: {
+        Row: {
+          changed_at: string | null
+          changed_by: string | null
+          changed_by_email: string | null
+          changed_by_name: string | null
+          comment: string | null
+          data_entry_id: string | null
+          id: string | null
+          metadata: Json | null
+          new_status: string | null
+          old_status: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       approval_permission_check: {

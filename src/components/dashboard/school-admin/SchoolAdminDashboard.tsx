@@ -47,16 +47,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
   });
 
   // Enhanced data-dan istifadə edirik, əgər yoxdursa basic data-ya düşürük
-  const currentData = enhancedData || { 
-    ...basicData, 
-    categoryProgress: [], 
-    columnStatuses: [],
-    totalCategories: 0,
-    completedCategories: 0,
-    totalColumns: 0,
-    filledColumns: 0,
-    overallProgress: 0
-  };
+  const currentData = enhancedData || { ...basicData, categoryProgress: [], columnStatuses: [] };
 
   // Category click handler - DataEntry səhifəsinə yönləndirir
   const handleCategoryClick = (categoryId: string) => {
@@ -115,7 +106,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
       description: 'Tam doldurulmuş kateqoriyalar',
       icon: CheckCircle,
       variant: 'success' as const,
-      trend: (currentData?.totalCategories && currentData.totalCategories > 0) ? {
+      trend: currentData?.totalCategories ? {
         value: Math.round((currentData.completedCategories / currentData.totalCategories) * 100),
         isPositive: true
       } : undefined
@@ -191,6 +182,8 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
         {/* Enhanced Stats Grid */}
         <EnhancedStatsGrid stats={statsData} />
 
+
+        
         {/* Column Status Grid Section */}
         {isReady && hasData && (currentData.columnStatuses?.length || 0) > 0 && (
           <ColumnStatusGrid

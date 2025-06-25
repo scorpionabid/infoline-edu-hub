@@ -23,4 +23,3 @@ const BulkDataEntryDialog: React.FC<BulkDataEntryDialogProps> = ({ open, onClose
 };
 
 export default BulkDataEntryDialog;
-export { BulkDataEntryDialog };

@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -75,7 +74,7 @@ const FormTabs: React.FC<FormTabsProps> = ({
     return (
       <Badge variant={config.variant} className={config.className}>
         <Icon className="w-3 h-3 mr-1" />
-        {t(status, status)}
+        {t(status)}
       </Badge>
     );
   };
@@ -96,9 +95,9 @@ const FormTabs: React.FC<FormTabsProps> = ({
   return (
     <Tabs defaultValue="categories" className="w-full">
       <TabsList className="grid w-full grid-cols-3">
-        <TabsTrigger value="categories">{t("categories", "Kateqoriyalar")}</TabsTrigger>
-        <TabsTrigger value="deadlines">{t("upcomingDeadlines", "Son Tarixlər")}</TabsTrigger>
-        <TabsTrigger value="forms">{t("pendingForms", "Gözləyən Formalar")}</TabsTrigger>
+        <TabsTrigger value="categories">{t("categories")}</TabsTrigger>
+        <TabsTrigger value="deadlines">{t("upcomingDeadlines")}</TabsTrigger>
+        <TabsTrigger value="forms">{t("pendingForms")}</TabsTrigger>
       </TabsList>
 
       <TabsContent value="categories" className="space-y-4">
@@ -125,7 +124,7 @@ const FormTabs: React.FC<FormTabsProps> = ({
                 <div className="space-y-3">
                   <div>
                     <div className="flex justify-between text-sm mb-1">
-                      <span>{t("progress", "Tərəqqi")}</span>
+                      <span>{t("progress")}</span>
                       <span>
                         {category.completionRate || category.completion || 0}%
                       </span>
@@ -141,13 +140,13 @@ const FormTabs: React.FC<FormTabsProps> = ({
                   {category.totalFields && (
                     <div className="text-sm text-muted-foreground">
                       {category.completedFields || 0} / {category.totalFields}{" "}
-                      {t("fieldsCompleted", "sahə tamamlandı")}
+                      {t("fieldsCompleted")}
                     </div>
                   )}
 
                   {category.lastUpdated && (
                     <div className="text-xs text-muted-foreground">
-                      {t("lastUpdated", "Son yenilənmə")}:{" "}
+                      {t("lastUpdated")}:{" "}
                       {new Date(category.lastUpdated).toLocaleDateString()}
                     </div>
                   )}
@@ -163,8 +162,8 @@ const FormTabs: React.FC<FormTabsProps> = ({
                     }
                   >
                     {category.status === "completed"
-                      ? t("viewData", "Məlumatı göstər")
-                      : t("enterData", "Məlumat daxil et")}
+                      ? t("viewData")
+                      : t("enterData")}
                   </Button>
                 </div>
               </CardContent>
@@ -183,12 +182,12 @@ const FormTabs: React.FC<FormTabsProps> = ({
                     {deadline.title || deadline.name}
                   </h3>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {t("deadline", "Son tarix")}:{" "}
+                    {t("deadline")}:{" "}
                     {new Date(deadline.deadline).toLocaleDateString()}
                   </p>
                   <p className="text-sm mt-1">
                     <Clock className="w-4 h-4 inline mr-1" />
-                    {deadline.daysLeft} {t("daysLeft", "gün qaldı")}
+                    {deadline.daysLeft} {t("daysLeft")}
                   </p>
                 </div>
                 <div className="text-right">
@@ -197,7 +196,7 @@ const FormTabs: React.FC<FormTabsProps> = ({
                       variant="outline"
                       className={getPriorityColor(deadline.priority)}
                     >
-                      {t(deadline.priority, deadline.priority)}
+                      {t(deadline.priority)}
                     </Badge>
                   )}
                   <Badge
@@ -208,7 +207,7 @@ const FormTabs: React.FC<FormTabsProps> = ({
                     }
                     className="ml-2"
                   >
-                    {t(deadline.status, deadline.status)}
+                    {t(deadline.status)}
                   </Badge>
                 </div>
               </div>
@@ -229,18 +228,18 @@ const FormTabs: React.FC<FormTabsProps> = ({
                   <h3 className="font-semibold">{form.title || form.name}</h3>
                   {form.category && (
                     <p className="text-sm text-muted-foreground mt-1">
-                      {t("category", "Kateqoriya")}: {form.category}
+                      {t("category")}: {form.category}
                     </p>
                   )}
                   <p className="text-sm text-muted-foreground">
-                    {t("lastModified", "Son dəyişiklik")}:{" "}
+                    {t("lastModified")}:{" "}
                     {new Date(form.lastModified).toLocaleDateString()}
                   </p>
                   {form.progress !== undefined && (
                     <div className="mt-2">
                       <Progress value={form.progress} className="h-2" />
                       <span className="text-xs text-muted-foreground">
-                        {form.progress}% {t("completed", "tamamlandı")}
+                        {form.progress}% {t("completed")}
                       </span>
                     </div>
                   )}
@@ -248,11 +247,11 @@ const FormTabs: React.FC<FormTabsProps> = ({
                 <div className="text-right">
                   {getStatusBadge(form.status)}
                   <Button
-                    onClick={() => handleFormClick?.(form.id)}
+                    onClick={() => handleFormClick(form.id)}
                     size="sm"
                     className="mt-2"
                   >
-                    {t("continue", "Davam et")}
+                    {t("continue")}
                   </Button>
                 </div>
               </div>

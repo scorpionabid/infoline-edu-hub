@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useTranslation } from "@/contexts/TranslationContext";
 import { DashboardFormStats } from "@/types/dashboard";
@@ -22,17 +21,11 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({
     );
   }
 
-  // Real Backend Data with all required properties
+  // Real Backend Data
   const formStats: DashboardFormStats = {
-    // Required properties
-    totalForms: dashboardData.formStats?.total || 0,
     completedForms: dashboardData.formStats?.completedForms || 0,
     pendingForms: dashboardData.formStats?.pendingForms || 0,
-    pendingApprovals: dashboardData.formStats?.pendingForms || 0,
-    rejectedForms: dashboardData.formStats?.rejected || 0,
     approvalRate: dashboardData.formStats?.approvalRate || 0,
-    
-    // Additional properties
     total: dashboardData.formStats?.total || 0,
     completed: dashboardData.formStats?.completed || 0,
     approved: dashboardData.formStats?.approved || 0,
@@ -45,6 +38,11 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({
     completion_rate: dashboardData.formStats?.completion_rate || 0,
     completionRate: dashboardData.formStats?.completionRate || 0,
   };
+
+  // Məcburi xassələri təyin edirik
+  formStats.totalForms = formStats.total || 0;
+  formStats.pendingApprovals = formStats.pendingForms || 0;
+  formStats.rejectedForms = formStats.rejected || 0;
 
   const statsGridData = [
     {
@@ -85,7 +83,7 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({
       <StatsGrid stats={statsGridData} />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <DashboardChart stats={formStats} />
+        <DashboardChart stats={formStats} className="lg:col-span-2" />
         <NotificationCard maxItems={5} />
       </div>
       
