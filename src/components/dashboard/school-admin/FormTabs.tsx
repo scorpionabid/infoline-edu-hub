@@ -247,7 +247,7 @@ const FormTabs: React.FC<FormTabsProps> = ({
                 <div className="text-right">
                   {getStatusBadge(form.status)}
                   <Button
-                    onClick={() => handleFormClick(form.id)}
+                    onClick={() => handleFormClick?.(form.id)}
                     size="sm"
                     className="mt-2"
                   >
