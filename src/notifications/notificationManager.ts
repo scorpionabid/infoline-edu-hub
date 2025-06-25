@@ -6,6 +6,10 @@ export interface UnifiedNotification {
   type: 'info' | 'success' | 'warning' | 'error';
   timestamp: string;
   userId?: string;
+  user_id?: string;
+  is_read?: boolean;
+  priority?: 'normal' | 'high' | 'critical';
+  created_at?: string;
 }
 
 class NotificationManager {
@@ -15,7 +19,10 @@ class NotificationManager {
     const newNotification: UnifiedNotification = {
       ...notification,
       id: Math.random().toString(36).substr(2, 9),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      is_read: false,
+      priority: notification.priority || 'normal'
     };
     this.notifications.push(newNotification);
     return newNotification;
@@ -31,6 +38,16 @@ class NotificationManager {
 
   clear() {
     this.notifications = [];
+  }
+
+  markAsRead(id: string) {
+    this.notifications = this.notifications.map(n => 
+      n.id === id ? { ...n, is_read: true } : n
+    );
+  }
+
+  markAllAsRead() {
+    this.notifications = this.notifications.map(n => ({ ...n, is_read: true }));
   }
 }
 

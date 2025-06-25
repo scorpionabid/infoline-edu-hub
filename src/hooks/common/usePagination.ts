@@ -1,4 +1,6 @@
 
+import React from 'react';
+
 export interface UsePaginationOptions {
   initialPage?: number;
   pageSize?: number;
@@ -9,12 +11,17 @@ export interface UsePaginationReturn {
   currentPage: number;
   pageSize: number;
   totalPages: number;
+  totalItems: number;
   hasNextPage: boolean;
   hasPreviousPage: boolean;
   goToPage: (page: number) => void;
   nextPage: () => void;
   previousPage: () => void;
+  prevPage: () => void;
   setPageSize: (size: number) => void;
+  startIndex: number;
+  endIndex: number;
+  paginatedItems: <T>(items: T[]) => T[];
 }
 
 export function usePagination({
@@ -28,6 +35,8 @@ export function usePagination({
   const totalPages = Math.ceil(totalItems / currentPageSize);
   const hasNextPage = currentPage < totalPages;
   const hasPreviousPage = currentPage > 1;
+  const startIndex = (currentPage - 1) * currentPageSize;
+  const endIndex = Math.min(startIndex + currentPageSize, totalItems);
 
   const goToPage = (page: number) => {
     if (page >= 1 && page <= totalPages) {
@@ -47,15 +56,24 @@ export function usePagination({
     }
   };
 
+  const paginatedItems = <T,>(items: T[]): T[] => {
+    return items.slice(startIndex, endIndex);
+  };
+
   return {
     currentPage,
     pageSize: currentPageSize,
     totalPages,
+    totalItems,
     hasNextPage,
     hasPreviousPage,
     goToPage,
     nextPage,
     previousPage,
-    setPageSize: setCurrentPageSize
+    prevPage: previousPage,
+    setPageSize: setCurrentPageSize,
+    startIndex,
+    endIndex,
+    paginatedItems
   };
 }

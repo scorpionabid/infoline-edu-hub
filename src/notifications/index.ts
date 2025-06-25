@@ -1,3 +1,4 @@
+
 import { useState, useCallback, useEffect } from 'react';
 import { notificationManager, UnifiedNotification } from './notificationManager';
 
@@ -18,6 +19,7 @@ export interface NotificationStats {
 
 export const useNotifications = (userId?: string) => {
   const [notifications, setNotifications] = useState<UnifiedNotification[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     // Simulate fetching notifications for a user
@@ -51,11 +53,42 @@ export const useNotifications = (userId?: string) => {
     setNotifications([]);
   }, []);
 
+  const markAsRead = useCallback((id: string) => {
+    notificationManager.markAsRead(id);
+    setNotifications(prev => prev.map(n => 
+      n.id === id ? { ...n, is_read: true } : n
+    ));
+  }, []);
+
+  const markAllAsRead = useCallback(() => {
+    notificationManager.markAllAsRead();
+    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+  }, []);
+
+  const deleteNotification = useCallback((id: string) => {
+    removeNotification(id);
+  }, [removeNotification]);
+
+  const unreadCount = notifications.filter(n => !n.is_read).length;
+
+  const refetch = useCallback(() => {
+    const updatedNotifications = notificationManager.getAll().filter(n => n.userId === userId);
+    setNotifications(updatedNotifications);
+  }, [userId]);
+
   return {
     notifications,
     addNotification,
     removeNotification,
-    clearNotifications
+    clearNotifications,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+    unreadCount,
+    isLoading,
+    realTimeEnabled: false,
+    toggleRealTime: () => {},
+    refetch
   };
 };
 

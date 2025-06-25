@@ -8,6 +8,15 @@ export interface SuperAdminDashboardData {
   stats: DashboardStats;
   forms: DashboardFormStats;
   userCount?: number;
+  totalRegions?: number;
+  formsByStatus?: {
+    total: number;
+    pending: number;
+    approved: number;
+    rejected: number;
+  };
+  approvalRate?: number;
+  regions?: any[];
 }
 
 export interface RegionAdminDashboardData {
@@ -78,4 +87,101 @@ export interface ColumnStatus {
   id: string;
   name: string;
   status: string;
+}
+
+// Additional missing dashboard types
+export interface CategoryItem {
+  id: string;
+  name: string;
+  description?: string;
+  completionRate?: number;
+  completion?: number;
+  status?: string;
+  deadline?: string;
+}
+
+export interface StatsGridItem {
+  title: string;
+  value: string | number;
+  description?: string;
+  color?: string;
+  icon?: string;
+}
+
+export interface DashboardChartProps {
+  stats: DashboardFormStats;
+  showLegend?: boolean;
+  height?: number;
+}
+
+export interface FormItem {
+  id: string;
+  name?: string;
+  title?: string;
+  category?: string;
+  categoryId?: string;
+  categoryName?: string;
+  dueDate?: string;
+  status: string;
+}
+
+export interface DeadlineItem {
+  id: string;
+  name?: string;
+  title?: string;
+  deadline: string;
+  daysLeft?: number;
+  category?: string;
+  categoryId?: string;
+  categoryName?: string;
+}
+
+export interface SchoolStat {
+  id: string;
+  name: string;
+  completionRate: number;
+  totalEntries?: number;
+  total_entries?: number;
+  pendingEntries?: number;
+  pending_entries?: number;
+  pendingCount?: number;
+  completion?: number;
+  status?: string;
+  lastUpdate?: string;
+  formsCompleted?: number;
+  totalForms?: number;
+  principalName?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  pendingForms?: number;
+}
+
+export interface SectorStat {
+  id: string;
+  name: string;
+  schoolCount: number;
+  completionRate: number;
+  completion?: number;
+}
+
+export interface PendingApproval {
+  id: string;
+  schoolId?: string;
+  schoolName: string;
+  categoryId?: string;
+  categoryName: string;
+  submittedBy?: string;
+  submittedAt: string;
+  status?: 'pending' | 'approved' | 'rejected';
+  createdAt?: string;
+  title?: string;
+  count?: number;
+  date?: string;
+}
+
+export interface FormTabsProps {
+  categories?: CategoryItem[];
+  deadlines?: DeadlineItem[];
+  forms?: FormItem[];
 }
