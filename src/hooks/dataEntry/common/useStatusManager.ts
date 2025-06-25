@@ -1,19 +1,12 @@
 
 import { useState, useCallback } from 'react';
-import { DataEntryStatus } from '@/types/dataEntry';
+import { DataEntryStatus, DATA_ENTRY_STATUS, DATA_ENTRY_STATUS_TRANSITIONS } from '@/types/dataEntry';
 
 export const useStatusManager = () => {
-  const [status, setStatus] = useState<DataEntryStatus>(DataEntryStatus.DRAFT);
+  const [status, setStatus] = useState<DataEntryStatus>(DATA_ENTRY_STATUS.DRAFT);
 
   const canTransitionTo = useCallback((newStatus: DataEntryStatus) => {
-    const validTransitions: Record<DataEntryStatus, DataEntryStatus[]> = {
-      [DataEntryStatus.DRAFT]: [DataEntryStatus.PENDING],
-      [DataEntryStatus.PENDING]: [DataEntryStatus.APPROVED, DataEntryStatus.REJECTED, DataEntryStatus.DRAFT],
-      [DataEntryStatus.APPROVED]: [DataEntryStatus.DRAFT],
-      [DataEntryStatus.REJECTED]: [DataEntryStatus.DRAFT],
-    };
-    
-    return validTransitions[status]?.includes(newStatus) || false;
+    return DATA_ENTRY_STATUS_TRANSITIONS[status]?.includes(newStatus) || false;
   }, [status]);
 
   const updateStatus = useCallback((newStatus: DataEntryStatus) => {

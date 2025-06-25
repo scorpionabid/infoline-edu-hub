@@ -20,6 +20,7 @@ export interface NotificationStats {
 export const useNotifications = (userId?: string) => {
   const [notifications, setNotifications] = useState<UnifiedNotification[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [realTimeEnabled, setRealTimeEnabled] = useState(false);
 
   useEffect(() => {
     // Simulate fetching notifications for a user
@@ -73,12 +74,16 @@ export const useNotifications = (userId?: string) => {
     clearNotifications();
   }, [clearNotifications]);
 
-  const unreadCount = notifications.filter(n => !n.is_read).length;
+  const toggleRealTime = useCallback((enabled: boolean) => {
+    setRealTimeEnabled(enabled);
+  }, []);
 
   const refetch = useCallback(() => {
     const updatedNotifications = notificationManager.getAll().filter(n => n.user_id === userId);
     setNotifications(updatedNotifications);
   }, [userId]);
+
+  const unreadCount = notifications.filter(n => !n.is_read).length;
 
   return {
     notifications,
@@ -91,8 +96,8 @@ export const useNotifications = (userId?: string) => {
     deleteNotification,
     unreadCount,
     isLoading,
-    realTimeEnabled: false,
-    toggleRealTime: () => {},
+    realTimeEnabled,
+    toggleRealTime,
     refetch
   };
 };
@@ -176,7 +181,10 @@ export const useNotificationPreferences = (userId?: string) => {
         user_id: userId || '',
         title: 'Test Notification',
         message: 'This is a test notification',
-        type: 'info'
+        type: 'info',
+        is_read: false,
+        priority: 'normal',
+        created_at: new Date().toISOString()
       });
     } finally {
       setIsTestingNotification(false);

@@ -6,9 +6,9 @@ export interface UnifiedNotification {
   message: string;
   type: 'info' | 'success' | 'warning' | 'error' | 'deadline' | 'approval' | 'rejection';
   timestamp: string;
-  is_read?: boolean;
-  priority?: 'normal' | 'high' | 'critical';
-  created_at?: string;
+  is_read: boolean;
+  priority: 'normal' | 'high' | 'critical';
+  created_at: string;
   related_entity_id?: string;
   related_entity_type?: string;
 }

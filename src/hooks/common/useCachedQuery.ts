@@ -7,16 +7,11 @@ export function useCachedQuery<T>(
   queryFn: () => Promise<T>,
   options?: UseQueryOptions<T>
 ) {
-  const { get: getCachedData, set: setCachedData } = useCachedData<T>(queryKey.join('_'));
+  const { data: cachedData, set: setCachedData } = useCachedData<T>(queryKey.join('_'));
 
   return useQuery({
     queryKey,
-    queryFn: async () => {
-      const cachedData = getCachedData();
-      if (cachedData && options?.staleTime && typeof options.staleTime === 'number') {
-        return cachedData;
-      }
-      
+    queryFn: async () => {      
       const freshData = await queryFn();
       setCachedData(freshData);
       return freshData;

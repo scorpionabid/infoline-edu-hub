@@ -29,6 +29,7 @@ export interface RegionAdminDashboardData {
   deadlines?: any[];
   formStats?: DashboardFormStats;
   sectors?: any[];
+  categories?: CategoryItem[];
 }
 
 export interface SectorAdminDashboardData {
@@ -39,6 +40,7 @@ export interface SectorAdminDashboardData {
   forms: DashboardFormStats;
   formStats?: DashboardFormStats;
   schools?: any[];
+  categories?: CategoryItem[];
 }
 
 export interface SchoolAdminDashboardData {

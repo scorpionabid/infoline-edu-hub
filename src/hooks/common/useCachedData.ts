@@ -1,5 +1,4 @@
 
-
 import { useState, useCallback } from 'react';
 
 export function useCachedData<T>(key: string) {
@@ -35,9 +34,9 @@ export function useCachedData<T>(key: string) {
 
   return {
     data: data || get(),
+    get,
     set,
     remove,
     isLoading
   };
 }
-

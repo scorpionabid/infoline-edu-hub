@@ -56,9 +56,9 @@ export function usePagination<T>(
     }
   };
 
-  const paginatedItems = <T,>(items: T[]): T[] => {
+  const paginatedItems = React.useCallback(<T,>(items: T[]): T[] => {
     return items.slice(startIndex, endIndex);
-  };
+  }, [startIndex, endIndex]);
 
   return {
     currentPage,

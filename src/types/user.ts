@@ -78,6 +78,7 @@ export interface UserFilter {
   sector_id?: string;
   sectorId?: string;
   school_id?: string;
+  schoolId?: string;
   dateRange?: {
     start: string;
     end: string;
