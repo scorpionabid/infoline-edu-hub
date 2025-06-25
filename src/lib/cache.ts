@@ -3,7 +3,11 @@ import { cacheManager } from '@/cache';
 
 export const cache = {
   get: (key: string) => cacheManager.get(key),
-  set: (key: string, value: any, ttl?: number) => cacheManager.set(key, value, ttl),
+  set: (key: string, value: any, ttl?: number) => {
+    // Convert simple TTL number to proper options object
+    const options = typeof ttl === 'number' ? { ttl } : ttl;
+    return cacheManager.set(key, value, options);
+  },
   delete: (key: string) => cacheManager.delete(key),
   clear: () => cacheManager.clear(),
   clearStorage: () => cacheManager.clear()

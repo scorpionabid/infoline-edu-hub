@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
@@ -40,6 +41,7 @@ export function useUserContext(): UserContextData {
               .eq('id', user.region_id)
               .single()
               .then(({ data }) => ({ type: 'region', name: data?.name }))
+              .catch(() => ({ type: 'region', name: null }))
           );
         }
 
@@ -52,6 +54,7 @@ export function useUserContext(): UserContextData {
               .eq('id', user.sector_id)
               .single()
               .then(({ data }) => ({ type: 'sector', name: data?.name }))
+              .catch(() => ({ type: 'sector', name: null }))
           );
         }
 
@@ -64,6 +67,7 @@ export function useUserContext(): UserContextData {
               .eq('id', user.school_id)
               .single()
               .then(({ data }) => ({ type: 'school', name: data?.name }))
+              .catch(() => ({ type: 'school', name: null }))
           );
         }
 

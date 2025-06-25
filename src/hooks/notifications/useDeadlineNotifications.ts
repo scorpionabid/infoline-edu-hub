@@ -1,7 +1,8 @@
+
 import { useState, useEffect } from 'react';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { useLanguage } from '@/context/LanguageContext';
-import { createDeadlineNotification } from '@/services/notificationService';
+import { notificationManager } from '@/notifications/notificationManager';
 
 export const useDeadlineNotifications = () => {
   const user = useAuthStore(selectUser);
@@ -16,7 +17,17 @@ export const useDeadlineNotifications = () => {
       const title = t('deadlineNotificationTitle');
       const message = t('deadlineNotificationBody', { days: daysLeft });
       
-      await createDeadlineNotification(title, message, categoryId);
+      notificationManager.add({
+        user_id: user.id,
+        title,
+        message,
+        type: 'deadline',
+        is_read: false,
+        priority: 'high',
+        created_at: new Date().toISOString(),
+        related_entity_id: categoryId,
+        related_entity_type: 'category'
+      });
       
       return true;
     } catch (error) {
