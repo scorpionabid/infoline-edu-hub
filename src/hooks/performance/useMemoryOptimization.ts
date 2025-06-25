@@ -43,6 +43,17 @@ export const useMemoryOptimization = (options: MemoryOptimizationOptions = {}) =
     }
   }, [enableGarbageCollection]);
 
+  const forceCleanup = useCallback(() => {
+    cleanupMemory();
+  }, [cleanupMemory]);
+
+  const getMemoryStats = useCallback(() => {
+    const memoryUsage = getMemoryUsage();
+    return {
+      memory: memoryUsage
+    };
+  }, [getMemoryUsage]);
+
   const memoryInfo = useMemo(() => {
     return getMemoryUsage();
   }, [getMemoryUsage]);
@@ -63,6 +74,8 @@ export const useMemoryOptimization = (options: MemoryOptimizationOptions = {}) =
   return {
     memoryInfo,
     cleanupMemory,
-    getMemoryUsage
+    getMemoryUsage,
+    forceCleanup,
+    getMemoryStats
   };
 };

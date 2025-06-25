@@ -138,15 +138,33 @@ export const useSchoolDataForColumn = (): UseSchoolDataForColumnResult => {
       const schoolDataMap: { [key: string]: SchoolDataEntry } = {};
 
       schools.forEach(school => {
-        // Type-safe access to nested data
-        const sectors = Array.isArray(school.sectors) ? school.sectors[0] : school.sectors;  
-        const regions = sectors && Array.isArray(sectors.regions) ? sectors.regions[0] : sectors?.regions;
+        // Type-safe access to nested data with proper null checking
+        const sectorsData = school.sectors;
+        let sectorName = 'Bilinmir';
+        let regionName = 'Bilinmir';
+
+        if (sectorsData) {
+          // Handle both single object and array cases
+          const sectorInfo = Array.isArray(sectorsData) ? sectorsData[0] : sectorsData;
+          if (sectorInfo && typeof sectorInfo === 'object' && 'name' in sectorInfo) {
+            sectorName = sectorInfo.name || 'Bilinmir';
+            
+            // Handle regions data
+            const regionsData = sectorInfo.regions;
+            if (regionsData) {
+              const regionInfo = Array.isArray(regionsData) ? regionsData[0] : regionsData;
+              if (regionInfo && typeof regionInfo === 'object' && 'name' in regionInfo) {
+                regionName = regionInfo.name || 'Bilinmir';
+              }
+            }
+          }
+        }
 
         schoolDataMap[school.id] = {
           schoolId: school.id,
           schoolName: school.name,
-          sectorName: sectors?.name || 'Bilinmir',
-          regionName: regions?.name || 'Bilinmir',
+          sectorName,
+          regionName,
           currentValue: undefined,
           status: 'empty',
           lastUpdated: undefined,
@@ -158,14 +176,23 @@ export const useSchoolDataForColumn = (): UseSchoolDataForColumnResult => {
       if (dataEntries) {
         dataEntries.forEach(entry => {
           if (schoolDataMap[entry.school_id]) {
-            const profiles = Array.isArray(entry.profiles) ? entry.profiles[0] : entry.profiles;
+            // Handle profiles data safely
+            const profilesData = entry.profiles;
+            let submittedBy = 'Bilinmir';
+            
+            if (profilesData) {
+              const profileInfo = Array.isArray(profilesData) ? profilesData[0] : profilesData;
+              if (profileInfo && typeof profileInfo === 'object' && 'full_name' in profileInfo) {
+                submittedBy = profileInfo.full_name || 'Bilinmir';
+              }
+            }
             
             schoolDataMap[entry.school_id] = {
               ...schoolDataMap[entry.school_id],
               currentValue: entry.value || undefined,
               status: entry.status as 'pending' | 'approved' | 'rejected',
               lastUpdated: entry.updated_at || undefined,
-              submittedBy: profiles?.full_name || 'Bilinmir'
+              submittedBy
             };
           }
         });

@@ -5,11 +5,7 @@ import { UserFilter } from '@/types/user';
 
 export const useUserList = (initialFilters: UserFilter = {}) => {
   const [filters, setFilters] = useState<UserFilter>(initialFilters);
-  const { users, loading, error, totalCount, refreshUsers, updateFilters } = useUsers();
-
-  useEffect(() => {
-    updateFilters(filters);
-  }, [filters, updateFilters]);
+  const { users, isLoading, error, refetch } = useUsers(filters);
 
   const applyFilters = (newFilters: UserFilter) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
@@ -21,12 +17,13 @@ export const useUserList = (initialFilters: UserFilter = {}) => {
 
   return {
     users,
-    loading,
+    loading: isLoading,
     error,
-    totalCount,
+    totalCount: users.length,
     filters,
     applyFilters,
     resetFilters,
-    refreshUsers
+    refreshUsers: refetch,
+    updateFilters: applyFilters
   };
 };
