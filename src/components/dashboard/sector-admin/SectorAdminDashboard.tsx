@@ -1,9 +1,13 @@
-import React from "react";
+import React, { useState } from "react";
 import { useTranslation } from "@/contexts/TranslationContext";
 import { DashboardFormStats } from "@/types/dashboard";
 import StatsGrid from "../StatsGrid";
 import DashboardChart from "../DashboardChart";
 import SchoolsTable from "./SchoolsTable";
+import SchoolDataEntryDialog from "./SchoolDataEntryDialog";
+import { School } from "@/types/school";
+import { useSchools } from "@/hooks/schools/useSchools";
+import { useAuthStore, selectUser } from "@/hooks/auth/useAuthStore";
 
 interface SectorAdminDashboardProps {
   dashboardData?: any;
@@ -13,6 +17,26 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({
   dashboardData,
 }) => {
   const { t } = useTranslation();
+  const user = useAuthStore(selectUser);
+  
+  // Modal state
+  const [selectedSchool, setSelectedSchool] = useState<School | null>(null);
+  const [isDataEntryDialogOpen, setIsDataEntryDialogOpen] = useState(false);
+  
+  // Get schools data for school lookup
+  const { schools } = useSchools(
+    user?.role === 'regionadmin' ? user.region_id : undefined,
+    user?.role === 'sectoradmin' ? user.sector_id : undefined
+  );
+  
+  // Handler for school click
+  const handleSchoolView = (schoolId: string) => {
+    const school = schools.find(s => s.id === schoolId);
+    if (school) {
+      setSelectedSchool(school);
+      setIsDataEntryDialogOpen(true);
+    }
+  };
 
   if (!dashboardData) {
     return (
@@ -92,8 +116,15 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({
 
       <div className="space-y-6">
         <DashboardChart stats={formStats} />
-        <SchoolsTable />
+        <SchoolsTable onView={handleSchoolView} />
       </div>
+      
+      {/* School Data Entry Modal */}
+      <SchoolDataEntryDialog
+        open={isDataEntryDialogOpen}
+        onOpenChange={setIsDataEntryDialogOpen}
+        school={selectedSchool}
+      />
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -39,8 +39,19 @@ import { toast } from 'sonner';
  * - Progressive disclosure
  * - Mobile responsive
  * - Error handling
+ * - Compact mode for modal usage
+ * - Preselected school filtering
  */
-const UnifiedDataManagement: React.FC = () => {
+
+interface UnifiedDataManagementProps {
+  preselectedSchoolId?: string; // Filter to show only specific school
+  compactMode?: boolean; // Simplified layout for modals
+}
+
+const UnifiedDataManagement: React.FC<UnifiedDataManagementProps> = ({
+  preselectedSchoolId,
+  compactMode = false,
+}) => {
   const { t } = useTranslation();
   
   // Use the unified data management hook
@@ -78,6 +89,29 @@ const UnifiedDataManagement: React.FC = () => {
     refreshData,
     clearError
   } = useDataManagement();
+
+  // Filter school data for preselected school
+  const filteredSchoolData = preselectedSchoolId 
+    ? schoolData.filter(school => school.schoolId === preselectedSchoolId)
+    : schoolData;
+
+  // Calculate filtered stats
+  const filteredStats = React.useMemo(() => {
+    if (!preselectedSchoolId || !stats) return stats;
+    
+    const filteredData = schoolData.filter(school => school.schoolId === preselectedSchoolId);
+    if (filteredData.length === 0) return stats;
+    
+    const school = filteredData[0];
+    return {
+      totalSchools: 1,
+      pendingCount: school.status === 'pending' ? 1 : 0,
+      approvedCount: school.status === 'approved' ? 1 : 0,
+      rejectedCount: school.status === 'rejected' ? 1 : 0,
+      emptyCount: school.status === 'empty' ? 1 : 0,
+      completionRate: school.status === 'approved' || school.status === 'pending' ? 100 : 0
+    };
+  }, [preselectedSchoolId, stats, schoolData]);
 
   // Calculate progress
   const getProgress = () => {
@@ -120,48 +154,50 @@ const UnifiedDataManagement: React.FC = () => {
   }
 
   return (
-    <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
+    <div className={`${compactMode ? 'p-2 space-y-3' : 'p-3 sm:p-6 space-y-4 sm:space-y-6'}`}>
       {/* Header - Mobile Responsive */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0">
-        <div>
-          <h2 className="text-lg sm:text-xl lg:text-2xl font-bold flex items-center gap-2">
-            <Database className="h-5 w-5 sm:h-6 sm:w-6" />
-            Data İdarəetməsi
-          </h2>
-          <p className="text-muted-foreground mt-1 text-sm sm:text-base">
-            {currentStep === 'category' && 'Məlumat növünü seçin'}
-            {currentStep === 'column' && 'Məlumat sütununu seçin'}
-            {currentStep === 'data' && 'Məktəb məlumatlarını idarə edin'}
-          </p>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          {currentStep !== 'category' && (
+      {!compactMode && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0">
+          <div>
+            <h2 className="text-lg sm:text-xl lg:text-2xl font-bold flex items-center gap-2">
+              <Database className="h-5 w-5 sm:h-6 sm:w-6" />
+              Data İdarəetməsi
+            </h2>
+            <p className="text-muted-foreground mt-1 text-sm sm:text-base">
+              {currentStep === 'category' && 'Məlumat növünü seçin'}
+              {currentStep === 'column' && 'Məlumat sütununu seçin'}
+              {currentStep === 'data' && 'Məktəb məlumatlarını idarə edin'}
+            </p>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            {currentStep !== 'category' && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => goToStep('category')}
+                disabled={loading.categories || loading.columns}
+                className="text-xs sm:text-sm"
+              >
+                <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Başa qayıt</span>
+                <span className="sm:hidden">Geri</span>
+              </Button>
+            )}
+            
             <Button 
               variant="outline" 
               size="sm"
-              onClick={() => goToStep('category')}
-              disabled={loading.categories || loading.columns}
+              onClick={handleRefresh} 
+              disabled={loading.categories || loading.columns || loading.schoolData}
               className="text-xs sm:text-sm"
             >
-              <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-              <span className="hidden sm:inline">Başa qayıt</span>
-              <span className="sm:hidden">Geri</span>
+              <RefreshCw className={`h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 ${loading.categories || loading.columns || loading.schoolData ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Yenilə</span>
             </Button>
-          )}
-          
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={handleRefresh} 
-            disabled={loading.categories || loading.columns || loading.schoolData}
-            className="text-xs sm:text-sm"
-          >
-            <RefreshCw className={`h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 ${loading.categories || loading.columns || loading.schoolData ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">Yenilə</span>
-          </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Progress Bar */}
       <div className="space-y-2">
@@ -238,18 +274,18 @@ const UnifiedDataManagement: React.FC = () => {
       )}
 
       {/* Statistics Overview */}
-      {currentStep === 'data' && stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {currentStep === 'data' && filteredStats && (
+        <div className={`grid grid-cols-1 ${compactMode ? 'md:grid-cols-2' : 'md:grid-cols-4'} gap-4`}>
           <Card>
             <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold">{stats.totalSchools}</div>
+              <div className="text-2xl font-bold">{filteredStats.totalSchools}</div>
               <div className="text-sm text-muted-foreground">Ümumi Məktəb</div>
             </CardContent>
           </Card>
           
           <Card>
             <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-yellow-600">{stats.pendingCount}</div>
+              <div className="text-2xl font-bold text-yellow-600">{filteredStats.pendingCount}</div>
               <div className="text-sm text-muted-foreground flex items-center justify-center gap-1">
                 <Clock className="h-3 w-3" />
                 Gözləyən
@@ -259,7 +295,7 @@ const UnifiedDataManagement: React.FC = () => {
           
           <Card>
             <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-green-600">{stats.approvedCount}</div>
+              <div className="text-2xl font-bold text-green-600">{filteredStats.approvedCount}</div>
               <div className="text-sm text-muted-foreground flex items-center justify-center gap-1">
                 <CheckCircle className="h-3 w-3" />
                 Təsdiqlənmiš
@@ -269,7 +305,7 @@ const UnifiedDataManagement: React.FC = () => {
           
           <Card>
             <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-blue-600">{stats.completionRate}%</div>
+              <div className="text-2xl font-bold text-blue-600">{filteredStats.completionRate}%</div>
               <div className="text-sm text-muted-foreground flex items-center justify-center gap-1">
                 <TrendingUp className="h-3 w-3" />
                 Tamamlanma
@@ -304,8 +340,8 @@ const UnifiedDataManagement: React.FC = () => {
           <SchoolDataGrid
             category={selectedCategory!}
             column={selectedColumn}
-            schoolData={schoolData}
-            stats={stats}
+            schoolData={filteredSchoolData}
+            stats={filteredStats}
             loading={loading.schoolData}
             saving={loading.saving}
             permissions={permissions}
@@ -315,6 +351,7 @@ const UnifiedDataManagement: React.FC = () => {
             onBulkApprove={handleBulkApprove}
             onBulkReject={handleBulkReject}
             onBack={() => goToStep('column')}
+            compactMode={compactMode}
           />
         )}
       </div>
