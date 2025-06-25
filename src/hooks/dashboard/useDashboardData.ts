@@ -82,3 +82,6 @@ export const useDashboardData = (options: UseDashboardDataOptions = {}) => {
     isEmpty: !data || (data.totalCategories === 0)
   };
 };
+
+// Export the types that are needed
+export type { EnhancedDashboardData, CategoryProgress, ColumnStatus };

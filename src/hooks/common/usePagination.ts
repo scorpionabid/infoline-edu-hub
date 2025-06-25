@@ -7,7 +7,7 @@ export interface UsePaginationOptions {
   totalItems?: number;
 }
 
-export interface UsePaginationReturn {
+export interface UsePaginationReturn<T> {
   currentPage: number;
   pageSize: number;
   totalPages: number;
@@ -21,13 +21,14 @@ export interface UsePaginationReturn {
   setPageSize: (size: number) => void;
   startIndex: number;
   endIndex: number;
-  paginatedItems: <T>(items: T[]) => T[];
+  paginatedItems: T[];
+  paginatedData: T[];
 }
 
 export function usePagination<T>(
   items: T[],
   initialPageSize = 10
-): UsePaginationReturn {
+): UsePaginationReturn<T> {
   const [currentPage, setCurrentPage] = React.useState(1);
   const [currentPageSize, setCurrentPageSize] = React.useState(initialPageSize);
 
@@ -37,6 +38,11 @@ export function usePagination<T>(
   const hasPreviousPage = currentPage > 1;
   const startIndex = (currentPage - 1) * currentPageSize;
   const endIndex = Math.min(startIndex + currentPageSize, totalItems);
+
+  // Calculate paginated items
+  const paginatedItems = React.useMemo(() => {
+    return items.slice(startIndex, endIndex);
+  }, [items, startIndex, endIndex]);
 
   const goToPage = (page: number) => {
     if (page >= 1 && page <= totalPages) {
@@ -56,10 +62,6 @@ export function usePagination<T>(
     }
   };
 
-  const paginatedItems = React.useCallback(<T,>(items: T[]): T[] => {
-    return items.slice(startIndex, endIndex);
-  }, [startIndex, endIndex]);
-
   return {
     currentPage,
     pageSize: currentPageSize,
@@ -74,6 +76,7 @@ export function usePagination<T>(
     setPageSize: setCurrentPageSize,
     startIndex,
     endIndex,
-    paginatedItems
+    paginatedItems,
+    paginatedData: paginatedItems
   };
 }

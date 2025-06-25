@@ -1,3 +1,4 @@
+
 import React, { useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -75,7 +76,7 @@ const SchoolsTable: React.FC<SchoolsTableProps> = ({
     currentPage,
     pageSize,
     totalPages,
-    paginatedItems: paginatedSchools,
+    paginatedItems,
     goToPage,
     nextPage,
     prevPage,
@@ -100,7 +101,7 @@ const SchoolsTable: React.FC<SchoolsTableProps> = ({
     );
   }
 
-  if (!paginatedSchools || paginatedSchools.length === 0) {
+  if (!paginatedItems || paginatedItems.length === 0) {
     return (
       <Card>
         <CardHeader>
@@ -125,7 +126,7 @@ const SchoolsTable: React.FC<SchoolsTableProps> = ({
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {paginatedSchools.map((school) => (
+          {paginatedItems.map((school) => (
             <div
               key={school.id}
               className="flex items-start justify-between p-6 border rounded-lg hover:shadow-md transition-shadow"

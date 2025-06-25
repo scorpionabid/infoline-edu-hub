@@ -11,7 +11,7 @@ export const cache = {
 
 export default cache;
 
-// Performance monitoring
+// Performance monitoring with simple localStorage implementation
 export const performanceCache = {
   get: (key: string) => {
     try {

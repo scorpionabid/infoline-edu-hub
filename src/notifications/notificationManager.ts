@@ -29,11 +29,19 @@ class NotificationManager {
     return newNotification;
   }
 
+  createNotification(notification: Omit<UnifiedNotification, 'id' | 'timestamp'>) {
+    return this.add(notification);
+  }
+
   remove(id: string) {
     this.notifications = this.notifications.filter(n => n.id !== id);
   }
 
   getAll() {
+    return this.notifications;
+  }
+
+  getNotifications() {
     return this.notifications;
   }
 

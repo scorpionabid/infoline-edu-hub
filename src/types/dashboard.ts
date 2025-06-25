@@ -1,4 +1,3 @@
-
 export interface SuperAdminDashboardData {
   totalSchools: number;
   totalUsers: number;
@@ -30,6 +29,7 @@ export interface RegionAdminDashboardData {
   formStats?: DashboardFormStats;
   sectors?: any[];
   categories?: CategoryItem[];
+  pendingItems?: any[];
 }
 
 export interface SectorAdminDashboardData {
@@ -41,6 +41,7 @@ export interface SectorAdminDashboardData {
   formStats?: DashboardFormStats;
   schools?: any[];
   categories?: CategoryItem[];
+  deadlines?: any[];
 }
 
 export interface SchoolAdminDashboardData {
@@ -79,9 +80,23 @@ export interface DashboardFormStats {
   pendingForms: number;
   approvalRate: number;
   completed: number;
+  totalRegions?: number;
+  totalSectors?: number;
+  totalSchools?: number;
 }
 
 export interface EnhancedDashboardData {
+  totalCategories: number;
+  completedCategories: number;
+  totalColumns: number;
+  filledColumns: number;
+  overallProgress: number;
+  categoryProgress: CategoryProgress[];
+  columnStatuses: ColumnStatus[];
+  totalForms: number;
+  completedForms: number;
+  pendingForms: number;
+  completionRate: number;
   [key: string]: any;
 }
 
@@ -89,15 +104,18 @@ export interface CategoryProgress {
   id: string;
   name: string;
   progress: number;
+  status: string;
+  completionRate: number;
 }
 
 export interface ColumnStatus {
   id: string;
   name: string;
   status: string;
+  categoryId: string;
+  categoryName: string;
 }
 
-// Additional missing dashboard types
 export interface CategoryItem {
   id: string;
   name: string;
@@ -174,6 +192,7 @@ export interface SchoolStat {
   completed?: number;
   total?: number;
   percentage?: number;
+  lastUpdated?: string;
 }
 
 export interface SectorStat {
