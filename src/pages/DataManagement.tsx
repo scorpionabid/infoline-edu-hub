@@ -40,8 +40,6 @@ const DataManagementPage: React.FC = () => {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
         <div className="container mx-auto py-3 sm:py-6 px-2 sm:px-4">
           <div className="max-w-7xl mx-auto">
-
-
             {/* Main Content - Mobile Responsive */}
             <div className="bg-white rounded-lg sm:rounded-xl shadow-sm border">
               <UnifiedDataManagement />

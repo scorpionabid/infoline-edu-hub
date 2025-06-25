@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useDataManagement } from '@/hooks/dataManagement/useDataManagement';
-import { CategorySelector } from './components/CategorySelector';
+import CategorySelector from './components/CategorySelector';
 import { ColumnSelector } from './components/ColumnSelector';
 import { SchoolDataGrid } from './components/SchoolDataGrid';
 import { toast } from 'sonner';
