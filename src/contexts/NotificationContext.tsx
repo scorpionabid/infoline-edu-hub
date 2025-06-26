@@ -1,3 +1,4 @@
+
 /**
  * İnfoLine Notification System - Legacy Compatibility Layer
  * DEPRECATED: Use /src/notifications/index.ts for new implementations
@@ -10,7 +11,7 @@ export interface Notification {
   id: string;
   title: string;
   message: string;
-  type: 'info' | 'success' | 'warning' | 'error';
+  type: 'info' | 'success' | 'warning' | 'error' | 'deadline' | 'approval' | 'rejection';
   status: 'sent' | 'delivered' | 'read' | 'failed' | 'pending';
   channel?: 'email' | 'push' | 'inApp' | 'sms';
   timestamp: Date;
@@ -74,9 +75,10 @@ The new hook provides better TypeScript support and more features.
     message: notification.message || '',
     type: notification.type === 'approval' ? 'success' : 
           notification.type === 'rejection' ? 'error' :
-          notification.type === 'deadline' ? 'warning' : 'info',
+          notification.type === 'deadline' ? 'warning' : 
+          notification.type as 'info' | 'success' | 'warning' | 'error',
     status: notification.is_read ? 'read' : 'delivered',
-    timestamp: new Date(notification.created_at)
+    timestamp: new Date(notification.created_at || notification.timestamp)
   }));
 
   const addNotification = async (notification: Omit<Notification, 'id' | 'timestamp'>) => {
@@ -106,3 +108,4 @@ export default {
   NotificationProvider,
   useNotifications
 };
+

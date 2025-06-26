@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface EmailParams {
@@ -498,11 +499,12 @@ export class EmailService {
     let sectionsHtml = '';
     Object.entries(groupedNotifications).forEach(([type, typeNotifications]) => {
       const label = typeLabels[type] || type;
+      const notifications = Array.isArray(typeNotifications) ? typeNotifications : [];
       sectionsHtml += `
         <div style="margin: 20px 0; padding: 15px; border-left: 4px solid #3b82f6; background: #f8fafc;">
-          <h3 style="margin: 0 0 10px 0; color: #1f2937;">${label} (${typeNotifications.length})</h3>
+          <h3 style="margin: 0 0 10px 0; color: #1f2937;">${label} (${notifications.length})</h3>
           <ul style="margin: 0; padding-left: 20px;">
-            ${typeNotifications.map(notification => `
+            ${notifications.map(notification => `
               <li style="margin: 5px 0;">
                 <strong>${notification.title}</strong>
                 ${notification.message ? `<br><span style="color: #6b7280; font-size: 14px;">${notification.message}</span>` : ''}

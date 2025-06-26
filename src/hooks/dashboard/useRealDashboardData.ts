@@ -7,7 +7,8 @@ import {
   RegionAdminDashboardData,
   SectorAdminDashboardData,
   SchoolAdminDashboardData,
-  DashboardFormStats 
+  DashboardFormStats,
+  DashboardStats
 } from '@/types/dashboard';
 
 export const useRealDashboardData = () => {
@@ -55,27 +56,52 @@ export const useRealDashboardData = () => {
           sectors(id)
         `);
 
+      const stats: DashboardStats = {
+        totalEntries: formsByStatus.total,
+        completedEntries: formsByStatus.approved,
+        pendingEntries: formsByStatus.pending,
+        approvedEntries: formsByStatus.approved,
+        rejectedEntries: formsByStatus.rejected,
+        completed: formsByStatus.approved,
+        pending: formsByStatus.pending
+      };
+
+      const forms: DashboardFormStats = {
+        totalForms: formsByStatus.total,
+        pendingApprovals: formsByStatus.pending,
+        rejectedForms: formsByStatus.rejected,
+        total: formsByStatus.total,
+        pending: formsByStatus.pending,
+        approved: formsByStatus.approved,
+        rejected: formsByStatus.rejected,
+        draft: 0,
+        dueSoon: 0,
+        overdue: 0,
+        percentage: completionRate,
+        completion_rate: completionRate,
+        completionRate: completionRate,
+        completedForms: formsByStatus.approved,
+        pendingForms: formsByStatus.pending,
+        approvalRate: completionRate,
+        completed: formsByStatus.approved
+      };
+
       return {
         totalUsers: usersResult.count || 0,
-        totalRegions: regionsResult.count || 0,
-        totalSectors: sectorsResult.count || 0,
         totalSchools: schoolsResult.count || 0,
-        regionCount: regionsResult.count || 0,
-        sectorCount: sectorsResult.count || 0,
-        schoolCount: schoolsResult.count || 0,
-        userCount: usersResult.count || 0,
-        approvalRate: completionRate,
+        totalCategories: 0,
+        pendingApprovals: formsByStatus.pending,
         completionRate,
+        stats,
+        forms,
+        userCount: usersResult.count || 0,
+        totalRegions: regionsResult.count || 0,
         formsByStatus,
+        approvalRate: completionRate,
         regions: regionsData?.map(region => ({
           ...region,
           sectorCount: region.sectors?.length || 0
-        })) || [],
-        notifications: [],
-        pendingApprovals: [],
-        regionStats: [],
-        categories: [],
-        deadlines: []
+        })) || []
       };
     } catch (error) {
       console.error('Error fetching super admin data:', error);
@@ -89,7 +115,7 @@ export const useRealDashboardData = () => {
         throw new Error('Region ID not found for region admin');
       }
 
-      // Fetch sectors in this region with enhanced statistics
+      // Fetch sectors in this region
       const { data: sectorsData } = await supabase
         .from('sectors')
         .select(`
@@ -100,42 +126,7 @@ export const useRealDashboardData = () => {
         `)
         .eq('region_id', user.region_id);
 
-      // Fetch form statistics for each sector
-      const sectorsWithStats = await Promise.all(
-        (sectorsData || []).map(async (sector) => {
-          const { data: sectorFormStats } = await supabase
-            .from('data_entries')
-            .select(`
-              status,
-              schools!inner(sector_id)
-            `)
-            .eq('schools.sector_id', sector.id);
-
-          const totalEntries = sectorFormStats?.length || 0;
-          const approvedEntries = sectorFormStats?.filter(f => f.status === 'approved').length || 0;
-          const pendingEntries = sectorFormStats?.filter(f => f.status === 'pending').length || 0;
-          
-          const sectorCompletionRate = totalEntries > 0 
-            ? Math.round((approvedEntries / totalEntries) * 100)
-            : 0;
-
-          return {
-            id: sector.id,
-            name: sector.name,
-            schoolCount: sector.schools?.length || 0,
-            totalSchools: sector.schools?.length || 0,
-            activeSchools: sector.schools?.length || 0,
-            completionRate: sectorCompletionRate,
-            completion_rate: sectorCompletionRate,
-            completion: sectorCompletionRate,
-            status: 'active',
-            created_at: '',
-            updated_at: ''
-          };
-        })
-      );
-
-      // Fetch overall form statistics for this region
+      // Fetch form statistics for this region
       const { data: formStatsData } = await supabase
         .from('data_entries')
         .select(`
@@ -153,7 +144,20 @@ export const useRealDashboardData = () => {
         ? Math.round((approvedEntries / totalEntries) * 100)
         : 0;
 
-      const formStats: DashboardFormStats = {
+      const stats: DashboardStats = {
+        totalEntries,
+        completedEntries: approvedEntries,
+        pendingEntries,
+        approvedEntries,
+        rejectedEntries,
+        completed: approvedEntries,
+        pending: pendingEntries
+      };
+
+      const forms: DashboardFormStats = {
+        totalForms: totalEntries,
+        pendingApprovals: pendingEntries,
+        rejectedForms: rejectedEntries,
         total: totalEntries,
         pending: pendingEntries,
         approved: approvedEntries,
@@ -171,13 +175,12 @@ export const useRealDashboardData = () => {
       };
 
       return {
+        totalSectors: sectorsData?.length || 0,
+        totalSchools: sectorsData?.reduce((sum, sector) => sum + (sector.schools?.length || 0), 0) || 0,
+        pendingApprovals: pendingEntries,
         completionRate,
-        formStats,
-        sectors: sectorsWithStats,
-        categories: [],
-        deadlines: [],
-        pendingItems: [],
-        notifications: []
+        stats,
+        forms
       };
     } catch (error) {
       console.error('Error fetching region admin data:', error);
@@ -219,7 +222,20 @@ export const useRealDashboardData = () => {
         ? Math.round((approvedEntries / totalEntries) * 100)
         : 0;
 
-      const formStats: DashboardFormStats = {
+      const stats: DashboardStats = {
+        totalEntries,
+        completedEntries: approvedEntries,
+        pendingEntries,
+        approvedEntries,
+        rejectedEntries,
+        completed: approvedEntries,
+        pending: pendingEntries
+      };
+
+      const forms: DashboardFormStats = {
+        totalForms: totalEntries,
+        pendingApprovals: pendingEntries,
+        rejectedForms: rejectedEntries,
         total: totalEntries,
         pending: pendingEntries,
         approved: approvedEntries,
@@ -237,24 +253,11 @@ export const useRealDashboardData = () => {
       };
 
       return {
+        totalSchools: schoolsData?.length || 0,
+        pendingApprovals: pendingEntries,
         completionRate,
-        formStats,
-        schools: schoolsData?.map(school => ({
-          id: school.id,
-          name: school.name,
-          completionRate: school.completion_rate || 0,
-          totalForms: 0,
-          completedForms: 0,
-          pendingForms: 0,
-          status: 'active',
-          lastUpdated: '',
-          created_at: '',
-          updated_at: ''
-        })) || [],
-        categories: [],
-        deadlines: [],
-        pendingItems: [],
-        notifications: []
+        stats,
+        forms
       };
     } catch (error) {
       console.error('Error fetching sector admin data:', error);
@@ -284,24 +287,42 @@ export const useRealDashboardData = () => {
         ? Math.round((approvedEntries / totalEntries) * 100)
         : 0;
 
+      const stats: DashboardStats = {
+        totalEntries,
+        completedEntries: approvedEntries,
+        pendingEntries,
+        approvedEntries,
+        rejectedEntries,
+        completed: approvedEntries,
+        pending: pendingEntries
+      };
+
+      const forms: DashboardFormStats = {
+        totalForms: totalEntries,
+        pendingApprovals: pendingEntries,
+        rejectedForms: rejectedEntries,
+        total: totalEntries,
+        pending: pendingEntries,
+        approved: approvedEntries,
+        rejected: rejectedEntries,
+        draft: draftEntries,
+        dueSoon: 0,
+        overdue: 0,
+        percentage: completionRate,
+        completion_rate: completionRate,
+        completionRate: completionRate,
+        completedForms: approvedEntries,
+        pendingForms: pendingEntries,
+        approvalRate: completionRate,
+        completed: approvedEntries
+      };
+
       return {
-        completionRate,
-        stats: {
-          completed: approvedEntries,
-          pending: pendingEntries
-        },
-        formStats: {
-          total: totalEntries,
-          pending: pendingEntries,
-          approved: approvedEntries,
-          rejected: rejectedEntries,
-          drafts: draftEntries,
-          incomplete: 0,
-          dueSoon: 0
-        },
-        categories: [],
-        deadlines: [],
-        notifications: []
+        totalForms: totalEntries,
+        completedForms: approvedEntries,
+        pendingForms: pendingEntries,
+        stats,
+        forms
       };
     } catch (error) {
       console.error('Error fetching school admin data:', error);

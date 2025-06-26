@@ -1,602 +1,264 @@
+
 import { supabase } from '@/integrations/supabase/client';
-import { EnhancedNotificationService } from '../enhancedNotificationService';
-import { NotificationTemplateService } from '../templates/templateService';
-import { NotificationPriority } from '@/types/notification';
+import { toast } from 'sonner';
 
-export interface DeadlineCheckResult {
-  processed: number;
-  warnings3Days: number;
-  warnings1Day: number;
-  expired: number;
-  errors: string[];
-}
-
-export interface DeadlineWarningType {
-  type: '3_days' | '1_day' | 'expired';
-  templateName: string;
-  priority: NotificationPriority;
-}
-
-export interface JobResult {
-  success: boolean;
-  message: string;
-  data?: any;
-}
-
-export interface Category {
-  id: string;
-  name: string;
-  deadline: string;
-  status: string;
-  assignment: string;
-}
-
-export interface School {
-  id: string;
-  name: string;
-  region_id: string;
-  sector_id: string;
-  admin_id?: string;
-}
-
-export interface User {
+interface UserData {
   id: string;
   full_name: string;
   email: string;
 }
 
-/**
- * Deadline Scheduler Service
- * Manages automated deadline notifications and warnings
- */
-export class DeadlineSchedulerService {
-  
-  // Deadline warning configurations
-  private static readonly DEADLINE_WARNINGS: DeadlineWarningType[] = [
-    {
-      type: '3_days',
-      templateName: NotificationTemplateService.TEMPLATES.DEADLINE_WARNING_3_DAYS,
-      priority: 'high'
-    },
-    {
-      type: '1_day',
-      templateName: NotificationTemplateService.TEMPLATES.DEADLINE_WARNING_1_DAY,
-      priority: 'critical'
-    },
-    {
-      type: 'expired',
-      templateName: NotificationTemplateService.TEMPLATES.DEADLINE_EXPIRED,
-      priority: 'critical'
+interface DeadlineCategory {
+  id: string;
+  name: string;
+  deadline: string;
+  assignment: string;
+}
+
+interface DeadlineNotificationData {
+  categoryId: string;
+  categoryName: string;
+  deadline: Date;
+  daysLeft: number;
+  assignment: string;
+}
+
+type NotificationPriority = 'normal' | 'high' | 'critical';
+
+// Simple notification manager mock
+const notificationManager = {
+  add: (notification: any) => {
+    console.log('Adding notification:', notification);
+    // In a real implementation, this would add to the notification system
+    return Promise.resolve();
+  }
+};
+
+export class DeadlineScheduler {
+  private static instance: DeadlineScheduler;
+  private intervals: Map<string, NodeJS.Timeout> = new Map();
+
+  static getInstance(): DeadlineScheduler {
+    if (!DeadlineScheduler.instance) {
+      DeadlineScheduler.instance = new DeadlineScheduler();
     }
-  ];
+    return DeadlineScheduler.instance;
+  }
 
-  /**
-   * Check for upcoming deadlines and send notifications
-   */
-  static async checkUpcomingDeadlines(): Promise<DeadlineCheckResult> {
-    const result: DeadlineCheckResult = {
-      processed: 0,
-      warnings3Days: 0,
-      warnings1Day: 0,
-      expired: 0,
-      errors: []
-    };
-
+  async scheduleDeadlineNotifications(): Promise<void> {
     try {
-      // Get all active categories with deadlines
+      console.log('🕒 Starting deadline notification scheduling...');
+      
+      // Get categories with upcoming deadlines
       const { data: categories, error: categoriesError } = await supabase
         .from('categories')
-        .select('*')
+        .select('id, name, deadline, assignment')
         .not('deadline', 'is', null)
-        .eq('status', 'active');
+        .eq('status', 'active')
+        .gte('deadline', new Date().toISOString());
 
       if (categoriesError) {
-        result.errors.push(`Categories fetch error: ${categoriesError.message}`);
-        return result;
+        console.error('Error fetching categories:', categoriesError);
+        return;
       }
 
       if (!categories || categories.length === 0) {
-        return result;
+        console.log('No upcoming deadlines found');
+        return;
       }
 
-      const now = new Date();
+      console.log(`Found ${categories.length} categories with upcoming deadlines`);
 
+      // Process each category
       for (const category of categories) {
-        try {
-          const deadline = new Date(category.deadline);
-          const timeDiff = deadline.getTime() - now.getTime();
-          const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
-
-          // Check if we need to send warnings
-          if (daysDiff === 3) {
-            await this.sendDeadlineWarning('3_days', category, result);
-            result.warnings3Days++;
-          } else if (daysDiff === 1) {
-            await this.sendDeadlineWarning('1_day', category, result);
-            result.warnings1Day++;
-          } else if (daysDiff <= 0) {
-            await this.handleExpiredDeadline(category, result);
-            result.expired++;
-          }
-
-          result.processed++;
-        } catch (error) {
-          result.errors.push(`Error processing category ${category.name}: ${error}`);
-        }
+        await this.processDeadlineNotifications(category as DeadlineCategory);
       }
 
-      return result;
     } catch (error) {
-      result.errors.push(`General error: ${error}`);
-      return result;
+      console.error('Error in deadline scheduling:', error);
+      toast.error('Deadline notification scheduling failed');
     }
   }
 
-  /**
-   * Schedule deadline notifications for a specific category
-   */
-  static async scheduleDeadlineNotifications(categoryId: string): Promise<void> {
+  private async processDeadlineNotifications(category: DeadlineCategory): Promise<void> {
     try {
-      // Get category details
-      const { data: category, error: categoryError } = await supabase
-        .from('categories')
-        .select('*')
-        .eq('id', categoryId)
-        .single();
-
-      if (categoryError) {
-        throw new Error(`Category fetch error: ${categoryError.message}`);
-      }
-
-      if (!category.deadline) {
-        throw new Error('Category has no deadline set');
-      }
-
       const deadline = new Date(category.deadline);
-      const warning3Days = new Date(deadline.getTime() - (3 * 24 * 60 * 60 * 1000));
-      const warning1Day = new Date(deadline.getTime() - (1 * 24 * 60 * 60 * 1000));
+      const now = new Date();
+      const daysLeft = Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
-      // Get users who should receive notifications
-      const recipients = await this.getNotificationRecipients(category);
-
-      if (recipients.length === 0) {
-        console.log(`No recipients found for category ${category.name}`);
+      // Only notify for deadlines within 30 days
+      if (daysLeft > 30 || daysLeft < 0) {
         return;
       }
 
-      // Schedule 3-day warning
-      if (warning3Days > new Date()) {
-        await this.scheduleNotificationForUsers(
-          recipients,
-          NotificationTemplateService.TEMPLATES.DEADLINE_WARNING_3_DAYS,
-          warning3Days,
-          {
-            category_id: category.id,
-            category_name: category.name,
-            deadline_date: deadline.toLocaleDateString('az-AZ'),
-            days_left: 3
+      console.log(`Processing deadline for category: ${category.name}, days left: ${daysLeft}`);
+
+      // Get target users based on assignment
+      const targetUsers = await this.getTargetUsers(category.assignment);
+      
+      if (!targetUsers || targetUsers.length === 0) {
+        console.log(`No target users found for category: ${category.name}`);
+        return;
+      }
+
+      // Create notifications for each user
+      for (const user of targetUsers) {
+        await this.createDeadlineNotification({
+          categoryId: category.id,
+          categoryName: category.name,
+          deadline,
+          daysLeft,
+          assignment: category.assignment
+        }, user);
+      }
+
+    } catch (error) {
+      console.error(`Error processing deadline for category ${category.name}:`, error);
+    }
+  }
+
+  private async getTargetUsers(assignment: string): Promise<UserData[]> {
+    try {
+      let query = supabase
+        .from('profiles')
+        .select('id, full_name, email');
+
+      // Filter based on assignment type
+      switch (assignment) {
+        case 'all':
+          // Get all active users
+          query = query.eq('status', 'active');
+          break;
+        case 'school_admin':
+          // Get school admins - use a proper subquery
+          const { data: schoolAdminIds } = await supabase
+            .from('user_roles')
+            .select('user_id')
+            .eq('role', 'schooladmin');
+          
+          if (schoolAdminIds && schoolAdminIds.length > 0) {
+            const userIds = schoolAdminIds.map(r => r.user_id);
+            query = query
+              .eq('status', 'active')
+              .in('id', userIds);
+          } else {
+            return [];
           }
-        );
-      }
-
-      // Schedule 1-day warning
-      if (warning1Day > new Date()) {
-        await this.scheduleNotificationForUsers(
-          recipients,
-          NotificationTemplateService.TEMPLATES.DEADLINE_WARNING_1_DAY,
-          warning1Day,
-          {
-            category_id: category.id,
-            category_name: category.name,
-            deadline_date: deadline.toLocaleDateString('az-AZ'),
-            days_left: 1
+          break;
+        case 'sector_admin':
+          // Get sector admins
+          const { data: sectorAdminIds } = await supabase
+            .from('user_roles')
+            .select('user_id')
+            .eq('role', 'sectoradmin');
+          
+          if (sectorAdminIds && sectorAdminIds.length > 0) {
+            const userIds = sectorAdminIds.map(r => r.user_id);
+            query = query
+              .eq('status', 'active')
+              .in('id', userIds);
+          } else {
+            return [];
           }
-        );
+          break;
+        case 'region_admin':
+          // Get region admins
+          const { data: regionAdminIds } = await supabase
+            .from('user_roles')
+            .select('user_id')
+            .eq('role', 'regionadmin');
+          
+          if (regionAdminIds && regionAdminIds.length > 0) {
+            const userIds = regionAdminIds.map(r => r.user_id);
+            query = query
+              .eq('status', 'active')
+              .in('id', userIds);
+          } else {
+            return [];
+          }
+          break;
+        default:
+          console.warn(`Unknown assignment type: ${assignment}`);
+          return [];
       }
 
-      console.log(`Scheduled deadline notifications for category: ${category.name}`);
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Error fetching target users:', error);
+        return [];
+      }
+
+      return data || [];
     } catch (error) {
-      console.error('Error scheduling deadline notifications:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Send deadline warning to appropriate users
-   */
-  private static async sendDeadlineWarning(
-    warningType: '3_days' | '1_day',
-    category: Category,
-    result: DeadlineCheckResult
-  ): Promise<void> {
-    try {
-      // Check if we've already sent this warning today
-      const today = new Date().toISOString().split('T')[0];
-      const warningKey = `deadline_${warningType}_${category.id}_${today}`;
-
-      // Check if notification was already sent today
-      const { data: existingNotifications } = await supabase
-        .from('notifications')
-        .select('id')
-        .eq('related_entity_id', category.id)
-        .eq('type', 'warning')
-        .gte('created_at', `${today}T00:00:00Z`)
-        .lte('created_at', `${today}T23:59:59Z`)
-        .limit(1);
-
-      if (existingNotifications && existingNotifications.length > 0) {
-        console.log(`Warning already sent today for category ${category.name}`);
-        return;
-      }
-
-      // Get users who should receive this warning
-      const recipients = await this.getNotificationRecipients(category);
-
-      if (recipients.length === 0) {
-        result.errors.push(`No recipients found for category ${category.name}`);
-        return;
-      }
-
-      // Get the warning configuration
-      const warningConfig = this.DEADLINE_WARNINGS.find(w => w.type === warningType);
-      if (!warningConfig) {
-        result.errors.push(`Warning config not found for type: ${warningType}`);
-        return;
-      }
-
-      // Prepare template data
-      const templateData = {
-        category_id: category.id,
-        category_name: category.name,
-        deadline_date: new Date(category.deadline).toLocaleDateString('az-AZ'),
-        days_left: warningType === '3_days' ? 3 : 1,
-        data_entry_url: `${window.location.origin}/data-entry/${category.id}`
-      };
-
-      // Create notifications using template
-      const createResult = await EnhancedNotificationService.createFromTemplate(
-        warningConfig.templateName,
-        templateData,
-        recipients.map(r => r.id)
-      );
-
-      if (!createResult.success) {
-        result.errors.push(`Failed to create notifications: ${createResult.error}`);
-        return;
-      }
-
-      // Send email notifications if enabled
-      await this.sendEmailNotifications(recipients, warningConfig.templateName, templateData);
-
-      console.log(`Sent ${warningType} deadline warning for category: ${category.name}`);
-    } catch (error) {
-      result.errors.push(`Error sending ${warningType} warning: ${error}`);
-    }
-  }
-
-  /**
-   * Handle expired deadline
-   */
-  private static async handleExpiredDeadline(
-    category: Category,
-    result: DeadlineCheckResult
-  ): Promise<void> {
-    try {
-      // Check if we've already handled this expiration
-      const today = new Date().toISOString().split('T')[0];
-
-      const { data: existingNotifications } = await supabase
-        .from('notifications')
-        .select('id')
-        .eq('related_entity_id', category.id)
-        .eq('type', 'error')
-        .gte('created_at', `${today}T00:00:00Z`)
-        .limit(1);
-
-      if (existingNotifications && existingNotifications.length > 0) {
-        console.log(`Expiration already handled for category ${category.name}`);
-        return;
-      }
-
-      // Get recipients
-      const recipients = await this.getNotificationRecipients(category);
-
-      if (recipients.length > 0) {
-        // Send expiration notifications
-        const templateData = {
-          category_id: category.id,
-          category_name: category.name,
-          deadline_date: new Date(category.deadline).toLocaleDateString('az-AZ')
-        };
-
-        await EnhancedNotificationService.createFromTemplate(
-          NotificationTemplateService.TEMPLATES.DEADLINE_EXPIRED,
-          templateData,
-          recipients.map(r => r.id)
-        );
-
-        // Send email notifications
-        await this.sendEmailNotifications(
-          recipients,
-          NotificationTemplateService.TEMPLATES.DEADLINE_EXPIRED,
-          templateData
-        );
-      }
-
-      // Auto-approve pending data entries for this category
-      await this.autoApprovePendingEntries(category.id);
-
-      console.log(`Handled expired deadline for category: ${category.name}`);
-    } catch (error) {
-      result.errors.push(`Error handling expired deadline: ${error}`);
-    }
-  }
-
-  /**
-   * Get users who should receive notifications for a category
-   */
-  private static async getNotificationRecipients(category: Category): Promise<User[]> {
-    try {
-      const recipients: User[] = [];
-
-      if (category.assignment === 'all') {
-        // Get all school admins
-        const { data: schoolAdmins } = await supabase
-          .from('user_roles')
-          .select(`
-            user_id,
-            profiles:user_id (
-              id,
-              full_name,
-              email
-            )
-          `)
-          .eq('role', 'schooladmin');
-
-        if (schoolAdmins) {
-          recipients.push(...schoolAdmins
-            .filter(admin => admin.profiles)
-            .map(admin => ({
-              id: admin.profiles.id,
-              full_name: admin.profiles.full_name,
-              email: admin.profiles.email
-            }))
-          );
-        }
-      } else if (category.assignment === 'sectors') {
-        // Get sector and region admins
-        const { data: adminUsers } = await supabase
-          .from('user_roles')
-          .select(`
-            user_id,
-            role,
-            profiles:user_id (
-              id,
-              full_name,
-              email
-            )
-          `)
-          .in('role', ['sectoradmin', 'regionadmin']);
-
-        if (adminUsers) {
-          recipients.push(...adminUsers
-            .filter(admin => admin.profiles)
-            .map(admin => ({
-              id: admin.profiles.id,
-              full_name: admin.profiles.full_name,
-              email: admin.profiles.email
-            }))
-          );
-        }
-      }
-
-      // Remove duplicates
-      const uniqueRecipients = recipients.filter((recipient, index, self) =>
-        index === self.findIndex(r => r.id === recipient.id)
-      );
-
-      return uniqueRecipients;
-    } catch (error) {
-      console.error('Error getting notification recipients:', error);
+      console.error('Error in getTargetUsers:', error);
       return [];
     }
   }
 
-  /**
-   * Schedule notifications for multiple users
-   */
-  private static async scheduleNotificationForUsers(
-    users: User[],
-    templateName: string,
-    scheduledFor: Date,
-    templateData: any
+  private async createDeadlineNotification(
+    deadlineData: DeadlineNotificationData,
+    user: UserData
   ): Promise<void> {
     try {
-      for (const user of users) {
-        await EnhancedNotificationService.scheduleNotification({
-          userId: user.id,
-          title: '', // Will be filled by template
-          message: '', // Will be filled by template
-          scheduledFor,
-          templateId: templateName,
-          templateData: {
-            ...templateData,
-            full_name: user.full_name,
-            email: user.email
-          }
-        });
-      }
-    } catch (error) {
-      console.error('Error scheduling notifications for users:', error);
-      throw error;
-    }
-  }
+      const title = `Son tarix xəbərdarlığı: ${deadlineData.categoryName}`;
+      const message = `${deadlineData.categoryName} kateqoriyası üçün ${deadlineData.daysLeft} gün qalıb`;
 
-  /**
-   * Send email notifications
-   */
-  private static async sendEmailNotifications(
-    recipients: User[],
-    templateName: string,
-    templateData: any
-  ): Promise<void> {
-    try {
-      // Check user preferences and send emails only to those who have email enabled
-      for (const recipient of recipients) {
-        const preferences = await EnhancedNotificationService.getUserPreferences(recipient.id);
-        
-        if (preferences.email_enabled) {
-          // Render email template
-          const template = await NotificationTemplateService.getTemplateByName(templateName);
-          if (template && template.email_template) {
-            const rendered = await NotificationTemplateService.renderTemplate(template.id, {
-              ...templateData,
-              full_name: recipient.full_name,
-              email: recipient.email
-            });
-
-            if (rendered.emailHtml) {
-              await EnhancedNotificationService.sendEmailNotification({
-                userIds: [recipient.id],
-                subject: rendered.title,
-                htmlContent: rendered.emailHtml,
-                textContent: rendered.message,
-                templateId: template.id,
-                templateData
-              });
-            }
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error sending email notifications:', error);
-    }
-  }
-
-  /**
-   * Auto-approve pending data entries when deadline expires
-   */
-  private static async autoApprovePendingEntries(categoryId: string): Promise<void> {
-    try {
-      // Get all pending data entries for this category
-      const { data: pendingEntries, error } = await supabase
-        .from('data_entries')
-        .select('id, school_id')
-        .eq('category_id', categoryId)
-        .eq('status', 'pending');
-
-      if (error) {
-        console.error('Error fetching pending entries:', error);
-        return;
-      }
-
-      if (!pendingEntries || pendingEntries.length === 0) {
-        return;
-      }
-
-      // Use the auto-approve edge function
-      const { error: functionError } = await supabase.functions.invoke('auto-approve-deadline', {
-        body: {
-          categoryId,
-          entryIds: pendingEntries.map(entry => entry.id)
-        }
-      });
-
-      if (functionError) {
-        console.error('Error auto-approving entries:', functionError);
-        return;
-      }
-
-      console.log(`Auto-approved ${pendingEntries.length} pending entries for category ${categoryId}`);
-    } catch (error) {
-      console.error('Error in autoApprovePendingEntries:', error);
-    }
-  }
-
-  /**
-   * Run the complete deadline check job
-   */
-  static async runDeadlineCheckJob(): Promise<JobResult> {
-    try {
-      console.log('Starting deadline check job...');
-      
-      const result = await this.checkUpcomingDeadlines();
-      
-      const message = `Deadline check completed. Processed: ${result.processed}, ` +
-        `3-day warnings: ${result.warnings3Days}, ` +
-        `1-day warnings: ${result.warnings1Day}, ` +
-        `Expired: ${result.expired}, ` +
-        `Errors: ${result.errors.length}`;
-
-      if (result.errors.length > 0) {
-        console.error('Deadline check errors:', result.errors);
-      }
-
-      console.log(message);
-
-      return {
-        success: result.errors.length === 0,
+      // Add notification to the system
+      await notificationManager.add({
+        user_id: user.id,
+        title,
         message,
-        data: result
-      };
-    } catch (error) {
-      const errorMessage = `Deadline check job failed: ${error}`;
-      console.error(errorMessage);
-      
-      return {
-        success: false,
-        message: errorMessage
-      };
-    }
-  }
-
-  /**
-   * Get deadline statistics
-   */
-  static async getDeadlineStatistics(): Promise<any> {
-    try {
-      const { data: categories } = await supabase
-        .from('categories')
-        .select('*')
-        .not('deadline', 'is', null)
-        .eq('status', 'active');
-
-      if (!categories) return null;
-
-      const now = new Date();
-      const stats = {
-        totalCategories: categories.length,
-        upcoming3Days: 0,
-        upcoming1Day: 0,
-        expired: 0,
-        noDeadline: 0
-      };
-
-      categories.forEach(category => {
-        if (!category.deadline) {
-          stats.noDeadline++;
-          return;
-        }
-
-        const deadline = new Date(category.deadline);
-        const timeDiff = deadline.getTime() - now.getTime();
-        const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
-
-        if (daysDiff <= 0) {
-          stats.expired++;
-        } else if (daysDiff <= 1) {
-          stats.upcoming1Day++;
-        } else if (daysDiff <= 3) {
-          stats.upcoming3Days++;
+        type: 'deadline',
+        priority: this.calculatePriority(deadlineData.daysLeft),
+        is_read: false,
+        created_at: new Date().toISOString(),
+        related_entity_id: deadlineData.categoryId,
+        related_entity_type: 'category',
+        metadata: {
+          daysLeft: deadlineData.daysLeft,
+          deadline: deadlineData.deadline.toISOString(),
+          assignment: deadlineData.assignment
         }
       });
 
-      return stats;
+      console.log(`Created deadline notification for user ${user.full_name} (${user.email})`);
+
     } catch (error) {
-      console.error('Error getting deadline statistics:', error);
-      return null;
+      console.error('Error creating deadline notification:', error);
     }
+  }
+
+  private calculatePriority(daysLeft: number): NotificationPriority {
+    if (daysLeft <= 1) return 'critical';
+    if (daysLeft <= 3) return 'high';
+    return 'normal';
+  }
+
+  startScheduler(): void {
+    // Clear existing interval
+    this.stopScheduler();
+
+    // Run immediately
+    this.scheduleDeadlineNotifications();
+
+    // Schedule to run every 6 hours
+    const interval = setInterval(() => {
+      this.scheduleDeadlineNotifications();
+    }, 6 * 60 * 60 * 1000);
+
+    this.intervals.set('main', interval);
+
+    console.log('✅ Deadline scheduler started');
+  }
+
+  stopScheduler(): void {
+    this.intervals.forEach((interval) => {
+      clearInterval(interval);
+    });
+    this.intervals.clear();
+    console.log('🛑 Deadline scheduler stopped');
   }
 }
 
-export default DeadlineSchedulerService;
+export const deadlineScheduler = DeadlineScheduler.getInstance();

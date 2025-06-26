@@ -1,3 +1,4 @@
+
 // Main performance optimization exports
 export { 
   default as LazyWrapper, 
@@ -6,14 +7,10 @@ export {
 } from './LazyWrapper';
 
 export { 
-  useEnhancedVirtualScrolling,
-  type VirtualItem
-} from '../../hooks/performance/useEnhancedVirtualScrolling';
-
-export {
-  VirtualTable as default,
-  type VirtualItem
+  default as VirtualTable
 } from './VirtualTable';
+
+export type { VirtualItem } from './VirtualTable';
 
 export {
   useEnhancedDebounce,
@@ -35,16 +32,9 @@ export {
 
 export { default as PerformanceDashboard } from './PerformanceDashboard';
 
-// Legacy components (these were moved to new optimized versions above)
-// export { default as LazyLoadingWrapper } from './LazyLoadingWrapper';
-// export { default as VirtualTable as LegacyVirtualTable } from './VirtualTable';
-// export { default as PerformanceMonitor } from './PerformanceMonitor';
-// export { default as CacheMonitor } from './CacheMonitor';
-
 // Performance utilities
 export type {
   VirtualScrollOptions,
-  VirtualItem,
   PerformanceMetrics,
   PerformanceIssue
 } from './types';

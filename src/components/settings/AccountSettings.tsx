@@ -47,7 +47,9 @@ export const AccountSettings = () => {
   const [email] = useState(user?.email || "");
   const [phone, setPhone] = useState(user?.phone || "");
   const [position, setPosition] = useState(user?.position || "");
-  const [currentLanguage, setCurrentLanguage] = useState(language || "az");
+  const [currentLanguage, setCurrentLanguage] = useState<"az" | "en" | "ru" | "tr">(
+    (language as "az" | "en" | "ru" | "tr") || "az"
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -134,14 +136,14 @@ export const AccountSettings = () => {
               <Label htmlFor="language">{t("language")}</Label>
               <Select
                 value={currentLanguage}
-                onValueChange={(value) => setCurrentLanguage(value)}
+                onValueChange={(value: "az" | "en" | "ru" | "tr") => setCurrentLanguage(value)}
               >
                 <SelectTrigger id="language">
                   <SelectValue placeholder={t("selectLanguage")} />
                 </SelectTrigger>
                 <SelectContent>
                   {languages.map((lang) => (
-                    <SelectItem key={lang.code} value={lang.code}>
+                    <SelectItem key={lang.code} value={lang.code as "az" | "en" | "ru" | "tr"}>
                       {lang.name}
                     </SelectItem>
                   ))}

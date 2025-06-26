@@ -1,149 +1,157 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { UserData, UserFilter } from '@/types/user';
+import { FullUserData } from '@/types/user'; // Use user types consistently
 
-type ValidUserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
+export const userFetchService = {
+  async fetchAllUsers(): Promise<FullUserData[]> {
+    try {
+      const { data: profiles, error } = await supabase
+        .from('profiles')
+        .select(`
+          id,
+          email,
+          full_name,
+          role,
+          region_id,
+          sector_id,
+          school_id,
+          phone,
+          position,
+          language,
+          avatar,
+          status,
+          last_login,
+          created_at,
+          updated_at
+        `)
+        .order('created_at', { ascending: false });
 
-export const getEntityDisplay = (userData: any): string | null => {
-  // Return display name based on role
-  const role = userData.role;
-  
-  if (role === 'regionadmin' && userData.region_name) {
-    return userData.region_name;
-  }
-  
-  if (role === 'sectoradmin' && userData.sector_name) {
-    return userData.sector_name;
-  }
-  
-  if (role === 'schooladmin' && userData.school_name) {
-    return userData.school_name;
-  }
-  
-  return null;
-};
-
-export const buildUserQuery = (filters: UserFilter, userRole: string, regionId?: string, sectorId?: string) => {
-  let query = supabase
-    .from('profiles')
-    .select(`
-      *,
-      user_roles!inner(
-        role,
-        region_id,
-        sector_id,
-        school_id
-      )
-    `, { count: 'exact' });
-
-  // Apply role-based restrictions
-  if (userRole === 'regionadmin' && regionId) {
-    query = query.eq('user_roles.region_id', regionId);
-  } else if (userRole === 'sectoradmin' && sectorId) {
-    query = query.eq('user_roles.sector_id', sectorId);
-  }
-
-  // Apply filters - handle both string and array types with proper validation
-  if (filters.role) {
-    const validRoles: ValidUserRole[] = ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'];
-    
-    if (Array.isArray(filters.role)) {
-      if (filters.role.length > 0) {
-        // Filter valid roles and cast to proper type
-        const validFilterRoles = filters.role.filter((role): role is ValidUserRole => 
-          validRoles.includes(role as ValidUserRole)
-        );
-        if (validFilterRoles.length > 0) {
-          query = query.in('user_roles.role', validFilterRoles);
-        }
+      if (error) {
+        console.error('Error fetching users:', error);
+        throw error;
       }
-    } else if (filters.role) {
-      // Ensure role is valid UserRole type
-      const roleValue = filters.role as ValidUserRole;
-      if (validRoles.includes(roleValue)) {
-        query = query.eq('user_roles.role', roleValue);
+
+      return profiles.map(profile => ({
+        id: profile.id,
+        email: profile.email,
+        full_name: profile.full_name,
+        name: profile.full_name,
+        role: profile.role,
+        region_id: profile.region_id,
+        sector_id: profile.sector_id,
+        school_id: profile.school_id,
+        phone: profile.phone,
+        position: profile.position,
+        language: profile.language,
+        avatar: profile.avatar,
+        status: profile.status,
+        last_login: profile.last_login,
+        created_at: profile.created_at,
+        updated_at: profile.updated_at
+      }));
+    } catch (error) {
+      console.error('Error in fetchAllUsers:', error);
+      throw error;
+    }
+  },
+
+  async fetchUserById(userId: string): Promise<FullUserData | null> {
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching user by ID:', error);
+        return null;
       }
+
+      if (!profile) return null;
+
+      return {
+        id: profile.id,
+        email: profile.email,
+        full_name: profile.full_name,
+        name: profile.full_name,
+        role: profile.role,
+        region_id: profile.region_id,
+        sector_id: profile.sector_id,
+        school_id: profile.school_id,
+        phone: profile.phone,
+        position: profile.position,
+        language: profile.language,
+        avatar: profile.avatar,
+        status: profile.status,
+        last_login: profile.last_login,
+        created_at: profile.created_at,
+        updated_at: profile.updated_at
+      };
+    } catch (error) {
+      console.error('Error in fetchUserById:', error);
+      return null;
     }
   }
-
-  if (filters.status) {
-    if (Array.isArray(filters.status)) {
-      if (filters.status.length > 0) {
-        query = query.in('status', filters.status);
-      }
-    } else if (filters.status) {
-      query = query.eq('status', filters.status);
-    }
-  }
-
-  if (filters.region_id) {
-    query = query.eq('user_roles.region_id', filters.region_id);
-  }
-
-  if (filters.sector_id) {
-    query = query.eq('user_roles.sector_id', filters.sector_id);
-  }
-
-  if (filters.school_id) {
-    query = query.eq('user_roles.school_id', filters.school_id);
-  }
-
-  if (filters.search) {
-    query = query.or(`full_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`);
-  }
-
-  return query;
 };
 
-export const transformUserData = (item: any): UserData => {
-  const userRole = item.user_roles;
-  
-  return {
-    id: item.id,
-    email: item.email,
-    fullName: item.full_name || '',
-    full_name: item.full_name || '',
-    name: item.full_name || '',
-    role: userRole?.role || 'schooladmin',
-    region_id: userRole?.region_id,
-    sector_id: userRole?.sector_id,
-    school_id: userRole?.school_id,
-    regionId: userRole?.region_id,
-    sectorId: userRole?.sector_id,
-    schoolId: userRole?.school_id,
-    phone: item.phone || '',
-    position: item.position || '',
-    language: item.language || 'az',
-    avatar: item.avatar || '',
-    status: (item.status === 'active' || item.status === 'inactive') ? item.status : 'active',
-    last_login: item.last_login,
-    created_at: item.created_at,
-    updated_at: item.updated_at,
-    entityName: getEntityDisplay(item)
-  };
-};
+// Export individual functions for backward compatibility
+export const getUsers = userFetchService.fetchAllUsers;
+export const getUser = userFetchService.fetchUserById;
 
-export const fetchUserData = async (filters: UserFilter, page: number, limit: number, userRole: string, regionId?: string, sectorId?: string): Promise<{ data: UserData[], count: number }> => {
+// Add the missing fetchUserData function that useOptimizedUserList expects
+export const fetchUserData = async (
+  filters: any = {}, 
+  page: number = 1, 
+  limit: number = 20, 
+  userRole: string = 'schooladmin', 
+  regionId?: string, 
+  sectorId?: string
+) => {
   try {
-    console.log('Fetching users with role:', userRole, 'regionId:', regionId, 'sectorId:', sectorId);
-
-    const query = buildUserQuery(filters, userRole, regionId, sectorId);
+    // For now, we'll use the existing fetchAllUsers and filter client-side
+    const allUsers = await userFetchService.fetchAllUsers();
     
-    const offset = (page - 1) * limit;
-    const { data, error, count } = await query
-      .range(offset, offset + limit - 1)
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-
-    const transformedUsers = (data || []).map(transformUserData);
-
+    // Apply filters
+    let filteredUsers = allUsers;
+    
+    if (filters.role && Array.isArray(filters.role) && filters.role.length > 0) {
+      filteredUsers = filteredUsers.filter(user => filters.role!.includes(user.role));
+    } else if (filters.role && typeof filters.role === 'string') {
+      filteredUsers = filteredUsers.filter(user => user.role === filters.role);
+    }
+    
+    if (filters.status && Array.isArray(filters.status) && filters.status.length > 0) {
+      filteredUsers = filteredUsers.filter(user => filters.status!.includes(user.status));
+    } else if (filters.status && typeof filters.status === 'string') {
+      filteredUsers = filteredUsers.filter(user => user.status === filters.status);
+    }
+    
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase();
+      filteredUsers = filteredUsers.filter(user => 
+        user.full_name?.toLowerCase().includes(searchLower) ||
+        user.email?.toLowerCase().includes(searchLower)
+      );
+    }
+    
+    // Apply role-based filtering
+    if (userRole === 'regionadmin' && regionId) {
+      filteredUsers = filteredUsers.filter(user => user.region_id === regionId);
+    } else if (userRole === 'sectoradmin' && sectorId) {
+      filteredUsers = filteredUsers.filter(user => user.sector_id === sectorId);
+    }
+    
+    // Apply pagination
+    const startIndex = (page - 1) * limit;
+    const paginatedUsers = filteredUsers.slice(startIndex, startIndex + limit);
+    
     return {
-      data: transformedUsers,
-      count: count || 0
+      data: paginatedUsers,
+      count: filteredUsers.length
     };
   } catch (error) {
-    console.error('Error fetching user data:', error);
+    console.error('Error in fetchUserData:', error);
     throw error;
   }
 };

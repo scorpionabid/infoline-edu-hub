@@ -1,14 +1,12 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { SchoolLink, CreateSchoolLinkData, UpdateSchoolLinkData } from '@/types/link';
-import { ENV } from '@/config/environment';
 
 export const linkService = {
   // Get all links for a school
   async getSchoolLinks(schoolId: string): Promise<SchoolLink[]> {
     try {
       console.log('🔍 Loading links for school:', schoolId);
-      console.log('🔗 Supabase URL:', ENV.supabase.url);
-      console.log('🔑 API Key present:', !!ENV.supabase.anonKey);
       
       // Check authentication first
       const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -107,7 +105,7 @@ export const linkService = {
     }
   },
 
-  // Delete a link (soft delete)
+  // Delete a link (soft delete)  
   async deleteLink(linkId: string): Promise<void> {
     try {
       console.log('Deleting link:', linkId);
@@ -151,7 +149,8 @@ export const linkService = {
 
       const total = data?.length || 0;
       const active = data?.filter(link => link.is_active).length || 0;
-      const categories = [...new Set(data?.map(link => link.category).filter(Boolean))] || [];
+      const uniqueCategories = data?.map(link => link.category).filter(Boolean) || [];
+      const categories = [...new Set(uniqueCategories)];
 
       return { total, active, categories };
     } catch (error) {

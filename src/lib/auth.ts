@@ -1,7 +1,7 @@
 
 // Auth utility functions
 import { supabase } from '@/integrations/supabase/client';
-import useSecureAuthStore from '@/hooks/auth/useSecureAuthStore';
+import { useAuthStore, selectUser, selectIsAuthenticated, selectIsLoading } from '@/hooks/auth/useAuthStore';
 
 export const getCurrentUser = async () => {
   const { data: { user }, error } = await supabase.auth.getUser();
@@ -29,7 +29,17 @@ export const isAuthenticated = async () => {
   }
 };
 
-// Export the auth hook for use in components
+// useAuth hook for compatibility
 export const useAuth = () => {
-  return useSecureAuthStore();
+  const user = useAuthStore(selectUser);
+  const isAuthenticated = useAuthStore(selectIsAuthenticated);
+  const loading = useAuthStore(selectIsLoading);
+
+  return {
+    user,
+    isAuthenticated,
+    loading,
+    signOut: useAuthStore.getState().signOut,
+    logout: useAuthStore.getState().logout
+  };
 };

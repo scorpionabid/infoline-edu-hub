@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -75,14 +76,19 @@ export const useSchoolDataForColumn = (): UseSchoolDataForColumnResult => {
         found: schools?.length || 0,
         entityId,
         entityType,
-        schools: schools?.map(s => ({ id: s.id, name: s.name, sector_id: s.sector_id, region_id: s.region_id })) || []
+        schools: schools?.map(s => ({ 
+          id: s.id, 
+          name: s.name, 
+          sector_id: s.sector_id, 
+          region_id: s.region_id 
+        })) || []
       });
 
       if (!schools || schools.length === 0) {
-        // Debug: Yoxlayaq ki, hərhansı məktəblər var?
+        // Debug: Check if any schools exist
         const { data: allSchools, error: allSchoolsError } = await supabase
           .from('schools')
-          .select('id, name, sector_id, status')
+          .select('id, name, sector_id, region_id, status')
           .limit(10);
         
         console.log('Debug - All schools (first 10):', {
@@ -132,15 +138,33 @@ export const useSchoolDataForColumn = (): UseSchoolDataForColumnResult => {
       const schoolDataMap: { [key: string]: SchoolDataEntry } = {};
 
       schools.forEach(school => {
-        // Simplified sectors access
-        const sectors = school.sectors;
-        const regions = sectors?.regions;
+        // Type-safe access to nested data with proper null checking
+        const sectorsData = school.sectors;
+        let sectorName = 'Bilinmir';
+        let regionName = 'Bilinmir';
+
+        if (sectorsData) {
+          // Handle both single object and array cases
+          const sectorInfo = Array.isArray(sectorsData) ? sectorsData[0] : sectorsData;
+          if (sectorInfo && typeof sectorInfo === 'object' && 'name' in sectorInfo) {
+            sectorName = sectorInfo.name || 'Bilinmir';
+            
+            // Handle regions data
+            const regionsData = sectorInfo.regions;
+            if (regionsData) {
+              const regionInfo = Array.isArray(regionsData) ? regionsData[0] : regionsData;
+              if (regionInfo && typeof regionInfo === 'object' && 'name' in regionInfo) {
+                regionName = regionInfo.name || 'Bilinmir';
+              }
+            }
+          }
+        }
 
         schoolDataMap[school.id] = {
           schoolId: school.id,
           schoolName: school.name,
-          sectorName: sectors?.name || 'Bilinmir',
-          regionName: regions?.name || 'Bilinmir',
+          sectorName,
+          regionName,
           currentValue: undefined,
           status: 'empty',
           lastUpdated: undefined,
@@ -152,14 +176,23 @@ export const useSchoolDataForColumn = (): UseSchoolDataForColumnResult => {
       if (dataEntries) {
         dataEntries.forEach(entry => {
           if (schoolDataMap[entry.school_id]) {
-            const profiles = entry.profiles;
+            // Handle profiles data safely
+            const profilesData = entry.profiles;
+            let submittedBy = 'Bilinmir';
+            
+            if (profilesData) {
+              const profileInfo = Array.isArray(profilesData) ? profilesData[0] : profilesData;
+              if (profileInfo && typeof profileInfo === 'object' && 'full_name' in profileInfo) {
+                submittedBy = profileInfo.full_name || 'Bilinmir';
+              }
+            }
             
             schoolDataMap[entry.school_id] = {
               ...schoolDataMap[entry.school_id],
               currentValue: entry.value || undefined,
               status: entry.status as 'pending' | 'approved' | 'rejected',
               lastUpdated: entry.updated_at || undefined,
-              submittedBy: profiles?.full_name || 'Bilinmir'
+              submittedBy
             };
           }
         });

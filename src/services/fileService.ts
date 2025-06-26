@@ -1,6 +1,13 @@
 
-import { supabase } from '@/lib/supabase';
-import { SchoolFile, FileCategory, UploadFileData } from '@/types/file';
+import { supabase } from '@/integrations/supabase/client';
+import { SchoolFile, FileCategory } from '@/types/file';
+
+export interface UploadFileData {
+  school_id: string;
+  category_id: string;
+  file: File;
+  description?: string;
+}
 
 export const fileService = {
   // Get file categories

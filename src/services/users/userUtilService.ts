@@ -18,7 +18,7 @@ export async function fetchAdminEntityData(roleItem: any) {
         .from('regions')
         .select('name, status')
         .eq('id', roleItem.region_id)
-        .maybeSingle();
+        .single();
       
       if (regionData) {
         adminEntity = {
@@ -30,33 +30,45 @@ export async function fetchAdminEntityData(roleItem: any) {
     } else if (rolStr === 'sectoradmin' && roleItem.sector_id) {
       const { data: sectorData } = await supabase
         .from('sectors')
-        .select('name, status, regions(name)')
+        .select('name, status, regions!inner(name)')
         .eq('id', roleItem.sector_id)
-        .maybeSingle();
+        .single();
       
       if (sectorData) {
+        const regionName = Array.isArray(sectorData.regions) 
+          ? sectorData.regions[0]?.name || 'Unknown'
+          : (sectorData.regions as any)?.name || 'Unknown';
+          
         adminEntity = {
           type: 'sector',
           name: sectorData.name,
           status: sectorData.status,
-          regionName: sectorData.regions?.name
+          regionName
         };
       }
     } else if (rolStr === 'schooladmin' && roleItem.school_id) {
       const { data: schoolData } = await supabase
         .from('schools')
-        .select('name, status, type, sectors(name), regions(name)')
+        .select('name, status, type, sectors!inner(name), regions!inner(name)')
         .eq('id', roleItem.school_id)
-        .maybeSingle();
+        .single();
       
       if (schoolData) {
+        const sectorName = Array.isArray(schoolData.sectors)
+          ? schoolData.sectors[0]?.name || 'Unknown'
+          : (schoolData.sectors as any)?.name || 'Unknown';
+          
+        const regionName = Array.isArray(schoolData.regions)
+          ? schoolData.regions[0]?.name || 'Unknown'
+          : (schoolData.regions as any)?.name || 'Unknown';
+          
         adminEntity = {
           type: 'school',
           name: schoolData.name,
           status: schoolData.status,
           schoolType: schoolData.type,
-          sectorName: schoolData.sectors?.name,
-          regionName: schoolData.regions?.name
+          sectorName,
+          regionName
         };
       }
     }

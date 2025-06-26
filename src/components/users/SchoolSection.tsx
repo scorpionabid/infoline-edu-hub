@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useTranslation } from "@/contexts/TranslationContext";
 import {
@@ -35,7 +36,7 @@ const SchoolSection: React.FC<SchoolSectionProps> = ({
 
   if (
     hideSection ||
-    !(data.role === "schooladmin" && (data.sector_id || data.sectorId))
+    !(data.role === "schooladmin" && (data.sector_id))
   ) {
     return null;
   }
@@ -59,7 +60,7 @@ const SchoolSection: React.FC<SchoolSectionProps> = ({
         <FormItem>
           <FormLabel>{t("school")}</FormLabel>
           <Select
-            value={data.school_id || data.schoolId || undefined}
+            value={data.school_id || undefined}
             onValueChange={(value) => {
               field.onChange(value);
               onFormChange("school_id", value);

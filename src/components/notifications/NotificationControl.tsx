@@ -28,7 +28,7 @@ const NotificationControl: React.FC<NotificationControlProps> = ({
   const [open, setOpen] = useState(false);
 
   const unreadCount = notifications.filter(
-    (notification) => !notification.isRead,
+    (notification) => !notification.is_read, // Fixed: use is_read instead of isRead
   ).length;
 
   return (

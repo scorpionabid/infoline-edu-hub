@@ -1,7 +1,7 @@
 
 /**
  * Utility functions for cleaning up cached/stale data
- * Enhanced for complete cache reset including GitHub sync issues
+ * Enhanced for complete cache reset
  */
 
 export const clearBrowserCache = () => {
@@ -92,7 +92,7 @@ export const performFullCacheReset = async () => {
   console.log('🧹 Starting COMPLETE cache reset...');
   
   clearBrowserCache();
-  clearSupabaseCache();  
+  clearSupabaseCache();
   await clearServiceWorkerCache();
   clearReactQueryCache();
   
@@ -109,7 +109,7 @@ export const performFullCacheReset = async () => {
   console.log('✅ COMPLETE cache reset finished');
   console.log('🔄 Force reloading page to apply changes...');
   
-  // Force a hard reload to refresh from GitHub state
+  // Force a hard reload
   window.location.reload();
 };
 
@@ -159,10 +159,6 @@ if (typeof window !== 'undefined') {
     forceReload: () => {
       console.log('🔄 Force reloading application...');
       window.location.reload();
-    },
-    syncGitHub: () => {
-      console.log('🔄 Attempting to sync with GitHub main branch...');
-      performFullCacheReset();
     }
   };
   
@@ -173,5 +169,4 @@ if (typeof window !== 'undefined') {
   console.log('- InfoLineDebug.clearSupabase() - Clear Supabase cache');
   console.log('- InfoLineDebug.clearServiceWorker() - Clear service worker cache');
   console.log('- InfoLineDebug.forceReload() - Force reload page');
-  console.log('- InfoLineDebug.syncGitHub() - Force sync with GitHub');
 }

@@ -1,70 +1,128 @@
-
-// Dashboard types with proper structure
-export interface DashboardFormStats {
-  totalForms: number;
-  completedForms: number;
-  pendingApprovals: number;
-  rejectedForms: number;
-  totalRegions?: number;
-  totalSectors?: number;
-  totalSchools?: number;
-  pendingForms?: number;
-  approved?: number;
-  pending?: number;
-  rejected?: number;
-  percentage?: number;
-  approvalRate?: number;
-  completion_rate?: number;
-  completionRate?: number;
-  draft?: number;
-  dueSoon?: number;
-  overdue?: number;
-  total?: number;
-  completed?: number;
-}
-
 export interface SuperAdminDashboardData {
-  stats: DashboardFormStats;
-  totalRegions: number;
-  totalSectors: number;
   totalSchools: number;
   totalUsers: number;
-  regionStats: any[];
-  approvalRate: number;
+  totalCategories: number;
+  pendingApprovals: number;
   completionRate: number;
-  regions: any[];
-  pendingApprovals: any[];
-  notifications: any[];
-  formsByStatus: any;
-  users?: number;
-  regionCount?: number;
-  sectorCount?: number;
-  schoolCount?: number;
-  entryCount?: number;
-  completion?: number;
-  categoryData?: any;
-  schoolData?: any;
-  regionData?: any;
+  stats: DashboardStats;
+  forms: DashboardFormStats;
+  userCount?: number;
+  totalRegions?: number;
+  formsByStatus?: {
+    total: number;
+    pending: number;
+    approved: number;
+    rejected: number;
+  };
+  approvalRate?: number;
+  regions?: any[];
 }
 
 export interface RegionAdminDashboardData {
-  stats: DashboardFormStats;
-  formStats: DashboardFormStats;
-  pendingItems: any[];
-  categories: any[];
-  sectors: any[];
-  notifications: any[];
+  totalSectors: number;
+  totalSchools: number;
+  pendingApprovals: number;
   completionRate: number;
+  stats: DashboardStats;
+  forms: DashboardFormStats;
+  deadlines?: any[];
+  formStats?: DashboardFormStats;
+  sectors?: any[];
+  categories?: CategoryItem[];
+  pendingItems?: any[];
+}
+
+export interface SectorAdminDashboardData {
+  totalSchools: number;
+  pendingApprovals: number;
+  completionRate: number;
+  stats: DashboardStats;
+  forms: DashboardFormStats;
+  formStats?: DashboardFormStats;
+  schools?: any[];
+  categories?: CategoryItem[];
+  deadlines?: any[];
+}
+
+export interface SchoolAdminDashboardData {
+  totalForms: number;
+  completedForms: number;
+  pendingForms: number;
+  stats: DashboardStats;
+  forms: DashboardFormStats;
+}
+
+export interface DashboardStats {
+  totalEntries: number;
+  completedEntries: number;
+  pendingEntries: number;
+  approvedEntries: number;
+  rejectedEntries: number;
+  completed?: number;
+  pending?: number;
+}
+
+export interface DashboardFormStats {
+  totalForms: number;
+  pendingApprovals: number;
+  rejectedForms: number;
+  total: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+  draft: number;
+  dueSoon: number;
+  overdue: number;
+  percentage: number;
+  completion_rate: number;
+  completionRate: number;
+  completedForms: number;
+  pendingForms: number;
+  approvalRate: number;
+  completed: number;
+  totalRegions?: number;
+  totalSectors?: number;
+  totalSchools?: number;
+}
+
+export interface EnhancedDashboardData {
+  totalCategories: number;
+  completedCategories: number;
+  totalColumns: number;
+  filledColumns: number;
+  overallProgress: number;
+  categoryProgress: CategoryProgress[];
+  columnStatuses: ColumnStatus[];
+  totalForms: number;
+  completedForms: number;
+  pendingForms: number;
+  completionRate: number;
+  [key: string]: any;
+}
+
+export interface CategoryProgress {
+  id: string;
+  name: string;
+  progress: number;
+  status: string;
+  completionRate: number;
+}
+
+export interface ColumnStatus {
+  id: string;
+  name: string;
+  status: string;
+  categoryId: string;
+  categoryName: string;
 }
 
 export interface CategoryItem {
   id: string;
   name: string;
-  progress: number;
-  status: string;
+  description?: string;
   completionRate?: number;
   completion?: number;
-  description?: string;
+  status?: string;
   deadline?: string;
   totalFields?: number;
   completedFields?: number;
@@ -74,90 +132,98 @@ export interface CategoryItem {
 export interface StatsGridItem {
   title: string;
   value: string | number;
-  icon: string;
-  trend?: 'up' | 'down' | 'neutral';
-  color?: string;
   description?: string;
+  color?: string;
+  icon?: string;
 }
 
 export interface DashboardChartProps {
-  data?: any[];
-  title?: string;
-  type?: 'bar' | 'line' | 'pie';
-  stats?: DashboardFormStats;
+  stats: DashboardFormStats;
   showLegend?: boolean;
   height?: number;
 }
 
-export interface PendingApproval {
-  id: string;
-  title: string;
-  school: string;
-  submittedAt: string;
-  priority: 'high' | 'medium' | 'low';
-  schoolName?: string;
-  categoryName?: string;
-  date?: string;
-}
-
 export interface FormItem {
   id: string;
-  name: string;
-  deadline: string;
-  status: 'completed' | 'pending' | 'overdue';
-  progress: number;
+  name?: string;
   title?: string;
   category?: string;
+  categoryId?: string;
+  categoryName?: string;
+  dueDate?: string;
+  status: string;
   lastModified?: string;
+  progress?: number;
+}
+
+export interface DeadlineItem {
+  id: string;
+  name?: string;
+  title?: string;
+  deadline: string;
+  daysLeft?: number;
+  category?: string;
+  categoryId?: string;
+  categoryName?: string;
+  priority?: 'low' | 'medium' | 'high';
+  status?: string;
 }
 
 export interface SchoolStat {
   id: string;
   name: string;
-  completed: number;
-  total: number;
-  percentage: number;
-  status: string;
-  completionRate?: number;
+  completionRate: number;
   totalEntries?: number;
   total_entries?: number;
   pendingEntries?: number;
   pending_entries?: number;
   pendingCount?: number;
+  completion?: number;
+  status?: string;
+  lastUpdate?: string;
+  formsCompleted?: number;
+  totalForms?: number;
+  principalName?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
   pendingForms?: number;
   completedForms?: number;
-  totalForms?: number;
+  completed?: number;
+  total?: number;
+  percentage?: number;
   lastUpdated?: string;
 }
 
 export interface SectorStat {
   id: string;
   name: string;
-  schools: number;
-  completed: number;
-  total: number;
-  percentage: number;
-  completionRate?: number;
-  completion_rate?: number;
+  schoolCount: number;
+  completionRate: number;
   completion?: number;
-  schoolCount?: number;
+  completion_rate?: number;
   totalSchools?: number;
 }
 
-export interface DeadlineItem {
+export interface PendingApproval {
   id: string;
-  title: string;
-  deadline: string;
-  priority: 'high' | 'medium' | 'low';
-  daysLeft: number;
-  name?: string;
-  status?: string;
+  schoolId?: string;
+  schoolName: string;
+  categoryId?: string;
+  categoryName: string;
+  submittedBy?: string;
+  submittedAt: string;
+  status?: 'pending' | 'approved' | 'rejected';
+  createdAt?: string;
+  title?: string;
+  count?: number;
+  date?: string;
 }
 
 export interface FormTabsProps {
-  categories: CategoryItem[];
-  deadlines: DeadlineItem[];
-  forms: FormItem[];
+  categories?: CategoryItem[];
+  deadlines?: DeadlineItem[];
+  forms?: FormItem[];
   upcoming?: DeadlineItem[];
   pendingForms?: FormItem[];
   navigateToDataEntry?: (categoryId: string) => void;

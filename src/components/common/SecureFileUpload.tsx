@@ -1,206 +1,176 @@
 
-/**
- * Secure File Upload Component
- * Enhanced security for file uploads
- */
-
-import React, { useCallback, useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
+import { Upload, X, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
-import { validateFileSecure, checkSecurityRateLimit } from '@/utils/inputValidation';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { securityLogger, getClientContext } from '@/utils/securityLogger';
-import { Upload, AlertTriangle, CheckCircle, X } from 'lucide-react';
-import { toast } from 'sonner';
 
 interface SecureFileUploadProps {
-  onFileSelect: (file: File) => Promise<void>;
+  onUpload: (files: File[]) => Promise<void>;
   maxFiles?: number;
+  maxSize?: number; // in bytes
+  allowedTypes?: string[];
   className?: string;
-  accept?: Record<string, string[]>;
-  disabled?: boolean;
 }
 
-interface UploadState {
-  uploading: boolean;
-  progress: number;
-  error?: string;
-  warnings?: string[];
-}
-
-export const SecureFileUpload: React.FC<SecureFileUploadProps> = ({
-  onFileSelect,
-  maxFiles = 1,
-  className = '',
-  accept = {
-    'image/*': ['.png', '.jpg', '.jpeg', '.gif'],
-    'application/pdf': ['.pdf'],
-    'text/plain': ['.txt'],
-    'application/msword': ['.doc'],
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx']
-  },
-  disabled = false
+const SecureFileUpload: React.FC<SecureFileUploadProps> = ({
+  onUpload,
+  maxFiles = 5,
+  maxSize = 10 * 1024 * 1024, // 10MB
+  allowedTypes = ['image/*', 'application/pdf', '.doc', '.docx'],
+  className = ''
 }) => {
-  const [uploadState, setUploadState] = useState<UploadState>({
-    uploading: false,
-    progress: 0
-  });
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string>('');
+  const [rejectedFiles, setRejectedFiles] = useState<string[]>([]);
+
+  const validateFile = useCallback((file: File): boolean => {
+    // File size validation
+    if (file.size > maxSize) {
+      const context = getClientContext();
+      securityLogger.logValidationFailure('file_size', `${file.size} bytes`, context);
+      return false;
+    }
+
+    // File type validation
+    const isAllowedType = allowedTypes.some(type => {
+      if (type.includes('*')) {
+        return file.type.startsWith(type.replace('*', ''));
+      }
+      if (type.startsWith('.')) {
+        return file.name.toLowerCase().endsWith(type.toLowerCase());
+      }
+      return file.type === type;
+    });
+
+    if (!isAllowedType) {
+      const context = getClientContext();
+      securityLogger.logValidationFailure('file_type', file.type, context);
+      return false;
+    }
+
+    // File name security check
+    const suspiciousPattern = /[<>:"/\\|?*\x00-\x1f]/;
+    if (suspiciousPattern.test(file.name)) {
+      const context = getClientContext();
+      securityLogger.logSuspiciousActivity('malicious_filename', {
+        fileName: file.name,
+        ...context
+      });
+      return false;
+    }
+
+    return true;
+  }, [maxSize, allowedTypes]);
 
   const onDrop = useCallback(async (acceptedFiles: File[], rejectedFiles: any[]) => {
-    // Rate limiting check
-    const rateLimitKey = `file_upload_${Date.now()}`;
-    const rateLimit = checkSecurityRateLimit(rateLimitKey, 10, 60000); // 10 uploads per minute
-    
-    if (!rateLimit.allowed) {
-      securityLogger.logRateLimit('file_upload', getClientContext());
-      toast.error('Too many upload attempts. Please wait before trying again.');
-      return;
-    }
+    setError('');
+    setRejectedFiles([]);
 
     // Handle rejected files
     if (rejectedFiles.length > 0) {
-      const rejectionReasons = rejectedFiles.map(file => 
-        file.errors?.map((error: any) => error.message).join(', ') || 'Unknown error'
-      ).join('; ');
-      
-      securityLogger.logValidationFailure('file_upload', rejectionReasons, getClientContext());
-      setUploadState({
-        uploading: false,
-        progress: 0,
-        error: `File rejected: ${rejectionReasons}`
-      });
+      const rejectedNames = rejectedFiles.map(f => f.file?.name || 'Unknown');
+      setRejectedFiles(rejectedNames);
+      setError(`Bəzi fayllar qəbul edilmədi: ${rejectedNames.join(', ')}`);
+    }
+
+    // Validate accepted files
+    const validFiles: File[] = [];
+    const invalidFiles: string[] = [];
+
+    for (const file of acceptedFiles) {
+      if (validateFile(file)) {
+        validFiles.push(file);
+      } else {
+        invalidFiles.push(file.name);
+      }
+    }
+
+    if (invalidFiles.length > 0) {
+      setRejectedFiles(prev => [...prev, ...invalidFiles]);
+      setError(prev => 
+        prev 
+          ? `${prev} Həmçinin: ${invalidFiles.join(', ')}`
+          : `Etibarsız fayllar: ${invalidFiles.join(', ')}`
+      );
+    }
+
+    if (validFiles.length === 0) {
       return;
     }
 
-    // Process accepted files
-    for (const file of acceptedFiles) {
-      try {
-        setUploadState({
-          uploading: true,
-          progress: 10,
-          error: undefined,
-          warnings: undefined
+    try {
+      setUploading(true);
+      setUploadProgress(0);
+
+      // Log security event with correct parameters
+      const context = getClientContext();
+      securityLogger.logSecurityEvent('file_upload_attempt', {
+        ...context,
+        severity: 'info'
+      });
+
+      // Simulate upload progress
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return prev;
+          }
+          return prev + 10;
         });
+      }, 200);
 
-        // Enhanced security validation
-        const validation = validateFileSecure(file);
-        
-        if (!validation.valid) {
-          securityLogger.logValidationFailure('file_security', validation.error || 'Unknown', getClientContext());
-          setUploadState({
-            uploading: false,
-            progress: 0,
-            error: validation.error
-          });
-          return;
-        }
+      await onUpload(validFiles);
+      
+      clearInterval(progressInterval);
+      setUploadProgress(100);
 
-        // Show warnings if any
-        if (validation.warnings && validation.warnings.length > 0) {
-          setUploadState(prev => ({
-            ...prev,
-            warnings: validation.warnings
-          }));
-        }
+      // Log successful upload
+      securityLogger.logSecurityEvent('file_upload_success', {
+        ...context,
+        severity: 'info'
+      });
 
-        setUploadState(prev => ({ ...prev, progress: 50 }));
+      // Reset after successful upload
+      setTimeout(() => {
+        setUploadProgress(0);
+        setUploading(false);
+        setError('');
+        setRejectedFiles([]);
+      }, 1000);
 
-        // Additional file content validation
-        await validateFileContent(file);
-        
-        setUploadState(prev => ({ ...prev, progress: 80 }));
-
-        // Upload the file
-        await onFileSelect(file);
-        
-        setUploadState({
-          uploading: false,
-          progress: 100
-        });
-
-        // Log successful upload
-        securityLogger.logSecurityEvent('file_uploaded', {
-          ...getClientContext(),
-          fileName: file.name,
-          fileSize: file.size,
-          fileType: file.type,
-          severity: 'low'
-        });
-
-        toast.success('File uploaded successfully');
-
-        // Reset after success
-        setTimeout(() => {
-          setUploadState({
-            uploading: false,
-            progress: 0
-          });
-        }, 2000);
-
-      } catch (error: any) {
-        securityLogger.logError(error, {
-          ...getClientContext(),
-          action: 'file_upload_error',
-          fileName: file.name
-        });
-        
-        setUploadState({
-          uploading: false,
-          progress: 0,
-          error: 'Upload failed. Please try again.'
-        });
-        
-        toast.error('Upload failed');
-      }
+    } catch (error: any) {
+      const context = getClientContext();
+      securityLogger.logError(error, {
+        ...context,
+        action: 'file_upload'
+      });
+      
+      setError(error.message || 'Yükləmə zamanı xəta baş verdi');
+      setUploading(false);
+      setUploadProgress(0);
     }
-  }, [onFileSelect]);
+  }, [onUpload, validateFile]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept,
     maxFiles,
-    disabled: disabled || uploadState.uploading,
-    maxSize: 15 * 1024 * 1024, // 15MB
-    onDropRejected: (files) => {
-      securityLogger.logValidationFailure('file_drop_rejected', `${files.length} files rejected`, getClientContext());
-    }
-  });
-
-  // Basic file content validation
-  const validateFileContent = async (file: File): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      
-      reader.onload = (e) => {
-        const content = e.target?.result as string;
-        
-        // Basic content validation
-        if (file.type.startsWith('text/') && content) {
-          // Check for suspicious content in text files
-          const suspiciousPatterns = [
-            /<script/i, /javascript:/i, /vbscript:/i,
-            /on\w+\s*=/i, /eval\s*\(/i, /expression\s*\(/i
-          ];
-          
-          if (suspiciousPatterns.some(pattern => pattern.test(content))) {
-            reject(new Error('File contains suspicious content'));
-            return;
-          }
-        }
-        
-        resolve();
-      };
-      
-      reader.onerror = () => reject(new Error('Failed to read file'));
-      
-      if (file.type.startsWith('text/')) {
-        reader.readAsText(file.slice(0, 1024)); // Only read first 1KB for validation
+    maxSize,
+    accept: allowedTypes.reduce((acc, type) => {
+      if (type.includes('*')) {
+        acc[type] = [];
+      } else if (type.startsWith('.')) {
+        acc['application/octet-stream'] = [type];
       } else {
-        resolve(); // Skip content validation for binary files
+        acc[type] = [];
       }
-    });
-  };
+      return acc;
+    }, {} as Record<string, string[]>)
+  });
 
   return (
     <div className={`space-y-4 ${className}`}>
@@ -208,62 +178,52 @@ export const SecureFileUpload: React.FC<SecureFileUploadProps> = ({
         {...getRootProps()}
         className={`
           border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
-          ${isDragActive ? 'border-blue-400 bg-blue-50' : 'border-gray-300 hover:border-gray-400'}
-          ${uploadState.uploading ? 'opacity-50 cursor-not-allowed' : ''}
-          ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
+          ${isDragActive 
+            ? 'border-primary bg-primary/5' 
+            : 'border-gray-300 hover:border-primary hover:bg-primary/5'
+          }
+          ${uploading ? 'pointer-events-none opacity-50' : ''}
         `}
       >
         <input {...getInputProps()} />
-        
-        <div className="flex flex-col items-center space-y-2">
-          <Upload className="w-8 h-8 text-gray-400" />
-          
-          {uploadState.uploading ? (
-            <div className="space-y-2 w-full max-w-xs">
-              <p className="text-sm text-gray-600">Uploading...</p>
-              <Progress value={uploadState.progress} className="w-full" />
-            </div>
-          ) : (
-            <>
-              <p className="text-sm font-medium">
-                {isDragActive ? 'Drop files here' : 'Click or drag files to upload'}
-              </p>
-              <p className="text-xs text-gray-500">
-                Max file size: 15MB | Supported: Images, PDF, Documents
-              </p>
-            </>
-          )}
-        </div>
+        <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+        {isDragActive ? (
+          <p className="text-primary">Faylları buraya atın...</p>
+        ) : (
+          <div>
+            <p className="text-gray-600 mb-2">
+              Faylları sürükləyin və ya klikləyin
+            </p>
+            <p className="text-sm text-gray-500">
+              Maksimum {maxFiles} fayl, hər biri {Math.round(maxSize / 1024 / 1024)}MB-a qədər
+            </p>
+          </div>
+        )}
       </div>
 
-      {/* Warnings */}
-      {uploadState.warnings && uploadState.warnings.length > 0 && (
-        <Alert>
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            <div className="space-y-1">
-              <p className="font-medium">Warnings:</p>
-              {uploadState.warnings.map((warning, index) => (
-                <p key={index} className="text-sm">• {warning}</p>
-              ))}
-            </div>
-          </AlertDescription>
-        </Alert>
+      {uploading && (
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm">
+            <span>Yüklənir...</span>
+            <span>{uploadProgress}%</span>
+          </div>
+          <Progress value={uploadProgress} className="w-full" />
+        </div>
       )}
 
-      {/* Errors */}
-      {uploadState.error && (
+      {error && (
         <Alert variant="destructive">
-          <X className="h-4 w-4" />
-          <AlertDescription>{uploadState.error}</AlertDescription>
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
-      {/* Success */}
-      {uploadState.progress === 100 && !uploadState.error && (
+      {rejectedFiles.length > 0 && (
         <Alert>
-          <CheckCircle className="h-4 w-4" />
-          <AlertDescription>File uploaded successfully!</AlertDescription>
+          <X className="h-4 w-4" />
+          <AlertDescription>
+            Rədd edilən fayllar: {rejectedFiles.join(', ')}
+          </AlertDescription>
         </Alert>
       )}
     </div>

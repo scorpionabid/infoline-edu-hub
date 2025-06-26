@@ -1,7 +1,8 @@
 
 import { useState, useCallback } from 'react';
-import { fetchUserData } from './userFetchService';
-import { FullUserData, UserFilter } from '@/types/user';
+import { userFetchService, fetchUserData } from './userFetchService';
+import { FullUserData } from '@/types/user'; // Use user types instead of auth types
+import { UserFilter } from '@/types/user';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 
 export const useOptimizedUserList = () => {
@@ -21,15 +22,8 @@ export const useOptimizedUserList = () => {
     setError(null);
     
     try {
-      // Fix type casting for role filter
-      const processedFilters: UserFilter = {
-        ...filters,
-        role: filters.role ? (Array.isArray(filters.role) ? filters.role : [filters.role]) : undefined,
-        status: filters.status ? (Array.isArray(filters.status) ? filters.status : [filters.status]) : undefined
-      };
-
       const result = await fetchUserData(
-        processedFilters, 
+        filters, 
         page, 
         limit, 
         userRole || 'schooladmin', 

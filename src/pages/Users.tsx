@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from "react";
 import UserList from "@/components/users/UserList";
 import UserHeader from "@/components/users/UserHeader";
@@ -12,6 +13,7 @@ import {
   UserRole,
   UserFilter as UserFilterType,
   UserStatus,
+  FullUserData // Use consistent user types
 } from "@/types/user";
 import { toast } from "sonner";
 
@@ -119,10 +121,10 @@ const Users = () => {
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={handlePageChange}
-          onEditUser={(user: User) => {
+          onEditUser={(user: FullUserData) => {
             console.log("Edit user:", user);
           }}
-          onDeleteUser={(user: User) => {
+          onDeleteUser={(user: FullUserData) => {
             console.log("Delete user:", user);
           }}
           onSearch={(query: string) => {

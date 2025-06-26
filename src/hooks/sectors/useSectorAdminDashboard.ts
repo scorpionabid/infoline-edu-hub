@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
@@ -110,12 +109,16 @@ export const useSectorAdminDashboard = () => {
       if (approvalsError) throw approvalsError;
       
       // Pending approvals formatını dəyiş
-      const formattedApprovals: PendingApproval[] = pendingApprovals.map(approval => ({
+      const formattedApprovals: PendingApproval[] = (pendingApprovals || []).map(approval => ({
         id: approval.id,
         schoolId: approval.school_id,
-        schoolName: approval.schools?.name || 'Unknown School',
+        schoolName: Array.isArray(approval.schools) && approval.schools.length > 0 
+          ? approval.schools[0].name || 'Unknown School'
+          : 'Unknown School',
         categoryId: approval.category_id,
-        categoryName: approval.categories?.name || 'Unknown Category',
+        categoryName: Array.isArray(approval.categories) && approval.categories.length > 0 
+          ? approval.categories[0].name || 'Unknown Category'
+          : 'Unknown Category',
         submittedAt: approval.updated_at,
         status: approval.status
       }));

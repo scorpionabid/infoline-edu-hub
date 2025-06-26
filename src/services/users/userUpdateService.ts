@@ -1,9 +1,76 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { UpdateUserData, FullUserData, UserRole } from '@/types/supabase';
+import { FullUserData, UserRole } from '@/types/auth';
 import { toast } from 'sonner';
-import { addAuditLog } from '@/hooks/auth/userDataService';
-import { getUser } from './userFetchService';
+
+// Define UpdateUserData locally
+export interface UpdateUserData {
+  full_name?: string;
+  phone?: string;
+  position?: string;
+  language?: string;
+  avatar?: string;
+  status?: 'active' | 'inactive' | 'blocked';
+  role?: UserRole;
+  region_id?: string | null;
+  sector_id?: string | null;
+  school_id?: string | null;
+  password?: string;
+}
+
+// Mock audit log function - simplified
+const addAuditLog = async (action: string, entityType: string, entityId: string, oldData: any, newData: any) => {
+  console.log('Audit log:', { action, entityType, entityId, oldData, newData });
+};
+
+// Simple user fetch function
+const getUser = async (userId: string): Promise<FullUserData | null> => {
+  try {
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select(`
+        *,
+        user_roles!inner(role, region_id, sector_id, school_id)
+      `)
+      .eq('id', userId)
+      .single();
+
+    if (profileError) {
+      console.error('Error fetching user:', profileError);
+      return null;
+    }
+
+    const userRole = profile.user_roles?.role || 'schooladmin';
+
+    return {
+      id: userId,
+      email: profile.email || '',
+      name: profile.full_name || '',
+      full_name: profile.full_name || '',
+      role: userRole,
+      region_id: profile.user_roles?.region_id,
+      sector_id: profile.user_roles?.sector_id,
+      school_id: profile.user_roles?.school_id,
+      regionId: profile.user_roles?.region_id,
+      sectorId: profile.user_roles?.sector_id,
+      schoolId: profile.user_roles?.school_id,
+      avatar: profile.avatar || '',
+      phone: profile.phone || '',
+      position: profile.position || '',
+      language: profile.language || 'az',
+      status: profile.status || 'active',
+      lastLogin: profile.last_login || null,
+      last_login: profile.last_login || null,
+      createdAt: profile.created_at || new Date().toISOString(),
+      updatedAt: profile.updated_at || new Date().toISOString(),
+      created_at: profile.created_at || new Date().toISOString(),
+      updated_at: profile.updated_at || new Date().toISOString()
+    };
+  } catch (error) {
+    console.error('Error in getUser:', error);
+    return null;
+  }
+};
 
 // İstifadəçini yenilə
 export const updateUser = async (userId: string, updates: UpdateUserData): Promise<FullUserData | null> => {

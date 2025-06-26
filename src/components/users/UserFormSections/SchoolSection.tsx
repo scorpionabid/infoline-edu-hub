@@ -33,7 +33,7 @@ const SchoolSection: React.FC<SchoolSectionProps> = ({
 }) => {
   const { t } = useTranslation();
 
-  const isFiltering = !!(data.sector_id || data.sectorId);
+  const isFiltering = !!(data.sector_id);
 
   if (hideSection || !(data.role === "schooladmin" && isFiltering)) {
     return null;
@@ -57,7 +57,7 @@ const SchoolSection: React.FC<SchoolSectionProps> = ({
         <FormItem>
           <FormLabel>{t("school")}</FormLabel>
           <Select
-            value={data.school_id || data.schoolId || undefined}
+            value={data.school_id || undefined}
             onValueChange={(value) => {
               const schoolValue = value === "NONE" ? null : value;
               field.onChange(schoolValue);

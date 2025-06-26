@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
 import { supabase } from '@/integrations/supabase/client';
@@ -235,14 +236,14 @@ const Schools = () => {
 
       if (error) throw error;
       
-      // Transform data to match FullUserData interface
+      // Transform data to match FullUserData interface with proper notification settings
       const transformedUsers: FullUserData[] = (data || []).map((user: any) => ({
         id: user.id,
         email: user.email || '',
         full_name: user.full_name || '',
         fullName: user.full_name || '',
         name: user.full_name || '',
-        role: 'user', // Default role
+        role: user.role || 'user',
         phone: user.phone || '',
         position: user.position || '',
         language: user.language || 'az',
@@ -274,7 +275,11 @@ const Schools = () => {
           deadline: true,
           deadlineReminders: true,
           statusUpdates: true,
-          weeklyReports: false
+          weeklyReports: false,
+          email_notifications: true,
+          sms_notifications: false,
+          push_notifications: false,
+          notification_frequency: 'daily'
         }
       }));
       

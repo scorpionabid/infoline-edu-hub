@@ -6,6 +6,9 @@ import { Column } from '@/types/column';
 interface DataEntryTableData {
   columns: Column[];
   values: Record<string, any>;
+  categoryId: string;
+  schoolId?: string;
+  sectorId?: string;
 }
 
 interface DataEntryTableProps {

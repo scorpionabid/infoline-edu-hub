@@ -1,435 +1,202 @@
-/**
- * İnfoLine Unified Notification System - Public API
- * Bütün notification funksionallığı üçün vahid entry point
- */
+import { useState, useCallback, useEffect } from 'react';
+import { notificationManager, UnifiedNotification } from './notificationManager';
 
-// Core exports
-export { UnifiedNotificationManager, notificationManager } from './core/NotificationManager';
+export interface NotificationPreferences {
+  email_notifications: boolean;
+  push_notifications: boolean;
+  deadline_reminders: '3_1' | '1' | 'none';
+  digest_frequency: 'immediate' | 'daily' | 'weekly';
+}
 
-// Hook exports
-export {
-  useNotifications,
-  useBulkNotifications,
-  useNotificationAnalytics,
-  useDeadlineNotifications,
-  useApprovalNotifications,
-  useSystemNotifications,
-  useNotificationPreferences
-} from './hooks';
+export interface NotificationStats {
+  total: number;
+  unread: number;
+  today: number;
+  thisWeek: number;
+  thisMonth: number;
+}
 
-// Component exports
-export {
-  UnifiedNotificationProvider,
-  NotificationProvider,
-  useNotificationContext,
-  withNotifications
-} from './components/NotificationProvider';
+export const useNotifications = (userId?: string) => {
+  const [notifications, setNotifications] = useState<UnifiedNotification[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [realTimeEnabled, setRealTimeEnabled] = useState(false);
 
-// Type exports
-export type {
-  UnifiedNotification,
-  NotificationType,
-  NotificationPriority,
-  NotificationChannel,
-  NotificationStatus,
-  NotificationSettings,
-  NotificationTemplate,
-  BulkNotificationRequest,
-  NotificationAnalytics,
-  NotificationEvent,
-  NotificationMetadata,
-  NotificationAction,
-  NotificationManagerConfig
-} from './core/types';
+  useEffect(() => {
+    const initialNotifications = notificationManager.getAll().filter(n => n.user_id === userId);
+    setNotifications(initialNotifications);
+  }, [userId]);
 
-// Constants exports - Explicit import and re-export to avoid circular dependency
-import {
-  NOTIFICATION_PRIORITIES,
-  NOTIFICATION_TYPES,
-  NOTIFICATION_CHANNELS,
-  NOTIFICATION_STATUS,
-  DEFAULT_NOTIFICATION_CONFIG
-} from './core/types';
+  const addNotification = useCallback((notification: Omit<UnifiedNotification, 'id' | 'timestamp'>) => {
+    const newNotification = notificationManager.add(notification);
+    setNotifications(prev => [...prev, newNotification]);
+  }, []);
 
-export {
-  NOTIFICATION_PRIORITIES,
-  NOTIFICATION_TYPES,
-  NOTIFICATION_CHANNELS,
-  NOTIFICATION_STATUS,
-  DEFAULT_NOTIFICATION_CONFIG
+  const removeNotification = useCallback((id: string) => {
+    notificationManager.remove(id);
+    setNotifications(prev => prev.filter(n => n.id !== id));
+  }, []);
+
+  const clearNotifications = useCallback(() => {
+    notificationManager.clear();
+    setNotifications([]);
+  }, []);
+
+  const markAsRead = useCallback((id: string) => {
+    notificationManager.markAsRead(id);
+    setNotifications(prev => prev.map(n => 
+      n.id === id ? { ...n, is_read: true } : n
+    ));
+  }, []);
+
+  const markAllAsRead = useCallback(() => {
+    notificationManager.markAllAsRead();
+    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+  }, []);
+
+  const deleteNotification = useCallback((id: string) => {
+    removeNotification(id);
+  }, [removeNotification]);
+
+  const clearAll = useCallback(() => {
+    clearNotifications();
+  }, [clearNotifications]);
+
+  const toggleRealTime = useCallback((enabled: boolean) => {
+    setRealTimeEnabled(enabled);
+  }, []);
+
+  const refetch = useCallback(() => {
+    const updatedNotifications = notificationManager.getAll().filter(n => n.user_id === userId);
+    setNotifications(updatedNotifications);
+  }, [userId]);
+
+  const unreadCount = notifications.filter(n => !n.is_read).length;
+
+  return {
+    notifications,
+    addNotification,
+    removeNotification,
+    clearNotifications,
+    clearAll,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+    unreadCount,
+    isLoading,
+    realTimeEnabled,
+    toggleRealTime,
+    refetch
+  };
 };
 
-// Utility functions for easy migration from old notification systems
-export const NotificationUtils = {
-  /**
-   * Migrate from old contexts/NotificationContext.tsx usage
-   */
-  migrateFromContext: (
-    title: string,
-    message: string,
-    type: 'info' | 'success' | 'warning' | 'error' = 'info'
-  ) => {
-    console.warn('[DEPRECATED] Old NotificationContext usage. Use notificationManager.createNotification instead.');
-    
-    const notificationType = type;
-    
-    return {
-      title,
-      message,
-      type: notificationType,
-      timestamp: new Date().toISOString()
-    };
-  },
+export { notificationManager };
+export type { UnifiedNotification };
 
-  /**
-   * Migrate from old hooks/useNotifications.ts usage
-   */
-  migrateFromHook: (notification: any) => {
-    console.warn('[DEPRECATED] Old useNotifications hook. Use unified useNotifications from @/notifications instead.');
-    
-    const unified: Partial<UnifiedNotification> = {
-      id: notification.id,
-      user_id: notification.user_id || '',
-      type: notification.type || 'info',
-      title: notification.title,
-      message: notification.message,
-      is_read: notification.is_read || false,
-      priority: notification.priority || 'normal',
-      created_at: notification.created_at,
-      related_entity_id: notification.related_entity_id,
-      related_entity_type: notification.related_entity_type
-    };
-    
-    return unified;
-  },
+export const useNotificationPreferences = (userId?: string) => {
+  const [preferences, setPreferences] = useState({
+    email_notifications: true,
+    push_notifications: false,
+    deadline_reminders: '3_1' as '3_1' | '1' | 'none',
+    digest_frequency: 'immediate' as 'immediate' | 'daily' | 'weekly'
+  });
 
-  /**
-   * Migrate from old services/notificationService.ts usage
-   */
-  migrateFromService: {
-    createNotification: async (
-      userId: string,
-      title: string,
-      message: string,
-      type: 'info' | 'success' | 'warning' | 'error' | 'deadline' | 'approval' | 'rejection' | 'reminder' | 'system' | 'category_update' | 'data_entry' | 'school_update' | 'region_update' | 'sector_update' = 'info',
-      relatedEntityId?: string,
-      relatedEntityType?: string
-    ) => {
-      console.warn('[DEPRECATED] Old notificationService. Use notificationManager instead.');
-      
-      return notificationManager.createNotification(
-        userId,
-        title,
-        message,
-        type,
-        {
-          relatedEntityId,
-          relatedEntityType
-        }
-      );
-    },
+  const [stats, setStats] = useState({
+    total: 0,
+    unread: 0,
+    today: 0,
+    thisWeek: 0,
+    thisMonth: 0
+  });
 
-    createDeadlineNotification: async (
-      title: string,
-      message: string,
-      categoryId: string
-    ) => {
-      console.warn('[DEPRECATED] Old createDeadlineNotification. Use notificationManager.createNotification with type "deadline".');
-      
-      return {
-        title,
-        message,
-        type: 'deadline' as const,
-        relatedEntityId: categoryId,
-        relatedEntityType: 'category'
-      };
-    },
+  const [isLoading, setIsLoading] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isTestingNotification, setIsTestingNotification] = useState(false);
 
-    createApprovalNotification: async (
-      userId: string,
-      categoryName: string,
-      categoryId: string,
-      isApproved: boolean,
-      rejectionReason?: string
-    ) => {
-      console.warn('[DEPRECATED] Old createApprovalNotification. Use notificationManager.createNotification.');
-      
-      const title = isApproved 
-        ? `"${categoryName}" məlumatları təsdiqləndi`
-        : `"${categoryName}" məlumatları rədd edildi`;
-      
-      const message = isApproved
-        ? `"${categoryName}" kateqoriyası üçün təqdim etdiyiniz məlumatlar təsdiqləndi.`
-        : `"${categoryName}" kateqoriyası üçün təqdim etdiyiniz məlumatlar rədd edildi. ${rejectionReason ? `Səbəb: ${rejectionReason}` : ''}`;
-      
-      return notificationManager.createNotification(
-        userId,
-        title,
-        message,
-        isApproved ? 'approval' : 'rejection',
-        {
-          priority: 'high',
-          relatedEntityId: categoryId,
-          relatedEntityType: 'category',
-          metadata: {
-            approval_status: isApproved ? 'approved' : 'rejected',
-            rejection_reason: rejectionReason,
-            category_id: categoryId,
-            category_name: categoryName
-          }
-        }
-      );
-    }
-  }
-};
-
-// Helper functions for common notification patterns
-export const NotificationHelpers = {
-  /**
-   * Create deadline notification
-   */
-  createDeadlineNotification: async (
-    userId: string,
-    categoryName: string,
-    categoryId: string,
-    deadlineDate: string,
-    daysRemaining: number
-  ) => {
-    const title = `Son tarix xatırlatması: ${categoryName}`;
-    const message = `"${categoryName}" kateqoriyası üçün son tarix ${daysRemaining} gün qalıb. Tarix: ${deadlineDate}`;
-    
-    return notificationManager.createNotification(
-      userId,
-      title,
-      message,
-      'deadline',
-      {
-        priority: daysRemaining <= 1 ? 'critical' : daysRemaining <= 3 ? 'high' : 'normal',
-        channels: ['inApp', 'email'],
-        relatedEntityId: categoryId,
-        relatedEntityType: 'category',
-        metadata: {
-          deadline_date: deadlineDate,
-          days_remaining: daysRemaining,
-          category_id: categoryId,
-          category_name: categoryName
-        }
-      }
-    );
-  },
-
-  /**
-   * Create approval notification
-   */
-  createApprovalNotification: async (
-    userId: string,
-    categoryName: string,
-    categoryId: string,
-    isApproved: boolean,
-    reviewerId?: string,
-    reviewerName?: string,
-    rejectionReason?: string
-  ) => {
-    const title = isApproved 
-      ? `Təsdiqləndi: ${categoryName}`
-      : `Rədd edildi: ${categoryName}`;
-    
-    const message = isApproved
-      ? `"${categoryName}" kateqoriyası üçün təqdim etdiyiniz məlumatlar təsdiqləndi.`
-      : `"${categoryName}" kateqoriyası üçün təqdim etdiyiniz məlumatlar rədd edildi. ${rejectionReason ? `Səbəb: ${rejectionReason}` : ''}`;
-    
-    return notificationManager.createNotification(
-      userId,
-      title,
-      message,
-      isApproved ? 'approval' : 'rejection',
-      {
-        priority: 'high',
-        channels: ['inApp', 'email'],
-        relatedEntityId: categoryId,
-        relatedEntityType: 'category',
-        metadata: {
-          approval_status: isApproved ? 'approved' : 'rejected',
-          reviewer_id: reviewerId,
-          reviewer_name: reviewerName,
-          rejection_reason: rejectionReason,
-          category_id: categoryId,
-          category_name: categoryName
-        }
-      }
-    );
-  },
-
-  /**
-   * Create data entry reminder
-   */
-  createDataEntryReminder: async (
-    userId: string,
-    categoryName: string,
-    categoryId: string,
-    completionPercentage: number,
-    schoolName?: string
-  ) => {
-    const title = `Məlumat daxil etmə xatırlatması: ${categoryName}`;
-    const message = `"${categoryName}" kateqoriyası üçün məlumat daxil etmə ${completionPercentage}% tamamlanıb. ${schoolName ? `Məktəb: ${schoolName}` : ''}`;
-    
-    return notificationManager.createNotification(
-      userId,
-      title,
-      message,
-      'reminder',
-      {
-        priority: completionPercentage < 50 ? 'high' : 'normal',
-        channels: ['inApp'],
-        relatedEntityId: categoryId,
-        relatedEntityType: 'category',
-        metadata: {
-          category_id: categoryId,
-          category_name: categoryName,
-          completion_percentage: completionPercentage,
-          school_name: schoolName
-        }
-      }
-    );
-  },
-
-  /**
-   * Create system maintenance notification
-   */
-  createSystemNotification: async (
-    userIds: string[],
-    title: string,
-    message: string,
-    priority: 'low' | 'normal' | 'high' | 'critical' = 'normal'
-  ) => {
-    return notificationManager.sendBulkNotifications({
-      type: 'system',
-      title,
-      message,
-      priority,
-      channels: ['inApp'],
-      user_ids: userIds
-    });
-  },
-
-  /**
-   * Create school update notification
-   */
-  createSchoolUpdateNotification: async (
-    userId: string,
-    schoolName: string,
-    schoolId: string,
-    updateType: 'created' | 'updated' | 'deleted'
-  ) => {
-    const titles = {
-      created: `Yeni məktəb əlavə edildi: ${schoolName}`,
-      updated: `Məktəb məlumatları yeniləndi: ${schoolName}`,
-      deleted: `Məktəb silindi: ${schoolName}`
-    };
-
-    const messages = {
-      created: `"${schoolName}" məktəbi sistemə əlavə edildi.`,
-      updated: `"${schoolName}" məktəbinin məlumatları yeniləndi.`,
-      deleted: `"${schoolName}" məktəbi sistemdən silindi.`
-    };
-    
-    return notificationManager.createNotification(
-      userId,
-      titles[updateType],
-      messages[updateType],
-      'school_update',
-      {
-        priority: 'normal',
-        channels: ['inApp'],
-        relatedEntityId: schoolId,
-        relatedEntityType: 'school',
-        metadata: {
-          school_id: schoolId,
-          school_name: schoolName,
-          update_type: updateType
-        }
-      }
-    );
-  }
-};
-
-// Debug and monitoring utilities
-export const NotificationDebug = {
-  /**
-   * Enable verbose logging for notifications
-   */
-  enableVerboseLogging: () => {
-    console.log('[NotificationDebug] Verbose logging enabled');
-    // This would hook into the NotificationManager's debug mode
-    notificationManager.getHealth(); // Trigger health check logging
-  },
-
-  /**
-   * Get comprehensive notification statistics
-   */
-  getStats: () => {
-    return {
-      performance: notificationManager.getPerformanceMetrics(),
-      health: notificationManager.getHealth()
-    };
-  },
-
-  /**
-   * Test notification functionality
-   */
-  runTests: async (testUserId: string) => {
-    console.group('[NotificationDebug] Running notification tests');
-
+  const toggleEmailNotifications = useCallback(async (enabled: boolean) => {
+    setIsUpdating(true);
     try {
-      // Test basic notification creation
-      const testNotification = await notificationManager.createNotification(
-        testUserId,
-        'Test Notification',
-        'This is a test notification',
-        'info'
-      );
-      console.assert(testNotification !== null, 'Basic notification creation failed');
-
-      // Test unread count
-      const unreadCount = await notificationManager.getUnreadCount(testUserId);
-      console.assert(unreadCount >= 0, 'Unread count failed');
-
-      // Test mark as read
-      if (testNotification) {
-        const markResult = await notificationManager.markAsRead(testNotification.id, testUserId);
-        console.assert(markResult === true, 'Mark as read failed');
-      }
-
-      console.log('✅ All notification tests passed');
-    } catch (error) {
-      console.error('❌ Notification tests failed:', error);
+      setPreferences(prev => ({ ...prev, email_notifications: enabled }));
+    } finally {
+      setIsUpdating(false);
     }
+  }, []);
 
-    console.groupEnd();
-  }
-};
+  const togglePushNotifications = useCallback(async (enabled: boolean) => {
+    setIsUpdating(true);
+    try {
+      setPreferences(prev => ({ ...prev, push_notifications: enabled }));
+    } finally {
+      setIsUpdating(false);
+    }
+  }, []);
 
-// Performance monitoring
-export const NotificationPerformance = {
-  /**
-   * Start performance monitoring
-   */
-  startMonitoring: () => {
-    const metrics = notificationManager.getPerformanceMetrics();
-    console.log('[NotificationPerformance] Monitoring started:', metrics);
-    
-    return {
-      getMetrics: () => notificationManager.getPerformanceMetrics(),
-      getHealth: () => notificationManager.getHealth()
-    };
-  }
-};
+  const updateDeadlineReminders = useCallback(async (value: '3_1' | '1' | 'none') => {
+    setIsUpdating(true);
+    try {
+      setPreferences(prev => ({ ...prev, deadline_reminders: value }));
+    } finally {
+      setIsUpdating(false);
+    }
+  }, []);
 
-// Default export with commonly used functions - Lazy loaded to avoid circular deps
-export default {
-  // Constants only (safe to export)
-  NOTIFICATION_TYPES,
-  NOTIFICATION_PRIORITIES,
-  NOTIFICATION_CHANNELS,
-  NOTIFICATION_STATUS
+  const updateDigestFrequency = useCallback(async (value: 'immediate' | 'daily' | 'weekly') => {
+    setIsUpdating(true);
+    try {
+      setPreferences(prev => ({ ...prev, digest_frequency: value }));
+    } finally {
+      setIsUpdating(false);
+    }
+  }, []);
+
+  const resetToDefaults = useCallback(async () => {
+    setIsUpdating(true);
+    try {
+      setPreferences({
+        email_notifications: true,
+        push_notifications: false,
+        deadline_reminders: '3_1',
+        digest_frequency: 'immediate'
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  }, []);
+
+  const sendTestNotification = useCallback(async () => {
+    setIsTestingNotification(true);
+    try {
+      notificationManager.add({
+        user_id: userId || '',
+        title: 'Test Notification',
+        message: 'This is a test notification',
+        type: 'info',
+        is_read: false,
+        priority: 'normal',
+        created_at: new Date().toISOString()
+      });
+    } finally {
+      setIsTestingNotification(false);
+    }
+  }, [userId]);
+
+  const canReceiveEmail = preferences.email_notifications;
+  const canReceivePush = preferences.push_notifications;
+  const deadlineRemindersEnabled = preferences.deadline_reminders !== 'none';
+
+  return {
+    preferences,
+    stats,
+    isLoading,
+    toggleEmailNotifications,
+    togglePushNotifications,
+    updateDeadlineReminders,
+    updateDigestFrequency,
+    resetToDefaults,
+    sendTestNotification,
+    isUpdating,
+    isTestingNotification,
+    canReceiveEmail,
+    canReceivePush,
+    deadlineRemindersEnabled
+  };
 };

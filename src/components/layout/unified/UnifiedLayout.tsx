@@ -1,3 +1,4 @@
+
 import React, { memo, Suspense } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
@@ -84,13 +85,29 @@ const UnifiedLayout: React.FC<UnifiedLayoutProps> = memo(({
 
             {/* Mobile/Tablet overlay sidebar */}
             {(isMobile || isTablet) && (
-              <UnifiedSidebar 
-                isOpen={sidebarOpen}
-                onToggle={toggleSidebar}
-                userName={user?.full_name || user?.email}
-                variant={sidebarVariant}
-                width={sidebarWidth}
-              />
+              <div
+                className={`
+                  fixed inset-0 z-50 bg-black/50 transition-opacity duration-300
+                  ${sidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}
+                `}
+                onClick={() => setSidebarOpen(false)}
+              >
+                <div
+                  className={`
+                    fixed left-0 top-0 h-full w-64 bg-card transform transition-transform duration-300
+                    ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+                  `}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <UnifiedSidebar 
+                    isOpen={sidebarOpen}
+                    onToggle={toggleSidebar}
+                    userName={user?.full_name || user?.email}
+                    variant="mobile"
+                    width={sidebarWidth}
+                  />
+                </div>
+              </div>
             )}
           </>
         )}

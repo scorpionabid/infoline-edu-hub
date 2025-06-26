@@ -1,10 +1,13 @@
-import React from "react";
+import React, { useState } from "react";
 import { useTranslation } from "@/contexts/TranslationContext";
 import { DashboardFormStats } from "@/types/dashboard";
 import StatsGrid from "../StatsGrid";
 import DashboardChart from "../DashboardChart";
-import NotificationCard from "@/components/dashboard/NotificationCard";
-import SectorStatsTable from "./SectorStatsTable";
+import SchoolsTable from "./SchoolsTable";
+import SchoolDataEntryDialog from "./SchoolDataEntryDialog";
+import { School } from "@/types/school";
+import { useSchools } from "@/hooks/schools/useSchools";
+import { useAuthStore, selectUser } from "@/hooks/auth/useAuthStore";
 
 interface SectorAdminDashboardProps {
   dashboardData?: any;
@@ -14,6 +17,26 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({
   dashboardData,
 }) => {
   const { t } = useTranslation();
+  const user = useAuthStore(selectUser);
+  
+  // Modal state
+  const [selectedSchool, setSelectedSchool] = useState<School | null>(null);
+  const [isDataEntryDialogOpen, setIsDataEntryDialogOpen] = useState(false);
+  
+  // Get schools data for school lookup
+  const { schools } = useSchools(
+    user?.role === 'regionadmin' ? user.region_id : undefined,
+    user?.role === 'sectoradmin' ? user.sector_id : undefined
+  );
+  
+  // Handler for school click
+  const handleSchoolView = (schoolId: string) => {
+    const school = schools.find(s => s.id === schoolId);
+    if (school) {
+      setSelectedSchool(school);
+      setIsDataEntryDialogOpen(true);
+    }
+  };
 
   if (!dashboardData) {
     return (
@@ -21,17 +44,16 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({
     );
   }
 
+  console.log("[SectorAdminDashboard] Dashboard data:", dashboardData);
+
   // Real Backend Data with all required properties
   const formStats: DashboardFormStats = {
-    // Required properties
     totalForms: dashboardData.formStats?.total || 0,
     completedForms: dashboardData.formStats?.completedForms || 0,
-    pendingForms: dashboardData.formStats?.pendingForms || 0,
     pendingApprovals: dashboardData.formStats?.pendingForms || 0,
     rejectedForms: dashboardData.formStats?.rejected || 0,
+    pendingForms: dashboardData.formStats?.pendingForms || 0,
     approvalRate: dashboardData.formStats?.approvalRate || 0,
-    
-    // Additional properties
     total: dashboardData.formStats?.total || 0,
     completed: dashboardData.formStats?.completed || 0,
     approved: dashboardData.formStats?.approved || 0,
@@ -40,10 +62,22 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({
     draft: dashboardData.formStats?.draft || 0,
     dueSoon: dashboardData.formStats?.dueSoon || 0,
     overdue: dashboardData.formStats?.overdue || 0,
-    percentage: dashboardData.formStats?.percentage || 0,
-    completion_rate: dashboardData.formStats?.completion_rate || 0,
-    completionRate: dashboardData.formStats?.completionRate || 0,
+    percentage:
+      dashboardData.formStats?.percentage || dashboardData.completionRate || 0,
+    completion_rate:
+      dashboardData.formStats?.completion_rate ||
+      dashboardData.completionRate ||
+      0,
+    completionRate:
+      dashboardData.formStats?.completionRate ||
+      dashboardData.completionRate ||
+      0,
   };
+
+  // Məcburi xassələri təyin edirik
+  formStats.totalForms = formStats.total || 0;
+  formStats.pendingApprovals = formStats.pendingForms || 0;
+  formStats.rejectedForms = formStats.rejected || 0;
 
   const statsGridData = [
     {
@@ -56,7 +90,7 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({
     {
       title: t("dashboard.totalPending") || "Gözləyən",
       value: formStats.pending || 0,
-      icon: "clock", 
+      icon: "clock",
       color: "text-yellow-600",
       description: t("pending") || "Gözləyir",
     },
@@ -76,19 +110,24 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({
     },
   ];
 
-  // Real sector data
-  const sectors = dashboardData.sectors || [];
+  // No need to pass schools data since SchoolsTable fetches its own data
+  // const schools = dashboardData.schools || [];
 
   return (
     <div className="space-y-6">
       <StatsGrid stats={statsGridData} />
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="space-y-6">
         <DashboardChart stats={formStats} />
-        <NotificationCard maxItems={5} />
+        <SchoolsTable onView={handleSchoolView} />
       </div>
       
-      <SectorStatsTable sectors={sectors} />
+      {/* School Data Entry Modal */}
+      <SchoolDataEntryDialog
+        open={isDataEntryDialogOpen}
+        onOpenChange={setIsDataEntryDialogOpen}
+        school={selectedSchool}
+      />
     </div>
   );
 };

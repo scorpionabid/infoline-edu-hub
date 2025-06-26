@@ -1,52 +1,85 @@
-// Notification types
-export type NotificationType = 
-  | 'info' 
-  | 'warning' 
-  | 'error' 
-  | 'success'
-  | 'data_approval'
-  | 'deadline_reminder'
-  | 'proxy_data_entry'
-  | 'system_update'
-  | 'deadline';
 
-export type NotificationPriority = 'low' | 'normal' | 'high';
-
-export interface NotificationData {
-  id: string;
-  user_id: string;
-  type: NotificationType;
-  title: string;
-  message?: string;
-  is_read?: boolean;
-  priority?: NotificationPriority;
-  related_entity_type?: string;
-  related_entity_id?: string;
-  created_at: string;
+export interface NotificationStats {
+  total: number;
+  unread: number;
+  today: number;
+  thisWeek: number;
+  thisMonth: number;
 }
 
 export interface AppNotification {
   id: string;
   title: string;
   message: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  is_read: boolean;
+  created_at: string;
+  user_id: string;
+  action_url?: string;
+  metadata?: Record<string, any>;
+}
+
+// Add missing types
+export type NotificationType = 'info' | 'success' | 'warning' | 'error' | 'deadline';
+export type NotificationPriority = 'low' | 'normal' | 'high' | 'critical';
+
+export interface DashboardNotification {
+  id: string;
+  title: string;
+  message: string;
+  type: NotificationType;
+  isRead: boolean;
+  timestamp: string;
+  entityId?: string;
+  entityType?: string;
+}
+
+export interface NotificationData {
+  id: string;
+  title: string;
+  message: string;
   type: NotificationType;
   priority: NotificationPriority;
-  created_at: string;
-  createdAt?: string; // For backward compatibility
-  is_read: boolean;
-  user_id: string;
+  userId: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export interface NotificationFilters {
+  type?: NotificationType[];
+  priority?: NotificationPriority[];
+  isRead?: boolean;
+  startDate?: string;
+  endDate?: string;
 }
 
 export interface NotificationsCardProps {
   notifications: AppNotification[];
-  onMarkAsRead?: (id: string) => void;
-  onMarkAllAsRead?: () => void;
-  title?: string;
+  onMarkAsRead: (id: string) => void;
+  onMarkAllAsRead: () => void;
+  onClearAll: () => void;
 }
 
-export interface NotificationStats {
-  totalCount: number;
-  unreadCount: number;
-  todayCount: number;
-  weekCount: number;
+export interface NotificationSettings {
+  email: boolean;
+  system: boolean;
+  push?: boolean;
+  sms?: boolean;
 }
+
+// Utility function
+export const adaptDashboardNotificationToApp = (notification: DashboardNotification): AppNotification => {
+  return {
+    id: notification.id,
+    title: notification.title,
+    message: notification.message,
+    type: notification.type as 'info' | 'success' | 'warning' | 'error',
+    is_read: notification.isRead,
+    created_at: notification.timestamp,
+    user_id: '',
+    metadata: {
+      entityId: notification.entityId,
+      entityType: notification.entityType
+    }
+  };
+};
