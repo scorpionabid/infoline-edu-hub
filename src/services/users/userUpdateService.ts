@@ -61,11 +61,7 @@ const getUser = async (userId: string): Promise<FullUserData | null> => {
       createdAt: profile.created_at || new Date().toISOString(),
       updatedAt: profile.updated_at || new Date().toISOString(),
       created_at: profile.created_at || new Date().toISOString(),
-      updated_at: profile.updated_at || new Date().toISOString(),
-      notificationSettings: {
-        email: true,
-        system: true
-      }
+      updated_at: profile.updated_at || new Date().toISOString()
     };
   } catch (error) {
     console.error('Error in getUser:', error);

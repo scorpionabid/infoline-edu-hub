@@ -1,3 +1,4 @@
+
 /**
  * Mərkəzləşdirilmiş istifadəçi məlumatları xidməti
  * Bütün istifadəçi məlumatları sorğuları bu servis vasitəsilə edilir
@@ -100,11 +101,7 @@ export async function fetchUserData(
         createdAt: rpcData.created_at || new Date().toISOString(),
         updatedAt: rpcData.updated_at || new Date().toISOString(),
         created_at: rpcData.created_at || new Date().toISOString(),
-        updated_at: rpcData.updated_at || new Date().toISOString(),
-        notificationSettings: {
-          email: true,
-          system: true
-        }
+        updated_at: rpcData.updated_at || new Date().toISOString()
       };
 
       // Keşləmə məlumatlarını yeniləyirik
@@ -199,11 +196,7 @@ export async function fetchUserData(
       createdAt: profile?.created_at || new Date().toISOString(),
       updatedAt: profile?.updated_at || new Date().toISOString(),
       created_at: profile?.created_at || new Date().toISOString(),
-      updated_at: profile?.updated_at || new Date().toISOString(),
-      notificationSettings: {
-        email: true,
-        system: true
-      }
+      updated_at: profile?.updated_at || new Date().toISOString()
     };
 
     // Keşləmə məlumatlarını yeniləyirik
