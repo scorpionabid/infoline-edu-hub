@@ -1,4 +1,3 @@
-
 /**
  * Utility functions for cleaning up cached/stale data
  * Enhanced for complete cache reset
@@ -146,6 +145,31 @@ export const debugDataSources = () => {
   });
   
   console.groupEnd();
+};
+
+// Fix cache manager property access
+export const clearAllCaches = async () => {
+  try {
+    // Clear localStorage
+    localStorage.clear();
+    
+    // Clear sessionStorage
+    sessionStorage.clear();
+    
+    // Clear custom cache if available
+    if (typeof window !== 'undefined' && 'customCacheManager' in window) {
+      const cacheManager = (window as any).customCacheManager;
+      if (cacheManager && typeof cacheManager.clearAll === 'function') {
+        await cacheManager.clearAll();
+      }
+    }
+    
+    console.log('✅ All caches cleared successfully');
+    return true;
+  } catch (error) {
+    console.error('❌ Error clearing caches:', error);
+    return false;
+  }
 };
 
 // Console commands for manual debugging

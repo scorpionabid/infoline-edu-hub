@@ -1,61 +1,54 @@
 
-// Auto-generated index file for az translations
-import app from './app';
-import auth from './auth'; 
-import categories from './categories';
-import columns from './columns';
+// Azerbaijan translations index - fix import errors
+
 import common from './common';
-import core from './core';
-import dashboard from './dashboard';
-import dataEntry from './dataEntry';
-import feedback from './feedback';
-import general from './general';
 import navigation from './navigation';
-import notifications from './notifications';
-import organization from './organization';
-import profile from './profile';
+import dashboard from './dashboard';
+import authTranslations from './auth'; // Fix: import default, not named export
+import categories from './categories';
+import dataEntry from './dataEntry';
 import schools from './schools';
 import sectors from './sectors';
+import userManagement from './userManagement';
+import notifications from './notifications';
+import settings from './settings';
+import validation from './validation';
+import approval from './approval';
+import feedback from './feedback';
+import profile from './profile';
+import user from './user';
+import organization from './organization';
+import core from './core';
+import statistics from './statistics';
 import status from './status';
-import theme from './theme';
 import time from './time';
 import ui from './ui';
-import user from './user';
-import userManagement from './userManagement';
-import validation from './validation';
-import statistics from './statistics';
-import settings from './settings';
-import approval from './approval';
-import dataManagement from './dataManagement';
+import app from './app';
+import general from './general';
 
 export default {
-  app,
-  auth,
-  categories,
-  columns,
-  ...common, // Spread common keys at root level
-  core,
-  dashboard,
-  dataEntry,
-  feedback,
-  general,
+  common,
   navigation,
-  notifications,
-  organization,
-  profile,
+  dashboard,
+  auth: authTranslations, // Fix: use renamed import
+  categories,
+  dataEntry,
   schools,
   sectors,
+  userManagement,
+  notifications,
+  settings,
+  validation,
+  approval,
+  feedback,
+  profile,
+  user,
+  organization,
+  core,
+  statistics,
   status,
-  theme,
   time,
   ui,
-  user,
-  userManagement,
-  validation,
-  statistics,
-  settings,
-  approval,
-  dataManagement,
-  // Keep common module accessible as well
-  common,
+  app,
+  general,
 };

@@ -1,11 +1,42 @@
 
-export type ColumnType = 'text' | 'number' | 'textarea' | 'select' | 'checkbox' | 'date' | 'email' | 'phone' | 'tel' | 'url' | 'password' | 'datetime-local' | 'time' | 'radio' | 'switch' | 'file' | 'boolean' | 'json';
+// Column types - enhanced with missing exports
+
+export type ColumnType = 
+  | 'text' 
+  | 'number' 
+  | 'email' 
+  | 'tel' 
+  | 'url' 
+  | 'date' 
+  | 'select' 
+  | 'multiselect' 
+  | 'radio' 
+  | 'checkbox' 
+  | 'textarea' 
+  | 'file';
 
 export interface ColumnOption {
-  id?: string;
   label: string;
   value: string;
-  [key: string]: string | undefined;
+}
+
+export interface ValidationRules {
+  required?: boolean;
+  min?: number;
+  max?: number;
+  minLength?: number;
+  maxLength?: number;
+  pattern?: string;
+  email?: boolean;
+  url?: boolean;
+  numeric?: boolean;
+  integer?: boolean;
+  date?: boolean;
+  custom?: string;
+}
+
+export interface ColumnValidation extends ValidationRules {
+  message?: string;
 }
 
 export interface Column {
@@ -16,49 +47,50 @@ export interface Column {
   is_required: boolean;
   placeholder?: string;
   help_text?: string;
-  description?: string;
   order_index: number;
-  status: string;
-  validation?: any;
+  status: 'active' | 'inactive';
+  options: ColumnOption[];
+  validation: ValidationRules;
   default_value?: string;
-  options?: ColumnOption[];
   created_at: string;
-  updated_at: string;
-  section?: string;
+  updated_at?: string;
+  parent_column_id?: string; // Add missing property
 }
 
 export interface ColumnFormValues {
   name: string;
   type: ColumnType;
-  category_id: string;
   is_required: boolean;
   placeholder?: string;
   help_text?: string;
-  description?: string;
+  options: ColumnOption[];
+  validation: ValidationRules;
   default_value?: string;
-  options?: ColumnOption[];
-  validation?: any;
-  order_index: number;
-  status: string;
 }
 
-export interface ColumnFormData {
+export interface ColumnFormData extends ColumnFormValues {
+  category_id: string;
+  order_index?: number;
+  status?: 'active' | 'inactive';
+}
+
+// Missing exports that were causing build errors
+export interface Category {
+  id: string;
   name: string;
-  type: ColumnType;
-  category_id: string;
-  is_required: boolean;
-  placeholder?: string;
-  help_text?: string;
   description?: string;
-  default_value?: string;
-  options?: ColumnOption[];
-  validation?: any;
-  order_index: number;
-  status: string;
+  assignment: 'all' | 'sectors' | 'schools';
+  deadline?: string;
+  status: 'active' | 'inactive' | 'draft';
+  priority: number;
+  created_at: string;
+  updated_at?: string;
+  archived: boolean;
+  column_count: number;
 }
 
-export interface UseColumnFormProps {
-  column?: Column;
-  categoryId: string;
-  onSuccess: () => void;
+export interface CategoryWithColumns extends Category {
+  columns?: Column[];
+  completionPercentage?: number;
+  columnCount?: number; // Compatibility alias
 }

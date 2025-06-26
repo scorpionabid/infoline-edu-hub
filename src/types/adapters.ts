@@ -1,46 +1,42 @@
 
-import { DashboardNotification, NotificationType } from './dashboard';
-import { 
-  SchoolFormData, 
-  School, 
-  SchoolCreateParams, 
-  SchoolUpdateParams,
-  // SchoolAdmin
-} from './school';
+// Type adapters - fix missing imports and properties
 
-export interface FormNotification {
-  id: string;
-  title: string;
-  message: string;
-  timestamp: string;
-  type: NotificationType;
-  read: boolean;
+import { School, SchoolFormData, SchoolCreateParams, SchoolUpdateParams, SchoolAdmin } from './school';
+import { DashboardNotification, NotificationType } from './dashboard';
+
+// School adapters
+export function adaptSchoolToFormData(school: School): SchoolFormData {
+  return {
+    name: school.name,
+    address: school.address,
+    phone: school.phone,
+    email: school.email,
+    region_id: school.region_id, // Fix: use correct property name
+    sector_id: school.sector_id, // Fix: use correct property name
+    status: school.status,
+  };
 }
 
-export const adaptNotification = (notification: DashboardNotification): FormNotification => {
+export function adaptFormDataToSchool(formData: SchoolFormData): SchoolCreateParams {
+  return {
+    name: formData.name,
+    address: formData.address,
+    phone: formData.phone,
+    email: formData.email,
+    region_id: formData.region_id,
+    sector_id: formData.sector_id,
+    status: formData.status || 'active',
+  };
+}
+
+// Notification adapters
+export function adaptDashboardNotificationToApp(notification: DashboardNotification) {
   return {
     id: notification.id,
     title: notification.title,
     message: notification.message,
-    timestamp: notification.timestamp,
-    type: notification.type || 'info',
-    read: notification.read
+    type: notification.type,
+    read: notification.read,
+    created_at: notification.created_at,
   };
-};
-
-export const adaptForm = (school: School): SchoolFormData => {
-  return {
-    name: school.name,
-    regionId: school.regionId || school.region_id || '',
-    sectorId: school.sectorId || school.sector_id || '',
-    address: school.address || '',
-    phone: school.phone || '',
-    email: school.email || '',
-    type: school.type || '',
-    language: school.language || '',
-    status: school.status || 'active',
-    principal_name: school.principal_name || '',
-    student_count: school.student_count || 0,
-    teacher_count: school.teacher_count || 0,
-  };
-};
+}

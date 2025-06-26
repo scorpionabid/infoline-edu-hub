@@ -1,5 +1,5 @@
 
-export type SchoolStatus = 'active' | 'inactive' | 'pending' | 'archived';
+// School related types - enhanced with missing exports
 
 export interface School {
   id: string;
@@ -7,20 +7,17 @@ export interface School {
   address?: string;
   phone?: string;
   email?: string;
-  principal_name?: string;
-  student_count?: number;
-  teacher_count?: number;
-  type?: string;
-  language?: string;
-  logo?: string;
-  status: SchoolStatus;
-  completion_rate?: number;
   region_id: string;
   sector_id: string;
-  admin_id?: string;
-  admin_email?: string;
+  status: 'active' | 'inactive';
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
+  
+  // Relational data (optional)
+  region_name?: string;
+  sector_name?: string;
+  regionName?: string; // Compatibility alias
+  sectorName?: string; // Compatibility alias
 }
 
 export interface SchoolFormData {
@@ -28,73 +25,42 @@ export interface SchoolFormData {
   address?: string;
   phone?: string;
   email?: string;
-  principal_name?: string;
-  student_count?: number;
-  teacher_count?: number;
-  type?: string;
-  language?: string;
-  logo?: string;
-  status: SchoolStatus;
   region_id: string;
   sector_id: string;
-  admin_email?: string;
+  status?: 'active' | 'inactive';
 }
 
-export interface SchoolFilter {
-  status?: SchoolStatus;
-  region_id?: string;
-  sector_id?: string;
-  search?: string;
-}
-
-export interface SchoolStats {
-  total: number;
-  active: number;
-  inactive: number;
-  pending: number;
-  completion_rate: number;
-}
-
-// Add missing Region and Sector interfaces
-export interface Region {
+// Missing exports that were causing build errors
+export interface SchoolAdmin {
   id: string;
-  name: string;
-  description?: string;
-  admin_id?: string;
-  admin_email?: string;
-  status: string;
-  completion_rate?: number;
+  user_id: string;
+  school_id: string;
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
 }
 
-export interface Sector {
-  id: string;
-  name: string;
-  description?: string;
-  region_id: string;
-  admin_id?: string;
-  admin_email?: string;
-  status: string;
-  completion_rate?: number;
-  created_at: string;
-  updated_at: string;
-}
-
-// School creation specific types
-export interface CreateSchoolData {
+export interface SchoolCreateParams {
   name: string;
   address?: string;
   phone?: string;
   email?: string;
-  principal_name?: string;
-  student_count?: number;
-  teacher_count?: number;
-  type?: string;
-  language?: string;
-  logo?: string;
-  status: 'active' | 'inactive';
   region_id: string;
   sector_id: string;
-  admin_email?: string;
+  status?: 'active' | 'inactive';
+}
+
+export interface SchoolUpdateParams {
+  name?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  region_id?: string;
+  sector_id?: string;
+  status?: 'active' | 'inactive';
+}
+
+export interface EnhancedSchool extends School {
+  admin_count?: number;
+  completion_rate?: number;
+  last_activity?: string;
 }
