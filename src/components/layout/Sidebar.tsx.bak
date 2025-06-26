@@ -1,9 +1,10 @@
+
 import React from 'react';
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChevronLeft } from "lucide-react";
-import UnifiedNavigation from '@/components/navigation/UnifiedNavigation';
+import NavigationSidebar from '@/components/navigation/Sidebar';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import Logo from './Logo';
 
@@ -18,7 +19,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   isOpen = false, 
   onToggle, 
   onMenuClick = () => {},
-  userName
+  // userName
 }) => {
   const { userRole } = usePermissions();
   
@@ -43,10 +44,10 @@ const Sidebar: React.FC<SidebarProps> = ({
       
       {/* Navigation content with scroll */}
       <ScrollArea className="flex-1">
-        <UnifiedNavigation 
+        <NavigationSidebar 
           userRole={userRole} 
           isOpen={isOpen} 
-          onToggle={onMenuClick}  
+          onToggle={onMenuClick}
           userName={userName}
         />
       </ScrollArea>
@@ -54,7 +55,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       {/* Footer */}
       <div className="mt-auto p-3 sm:p-4 border-t border-border">
         <p className="text-xs text-muted-foreground text-center">
-          InfoLine v2.0.0
+          InfoLine v1.0.0
         </p>
       </div>
     </div>
