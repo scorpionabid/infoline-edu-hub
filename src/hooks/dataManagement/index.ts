@@ -1,4 +1,6 @@
 
+import type { Category } from '@/types/category';
+import type { Column } from '@/types/column';
 
 export { useDataManagement } from './useDataManagement';
 export type { 
@@ -9,6 +11,27 @@ export type {
   DataStats
 } from './useDataManagement';
 
+// Define specific types for data management
+export type DataManagementStep = 'category' | 'column' | 'data' | 'review';
+
+export interface SchoolDataEntry {
+  schoolId: string;
+  schoolName: string;
+  sectorName: string;
+  regionName: string;
+  currentValue?: string;
+  status: 'pending' | 'approved' | 'rejected' | 'empty';
+  lastUpdated?: string;
+  submittedBy?: string;
+}
+
+export interface DataStats {
+  totalSchools: number;
+  completedSchools: number;
+  pendingSchools: number;
+  completionRate: number;
+}
+
 // DataManagementState type definition
 export type DataManagementState = {
   currentStep: DataManagementStep;
@@ -18,4 +41,3 @@ export type DataManagementState = {
   isLoading: boolean;
   error: string | null;
 };
-

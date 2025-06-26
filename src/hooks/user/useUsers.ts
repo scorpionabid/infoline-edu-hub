@@ -2,7 +2,7 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { userFetchService } from './userFetchService';
-import { FullUserData } from '@/types/auth';
+import { FullUserData } from '@/types/user'; // Use consistent user types
 
 export const useUsers = (filters?: { role?: string; status?: string; searchTerm?: string }) => {
   const { data: users = [], isLoading, error, refetch } = useQuery({
@@ -17,7 +17,7 @@ export const useUsers = (filters?: { role?: string; status?: string; searchTerm?
     return users.filter((user: FullUserData) => {
       const roles = Array.isArray(filters.role) ? filters.role : filters.role ? [filters.role] : [];
       
-      if (roles.length > 0 && !roles.includes(user.role)) {
+      if (roles.length > 0 && user.role && !roles.includes(user.role)) {
         return false;
       }
       
