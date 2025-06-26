@@ -7,7 +7,7 @@ import { useTranslation } from "@/contexts/TranslationContext";
 import { SchoolStat } from "@/types/dashboard";
 import { Eye, Edit, Trash2, CheckCircle, Clock, XCircle } from "lucide-react";
 import { useAuthStore, selectUser } from "@/hooks/auth/useAuthStore";
-import { useSchools } from "@/hooks/schools/useSchools";
+import { useSchoolsQuery } from "@/hooks/schools";
 import { usePagination } from "@/hooks/common/usePagination";
 import SchoolPagination from "@/components/schools/SchoolPagination";
 import { School } from "@/types/school";
@@ -30,10 +30,11 @@ const SchoolsTable: React.FC<SchoolsTableProps> = ({
   const user = useAuthStore(selectUser);
   
   // Get real schools data based on user role
-  const { schools: realSchools, loading: schoolsLoading, error: schoolsError } = useSchools(
-    user?.role === 'regionadmin' ? user.region_id : undefined,
-    user?.role === 'sectoradmin' ? user.sector_id : undefined
-  );
+  const { schools: realSchools, isLoading: schoolsLoading, error: schoolsError } = useSchoolsQuery({
+    regionId: user?.role === 'regionadmin' ? user.region_id : undefined,
+    sectorId: user?.role === 'sectoradmin' ? user.sector_id : undefined,
+    enabled: true
+  });
   
   // Only log once when schools are initially loaded
   useEffect(() => {

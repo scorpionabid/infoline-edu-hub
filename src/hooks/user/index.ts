@@ -15,7 +15,7 @@ export { useUserForm } from './useUserForm';
 export { useUserList } from './useUserList';
 export { useUserPermissions } from './useUserPermissions';
 export { useUsers } from './useUsers';
-export { useSuperUsers } from './useSuperUsers';
+// export { useSuperUsers } from './useSuperUsers'; // SİLİNDİ - root useSuperUsers.ts istifadə edin
 
 // Types
 export type { FullUserData, UserFilter } from '@/types/user';

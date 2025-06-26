@@ -6,7 +6,7 @@ import DashboardChart from "../DashboardChart";
 import SchoolsTable from "./SchoolsTable";
 import SchoolDataEntryDialog from "./SchoolDataEntryDialog";
 import { School } from "@/types/school";
-import { useSchools } from "@/hooks/schools/useSchools";
+import { useSchoolsQuery } from "@/hooks/schools";
 import { useAuthStore, selectUser } from "@/hooks/auth/useAuthStore";
 
 interface SectorAdminDashboardProps {
@@ -24,10 +24,11 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({
   const [isDataEntryDialogOpen, setIsDataEntryDialogOpen] = useState(false);
   
   // Get schools data for school lookup
-  const { schools } = useSchools(
-    user?.role === 'regionadmin' ? user.region_id : undefined,
-    user?.role === 'sectoradmin' ? user.sector_id : undefined
-  );
+  const { schools } = useSchoolsQuery({
+    regionId: user?.role === 'regionadmin' ? user.region_id : undefined,
+    sectorId: user?.role === 'sectoradmin' ? user.sector_id : undefined,
+    enabled: true
+  });
   
   // Handler for school click
   const handleSchoolView = (schoolId: string) => {

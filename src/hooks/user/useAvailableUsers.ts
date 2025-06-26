@@ -47,7 +47,7 @@ export const useAvailableUsers = () => {
           id,
           full_name,
           email,
-          // status
+          status
         `)
         .eq('status', 'active');
 
@@ -73,7 +73,7 @@ export const useAvailableUsers = () => {
     }
   };
 
-  const fetchAvailableUsers = fetchUsers;
+  // fetchUsers function is already defined above
 
   const updateFilter = (newFilter: Partial<UserFilter>) => {
     setFilter(prev => ({ ...prev, ...newFilter }));
@@ -95,7 +95,7 @@ export const useAvailableUsers = () => {
   return {
     users,
     loading,
-    error: error || new Error('No error'),
+    error,
     filter,
     updateFilter,
     totalPages,
@@ -103,8 +103,7 @@ export const useAvailableUsers = () => {
     totalRecords,
     handlePageChange,
     refetch,
-    fetchUsers,
-    // fetchAvailableUsers
+    fetchUsers
   };
 };
 

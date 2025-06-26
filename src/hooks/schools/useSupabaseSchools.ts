@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { School } from '@/types/supabase';
-import { useRegions } from '@/hooks/regions/useRegions';
+import { useRegionsQuery } from '@/hooks/regions/useRegionsQuery';
 import { useSectors } from '@/hooks/sectors/useSectors';
 import { toast } from 'sonner';
-import { useLanguage } from '@/context/LanguageContext';
+import { useLanguage } from '@/contexts/TranslationContext';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 
@@ -29,7 +29,7 @@ export const useSupabaseSchools = () => {
   const { userRole, sectorId } = usePermissions();
   
   // Regionları və sektorları əldə etmək üçün hookları istifadə edirik
-  const { regions } = useRegions();
+  const { regions } = useRegionsQuery();
   const { sectors, loading: sectorsLoading } = useSectors(selectedRegion);
 
   // Məktəbləri yükləmək metodu
