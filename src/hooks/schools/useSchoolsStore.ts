@@ -4,7 +4,7 @@ import { School } from '@/types/supabase';
 import { useRegions } from '@/hooks/regions/useRegions';
 import { useSectors } from '@/hooks/sectors/useSectors';
 import { toast } from 'sonner';
-import { useLanguageSafe } from '@/context/LanguageContext';
+import { useTranslation } from '@/contexts/TranslationContext';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 
@@ -24,7 +24,7 @@ export const useSchoolsStore = () => {
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: null, direction: null });
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  const { t } = useLanguageSafe();
+  const { t } = useTranslation();
   const user = useAuthStore(selectUser);
   const { userRole, sectorId, regionId } = usePermissions();
   

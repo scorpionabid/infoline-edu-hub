@@ -2,7 +2,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useLanguage } from '@/contexts/TranslationContext';
+import { useTranslation } from '@/contexts/TranslationContext';
 import { useDebounce } from '@/hooks/common/useDebounce';
 import { useState } from 'react';
 import { usePermissions } from '@/hooks/auth/usePermissions';
@@ -23,7 +23,7 @@ interface SchoolsQueryOptions {
 export const useSchoolsQuery = (options: SchoolsQueryOptions = {}) => {
   const { regionId, sectorId, status, limit = 10, page = 1, enabled = true } = options;
   const queryClient = useQueryClient();
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
   const { userRole, regionId: userRegionId, sectorId: userSectorId } = usePermissions();
@@ -123,6 +123,11 @@ export const useSchoolsQuery = (options: SchoolsQueryOptions = {}) => {
     }
   };
 
+  // Define refetch function
+  const refetch = async () => {
+    return queryClient.invalidateQueries({ queryKey: [SCHOOLS_QUERY_KEY] });
+  };
+
   return {
     schools,
     totalCount,
@@ -133,7 +138,7 @@ export const useSchoolsQuery = (options: SchoolsQueryOptions = {}) => {
     error,
     refetch,
     searchTerm,
-    setSearchTerm,
+    setSearchTerm
     // prefetchNextPage
   };
 };

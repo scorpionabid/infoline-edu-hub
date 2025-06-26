@@ -2,7 +2,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useLanguage } from '@/context/LanguageContext';
+import { useTranslation } from '@/contexts/TranslationContext';
 import { useState, useCallback, useMemo } from 'react';
 import { EnhancedRegion, Region } from '@/types/region';
 
@@ -39,7 +39,7 @@ export interface UseRegionsQueryResult {
 
 export const useRegionsQuery = (options = {}, initialPageSize = 10): UseRegionsQueryResult => {
   const queryClient = useQueryClient();
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   
   const [filter, setFilter] = useState<RegionFilter>({ status: '', search: '' });
   const [currentPage, setCurrentPage] = useState(1);
@@ -283,7 +283,7 @@ export const useRegionsQuery = (options = {}, initialPageSize = 10): UseRegionsQ
     currentPage,
     setCurrentPage,
     totalPages,
-    // pageSize
+    pageSize
   };
 };
 
