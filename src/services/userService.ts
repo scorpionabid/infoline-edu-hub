@@ -7,9 +7,9 @@ import { deleteUser } from './users/userDeleteService';
 import { resetUserPassword } from './users/userAuthService';
 import { getAdminEntity } from './users/userAdminService';
 
-// Main exports using the service functions
-export const getUsers = userFetchService.fetchAllUsers;
-export const getUser = userFetchService.fetchUserById;
+// Main exports using the service functions with correct method names
+export const getUsers = userFetchService.getAllUsers;
+export const getUser = userFetchService.getUserById;
 
 export {
   createUser,
