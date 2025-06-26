@@ -125,8 +125,10 @@ export const ProgressTracking: React.FC<ProgressTrackingProps> = ({
     switch (status) {
       case 'completed': {
         return <Award className="h-4 w-4 text-green-600" />;
+      }
       case 'overdue': {
         return <AlertTriangle className="h-4 w-4 text-red-600" />;
+      }
       default:
         return <Clock className="h-4 w-4 text-blue-600" />;
     }

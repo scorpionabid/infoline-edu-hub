@@ -105,10 +105,14 @@ export const AssignAdminDialog: React.FC<AssignAdminDialogProps> = ({
 
   const getEntityTypeName = () => {
     switch (entityType) {
-      case 'school': { return 'məktəb';
-      case 'sector': { return 'sektor';
-      case 'region': { return 'region';
-      default: return 'entity';
+      case 'school': 
+        return 'məktəb';
+      case 'sector': 
+        return 'sektor';
+      case 'region': 
+        return 'region';
+      default: 
+        return 'entity';
     }
   };
 

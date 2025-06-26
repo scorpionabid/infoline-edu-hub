@@ -185,10 +185,14 @@ export const useResponsiveLayout = (): UseResponsiveLayoutReturn => {
   // Utility function to get breakpoint classes
   const getBreakpointClass = useCallback((breakpoint: keyof ResponsiveLayoutConfig['sidebar']['breakpoints']) => {
     switch (breakpoint) {
-      case 'mobile': { return 'md:hidden';
-      case 'tablet': { return 'hidden md:block lg:hidden';
-      case 'desktop': { return 'hidden lg:block';
-      default: return '';
+      case 'mobile': 
+        return 'md:hidden';
+      case 'tablet': 
+        return 'hidden md:block lg:hidden';
+      case 'desktop': 
+        return 'hidden lg:block';
+      default: 
+        return '';
     }
   }, []);
 

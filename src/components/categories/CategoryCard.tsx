@@ -35,12 +35,16 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
     switch (status) {
       case "active": {
         return "default";
+      }
       case "draft": {
         return "secondary";
+      }
       case "inactive": {
         return "outline";
+      }
       case "archived": {
         return "destructive";
+      }
       default:
         return "default";
     }

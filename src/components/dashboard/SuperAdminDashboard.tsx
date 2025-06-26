@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DashboardFormStats, StatsGridItem } from "@/types/dashboard";
 import StatsGrid from "./StatsGrid";
 import DashboardChart from "./DashboardChart";
-import NotificationCard from "@/components/dashboard/NotificationCard";
+import NotificationsCard from "@/components/dashboard/common/NotificationsCard";
 import { BarChart3, Users, School, MapPin } from "lucide-react";
 
 interface SuperAdminDashboardProps {
@@ -161,7 +161,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
         
         {/* Notification Card */}
         <div className="col-span-3 space-y-4">
-          <NotificationCard maxItems={6} />
+          <NotificationsCard maxNotifications={6} />
           
           {/* Recent Activity Card */}
           <Card>

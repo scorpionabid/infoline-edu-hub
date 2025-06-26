@@ -70,22 +70,32 @@ const UserMenu: React.FC = () => {
   // Role badge color
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
-      case 'superadmin': { return 'text-red-600 bg-red-50 dark:bg-red-950 dark:text-red-400';
-      case 'regionadmin': { return 'text-blue-600 bg-blue-50 dark:bg-blue-950 dark:text-blue-400';
-      case 'sectoradmin': { return 'text-green-600 bg-green-50 dark:bg-green-950 dark:text-green-400';
-      case 'schooladmin': { return 'text-purple-600 bg-purple-50 dark:bg-purple-950 dark:text-purple-400';
-      default: return 'text-gray-600 bg-gray-50 dark:bg-gray-950 dark:text-gray-400';
+      case 'superadmin': 
+        return 'text-red-600 bg-red-50 dark:bg-red-950 dark:text-red-400';
+      case 'regionadmin': 
+        return 'text-blue-600 bg-blue-50 dark:bg-blue-950 dark:text-blue-400';
+      case 'sectoradmin': 
+        return 'text-green-600 bg-green-50 dark:bg-green-950 dark:text-green-400';
+      case 'schooladmin': 
+        return 'text-purple-600 bg-purple-50 dark:bg-purple-950 dark:text-purple-400';
+      default: 
+        return 'text-gray-600 bg-gray-50 dark:bg-gray-950 dark:text-gray-400';
     }
   };
 
   // Role display name
   const getRoleDisplayName = (role: string) => {
     switch (role) {
-      case 'superadmin': { return 'Super Admin';
-      case 'regionadmin': { return 'Region Admin';
-      case 'sectoradmin': { return 'Sektor Admin';
-      case 'schooladmin': { return 'Məktəb Admin';
-      default: return role;
+      case 'superadmin': 
+        return 'Super Admin';
+      case 'regionadmin': 
+        return 'Region Admin';
+      case 'sectoradmin': 
+        return 'Sektor Admin';
+      case 'schooladmin': 
+        return 'Məktəb Admin';
+      default: 
+        return role;
     }
   };
 

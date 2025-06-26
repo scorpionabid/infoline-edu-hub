@@ -105,9 +105,14 @@ const PerformanceDashboard = memo(() => {
 
   const getBadgeVariant = (type: string) => {
     switch (type) {
-      case 'error': { return 'destructive';
-      case 'warning': { return 'secondary';
-      default: return 'default';
+      case 'error': { 
+        return 'destructive';
+      }
+      case 'warning': { 
+        return 'secondary';
+      }
+      default: 
+        return 'default';
     }
   };
 

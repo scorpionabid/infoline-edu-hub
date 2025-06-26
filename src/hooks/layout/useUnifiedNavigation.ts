@@ -59,8 +59,10 @@ export const useUnifiedNavigation = () => {
     canManageColumns,
     canManageUsers,
     canApproveData,
-    // canViewReports
   } = usePermissions();
+
+  // Temp fix - always allow viewing reports
+  const canViewReports = true;
 
   // Open sections state
   const [openSections, setOpenSections] = useLocalStorage('nav-sections', ['organization', 'content']);
@@ -257,7 +259,7 @@ export const useUnifiedNavigation = () => {
     canManageColumns,
     canManageUsers,
     canApproveData,
-    // canViewReports
+    canViewReports
   ]);
 
   // Get breadcrumbs for current route

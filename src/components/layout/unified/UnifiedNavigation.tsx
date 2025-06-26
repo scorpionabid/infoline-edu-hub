@@ -97,7 +97,7 @@ const UnifiedNavigation: React.FC<UnifiedNavigationProps> = ({
                       {item.badge && (
                         <div className={cn(
                           "ml-auto flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold",
-                          // active
+                          active
                             ? "bg-white/30 text-white"
                             : "bg-primary text-primary-foreground"
                         )}>
@@ -150,9 +150,11 @@ const UnifiedNavigation: React.FC<UnifiedNavigationProps> = ({
                           "group relative flex items-center gap-3 rounded-xl px-3 py-3 text-sm transition-all duration-200",
                           "hover:bg-accent/50 hover:shadow-md hover:scale-[1.02] hover:-translate-y-0.5",
                           "min-h-[48px] touch-manipulation",
-                          // active
-                            ? `bg-gradient-to-r text-white shadow-lg transform scale-[1.02] ${item.gradient || 'bg-gradient-to-r from-primary to-primary/80'}`
-                            : "text-muted-foreground hover:text-foreground"
+                          active ? (
+                            `bg-gradient-to-r text-white shadow-lg transform scale-[1.02] ${item.gradient || 'bg-gradient-to-r from-primary to-primary/80'}`
+                          ) : (
+                            "text-muted-foreground hover:text-foreground"
+                          )
                         )}
                         title={item.label}
                       >
@@ -176,7 +178,7 @@ const UnifiedNavigation: React.FC<UnifiedNavigationProps> = ({
                         {item.badge && (
                           <div className={cn(
                             "ml-auto flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold",
-                            // active
+                            active
                               ? "bg-white/30 text-white"
                               : "bg-primary text-primary-foreground"
                           )}>

@@ -79,12 +79,16 @@ export const usePermissions = (): UsePermissionsResult => {
     switch (userRole) {
       case 'superadmin': {
         return 'all';
+      }
       case 'regionadmin': {
         return userRegionId;
+      }
       case 'sectoradmin': {
         return userSectorId;
+      }
       case 'schooladmin': {
         return userSchoolId;
+      }
       default:
         return undefined;
     }

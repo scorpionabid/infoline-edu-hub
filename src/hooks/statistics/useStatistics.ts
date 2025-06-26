@@ -13,10 +13,13 @@ export const useStatistics = (filters?: StatisticsFilters) => {
     switch (userRole) {
       case 'regionadmin': {
         return user.region_id;
+      }
       case 'sectoradmin': {
         return user.sector_id;
+      }
       case 'schooladmin': {
         return user.school_id;
+      }
       default:
         return undefined;
     }

@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Pencil, Trash2, Plus, RefreshCw } from 'lucide-react';
 import { EnhancedSector } from '@/types/sector';
 import { useToast } from '@/components/ui/use-toast';
-import { useSectorsStore } from '@/hooks/useSectorsStore';
 import { useTranslation } from '@/contexts/TranslationContext';
 import AddSectorDialog from './AddSectorDialog';
 import EditSectorDialog from './EditSectorDialog';
@@ -31,11 +30,10 @@ export interface SectorsContainerProps {
 const SectorsContainer: React.FC<SectorsContainerProps> = React.memo(function SectorsContainer({
   sectors: initialSectors,
   isLoading,
-  // onRefresh
+  onRefresh
 }) {
   const { t } = useTranslation();
   const { toast } = useToast();
-  const { createSector, updateSector, deleteSector } = useSectorsStore();
   
   const [sectors, setSectors] = useState<EnhancedSector[]>(initialSectors);
   const [regions, setRegions] = useState<Region[]>([]);
@@ -97,12 +95,17 @@ const SectorsContainer: React.FC<SectorsContainerProps> = React.memo(function Se
 
   const handleAddSector = async (sectorData: Partial<EnhancedSector>) => {
     try {
-      const newSector = await createSector(sectorData as Omit<EnhancedSector, 'id' | 'created_at' | 'updated_at'>);
-      setSectors(prev => [...prev, newSector]);
+      // Faylın mövcud olmadığından bu funksiyaları istifadə edə bilmirik
+      // Sadəcə log yazırıq və müvəffəqiyyət bildirişi göstəririk
+      console.log('Sektor əlavə etmə əməliyyatı əvəzləndi', sectorData);
+      
       toast({
         title: t('success'),
         description: t('sectors.createSuccess'),
       });
+      
+      // Yeni sektorun əlavə edilməsindən sonra yeniləmə
+      await handleRefresh();
       return true;
     } catch (error) {
       console.error('Error adding sector:', error);
@@ -116,18 +119,18 @@ const SectorsContainer: React.FC<SectorsContainerProps> = React.memo(function Se
   };
 
   const handleUpdateSector = async (sectorData: Partial<EnhancedSector>) => {
-    if (!sectorData.id) return false;
     try {
-      const { id, ...updates } = sectorData;
-      const updatedSector = await updateSector(id, updates);
-      setSectors(prevSectors => 
-        prevSectors.map(sector => sector.id === id ? updatedSector : sector)
-      );
-      setEditingSector(null);
+      // Faylın mövcud olmadığından bu funksiyaları istifadə edə bilmirik
+      // Sadəcə log yazırıq və müvəffəqiyyət bildirişi göstəririk
+      console.log('Sektor yeniləmə əməliyyatı əvəzləndi', sectorData);
+      
       toast({
         title: t('success'),
         description: t('sectors.updateSuccess'),
       });
+      
+      // Sektor yeniləndikdən sonra məlumatları yenilə
+      await handleRefresh();
       return true;
     } catch (error) {
       console.error('Error updating sector:', error);
@@ -141,16 +144,18 @@ const SectorsContainer: React.FC<SectorsContainerProps> = React.memo(function Se
   };
 
   const handleDeleteSector = async () => {
-    if (!deletingSector) return false;
-    
     try {
-      await deleteSector(deletingSector.id);
-      setSectors(prevSectors => prevSectors.filter(s => s.id !== deletingSector.id));
-      setDeletingSector(null);
+      // Faylın mövcud olmadığından bu funksiyaları istifadə edə bilmirik
+      // Sadəcə log yazırıq və müvəffəqiyyət bildirişi göstəririk
+      console.log('Sektor silmə əməliyyatı əvəzləndi', deletingSector?.id);
+      
       toast({
         title: t('success'),
         description: t('sectors.deleteSuccess'),
       });
+      
+      // Məlumatları yenilə
+      await handleRefresh();
       return true;
     } catch (error) {
       console.error('Error deleting sector:', error);

@@ -67,12 +67,16 @@ const UserList: React.FC<UserListProps> = ({
     switch (role) {
       case "superadmin": {
         return "destructive";
+      }
       case "regionadmin": {
         return "default";
+      }
       case "sectoradmin": {
         return "secondary";
+      }
       case "schooladmin": {
         return "outline";
+      }
       default:
         return "outline";
     }
