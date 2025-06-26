@@ -542,7 +542,7 @@ export class StatusTransitionService {
         schoolId,
         categoryId,
         newStatus,
-        // userId
+        userId
       );
 
       // Create notifications
@@ -672,10 +672,13 @@ export class StatusTransitionService {
     switch (status) {
       case DataEntryStatus.APPROVED: {
         return 'normal';
+      }
       case DataEntryStatus.REJECTED: {
         return 'high';
+      }
       case DataEntryStatus.PENDING: {
         return 'medium';
+      }
       default:
         return 'normal';
     }
@@ -726,12 +729,16 @@ export class StatusTransitionService {
     switch (status) {
       case DataEntryStatus.DRAFT: {
         return 'gray';
+      }
       case DataEntryStatus.PENDING: {
         return 'blue';
+      }
       case DataEntryStatus.APPROVED: {
         return 'green';
+      }
       case DataEntryStatus.REJECTED: {
         return 'red';
+      }
       default:
         return 'gray';
     }
@@ -761,12 +768,16 @@ export class StatusTransitionService {
     switch (status) {
       case DataEntryStatus.DRAFT: {
         return 'FileEdit';
+      }
       case DataEntryStatus.PENDING: {
         return 'Clock';
+      }
       case DataEntryStatus.APPROVED: {
         return 'CheckCircle';
+      }
       case DataEntryStatus.REJECTED: {
         return 'XCircle';
+      }
       default:
         return 'File';
     }
