@@ -21,27 +21,32 @@ export const useDataTransformation = ({
     if (!column || !value) return value;
 
     switch (column.type) {
-      case 'text': {
+      case 'text': 
       case 'textarea': {
         return typeof value === 'string' ? value.trim() : value;
+      }
       
       case 'email': {
         return typeof value === 'string' ? value.toLowerCase().trim() : value;
+      }
       
       case 'number': {
         const num = Number(value);
         return isNaN(num) ? value : num;
+      }
       
       case 'phone': {
         // Remove non-numeric characters except + and spaces
         return typeof value === 'string' ? 
           value.replace(/[^\d\s\+\-\(\)]/g, '').trim() : value;
+      }
       
       case 'url': {
         if (typeof value === 'string' && value && !value.startsWith('http')) {
           return `https://${value}`;
         }
         return value;
+      }
       
       default:
         return value;
