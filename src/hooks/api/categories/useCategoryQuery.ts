@@ -65,7 +65,7 @@ export const useCategoryQuery = (options: UseCategoryQueryOptions = {}) => {
               })) : []
         })) as CategoryWithColumns[];
     },
-    enabled
+    // enabled
   });
 };
 

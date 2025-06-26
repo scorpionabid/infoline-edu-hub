@@ -22,7 +22,7 @@ interface CategoryColumnsProps {
 export const CategoryColumns = ({
   onDelete,
   onUpdateStatus,
-  isLoading
+  // isLoading
 }: CategoryColumnsProps): ColumnDef<Category, unknown>[] => [
   {
     accessorKey: "name",
@@ -130,13 +130,13 @@ export const CategoryColumns = ({
 // Köməkçi funksiyalar
 function getStatusVariant(status: string): "default" | "secondary" | "outline" | "destructive" {
   switch (status) {
-    case "active":
+    case "active": {
       return "default";
-    case "inactive":
+    case "inactive": {
       return "secondary";
-    case "draft":
+    case "draft": {
       return "outline";
-    case "archived":
+    case "archived": {
       return "destructive";
     default:
       return "outline";
@@ -145,13 +145,13 @@ function getStatusVariant(status: string): "default" | "secondary" | "outline" |
 
 function getStatusText(status: string): string {
   switch (status) {
-    case "active":
+    case "active": {
       return "Aktiv";
-    case "inactive":
+    case "inactive": {
       return "Qeyri-aktiv";
-    case "draft":
+    case "draft": {
       return "Qaralama";
-    case "archived":
+    case "archived": {
       return "Arxivlənmiş";
     default:
       return status;

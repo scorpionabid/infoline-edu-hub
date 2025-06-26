@@ -116,7 +116,7 @@ export const UniversalDialog: React.FC<UniversalDialogProps> = ({
                   {loadingText}
                 </>
               ) : (
-                confirmText
+                // confirmText
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -165,7 +165,7 @@ export const UniversalDialog: React.FC<UniversalDialogProps> = ({
                 {loadingText}
               </>
             ) : (
-              confirmText
+              // confirmText
             )}
           </Button>
         </DialogFooter>

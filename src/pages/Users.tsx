@@ -25,22 +25,7 @@ const Users = () => {
   const user = useAuthStore(selectUser);
   const navigate = useNavigate();
 
-  React.useEffect(() => {
-    if (!isAuthorized) {
-      navigate("/dashboard");
-    }
-  }, [isAuthorized, navigate]);
-
-  if (!isAuthorized) {
-    return null;
-  }
-
-  const entityTypes: Array<"region" | "sector" | "school"> = isSuperAdmin
-    ? ["region", "sector", "school"]
-    : isRegionAdmin
-      ? ["sector", "school"]
-      : ["school"];
-
+  // All hooks must be called before any early returns
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
@@ -97,6 +82,23 @@ const Users = () => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
+
+  // Early return after all hooks
+  React.useEffect(() => {
+    if (!isAuthorized) {
+      navigate("/dashboard");
+    }
+  }, [isAuthorized, navigate]);
+
+  if (!isAuthorized) {
+    return null;
+  }
+
+  const entityTypes: Array<"region" | "sector" | "school"> = isSuperAdmin
+    ? ["region", "sector", "school"]
+    : isRegionAdmin
+      ? ["sector", "school"]
+      : ["school"];
 
   return (
     <>

@@ -108,7 +108,7 @@ const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
           ]
         )}
         style={{
-          width: variant === 'mobile' ? '85vw' : `${width}px`,
+          width: variant === 'mobile' ? '85vw' : `${width}, px`,
           maxWidth: variant === 'mobile' ? '320px' : undefined
         }}
       >

@@ -217,7 +217,7 @@ const EmailTemplateManager: React.FC = () => {
               
               <div className="flex justify-end space-x-2">
                 <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-                  Cancel
+                  // Cancel
                 </Button>
                 <Button onClick={handleCreate}>
                   Create Template
@@ -312,7 +312,7 @@ const EmailTemplateManager: React.FC = () => {
                   <div className="flex items-center space-x-2">
                     <div className="flex items-center space-x-2">
                       <Label htmlFor={`status-${template.id}`} className="text-sm">
-                        Active
+                        // Active
                       </Label>
                       <Switch
                         id={`status-${template.id}`}
@@ -384,7 +384,7 @@ const EmailTemplateManager: React.FC = () => {
             
             <div className="flex justify-end space-x-2">
               <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                Cancel
+                // Cancel
               </Button>
               <Button onClick={handleUpdate}>
                 Update Template
@@ -430,7 +430,7 @@ const EmailTemplateManager: React.FC = () => {
               
               <div className="flex justify-end">
                 <Button onClick={() => setIsPreviewDialogOpen(false)}>
-                  Close
+                  // Close
                 </Button>
               </div>
             </div>

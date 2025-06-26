@@ -27,7 +27,7 @@ const ExcelActions: React.FC<ExcelActionsProps> = ({
   onUpload,
   onImportComplete,
   onDownloadLegacy,
-  onUploadLegacy
+  // onUploadLegacy
 }) => {
   const { t } = useLanguageSafe();
   const [isUploading, setIsUploading] = useState(false);

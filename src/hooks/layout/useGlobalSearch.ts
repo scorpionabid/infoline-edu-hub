@@ -201,6 +201,6 @@ export const useGlobalSearch = (): UseGlobalSearchResult => {
     results,
     isLoading,
     recentSearches,
-    clearRecentSearches
+    // clearRecentSearches
   };
 };

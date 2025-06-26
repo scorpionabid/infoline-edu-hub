@@ -16,7 +16,7 @@ import type {
   DataAccessResult,
   PermissionLevel,
   PermissionResult,
-  UserRole
+  // UserRole
 } from '@/types/auth';
 
 // ============================================================================
@@ -77,13 +77,13 @@ export const usePermissions = (): UsePermissionsResult => {
     if (!userRole) return undefined;
     
     switch (userRole) {
-      case 'superadmin':
+      case 'superadmin': {
         return 'all';
-      case 'regionadmin':
+      case 'regionadmin': {
         return userRegionId;
-      case 'sectoradmin':
+      case 'sectoradmin': {
         return userSectorId;
-      case 'schooladmin':
+      case 'schooladmin': {
         return userSchoolId;
       default:
         return undefined;
@@ -146,7 +146,7 @@ export const usePermissions = (): UsePermissionsResult => {
     canEditCategory,
     canDeleteCategory,
     canAddCategory,
-    hasSubmitPermission
+    // hasSubmitPermission
   };
 };
 
@@ -163,7 +163,7 @@ export const useDataAccessControl = () => {
     isSchoolAdmin,
     regionId,
     sectorId,
-    schoolId
+    // schoolId
   } = usePermissions();
 
   const checkDataAccess = useCallback(async (schoolId: string, categoryId: string): Promise<boolean> => {
@@ -236,7 +236,7 @@ export const useDataAccessControl = () => {
     isSchoolAdmin,
     regionId,
     sectorId,
-    schoolId
+    // schoolId
   };
 };
 

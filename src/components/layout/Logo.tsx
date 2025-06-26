@@ -29,7 +29,7 @@ const Logo: React.FC<LogoProps> = ({ className, showText = true, size = 'md' }) 
         sizeClasses[size]
       )}>
         <span className="font-bold text-primary-foreground animate-pulse">
-          I
+          // I
         </span>
       </div>
       
@@ -39,7 +39,7 @@ const Logo: React.FC<LogoProps> = ({ className, showText = true, size = 'md' }) 
           "font-bold bg-gradient-to-r from-primary via-primary/90 to-primary/80 bg-clip-text text-transparent",
           textSizeClasses[size]
         )}>
-          InfoLine
+          // InfoLine
         </span>
       )}
     </div>

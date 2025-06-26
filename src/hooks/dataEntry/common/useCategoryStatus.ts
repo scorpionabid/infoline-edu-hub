@@ -25,7 +25,7 @@ export function useCategoryStatus(category: CategoryWithColumns | null) {
   return {
     isComplete,
     isPending,
-    status
+    // status
   };
 }
 

@@ -62,7 +62,7 @@ export class StatusValidationService {
     return {
       isValid: errors.length === 0,
       errors,
-      warnings
+      // warnings
     };
   }
   
@@ -74,13 +74,13 @@ export class StatusValidationService {
     context: Record<string, any>
   ): Promise<StatusValidationResult> {
     switch (rule) {
-      case 'all_required_fields_completed':
+      case 'all_required_fields_completed': {
         return await this.validateRequiredFields(context.schoolId, context.categoryId);
         
-      case 'has_approval_permission':
+      case 'has_approval_permission': {
         return await this.validateApprovalPermission(context.userRole, context.schoolId);
         
-      case 'rejection_reason_provided':
+      case 'rejection_reason_provided': {
         return {
           isValid: !!context.rejectionReason,
           errors: context.rejectionReason ? [] : ['Rejection reason is required'],
@@ -183,7 +183,7 @@ export class StatusValidationService {
       }
       
       // İstifadəçi məlumatlarını əldə et
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } = await supabase.auth.getUser();
       
       if (!user) {
         return { 

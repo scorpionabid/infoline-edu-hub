@@ -10,7 +10,7 @@ import {
   Database,
   Building2,
   AlertCircle,
-  FileText
+  // FileText
 } from 'lucide-react';
 import { Category, Column } from '@/hooks/dataManagement/useDataManagement';
 
@@ -40,7 +40,7 @@ export const ColumnSelector: React.FC<ColumnSelectorProps> = memo(({
   columns,
   loading,
   onColumnSelect,
-  onBack
+  // onBack
 }) => {
   if (loading) {
     return (
@@ -106,7 +106,7 @@ export const ColumnSelector: React.FC<ColumnSelectorProps> = memo(({
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="sm" onClick={onBack}>
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Geri
+          // Geri
         </Button>
         <div>
           <h3 className="text-2xl font-bold">Sütun Seçimi</h3>

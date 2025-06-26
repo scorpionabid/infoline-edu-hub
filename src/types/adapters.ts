@@ -5,7 +5,7 @@ import {
   School, 
   SchoolCreateParams, 
   SchoolUpdateParams,
-  SchoolAdmin
+  // SchoolAdmin
 } from './school';
 
 export interface FormNotification {

@@ -12,7 +12,7 @@ import {
   Clock,
   School,
   Award,
-  AlertTriangle
+  // AlertTriangle
 } from 'lucide-react';
 
 interface ProgressData {
@@ -34,7 +34,7 @@ interface ProgressTrackingProps {
 
 export const ProgressTracking: React.FC<ProgressTrackingProps> = ({
   data = [],
-  onSchoolClick
+  // onSchoolClick
 }) => {
   const [viewMode, setViewMode] = useState<'overview' | 'detailed' | 'trends'>('overview');
 
@@ -123,9 +123,9 @@ export const ProgressTracking: React.FC<ProgressTrackingProps> = ({
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'completed':
+      case 'completed': {
         return <Award className="h-4 w-4 text-green-600" />;
-      case 'overdue':
+      case 'overdue': {
         return <AlertTriangle className="h-4 w-4 text-red-600" />;
       default:
         return <Clock className="h-4 w-4 text-blue-600" />;
@@ -149,7 +149,7 @@ export const ProgressTracking: React.FC<ProgressTrackingProps> = ({
             Ətraflı
           </Button>
           <Button variant={viewMode === 'trends' ? 'default' : 'outline'} onClick={() => setViewMode('trends')}>
-            Tendensiyalar
+            // Tendensiyalar
           </Button>
         </div>
       </div>

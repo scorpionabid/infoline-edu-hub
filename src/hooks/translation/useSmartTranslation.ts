@@ -38,6 +38,6 @@ export const useSmartTranslation = () => {
     setLanguage,
     isLoading,
     error,
-    isReady
+    // isReady
   };
 };

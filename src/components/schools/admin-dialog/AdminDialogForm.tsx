@@ -20,7 +20,7 @@ export const AdminDialogForm: React.FC<AdminDialogFormProps> = ({
   error,
   schoolId,
   schoolName,
-  loading
+  // loading
 }) => {
   const { t } = useLanguageSafe();
 

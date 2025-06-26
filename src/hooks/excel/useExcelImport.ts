@@ -23,7 +23,7 @@ export const useExcelImport = ({
   category,
   schoolId,
   onImportComplete,
-  onProgress
+  // onProgress
 }: UseExcelImportOptions) => {
   const { t } = useLanguage();
   const { toast } = useToast();
@@ -89,7 +89,7 @@ export const useExcelImport = ({
     if (file.size > EXCEL_CONSTRAINTS.MAX_FILE_SIZE) {
       return {
         isValid: false,
-        error: t('fileSizeExceedsLimit').replace('{size}', `${EXCEL_CONSTRAINTS.MAX_FILE_SIZE / (1024 * 1024)}MB`)
+        error: t('fileSizeExceedsLimit').replace('{size}', `${EXCEL_CONSTRAINTS.MAX_FILE_SIZE / (1024 * 1024)}, MB`)
       };
     }
     
@@ -189,27 +189,27 @@ export const useExcelImport = ({
         setImportProgress(prev => {
           if (!prev || importAbortController.current?.signal.aborted) return prev;
           
-          let newProgress = { ...prev };
+          const newProgress = { ...prev };
           
           switch (prev.phase) {
-            case 'parsing':
+            case 'parsing': {
               newProgress.percentage = Math.min(prev.percentage + 8, 20);
               newProgress.message = t('parsingFile');
               if (newProgress.percentage >= 20) {
                 newProgress.phase = 'validating';
                 newProgress.message = t('validatingData');
               }
-              break;
-            case 'validating':
+              break; }
+            case 'validating': {
               newProgress.percentage = Math.min(prev.percentage + 12, 40);
               if (newProgress.percentage >= 40) {
                 newProgress.phase = 'processing';
                 newProgress.message = t('savingData');
               }
-              break;
-            case 'processing':
+              break; }
+            case 'processing': {
               newProgress.percentage = Math.min(prev.percentage + 15, 90);
-              break;
+              break; }
           }
           
           onProgress?.(newProgress);

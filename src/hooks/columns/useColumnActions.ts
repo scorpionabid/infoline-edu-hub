@@ -120,6 +120,6 @@ export const useColumnActions = () => {
     handleCreateColumn,
     handleUpdateColumn,
     handleDeleteColumn,
-    handleCloneColumn
+    // handleCloneColumn
   };
 };

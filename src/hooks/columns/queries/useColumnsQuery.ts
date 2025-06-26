@@ -45,6 +45,6 @@ export const useColumnsQuery = (options: UseColumnsQueryOptions = {}) => {
           {}
       })) as Column[];
     },
-    enabled
+    // enabled
   });
 };

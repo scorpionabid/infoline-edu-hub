@@ -50,7 +50,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
             name="name"
             value={categoryForm.name}
             onChange={handleFormChange}
-            required
+            // required
           />
         </div>
         <div className="space-y-2">

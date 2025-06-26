@@ -8,7 +8,7 @@ import {
   FileText,
   TrendingUp,
   Calendar,
-  RefreshCw
+  // RefreshCw
 } from "lucide-react";
 import { FilesCard } from "./FilesCard";
 import { LinksCard } from "./LinksCard";

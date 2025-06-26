@@ -88,7 +88,7 @@ export class NotificationTemplateService {
         title,
         message,
         emailContent,
-        smsContent
+        // smsContent
       };
     } catch (error) {
       console.error('Error rendering template:', error);

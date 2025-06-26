@@ -128,8 +128,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   fetchUser: async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    const { data } = await supabase.auth.getUser();
+    if (!data.user) return;
+    const user = data.user;
 
     const { data: profile } = await supabase
       .from('profiles')
@@ -375,14 +376,18 @@ export const isProtectedRoute = (route: string): boolean => {
 
 export const getRedirectPath = (userRole: string): string => {
   switch (userRole) {
-    case 'superadmin':
+    case 'superadmin': {
       return '/dashboard';
-    case 'regionadmin':
+    }
+    case 'regionadmin': {
       return '/dashboard';
-    case 'sectoradmin':
+    }
+    case 'sectoradmin': {
       return '/dashboard';
-    case 'schooladmin':
+    }
+    case 'schooladmin': {
       return '/dashboard';
+    }
     default:
       return '/dashboard';
   }

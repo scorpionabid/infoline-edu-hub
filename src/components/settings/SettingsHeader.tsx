@@ -96,10 +96,10 @@ const SettingsHeader: React.FC = () => {
               Excel (.xlsx)
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleExport("csv")}>
-              CSV
+              // CSV
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => handleExport("json")}>
-              JSON
+              // JSON
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

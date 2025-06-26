@@ -95,7 +95,7 @@ export const validateNotificationContent = (content: {
   
   return {
     isValid: errors.length === 0,
-    errors
+    // errors
   };
 };
 
@@ -210,5 +210,5 @@ export default {
   advancedSanitize,
   validateNotificationContent,
   validateFileSecure,
-  checkSecurityRateLimit
+  // checkSecurityRateLimit
 };

@@ -38,7 +38,7 @@ export function useReportActions() {
   return {
     loading,
     downloadReport,
-    shareReport
+    // shareReport
   };
 }
 

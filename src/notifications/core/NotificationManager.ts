@@ -16,7 +16,7 @@ import type {
   NotificationAnalytics,
   NotificationEvent,
   NotificationManagerConfig,
-  NotificationMetadata
+  // NotificationMetadata
 } from './types';
 
 export class UnifiedNotificationManager {
@@ -72,32 +72,32 @@ export class UnifiedNotificationManager {
       let event: NotificationEvent;
       
       switch (eventType) {
-        case 'INSERT':
+        case 'INSERT': {
           event = {
             type: 'notification_created',
             notification: newRecord as UnifiedNotification,
             user_id: newRecord.user_id,
             timestamp: new Date().toISOString()
           };
-          break;
+          break; }
           
-        case 'UPDATE':
+        case 'UPDATE': {
           event = {
             type: 'notification_updated',
             notification: newRecord as UnifiedNotification,
             user_id: newRecord.user_id,
             timestamp: new Date().toISOString()
           };
-          break;
+          break; }
           
-        case 'DELETE':
+        case 'DELETE': {
           event = {
             type: 'notification_deleted',
             notification: oldRecord as UnifiedNotification,
             user_id: oldRecord.user_id,
             timestamp: new Date().toISOString()
           };
-          break;
+          break; }
           
         default:
           return;
@@ -146,7 +146,7 @@ export class UnifiedNotificationManager {
     }
     
     if (this.config.enableDebug) {
-      console.log(`[NotificationManager] ${operation} completed in ${duration}ms (success: ${success})`);
+      console.log(`[NotificationManager] ${operation} completed in ${duration}, ms (success: ${success})`);
     }
   }
 
@@ -186,7 +186,7 @@ export class UnifiedNotificationManager {
         relatedEntityId,
         relatedEntityType,
         metadata,
-        expiresAt
+        // expiresAt
       } = options;
 
       const notification: Partial<UnifiedNotification> = {
@@ -507,7 +507,7 @@ export class UnifiedNotificationManager {
     };
     
     try {
-      let userIds = request.user_ids || [];
+      const userIds = request.user_ids || [];
       
       if (userIds.length === 0) {
         console.warn('[NotificationManager] Bulk notification without user_ids not implemented');
@@ -625,7 +625,7 @@ export class UnifiedNotificationManager {
     }
 
     if (metrics.averageOperationTime > 1000) {
-      issues.push(`Slow average operation time: ${metrics.averageOperationTime.toFixed(0)}ms`);
+      issues.push(`Slow average operation time: ${metrics.averageOperationTime.toFixed(0)}, ms`);
       recommendations.push('Consider optimizing database queries or increasing cache TTL');
     }
 
@@ -637,7 +637,7 @@ export class UnifiedNotificationManager {
       healthy: issues.length === 0,
       issues,
       recommendations,
-      metrics
+      // metrics
     };
   }
 

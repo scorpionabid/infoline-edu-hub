@@ -127,7 +127,7 @@ export class ReportCache {
       data,
       timestamp: Date.now(),
       ttl: customTtl || this.options.ttl,
-      key
+      // key
     };
 
     this.cache.set(key, entry);
@@ -281,23 +281,23 @@ export const CacheHelpers = {
    */
   invalidateRelated(operation: 'create' | 'update' | 'delete', entity: string): void {
     switch (entity) {
-      case 'data_entry':
+      case 'data_entry': {
         reportCache.invalidate('school_performance');
         reportCache.invalidate('regional_comparison');
         reportCache.invalidate('category_completion');
         reportCache.invalidate('school_column_data');
-        break;
+        break; }
 
-      case 'school':
+      case 'school': {
         reportCache.invalidate('school_performance');
         reportCache.invalidate('school_column_data');
-        break;
+        break; }
 
-      case 'category':
-      case 'column':
+      case 'category': {
+      case 'column': {
         reportCache.invalidate('category_completion');
         reportCache.invalidate('school_column_data');
-        break;
+        break; }
 
       default:
         // Unknown entity, clear all cache

@@ -38,7 +38,7 @@ export const saveSchoolDataEntry = async (input: SaveSchoolDataEntryInput): Prom
     categoryId,
     columnId,
     value: value?.substring(0, 50) + (value?.length > 50 ? '...' : ''),
-    userId
+    // userId
   });
   
   try {
@@ -267,5 +267,5 @@ export default {
   getSchoolDataEntry,
   getSchoolDataByCategory,
   updateSchoolDataEntryStatus,
-  deleteSchoolDataEntry
+  // deleteSchoolDataEntry
 };

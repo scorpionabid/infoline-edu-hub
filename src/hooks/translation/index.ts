@@ -7,5 +7,5 @@ export { useTranslationValidation } from './useTranslationValidation';
 export type { 
   SupportedLanguage,
   TranslationInterpolationOptions,
-  SmartTranslationOptions
+  // SmartTranslationOptions
 } from '../../types/translation';

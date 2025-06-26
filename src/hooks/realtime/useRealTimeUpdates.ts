@@ -19,7 +19,7 @@ export const useRealTimeUpdates = ({
   filter,
   onInsert,
   onUpdate,
-  onDelete
+  // onDelete
 }: UseRealTimeUpdatesProps) => {
   const channelRef = useRef<RealtimeChannel | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<string>('DISCONNECTED');
@@ -73,15 +73,15 @@ export const useRealTimeUpdates = ({
           console.log('Real-time update received:', payload);
           
           switch (payload.eventType) {
-            case 'INSERT':
+            case 'INSERT': {
               callbacksRef.current.onInsert?.(payload);
-              break;
-            case 'UPDATE':
+              break; }
+            case 'UPDATE': {
               callbacksRef.current.onUpdate?.(payload);
-              break;
-            case 'DELETE':
+              break; }
+            case 'DELETE': {
               callbacksRef.current.onDelete?.(payload);
-              break;
+              break; }
           }
         })
         .subscribe((status) => {

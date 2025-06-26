@@ -16,7 +16,7 @@ export const AdminDialogFooter: React.FC<AdminDialogFooterProps> = ({
   onClose,
   onSubmit,
   loading,
-  selectedUserId
+  // selectedUserId
 }) => {
   const { t } = useLanguageSafe();
   

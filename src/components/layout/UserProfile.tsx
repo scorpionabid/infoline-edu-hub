@@ -120,7 +120,7 @@ const UserProfile: React.FC = () => {
           disabled={isButtonDisabled}
         >
           <User className="mr-2 h-4 w-4" />
-          Profil
+          // Profil
         </DropdownMenuItem>
         
         <DropdownMenuItem 

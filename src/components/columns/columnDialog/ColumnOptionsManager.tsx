@@ -39,13 +39,13 @@ const ColumnOptionsManager: React.FC<ColumnOptionsManagerProps> = ({
               value={option.value}
               placeholder={t("optionValue")}
               className="flex-1"
-              readOnly
+              // readOnly
             />
             <Input
               value={option.label}
               placeholder={t("optionLabel")}
               className="flex-1"
-              readOnly
+              // readOnly
             />
             <Button
               type="button"

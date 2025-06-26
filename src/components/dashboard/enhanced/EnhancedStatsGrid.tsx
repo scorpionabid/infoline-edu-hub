@@ -26,7 +26,7 @@ interface EnhancedStatsGridProps {
 
 export const EnhancedStatsGrid: React.FC<EnhancedStatsGridProps> = ({
   stats,
-  className
+  // className
 }) => {
   return (
     <ResponsiveGrid
@@ -37,7 +37,7 @@ export const EnhancedStatsGrid: React.FC<EnhancedStatsGridProps> = ({
       {stats.map((stat, index) => (
         <div
           key={stat.id}
-          style={{ animationDelay: `${index * 0.1}s` }}
+          style={{ animationDelay: `${index * 0.1}, s` }}
         >
           <EnhancedDashboardCard
             title={stat.title}

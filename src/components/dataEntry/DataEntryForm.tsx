@@ -110,7 +110,7 @@ export const DataEntryForm: React.FC<DataEntryFormProps> = ({
     // Type-specific validation
     if (value && String(value).trim() !== '') {
       switch (column.type) {
-        case 'number':
+        case 'number': {
           if (isNaN(Number(value))) {
             errors.push('Rəqəm daxil edin');
           } else {
@@ -122,9 +122,9 @@ export const DataEntryForm: React.FC<DataEntryFormProps> = ({
               errors.push(`Maksimum dəyər: ${column.validation.max}`);
             }
           }
-          break;
+          break; }
         
-        case 'text':
+        case 'text': {
           if (column.validation?.minLength && String(value).length < column.validation.minLength) {
             errors.push(`Minimum ${column.validation.minLength} simvol tələb olunur`);
           }
@@ -137,14 +137,14 @@ export const DataEntryForm: React.FC<DataEntryFormProps> = ({
               errors.push('Format düzgün deyil');
             }
           }
-          break;
+          break; }
         
-        case 'email':
+        case 'email': {
           const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
           if (!emailRegex.test(String(value))) {
             errors.push('E-poçt formatı düzgün deyil');
           }
-          break;
+          break; }
       }
     }
 
@@ -268,7 +268,7 @@ export const DataEntryForm: React.FC<DataEntryFormProps> = ({
           />
         );
         
-      case 'number':
+      case 'number': {
         return (
           <Input
             type="number"
@@ -277,14 +277,12 @@ export const DataEntryForm: React.FC<DataEntryFormProps> = ({
             onChange={(e) => handleFieldChange(column.id, e.target.value)}
             placeholder={column.placeholder}
             required={column.is_required}
-            min={column.validation?.min}
-            max={column.validation?.max}
-            step={column.validation?.step || "any"}
             {...fieldProps}
           />
         );
+      }
 
-      case 'date':
+      case 'date': {
         return (
           <Popover>
             <PopoverTrigger asChild>
@@ -307,33 +305,39 @@ export const DataEntryForm: React.FC<DataEntryFormProps> = ({
                 selected={value ? new Date(value) : undefined}
                 onSelect={(date) => handleFieldChange(column.id, date?.toISOString().split('T')[0])}
                 disabled={fieldProps.disabled}
-                initialFocus
+                // initialFocus
               />
             </PopoverContent>
           </Popover>
         );
-        
-      case 'select':
+      }
+    
+      case 'select': {
         return (
-          <Select
-            value={value}
-            onValueChange={(val) => handleFieldChange(column.id, val)}
-            disabled={fieldProps.disabled}
-          >
-            <SelectTrigger className={fieldProps.className}>
-              <SelectValue placeholder={column.placeholder || "Seçin"} />
-            </SelectTrigger>
-            <SelectContent>
-              {column.options?.map((option: any) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div>
+            <Select
+              value={value || ''}
+              onValueChange={(val) => handleFieldChange(column.id, val)}
+              required={column.is_required}
+              disabled={fieldProps.disabled}
+            >
+              <SelectTrigger id={column.id}>
+                <SelectValue placeholder={column.placeholder} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">- Seçin -</SelectItem>
+                {column.options?.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         );
-
-      case 'radio':
+      }
+    
+      case 'radio': {
         return (
           <RadioGroup
             value={value}
@@ -354,26 +358,30 @@ export const DataEntryForm: React.FC<DataEntryFormProps> = ({
             ))}
           </RadioGroup>
         );
-        
-      case 'checkbox':
+      }
+    
+      case 'checkbox': {
         return (
-          <div className="flex items-center space-x-2">
+          <label htmlFor={column.id} className="flex items-start gap-2 pt-2">
             <Checkbox
-              checked={value === 'true' || value === true}
-              onCheckedChange={(checked) => handleFieldChange(column.id, checked)}
-              disabled={fieldProps.disabled}
               id={column.id}
+              checked={value === 'true' || value === true}
+              onCheckedChange={(checked) => {
+                handleFieldChange(column.id, checked ? true : false);
+              }}
+              required={column.is_required}
+              disabled={fieldProps.disabled}
             />
-            <Label 
-              htmlFor={column.id} 
-              className={cn("text-sm", compactMode && "text-xs")}
-            >
-              {column.placeholder || "Təstiq edin"}
-            </Label>
-          </div>
+            <span className={cn("leading-tight text-sm pt-0.5", {
+              'text-muted-foreground': !column.label,
+            })}>
+              {column.label || "Check this box"}
+            </span>
+          </label>
         );
-
-      case 'file':
+      }
+    
+      case 'file': {
         return (
           <Input
             type="file"
@@ -389,8 +397,9 @@ export const DataEntryForm: React.FC<DataEntryFormProps> = ({
             {...fieldProps}
           />
         );
-        
-      default:
+      }
+    
+      default: {
         return (
           <Input
             id={column.id}
@@ -401,6 +410,7 @@ export const DataEntryForm: React.FC<DataEntryFormProps> = ({
             {...fieldProps}
           />
         );
+      }
     }
   };
 

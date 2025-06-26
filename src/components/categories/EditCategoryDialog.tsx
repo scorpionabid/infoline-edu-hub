@@ -208,7 +208,7 @@ export const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
                     mode="single"
                     selected={deadline}
                     onSelect={setDeadline}
-                    initialFocus
+                    // initialFocus
                     className="p-3 pointer-events-auto"
                   />
                 </PopoverContent>

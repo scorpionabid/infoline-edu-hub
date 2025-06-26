@@ -15,7 +15,7 @@ export const useOptimizedUserAdapter = () => {
     fetchUsers,
     resetUsers: refreshUsers, // Alias
     refetch: refreshUsers, // Alias
-    refreshUsers
+    // refreshUsers
   };
 };
 

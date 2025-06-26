@@ -201,7 +201,7 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
   // Get unique types for filter dropdown
   const uniqueTypes = React.useMemo(() => {
     const types = new Set(
-      columns
+      // columns
         .map((col) => col.type)
         .filter((type) => type && type.trim() !== ""),
     );

@@ -142,7 +142,7 @@ const Register = () => {
                     placeholder={t("auth.enterFullName")}
                     value={formData.fullName}
                     onChange={handleChange}
-                    required
+                    // required
                     disabled={isLoading}
                     className="pl-10"
                   />
@@ -162,7 +162,7 @@ const Register = () => {
                     placeholder={t("auth.enterEmail")}
                     value={formData.email}
                     onChange={handleChange}
-                    required
+                    // required
                     disabled={isLoading}
                     className="pl-10"
                   />
@@ -182,7 +182,7 @@ const Register = () => {
                     placeholder={t("auth.enterPassword")}
                     value={formData.password}
                     onChange={handleChange}
-                    required
+                    // required
                     disabled={isLoading}
                     className="pl-10 pr-10"
                   />
@@ -210,7 +210,7 @@ const Register = () => {
                     placeholder={t("auth.confirmPassword")}
                     value={formData.confirmPassword}
                     onChange={handleChange}
-                    required
+                    // required
                     disabled={isLoading}
                     className="pl-10 pr-10"
                   />

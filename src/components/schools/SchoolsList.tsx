@@ -21,7 +21,7 @@ interface SchoolsListProps {
 export const SchoolsList: React.FC<SchoolsListProps> = ({
   schools,
   onEdit,
-  onDelete
+  // onDelete
 }) => {
   if (!schools || schools.length === 0) {
     return (

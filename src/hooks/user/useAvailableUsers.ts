@@ -47,7 +47,7 @@ export const useAvailableUsers = () => {
           id,
           full_name,
           email,
-          status
+          // status
         `)
         .eq('status', 'active');
 
@@ -104,7 +104,7 @@ export const useAvailableUsers = () => {
     handlePageChange,
     refetch,
     fetchUsers,
-    fetchAvailableUsers
+    // fetchAvailableUsers
   };
 };
 

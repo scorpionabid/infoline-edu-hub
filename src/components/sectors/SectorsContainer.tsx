@@ -31,7 +31,7 @@ export interface SectorsContainerProps {
 const SectorsContainer: React.FC<SectorsContainerProps> = React.memo(function SectorsContainer({
   sectors: initialSectors,
   isLoading,
-  onRefresh
+  // onRefresh
 }) {
   const { t } = useTranslation();
   const { toast } = useToast();

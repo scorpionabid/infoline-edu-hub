@@ -61,7 +61,7 @@ const SectorLinksCard: React.FC<SectorLinksCardProps> = ({
                 </div>
                 {onEditLink && (
                   <Button variant="ghost" size="sm" onClick={() => onEditLink(link)}>
-                    Edit
+                    // Edit
                   </Button>
                 )}
               </div>

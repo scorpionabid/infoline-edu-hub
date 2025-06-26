@@ -19,12 +19,12 @@ const EmptyState: React.FC<EmptyStateProps> = ({
   description,
   icon,
   action,
-  className
+  // className
 }) => {
   return (
     <div className={cn(
       "flex flex-col items-center justify-center p-8 text-center rounded-lg border border-dashed",
-      className
+      // className
     )}>
       {icon && (
         <div className="rounded-full bg-primary/10 p-3 mb-4">

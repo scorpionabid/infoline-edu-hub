@@ -62,11 +62,11 @@ class StatisticsService {
   ): Promise<StatisticsData> {
     try {
       switch (userRole) {
-        case 'superadmin':
+        case 'superadmin': {
           return await this.getSuperAdminStatistics(filters);
-        case 'regionadmin':
+        case 'regionadmin': {
           return await this.getRegionAdminStatistics(entityId!, filters);
-        case 'sectoradmin':
+        case 'sectoradmin': {
           return await this.getSectorAdminStatistics(entityId!, filters);
         default:
           throw new Error('Bu rol üçün statistika mövcud deyil');
@@ -83,7 +83,7 @@ class StatisticsService {
       usersResult,
       regionsResult,
       sectorsResult,
-      dataEntriesResult
+      // dataEntriesResult
     ] = await Promise.all([
       this.getSchoolsCount(filters),
       this.getUsersCount(filters),
@@ -96,7 +96,7 @@ class StatisticsService {
       schoolPerformance,
       sectorPerformance,
       regionPerformance,
-      timeSeriesData
+      // timeSeriesData
     ] = await Promise.all([
       this.getSchoolPerformance(filters),
       this.getSectorPerformance(filters),
@@ -115,7 +115,7 @@ class StatisticsService {
       schoolPerformance,
       sectorPerformance,
       regionPerformance,
-      timeSeriesData
+      // timeSeriesData
     };
   }
 
@@ -125,7 +125,7 @@ class StatisticsService {
     const [
       schoolsResult,
       sectorsResult,
-      dataEntriesResult
+      // dataEntriesResult
     ] = await Promise.all([
       this.getSchoolsCount(regionFilter),
       this.getSectorsCount(regionFilter),
@@ -135,7 +135,7 @@ class StatisticsService {
     const [
       schoolPerformance,
       sectorPerformance,
-      timeSeriesData
+      // timeSeriesData
     ] = await Promise.all([
       this.getSchoolPerformance(regionFilter),
       this.getSectorPerformance(regionFilter),
@@ -153,7 +153,7 @@ class StatisticsService {
       schoolPerformance,
       sectorPerformance,
       regionPerformance: [],
-      timeSeriesData
+      // timeSeriesData
     };
   }
 
@@ -162,7 +162,7 @@ class StatisticsService {
     
     const [
       schoolsResult,
-      dataEntriesResult
+      // dataEntriesResult
     ] = await Promise.all([
       this.getSchoolsCount(sectorFilter),
       this.getDataEntriesStats(sectorFilter)
@@ -170,7 +170,7 @@ class StatisticsService {
 
     const [
       schoolPerformance,
-      timeSeriesData
+      // timeSeriesData
     ] = await Promise.all([
       this.getSchoolPerformance(sectorFilter),
       this.getTimeSeriesData(sectorFilter)
@@ -187,7 +187,7 @@ class StatisticsService {
       schoolPerformance,
       sectorPerformance: [],
       regionPerformance: [],
-      timeSeriesData
+      // timeSeriesData
     };
   }
 
@@ -275,7 +275,7 @@ class StatisticsService {
         approved,
         rejected,
         draft,
-        total
+        // total
       }
     };
   }
@@ -399,7 +399,7 @@ class StatisticsService {
     const startDate = filters?.dateRange?.startDate || 
       new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(); // 30 gün əvvəl
 
-    let query = supabase
+    const query = supabase
       .from('data_entries')
       .select('created_at, status')
       .gte('created_at', startDate)
@@ -411,7 +411,7 @@ class StatisticsService {
     if (!entries) return [];
     
     // Günlük məlumatları qruplaşdır
-    const dailyStats: { [key: string]: { submissions: number; approvals: number } } = {};
+    const dailyStats: { [key: string]: { submissions: number; approvals: number } = {};
     
     entries.forEach(entry => {
       const date = new Date(entry.created_at).toISOString().split('T')[0];

@@ -31,7 +31,7 @@ export const deleteUser = async (userId: string): Promise<boolean> => {
       'user',
       userId,
       oldUser,
-      null
+      // null
     );
     
     toast.success('İstifadəçi uğurla silindi', {

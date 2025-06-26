@@ -98,7 +98,7 @@ export const AccountSettings = () => {
                 <Input
                   id="email"
                   value={email}
-                  disabled
+                  // disabled
                   placeholder={t("emailPlaceholder")}
                 />
               </div>

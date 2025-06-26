@@ -28,7 +28,7 @@ export class RealtimeNotificationService {
             table: 'notifications',
             filter: `user_id=eq.${userId}`
           },
-          onNotification
+          // onNotification
         )
         .subscribe((status) => {
           this.connectionStatus.isConnected = status === 'SUBSCRIBED';

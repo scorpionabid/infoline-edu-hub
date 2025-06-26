@@ -53,7 +53,7 @@ const PerformanceDashboard = memo(() => {
       type,
       message,
       timestamp: new Date(),
-      component
+      // component
     };
 
     setIssues(prev => [newIssue, ...prev].slice(0, 10)); // Keep only last 10 issues
@@ -105,8 +105,8 @@ const PerformanceDashboard = memo(() => {
 
   const getBadgeVariant = (type: string) => {
     switch (type) {
-      case 'error': return 'destructive';
-      case 'warning': return 'secondary';
+      case 'error': { return 'destructive';
+      case 'warning': { return 'secondary';
       default: return 'default';
     }
   };
@@ -174,7 +174,7 @@ const PerformanceDashboard = memo(() => {
           </CardHeader>
           <CardContent>
             <div className={`text-2xl font-bold ${getMetricColor(metrics.networkLatency, { warning: 150, error: 200 })}`}>
-              {metrics.networkLatency.toFixed(0)}ms
+              {metrics.networkLatency.toFixed(0)}, ms
             </div>
             <p className="text-xs text-muted-foreground">Şəbəkə gecikmələri</p>
           </CardContent>
@@ -187,7 +187,7 @@ const PerformanceDashboard = memo(() => {
           </CardHeader>
           <CardContent>
             <div className={`text-2xl font-bold ${getMetricColor(metrics.renderTime, { warning: 20, error: 30 })}`}>
-              {metrics.renderTime.toFixed(1)}ms
+              {metrics.renderTime.toFixed(1)}, ms
             </div>
             <p className="text-xs text-muted-foreground">Ortalama render vaxtı</p>
           </CardContent>

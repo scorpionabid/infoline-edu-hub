@@ -48,23 +48,23 @@ export const useCrossTabSync = (options: CrossTabSyncOptions) => {
     }
 
     switch (data.type) {
-      case 'heartbeat':
+      case 'heartbeat': {
         activeTabs.current.add(data.fromTab);
         if (onTabsChange) {
           onTabsChange(activeTabs.current.size);
         }
-        break;
-      case 'tab_closing':
+        break; }
+      case 'tab_closing': {
         activeTabs.current.delete(data.fromTab);
         if (onTabsChange) {
           onTabsChange(activeTabs.current.size);
         }
-        break;
+        break; }
       default:
         if (onMessage) {
           onMessage(data);
         }
-        break;
+        break; }
     }
   }, [onMessage, onTabsChange]);
 

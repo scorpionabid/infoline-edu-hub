@@ -55,6 +55,6 @@ export const usePaginationStandard = ({
     nextPage,
     previousPage,
     canGoNext,
-    canGoPrevious
+    // canGoPrevious
   };
 };

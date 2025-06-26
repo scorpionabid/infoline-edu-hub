@@ -28,7 +28,7 @@ export const FormActionBar: React.FC<FormActionBarProps> = ({
   isSubmitting = false,
   hasUnsavedChanges = false,
   currentIndex,
-  totalCount
+  // totalCount
 }) => {
   return (
     <Card className="sticky bottom-4 bg-white/95 backdrop-blur-sm border shadow-lg">

@@ -60,7 +60,7 @@ export const MOBILE_SPACING = {
 export const useMobileClasses = () => {
   return useMemo(() => ({
     // Touch target classes
-    touchTarget: `min-h-[${TOUCH_STANDARDS.minTouchTarget}px] min-w-[${TOUCH_STANDARDS.minTouchTarget}px] touch-manipulation`,
+    touchTarget: `min-h-[${TOUCH_STANDARDS.minTouchTarget}, px] min-w-[${TOUCH_STANDARDS.minTouchTarget}, px] touch-manipulation`,
     
     // Responsive padding
     responsivePadding: 'px-4 sm:px-6 lg:px-8',

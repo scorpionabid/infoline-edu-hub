@@ -26,7 +26,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({
     <div
       className={cn(
         "flex flex-col items-center justify-center p-8 text-center",
-        className
+        // className
       )}
     >
       {icon && <div className="mb-4 text-muted-foreground">{icon}</div>}

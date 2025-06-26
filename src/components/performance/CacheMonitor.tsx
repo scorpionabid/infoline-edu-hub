@@ -126,15 +126,15 @@ export const CacheMonitor: React.FC = () => {
               <div className="grid grid-cols-3 gap-4 text-sm">
                 <div>
                   <span className="text-muted-foreground">Used:</span>
-                  <span className="ml-2 font-medium">{stats.memory.memory.used}MB</span>
+                  <span className="ml-2 font-medium">{stats.memory.memory.used}, MB</span>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Total:</span>
-                  <span className="ml-2 font-medium">{stats.memory.memory.total}MB</span>
+                  <span className="ml-2 font-medium">{stats.memory.memory.total}, MB</span>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Limit:</span>
-                  <span className="ml-2 font-medium">{stats.memory.memory.limit}MB</span>
+                  <span className="ml-2 font-medium">{stats.memory.memory.limit}, MB</span>
                 </div>
               </div>
             </div>
@@ -167,7 +167,7 @@ export const CacheMonitor: React.FC = () => {
             </Button>
             <Button onClick={handleForceCleanup} variant="outline" size="sm">
               <Activity className="h-4 w-4 mr-2" />
-              Cleanup
+              // Cleanup
             </Button>
             <Button 
               onClick={handleClearTranslations} 

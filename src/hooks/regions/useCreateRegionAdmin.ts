@@ -80,7 +80,7 @@ export const useCreateRegionAdmin = () => {
 
   return {
     loading,
-    createRegionWithAdmin
+    // createRegionWithAdmin
   };
 };
 

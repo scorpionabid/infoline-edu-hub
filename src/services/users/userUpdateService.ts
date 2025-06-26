@@ -142,7 +142,7 @@ export const updateUser = async (userId: string, updates: UpdateUserData): Promi
       'user',
       userId,
       oldUser,
-      updatedUser
+      // updatedUser
     );
     
     toast.success('İstifadəçi uğurla yeniləndi', {

@@ -57,7 +57,7 @@ const useUsersQuery = () => {
     createUser,
     updateUser,
     deleteUser,
-    refetch
+    // refetch
   };
 };
 

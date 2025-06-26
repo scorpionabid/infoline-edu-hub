@@ -49,7 +49,7 @@ export const useSectorValidation = ({
     
     return {
       valid: Object.keys(errors).length === 0,
-      errors
+      // errors
     };
   };
   
@@ -72,6 +72,6 @@ export const useSectorValidation = ({
   return {
     validateForm,
     errors,
-    isValid
+    // isValid
   };
 };

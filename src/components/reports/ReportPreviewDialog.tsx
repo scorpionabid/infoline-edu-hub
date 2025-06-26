@@ -52,17 +52,17 @@ export const ReportPreviewDialog: React.FC<ReportPreviewDialogProps> = ({
 
   const getReportTypeName = (type: string) => {
     switch (type) {
-      case REPORT_TYPE_VALUES.BAR:
+      case REPORT_TYPE_VALUES.BAR: {
         return t("barChart");
-      case REPORT_TYPE_VALUES.LINE:
+      case REPORT_TYPE_VALUES.LINE: {
         return t("lineChart");
-      case REPORT_TYPE_VALUES.PIE:
+      case REPORT_TYPE_VALUES.PIE: {
         return t("pieChart");
-      case REPORT_TYPE_VALUES.TABLE:
+      case REPORT_TYPE_VALUES.TABLE: {
         return t("tableReport");
-      case REPORT_TYPE_VALUES.METRICS:
+      case REPORT_TYPE_VALUES.METRICS: {
         return t("metricsReport");
-      case REPORT_TYPE_VALUES.CUSTOM:
+      case REPORT_TYPE_VALUES.CUSTOM: {
         return t("customReport");
       default:
         return type;
@@ -71,19 +71,19 @@ export const ReportPreviewDialog: React.FC<ReportPreviewDialogProps> = ({
 
   const getStatusBadge = (status?: string) => {
     switch (status) {
-      case "draft":
+      case "draft": {
         return (
           <Badge variant="outline" className="bg-gray-100">
             {t("draft")}
           </Badge>
         );
-      case "published":
+      case "published": {
         return (
           <Badge variant="outline" className="bg-green-100 text-green-800">
             {t("published")}
           </Badge>
         );
-      case "archived":
+      case "archived": {
         return (
           <Badge variant="outline" className="bg-amber-100 text-amber-800">
             {t("archived")}

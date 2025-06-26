@@ -38,7 +38,7 @@ export const useFiltering = <T extends Record<string, any>>(
     searchQuery,
     setSearchQuery,
     filteredData,
-    handleSearchChange
+    // handleSearchChange
   };
 };
 

@@ -16,7 +16,7 @@ export {
   checkUserRole,
   checkRegionAccessUtil,
   checkSectorAccessUtil,
-  checkSchoolAccessUtil
+  // checkSchoolAccessUtil
 } from './permissions/usePermissions';
 
 export type { UsePermissionsResult } from '@/types/auth';

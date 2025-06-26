@@ -195,7 +195,7 @@ const SecureFileUpload: React.FC<SecureFileUploadProps> = ({
               Faylları sürükləyin və ya klikləyin
             </p>
             <p className="text-sm text-gray-500">
-              Maksimum {maxFiles} fayl, hər biri {Math.round(maxSize / 1024 / 1024)}MB-a qədər
+              Maksimum {maxFiles} fayl, hər biri {Math.round(maxSize / 1024 / 1024)}, MB-a qədər
             </p>
           </div>
         )}

@@ -55,13 +55,13 @@ export const ReportList: React.FC = () => {
   // Helper function to convert advanced report type to legacy report type
   function convertAdvancedTypeToReportType(advType: string): any {
     switch (advType) {
-      case "performance":
+      case "performance": {
         return "metrics";
-      case "completion":
+      case "completion": {
         return "bar";
-      case "comparison":
+      case "comparison": {
         return "pie";
-      case "trend":
+      case "trend": {
         return "line";
       default:
         return "table";

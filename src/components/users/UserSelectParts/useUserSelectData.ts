@@ -29,7 +29,7 @@ export function useUserSelectData(selectedId?: string): UserSelectDataResult {
     users: availableUsers, 
     loading, 
     error,
-    fetchAvailableUsers
+    // fetchAvailableUsers
   } = useAvailableUsers();
 
   // useAvailableUsers hook'undan gələn istifadəçiləri emal edirik

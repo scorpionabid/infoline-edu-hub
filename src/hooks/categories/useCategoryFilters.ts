@@ -38,7 +38,7 @@ export const useCategoryFilters = () => {
     updateSearchFilter,
     updateStatusFilter,
     updateAssignmentFilter,
-    clearFilters
+    // clearFilters
   };
 };
 

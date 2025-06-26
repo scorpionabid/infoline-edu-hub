@@ -15,7 +15,7 @@ import {
   Users,
   BookOpen,
   TrendingUp,
-  AlertCircle
+  // AlertCircle
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -182,7 +182,7 @@ const SectorAdminSchoolList: React.FC<SectorAdminSchoolListProps> = ({
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => handleBulkAction('export')}>
                   <Download className="mr-2 h-4 w-4" />
-                  Export
+                  // Export
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleBulkAction('data-entry')}>
                   <Upload className="mr-2 h-4 w-4" />

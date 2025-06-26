@@ -104,7 +104,7 @@ export function usePaginatedReports<T = any>({
     
     // Build query based on report type
     switch (reportType) {
-      case 'school_performance':
+      case 'school_performance': {
         const { data: performanceData, error: perfError } = await supabase.rpc('get_school_performance_report' as any, {
           p_region_id: filters.region_id || null,
           p_sector_id: filters.sector_id || null,
@@ -126,7 +126,7 @@ export function usePaginatedReports<T = any>({
         reportCache.set('paginated_reports', cacheKey, result, 5 * 60 * 1000);
         return result;
         
-      case 'school_column_data':
+      case 'school_column_data': {
         const { data: columnData, error: colError } = await supabase.rpc('get_school_column_export_data' as any, {
           p_category_id: filters.category_id || null,
           p_region_id: filters.region_id || null,
@@ -263,13 +263,13 @@ export function usePaginatedReports<T = any>({
     hasPreviousPage,
     isLoading,
     isLoadingMore,
-    error
+    // error
   };
 
   return {
     data,
     pagination,
-    actions
+    // actions
   };
 }
 

@@ -77,7 +77,7 @@ export const FileUploadForm: React.FC<FileUploadFormProps> = ({ categories, onSu
           <Input 
             type="file" 
             onChange={handleFileChange}
-            required
+            // required
           />
           {selectedFile && (
             <p className="text-sm text-gray-500 mt-1">

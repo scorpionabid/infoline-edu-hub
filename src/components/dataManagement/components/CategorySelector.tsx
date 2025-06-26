@@ -7,7 +7,7 @@ import {
   Database, 
   Building2, 
   Loader2,
-  BookOpen
+  // BookOpen
 } from 'lucide-react';
 import { Category } from '@/hooks/dataManagement/useDataManagement';
 
@@ -35,7 +35,7 @@ export const CategorySelector: React.FC<CategorySelectorProps> = memo(({
   categories,
   loading,
   onCategorySelect,
-  permissions
+  // permissions
 }) => {
   // Filter categories based on role
   const filteredCategories = categories.filter(category => {

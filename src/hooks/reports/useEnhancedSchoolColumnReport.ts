@@ -95,6 +95,6 @@ export const useEnhancedSchoolColumnReport = () => {
     data,
     loading,
     error,
-    fetchReport
+    // fetchReport
   };
 };

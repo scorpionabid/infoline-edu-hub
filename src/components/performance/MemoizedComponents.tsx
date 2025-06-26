@@ -252,7 +252,7 @@ export const OptimizedList = memo<OptimizedListProps<any>>(({
   height = 400,
   itemHeight = 60,
   loading = false,
-  emptyState
+  // emptyState
 }) => {
   usePerformanceMonitor('OptimizedList');
 

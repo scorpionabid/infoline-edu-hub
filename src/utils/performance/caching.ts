@@ -89,7 +89,7 @@ export const useCachedData = <T>(
     };
     
     loadData();
-  }, [key, ttl]);
+  }, [key, fetcher, ttl]); // fetcher əlavə edildi
   
   const refresh = async () => {
     memoryCache.delete(key);

@@ -92,22 +92,26 @@ const DashboardContent: React.FC = () => {
     }
     
     switch (userRole) {
-      case "superadmin":
+      case "superadmin": {
         console.log('Rendering superadmin dashboard');
         return <SuperAdminDashboard dashboardData={dashboardData} />;
-
-      case "regionadmin":
+      }
+      
+      case "regionadmin": {
         console.log('Rendering regionadmin dashboard');
         return <RegionAdminDashboard dashboardData={dashboardData} />;
-
-      case "sectoradmin":
+      }
+      
+      case "sectoradmin": {
         console.log('Rendering sectoradmin dashboard');
         return <SectorAdminDashboard dashboardData={dashboardData} />;
-
-      case "schooladmin":
+      }
+      
+      case "schooladmin": {
         console.log('Rendering schooladmin dashboard');
         return <SchoolAdminDashboard dashboardData={dashboardData} />;
-
+      }
+      
       default:
         console.warn('Unknown role detected:', userRole);
         return (

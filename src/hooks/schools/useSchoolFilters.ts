@@ -82,6 +82,6 @@ export const useSchoolFilters = (schools: School[] = []): UseSchoolFiltersReturn
     setStatusFilter,
     filteredSchools,
     resetFilters,
-    filterSchools
+    // filterSchools
   };
 };

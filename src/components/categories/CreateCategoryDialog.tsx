@@ -22,7 +22,7 @@ interface CreateCategoryDialogProps {
 export const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({
   open,
   onOpenChange,
-  onSubmit
+  // onSubmit
 }) => {
   const { t } = useTranslation();
   const [name, setName] = useState('');
@@ -66,7 +66,7 @@ export const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="col-span-3"
-                required
+                // required
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">

@@ -27,13 +27,13 @@ const UserDetailsDialog: React.FC<UserDetailsDialogProps> = ({
 
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
-      case "superadmin":
+      case "superadmin": {
         return "destructive";
-      case "regionadmin":
+      case "regionadmin": {
         return "default";
-      case "sectoradmin":
+      case "sectoradmin": {
         return "secondary";
-      case "schooladmin":
+      case "schooladmin": {
         return "outline";
       default:
         return "outline";
@@ -46,11 +46,11 @@ const UserDetailsDialog: React.FC<UserDetailsDialogProps> = ({
 
   const getEntityType = () => {
     switch (user.role) {
-      case "regionadmin":
+      case "regionadmin": {
         return getEntityName() || "Region təyin edilməyib";
-      case "sectoradmin":
+      case "sectoradmin": {
         return getEntityName() || "Sektor təyin edilməyib";
-      case "schooladmin":
+      case "schooladmin": {
         return getEntityName() || "Məktəb təyin edilməyib";
       default:
         return "Sistem administratoru";

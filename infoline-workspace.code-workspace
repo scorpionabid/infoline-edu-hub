@@ -1,0 +1,46 @@
+{
+  "folders": [
+    {
+      "name": "Frontend App",
+      "path": "./src"
+    },
+    {
+      "name": "Supabase Functions", 
+      "path": "./supabase/functions"
+    }
+  ],
+  "settings": {
+    "eslint.workingDirectories": [
+      "./src",
+      "./supabase/functions"
+    ],
+    "eslint.options": {
+      "overrideConfigFile": "./eslint.config.js"
+    },
+    "typescript.preferences.includePackageJsonAutoImports": "off",
+    "eslint.validate": [
+      "javascript",
+      "javascriptreact",
+      "typescript",
+      "typescriptreact"
+    ],
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit"
+    },
+    "files.exclude": {
+      "**/node_modules": true,
+      "**/dist": true,
+      "**/.git": true,
+      "**/backup": true,
+      "**/docs": true
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "dbaeumer.vscode-eslint",
+      "ms-vscode.vscode-typescript-next",
+      "bradlc.vscode-tailwindcss",
+      "esbenp.prettier-vscode"
+    ]
+  }
+}

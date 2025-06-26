@@ -29,7 +29,7 @@ export const useSchoolManagement = (): UseSchoolManagementResult => {
     isLoading,
     error,
     selectSchool,
-    clearSelection
+    // clearSelection
   };
 };
 

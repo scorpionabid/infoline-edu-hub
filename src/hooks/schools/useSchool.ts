@@ -26,7 +26,7 @@ export function useSchool(schoolId?: string) {
     school,
     loading,
     error,
-    fetchSchool
+    // fetchSchool
   };
 }
 

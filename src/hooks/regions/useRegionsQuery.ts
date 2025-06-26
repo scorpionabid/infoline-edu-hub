@@ -283,7 +283,7 @@ export const useRegionsQuery = (options = {}, initialPageSize = 10): UseRegionsQ
     currentPage,
     setCurrentPage,
     totalPages,
-    pageSize
+    // pageSize
   };
 };
 

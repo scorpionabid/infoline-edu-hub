@@ -8,7 +8,7 @@ import {
   SectorAdminDashboardData,
   SchoolAdminDashboardData,
   DashboardFormStats,
-  DashboardStats
+  // DashboardStats
 } from '@/types/dashboard';
 
 export const useRealDashboardData = () => {
@@ -180,7 +180,7 @@ export const useRealDashboardData = () => {
         pendingApprovals: pendingEntries,
         completionRate,
         stats,
-        forms
+        // forms
       };
     } catch (error) {
       console.error('Error fetching region admin data:', error);
@@ -200,7 +200,7 @@ export const useRealDashboardData = () => {
         .select(`
           id,
           name,
-          completion_rate
+          // completion_rate
         `)
         .eq('sector_id', user.sector_id);
 
@@ -257,7 +257,7 @@ export const useRealDashboardData = () => {
         pendingApprovals: pendingEntries,
         completionRate,
         stats,
-        forms
+        // forms
       };
     } catch (error) {
       console.error('Error fetching sector admin data:', error);
@@ -360,7 +360,7 @@ export const useRealDashboardData = () => {
         completedForms: approvedEntries,
         pendingForms: pendingEntries,
         stats,
-        forms
+        // forms
       };
     } catch (error) {
       console.error('Error fetching school admin data:', error);
@@ -379,18 +379,18 @@ export const useRealDashboardData = () => {
         let data: any;
 
         switch (userRole) {
-          case 'superadmin':
+          case 'superadmin': {
             data = await fetchSuperAdminData();
-            break;
-          case 'regionadmin':
+            break; }
+          case 'regionadmin': {
             data = await fetchRegionAdminData();
-            break;
-          case 'sectoradmin':
+            break; }
+          case 'sectoradmin': {
             data = await fetchSectorAdminData();
-            break;
-          case 'schooladmin':
+            break; }
+          case 'schooladmin': {
             data = await fetchSchoolAdminData();
-            break;
+            break; }
           default:
             throw new Error(`Unsupported user role: ${userRole}`);
         }

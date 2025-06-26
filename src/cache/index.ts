@@ -283,5 +283,5 @@ export default {
   // Constants
   CACHE_KEYS,
   CACHE_TTL,
-  CACHE_LIMITS
+  // CACHE_LIMITS
 };

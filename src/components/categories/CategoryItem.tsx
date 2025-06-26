@@ -14,13 +14,13 @@ interface CategoryItemProps {
 const CategoryItem: React.FC<CategoryItemProps> = ({ category, onCategorySelect }) => {
   const getBadgeVariant = (status: string) => {
     switch (status) {
-      case 'active':
+      case 'active': {
         return 'success';
-      case 'inactive':
+      case 'inactive': {
         return 'secondary';
-      case 'draft':
+      case 'draft': {
         return 'outline';
-      case 'archived':
+      case 'archived': {
         return 'destructive';
       default:
         return 'outline';
@@ -95,7 +95,7 @@ const CategoryItem: React.FC<CategoryItemProps> = ({ category, onCategorySelect 
           className="w-full" 
           onClick={() => onCategorySelect && onCategorySelect(category.id)}
         >
-          Bax
+          // Bax
         </Button>
       </CardFooter>
     </Card>

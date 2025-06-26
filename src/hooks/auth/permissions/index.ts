@@ -6,7 +6,7 @@
 // Main Permission Hook
 export { 
   usePermissions,
-  useDataAccessControl
+  // useDataAccessControl
 } from './usePermissions';
 
 // Server-Side Permission Checkers
@@ -16,7 +16,7 @@ export {
   checkSchoolAccess,
   checkIsSuperAdmin,
   checkIsRegionAdmin,
-  checkIsSectorAdmin
+  // checkIsSectorAdmin
 } from './usePermissions';
 
 // Permission Utility Functions
@@ -24,7 +24,7 @@ export {
   checkUserRole,
   checkRegionAccessUtil,
   checkSectorAccessUtil,
-  checkSchoolAccessUtil
+  // checkSchoolAccessUtil
 } from './usePermissions';
 
 // Default export

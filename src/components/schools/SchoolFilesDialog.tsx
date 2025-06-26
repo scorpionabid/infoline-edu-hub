@@ -17,7 +17,7 @@ export interface SchoolFilesDialogProps {
 export const SchoolFilesDialog: React.FC<SchoolFilesDialogProps> = ({
   open,
   onOpenChange,
-  schoolId
+  // schoolId
 }) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

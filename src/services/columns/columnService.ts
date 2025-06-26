@@ -278,7 +278,7 @@ export class ColumnService {
   async reorderColumns(columnIds: string[]): Promise<boolean> {
     try {
       const updatePromises = columnIds.map((columnId, index) => 
-        supabase
+        // supabase
           .from('columns')
           .update({ order_index: index })
           .eq('id', columnId)
@@ -401,7 +401,7 @@ export class ColumnService {
 
       return {
         isValid: issues.length === 0,
-        issues
+        // issues
       };
       
     } catch (error: any) {

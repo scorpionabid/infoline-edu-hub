@@ -38,7 +38,7 @@ const SchoolColumnFilters: React.FC<SchoolColumnFiltersProps> = ({
   categories,
   pageSize,
   onPageSizeChange,
-  permissions
+  // permissions
 }) => {
   return (
     <div className="space-y-4">

@@ -5,7 +5,7 @@
  */
 
 import { ENV } from '@/config/environment';
-import { PRODUCTION_CONFIG, productionUtils } from '@/config/production';
+import { PRODUCTION_CONFIG } from '@/config/production';
 
 interface ReadinessCheck {
   name: string;

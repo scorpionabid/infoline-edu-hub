@@ -35,6 +35,6 @@ export const useRateLimit = (key: string, maxAttempts: number, windowMs: number)
     remainingAttempts,
     resetTime,
     checkRateLimit,
-    recordAttempt
+    // recordAttempt
   };
 };

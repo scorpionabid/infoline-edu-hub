@@ -211,7 +211,7 @@ export const shareReportWithUsers = async (reportId: string, userIds: string[]):
     if (fetchError) throw fetchError;
 
     // Mövcud paylaşılanlar siyahısını alaq
-    let sharedWith = Array.isArray(data.shared_with) ? data.shared_with : [];
+    const sharedWith = Array.isArray(data.shared_with) ? data.shared_with : [];
 
     // Yeni istifadəçiləri əlavə edək
     userIds.forEach(userId => {

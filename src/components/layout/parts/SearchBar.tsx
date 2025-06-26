@@ -53,7 +53,7 @@ const SearchBar: React.FC = () => {
         <div className="ml-auto hidden sm:flex items-center gap-1 text-xs text-muted-foreground">
           <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
             <Command className="h-3 w-3" />
-            K
+            // K
           </kbd>
         </div>
       </Button>

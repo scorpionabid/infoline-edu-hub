@@ -264,15 +264,15 @@ export const useErrorRecovery = ({
       let resolvedData;
       
       switch (resolution) {
-        case 'local':
+        case 'local': {
           resolvedData = conflictData.localData;
-          break;
-        case 'server':
+          break; }
+        case 'server': {
           resolvedData = conflictData.serverData;
-          break;
-        case 'merge':
+          break; }
+        case 'merge': {
           resolvedData = mergedData || { ...conflictData.serverData, ...conflictData.localData };
-          break;
+          break; }
         default:
           throw new Error('Invalid resolution strategy');
       }
@@ -323,7 +323,7 @@ export const useErrorRecovery = ({
       }));
       
       switch (strategy) {
-        case 'retry':
+        case 'retry': {
           // Retry the original operation
           if (lastErrorRef.current) {
             // Simulate retry logic - in real implementation, 
@@ -345,9 +345,9 @@ export const useErrorRecovery = ({
               throw new Error('Retry failed');
             }
           }
-          break;
+          break; }
           
-        case 'useLocal':
+        case 'useLocal': {
           const localData = restoreBackup();
           if (localData) {
             // Use local backup data
@@ -359,9 +359,9 @@ export const useErrorRecovery = ({
             });
             return true;
           }
-          break;
+          break; }
           
-        case 'useServer':
+        case 'useServer': {
           // Use server data (implementation depends on context)
           clearError();
           toast({
@@ -371,7 +371,7 @@ export const useErrorRecovery = ({
           });
           return true;
           
-        case 'merge':
+        case 'merge': {
           // Handle merge strategy (implementation depends on context)
           clearError();
           toast({
@@ -433,7 +433,7 @@ export const useErrorRecovery = ({
     createBackup,
     restoreBackup,
     clearBackup,
-    resolveConflict
+    // resolveConflict
   };
 };
 

@@ -85,7 +85,7 @@ export const useNotifications = (userId?: string) => {
     isLoading,
     realTimeEnabled,
     toggleRealTime,
-    refetch
+    // refetch
   };
 };
 
@@ -197,6 +197,6 @@ export const useNotificationPreferences = (userId?: string) => {
     isTestingNotification,
     canReceiveEmail,
     canReceivePush,
-    deadlineRemindersEnabled
+    // deadlineRemindersEnabled
   };
 };

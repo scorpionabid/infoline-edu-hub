@@ -125,11 +125,11 @@ export class DeadlineScheduler {
 
       // Filter based on assignment type
       switch (assignment) {
-        case 'all':
+        case 'all': {
           // Get all active users
           query = query.eq('status', 'active');
-          break;
-        case 'school_admin':
+          break; }
+        case 'school_admin': {
           // Get school admins - use a proper subquery
           const { data: schoolAdminIds } = await supabase
             .from('user_roles')
@@ -144,8 +144,8 @@ export class DeadlineScheduler {
           } else {
             return [];
           }
-          break;
-        case 'sector_admin':
+          break; }
+        case 'sector_admin': {
           // Get sector admins
           const { data: sectorAdminIds } = await supabase
             .from('user_roles')
@@ -160,8 +160,8 @@ export class DeadlineScheduler {
           } else {
             return [];
           }
-          break;
-        case 'region_admin':
+          break; }
+        case 'region_admin': {
           // Get region admins
           const { data: regionAdminIds } = await supabase
             .from('user_roles')
@@ -176,7 +176,7 @@ export class DeadlineScheduler {
           } else {
             return [];
           }
-          break;
+          break; }
         default:
           console.warn(`Unknown assignment type: ${assignment}`);
           return [];

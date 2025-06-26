@@ -14,7 +14,7 @@ interface StatisticsExportProps {
 export const StatisticsExport: React.FC<StatisticsExportProps> = ({
   data,
   filters,
-  onExport
+  // onExport
 }) => {
   const { tSafe } = useSmartTranslation();
 
@@ -88,7 +88,7 @@ export const StatisticsExport: React.FC<StatisticsExportProps> = ({
         className="flex items-center gap-2"
       >
         <FileSpreadsheet className="h-4 w-4" />
-        Excel
+        // Excel
       </Button>
       
       <Button
@@ -98,7 +98,7 @@ export const StatisticsExport: React.FC<StatisticsExportProps> = ({
         className="flex items-center gap-2"
       >
         <FileText className="h-4 w-4" />
-        CSV
+        // CSV
       </Button>
     </div>
   );

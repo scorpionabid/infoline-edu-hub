@@ -61,7 +61,7 @@ export const useCreateSector = () => {
 
   return {
     loading,
-    createSector
+    // createSector
   };
 };
 

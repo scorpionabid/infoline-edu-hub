@@ -72,26 +72,26 @@ export class CrossTabSyncStrategy {
     for (const adapter of this.adapters) {
       try {
         switch (message.type) {
-          case 'cache_update':
+          case 'cache_update': {
             if (message.key && message.value !== undefined) {
               adapter.set(message.key, message.value);
             }
-            break;
+            break; }
           
-          case 'cache_delete':
+          case 'cache_delete': {
             if (message.key) {
               adapter.delete(message.key);
             }
-            break;
+            break; }
           
-          case 'cache_clear':
+          case 'cache_clear': {
             adapter.clear();
-            break;
+            break; }
           
-          case 'cache_sync':
+          case 'cache_sync': {
             // Respond with current cache state if needed
             this.sendSyncResponse(adapter);
-            break;
+            break; }
         }
       } catch (error) {
         console.warn('[CrossTabSync] Failed to handle message for adapter:', error);

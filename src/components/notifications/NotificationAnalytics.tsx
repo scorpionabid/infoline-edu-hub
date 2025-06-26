@@ -14,7 +14,7 @@ import {
   Clock,
   CheckCircle2,
   XCircle,
-  AlertCircle
+  // AlertCircle
 } from 'lucide-react';
 
 interface NotificationStats {
@@ -57,18 +57,18 @@ export const NotificationAnalytics: React.FC = () => {
       acc.total += 1;
       
       switch (notification.status) {
-        case 'sent':
+        case 'sent': {
           acc.sent += 1;
-          break;
-        case 'delivered':
+          break; }
+        case 'delivered': {
           acc.delivered += 1;
-          break;
-        case 'read':
+          break; }
+        case 'read': {
           acc.read += 1;
-          break;
-        case 'failed':
+          break; }
+        case 'failed': {
           acc.failed += 1;
-          break;
+          break; }
         default:
           acc.pending += 1;
       }

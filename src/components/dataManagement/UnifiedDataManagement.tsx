@@ -14,7 +14,7 @@ import {
   AlertCircle,
   CheckCircle,
   Clock,
-  TrendingUp
+  // TrendingUp
 } from 'lucide-react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useDataManagement } from '@/hooks/dataManagement/useDataManagement';
@@ -88,7 +88,7 @@ const UnifiedDataManagement: React.FC<UnifiedDataManagementProps> = ({
     
     // Utilities
     refreshData,
-    clearError
+    // clearError
   } = useDataManagement();
 
   // Filter school data for preselected school
@@ -312,7 +312,7 @@ const UnifiedDataManagement: React.FC<UnifiedDataManagementProps> = ({
               <div className="text-2xl font-bold text-blue-600">{filteredStats.completionRate}%</div>
               <div className="text-sm text-muted-foreground flex items-center justify-center gap-1">
                 <TrendingUp className="h-3 w-3" />
-                Tamamlanma
+                // Tamamlanma
               </div>
             </CardContent>
           </Card>

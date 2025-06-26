@@ -64,6 +64,6 @@ export const useUnifiedDataEntry = (entityId: string, entityType: 'school' | 'se
     values,
     isSubmitting,
     handleValueChange,
-    submitData
+    // submitData
   };
 };

@@ -19,6 +19,6 @@ export const useReportPreview = () => {
     isOpen,
     reportData,
     openPreview,
-    closePreview
+    // closePreview
   };
 };

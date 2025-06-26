@@ -88,5 +88,5 @@ export default {
   setRegionsCache,
   isFetchInProgress,
   setFetchInProgress,
-  clearCache
+  // clearCache
 };

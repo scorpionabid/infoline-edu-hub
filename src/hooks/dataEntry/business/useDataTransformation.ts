@@ -13,7 +13,7 @@ export interface DataTransformationResult {
 }
 
 export const useDataTransformation = ({
-  category
+  // category
 }: DataTransformationOptions): DataTransformationResult => {
 
   const normalizeValue = useCallback((fieldId: string, value: any) => {
@@ -21,23 +21,23 @@ export const useDataTransformation = ({
     if (!column || !value) return value;
 
     switch (column.type) {
-      case 'text':
-      case 'textarea':
+      case 'text': {
+      case 'textarea': {
         return typeof value === 'string' ? value.trim() : value;
       
-      case 'email':
+      case 'email': {
         return typeof value === 'string' ? value.toLowerCase().trim() : value;
       
-      case 'number':
+      case 'number': {
         const num = Number(value);
         return isNaN(num) ? value : num;
       
-      case 'phone':
+      case 'phone': {
         // Remove non-numeric characters except + and spaces
         return typeof value === 'string' ? 
           value.replace(/[^\d\s\+\-\(\)]/g, '').trim() : value;
       
-      case 'url':
+      case 'url': {
         if (typeof value === 'string' && value && !value.startsWith('http')) {
           return `https://${value}`;
         }
@@ -68,13 +68,13 @@ export const useDataTransformation = ({
       
       if (column) {
         switch (column.type) {
-          case 'number':
+          case 'number': {
             // Format numbers for display
             transformed[fieldId] = typeof value === 'number' ? 
               value.toLocaleString() : value;
-            break;
+            break; }
           
-          case 'date':
+          case 'date': {
             // Format dates for display
             if (value instanceof Date) {
               transformed[fieldId] = value.toLocaleDateString();
@@ -84,11 +84,11 @@ export const useDataTransformation = ({
             } else {
               transformed[fieldId] = value;
             }
-            break;
+            break; }
           
           default:
             transformed[fieldId] = value;
-            break;
+            break; }
         }
       } else {
         transformed[fieldId] = value;
@@ -101,7 +101,7 @@ export const useDataTransformation = ({
   return {
     transformForSave,
     transformForDisplay,
-    normalizeValue
+    // normalizeValue
   };
 };
 

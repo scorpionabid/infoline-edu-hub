@@ -28,7 +28,7 @@ export const SchoolFilters: React.FC<SchoolFiltersProps> = ({
   regions,
   sectors,
   loadingRegions,
-  loadingSectors
+  // loadingSectors
 }) => {
   // Handle region change with proper empty value handling
   const handleRegionChange = (value: string) => {

@@ -299,7 +299,7 @@ const ColumnDialog: React.FC<ColumnDialogProps> = ({
                 value={formData.name}
                 onChange={(e) => updateField("name", e.target.value)}
                 placeholder={t("columns.enterColumnName")}
-                required
+                // required
               />
             </div>
 

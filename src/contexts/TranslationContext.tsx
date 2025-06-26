@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { getTranslations } from '@/translations';
@@ -74,7 +75,7 @@ export const TranslationProvider: React.FC<TranslationProviderProps> = ({
 
     try {
       // Check cache first
-      let cached = translationCache.get(lang);
+      const cached = translationCache.get(lang);
       
       if (cached) {
         setTranslations(cached);

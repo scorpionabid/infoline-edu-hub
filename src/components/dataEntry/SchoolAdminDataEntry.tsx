@@ -31,7 +31,7 @@ import {
   Eye,
   CheckCircle2,
   Clock,
-  FileSpreadsheet
+  // FileSpreadsheet
 } from "lucide-react";
 import { useTranslation } from "@/contexts/TranslationContext";
 import { CategoryWithColumns } from "@/types/category";
@@ -185,7 +185,7 @@ const SchoolAdminDataEntry: React.FC = () => {
         filledColumns,
         filledRequiredColumns,
         completionPercentage,
-        isComplete
+        // isComplete
       };
     });
 
@@ -448,7 +448,7 @@ const CategorySelectionMode: React.FC<CategorySelectionModeProps> = ({
   categories,
   completionStats,
   onCategorySelect,
-  onExcelImport
+  // onExcelImport
 }) => {
   return (
     <div className="space-y-6">
@@ -625,7 +625,7 @@ const DataEntryMode: React.FC<DataEntryModeProps> = ({
   onNext,
   completionStats,
   focusColumnId,
-  returnUrl
+  // returnUrl
 }) => {
   const categoryStats = completionStats.categories.find(
     (stat: any) => stat.categoryId === category.id
@@ -722,7 +722,7 @@ const ReviewSubmitMode: React.FC<ReviewSubmitModeProps> = ({
   isSubmitting,
   onBack,
   onSubmit,
-  onEditCategory
+  // onEditCategory
 }) => {
   return (
     <div className="space-y-6">

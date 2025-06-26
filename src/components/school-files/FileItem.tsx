@@ -48,11 +48,11 @@ export const FileItem: React.FC<FileItemProps> = ({ file, onDownload, onDelete, 
       </CardContent>
       <CardFooter className="flex justify-end space-x-2">
         <Button size="sm" variant="outline" onClick={() => onDownload(file)}>
-          Endir
+          // Endir
         </Button>
         {!readonly && (
           <Button size="sm" variant="destructive" onClick={() => onDelete(file)}>
-            Sil
+            // Sil
           </Button>
         )}
       </CardFooter>

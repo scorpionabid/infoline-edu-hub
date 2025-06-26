@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { School } from '@/types/school';
@@ -81,11 +82,11 @@ export const SchoolsProvider: React.FC<SchoolsProviderProps> = ({ children }) =>
           *,
           regions!inner(
             id,
-            name
+            // name
           ),
           sectors!inner(
             id,
-            name
+            // name
           )
         `);
 
@@ -241,7 +242,7 @@ export const SchoolsProvider: React.FC<SchoolsProviderProps> = ({ children }) =>
     refreshSchools,
     deleteSchool,
     updateSchool,
-    addSchool
+    // addSchool
   };
 
   return (

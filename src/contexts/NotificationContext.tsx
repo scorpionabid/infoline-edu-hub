@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 
 /**
  * İnfoLine Notification System - Legacy Compatibility Layer
@@ -100,12 +101,12 @@ The new hook provides better TypeScript support and more features.
     notifications: legacyNotifications,
     addNotification,
     removeNotification,
-    markAsRead
+    // markAsRead
   };
 };
 
 export default {
   NotificationProvider,
-  useNotifications
+  // useNotifications
 };
 

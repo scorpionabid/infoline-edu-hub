@@ -160,7 +160,7 @@ export const useLinkManagement = () => {
     createLink,
     updateLink,
     deleteLink,
-    trackLinkAccess
+    // trackLinkAccess
   };
 };
 

@@ -59,7 +59,7 @@ export const useUnifiedNavigation = () => {
     canManageColumns,
     canManageUsers,
     canApproveData,
-    canViewReports
+    // canViewReports
   } = usePermissions();
 
   // Open sections state
@@ -257,7 +257,7 @@ export const useUnifiedNavigation = () => {
     canManageColumns,
     canManageUsers,
     canApproveData,
-    canViewReports
+    // canViewReports
   ]);
 
   // Get breadcrumbs for current route

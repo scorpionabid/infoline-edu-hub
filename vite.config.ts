@@ -22,10 +22,57 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    target: 'esnext',
+    minify: 'esbuild', // terser əvəzinə esbuild istifadə et
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Vendor chunk - əsas kitabxanalar
+          vendor: [
+            'react',
+            'react-dom',
+            'react-router-dom',
+            '@tanstack/react-query',
+            '@supabase/supabase-js'
+          ],
+          // UI Components chunk
+          ui: [
+            '@radix-ui/react-dialog',
+            '@radix-ui/react-dropdown-menu',
+            '@radix-ui/react-select',
+            '@radix-ui/react-tabs',
+            '@radix-ui/react-toast',
+            'lucide-react'
+          ],
+          // Utils chunk
+          utils: [
+            'date-fns',
+            'clsx',
+            'class-variance-authority',
+            'tailwind-merge'
+          ],
+          // Chart və data visualization
+          charts: [
+            'recharts'
+          ],
+          // File processing
+          files: [
+            'xlsx',
+            'file-saver',
+            'react-csv'
+          ]
+        }
+      }
+    },
+    // Chunk size limit artırılır (default 500kb)
+    chunkSizeWarningLimit: 1000
+  },
   test: {
     globals: true,
     environment: 'jsdom',
-    setupFiles: './src/setupTests.ts',
+    setupFiles: './src/setupTests.tsx',
     include: [
       'src/__tests__/**/*.test.ts?(x)',
       'src/__tests__/**/*.spec.ts?(x)'

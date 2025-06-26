@@ -12,7 +12,7 @@ import {
   Database, 
   Loader2, 
   AlertCircle,
-  CheckCircle
+  // CheckCircle
 } from 'lucide-react';
 import { Category, Column } from '@/hooks/dataManagement/useDataManagement';
 import { toast } from 'sonner';
@@ -50,7 +50,7 @@ export const SectorDataEntry: React.FC<SectorDataEntryProps> = ({
   onDataSave,
   onBack,
   loading = false,
-  permissions
+  // permissions
 }) => {
   const [sectorValue, setSectorValue] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -202,21 +202,21 @@ export const SectorDataEntry: React.FC<SectorDataEntryProps> = ({
   // Render save status indicator
   const renderSaveStatus = () => {
     switch (saveStatus) {
-      case 'saving':
+      case 'saving': {
         return (
           <div className="flex items-center gap-2 text-blue-600 text-sm">
             <Loader2 className="h-4 w-4 animate-spin" />
             Saxlanır...
           </div>
         );
-      case 'saved':
+      case 'saved': {
         return (
           <div className="flex items-center gap-2 text-green-600 text-sm">
             <CheckCircle className="h-4 w-4" />
             Saxlanıldı {lastSaved && `(${lastSaved.toLocaleTimeString('az-AZ')})`}
           </div>
         );
-      case 'error':
+      case 'error': {
         return (
           <div className="flex items-center gap-2 text-red-600 text-sm">
             <AlertCircle className="h-4 w-4" />
@@ -235,7 +235,7 @@ export const SectorDataEntry: React.FC<SectorDataEntryProps> = ({
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" onClick={onBack}>
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Geri
+            // Geri
           </Button>
           <div>
             <h3 className="text-2xl font-bold">Sektor Məlumatı</h3>
@@ -260,7 +260,7 @@ export const SectorDataEntry: React.FC<SectorDataEntryProps> = ({
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="sm" onClick={onBack}>
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Geri
+          // Geri
         </Button>
         <div>
           <h3 className="text-2xl font-bold flex items-center gap-2">
@@ -373,7 +373,7 @@ export const SectorDataEntry: React.FC<SectorDataEntryProps> = ({
               ) : (
                 <>
                   <Save className="h-4 w-4 mr-2" />
-                  Saxla
+                  // Saxla
                 </>
               )}
             </Button>

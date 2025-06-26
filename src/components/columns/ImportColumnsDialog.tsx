@@ -20,7 +20,7 @@ interface ImportColumnsDialogProps {
 export const ImportColumnsDialog: React.FC<ImportColumnsDialogProps> = ({
   open,
   onOpenChange,
-  onImport
+  // onImport
 }) => {
   const { t } = useTranslation();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);

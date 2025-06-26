@@ -61,7 +61,7 @@ const EnhancedButton = React.forwardRef<HTMLButtonElement, EnhancedButtonProps>(
           "rounded-lg font-medium transition-all duration-200",
           "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
           isDisabled && "pointer-events-none opacity-50",
-          className
+          // className
         )}
         disabled={isDisabled}
         {...props}

@@ -78,7 +78,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               placeholder={t('fullNamePlaceholder')}
-              required
+              // required
             />
           </div>
           <div className="grid gap-2">
@@ -89,7 +89,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder={t('emailPlaceholder')}
-              required
+              // required
             />
           </div>
           <div className="grid gap-2">
@@ -100,7 +100,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder={t('passwordPlaceholder')}
-              required
+              // required
             />
           </div>
           <div className="grid gap-2">

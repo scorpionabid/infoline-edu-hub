@@ -14,7 +14,7 @@ export function useLoadingState(initialState = false) {
     startLoading,
     stopLoading,
     toggleLoading,
-    setIsLoading
+    // setIsLoading
   };
 }
 

@@ -30,7 +30,7 @@ const Step = React.forwardRef<
         "border-primary bg-background text-primary": isCompleted,
         "border-muted-foreground text-muted-foreground": !isActive && !isCompleted,
       },
-      className
+      // className
     )}
     {...props}
   />

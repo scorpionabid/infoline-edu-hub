@@ -34,12 +34,12 @@ export type {
   AuthReducerAction,
   AuthReducerState,
   AuthError,
-  AuthErrorCode
+  // AuthErrorCode
 } from './auth';
 
 // Core Business Types - Explicit exports
 export type {
-  Category
+  // Category
 } from './category';
 
 export type {
@@ -48,7 +48,7 @@ export type {
   Column,
   ColumnFormValues,
   ColumnFormData,
-  UseColumnFormProps
+  // UseColumnFormProps
 } from './column';
 
 export type {
@@ -65,22 +65,22 @@ export type {
   FormFieldsProps,
   DataEntrySaveStatusType,
   DataEntryForm,
-  DataEntrySaveBarProps
+  // DataEntrySaveBarProps
 } from './dataEntry';
 
 export type {
-  School
+  // School
 } from './school';
 
 export type {
   Sector,
   EnhancedSector,
   SectorFormData,
-  CreateSectorData
+  // CreateSectorData
 } from './sector';
 
 export type {
-  Region
+  // Region
 } from './region';
 
 // Database and Supabase Types
@@ -102,7 +102,7 @@ export type {
   NotificationPriority,
   NotificationsCardProps,
   NotificationSettings as UINotificationSettings, // Aliased to avoid conflict
-  adaptDashboardNotificationToApp
+  // adaptDashboardNotificationToApp
 } from './notification';
 
 // Report ilə bağlı tiplər artıq core/report-dan export olunur

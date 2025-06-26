@@ -15,7 +15,7 @@ interface UseExcelExportOptions {
 export const useExcelExport = ({
   category,
   schoolId,
-  onExportComplete
+  // onExportComplete
 }: UseExcelExportOptions) => {
   const { t } = useLanguage();
   const { toast } = useToast();

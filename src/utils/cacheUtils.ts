@@ -26,7 +26,7 @@ export const setCache = <T>(key: string, data: T, config: CacheConfig = {}): voi
     const cacheObject: CachedData<T> = {
       data,
       timestamp,
-      expiry
+      // expiry
     };
     
     localStorage.setItem(`infoline_cache_${key}`, JSON.stringify(cacheObject));

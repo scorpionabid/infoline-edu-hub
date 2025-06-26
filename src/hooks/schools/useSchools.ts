@@ -96,7 +96,7 @@ export const useSchools = (regionId?: string, sectorId?: string) => {
     schools,
     loading,
     error,
-    refetch
+    // refetch
   };
 };
 

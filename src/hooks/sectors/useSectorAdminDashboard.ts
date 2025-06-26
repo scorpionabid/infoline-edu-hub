@@ -101,7 +101,7 @@ export const useSectorAdminDashboard = () => {
           category_id,
           categories:category_id(name),
           updated_at,
-          status
+          // status
         `)
         .eq('status', 'pending')
         .in('school_id', schools.map(s => s.id));
@@ -218,7 +218,7 @@ export const useSectorAdminDashboard = () => {
     ...dashboardData,
     approveForm,
     rejectForm,
-    refreshData
+    // refreshData
   };
 };
 

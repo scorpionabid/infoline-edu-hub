@@ -29,7 +29,7 @@ export const useReportsData = () => {
         .select(`
           school_id,
           schools!inner(name),
-          status
+          // status
         `);
 
       // Apply role-based filtering
@@ -89,7 +89,7 @@ export const useReportsData = () => {
 
   const fetchRegionalComparisonData = async (filters: ReportsFilters = {}) => {
     try {
-      let query = supabase
+      const query = supabase
         .from('schools')
         .select(`
           region_id,
@@ -143,13 +143,13 @@ export const useReportsData = () => {
 
   const fetchCategoryCompletionData = async (filters: ReportsFilters = {}) => {
     try {
-      let query = supabase
+      const query = supabase
         .from('data_entries')
         .select(`
           category_id,
           categories!inner(name),
           school_id,
-          status
+          // status
         `);
 
       const { data, error } = await query;
@@ -193,7 +193,7 @@ export const useReportsData = () => {
 
   const fetchSchoolDataByCategory = async (filters: ReportsFilters = {}) => {
     try {
-      let query = supabase
+      const query = supabase
         .from('data_entries')
         .select(`
           school_id,
@@ -201,7 +201,7 @@ export const useReportsData = () => {
           category_id,
           categories!inner(name),
           status,
-          updated_at
+          // updated_at
         `);
 
       const { data, error } = await query;
@@ -284,6 +284,6 @@ export const useReportsData = () => {
     dashboardStats,
     loading,
     error,
-    refetchData
+    // refetchData
   };
 };

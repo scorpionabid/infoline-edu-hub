@@ -58,7 +58,7 @@ export const useColumnAdapters = () => {
     adaptToFrontend,
     adaptToDb,
     adaptDbColumnToFrontend,
-    adaptFrontendColumnToDb
+    // adaptFrontendColumnToDb
   };
 };
 

@@ -130,6 +130,6 @@ export const useCategoriesOperations = () => {
     isCreating: createCategory.isPending,
     isUpdating: updateCategory.isPending,
     isDeleting: deleteCategory.isPending,
-    fetchCategories
+    // fetchCategories
   };
 };

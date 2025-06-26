@@ -11,7 +11,7 @@ import {
   MoreHorizontal,
   Eye,
   EyeOff,
-  AlertTriangle
+  // AlertTriangle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -73,7 +73,7 @@ const ColumnItem: React.FC<ColumnItemProps> = React.memo(({
   onToggleStatus,
   onSelection,
   canManage,
-  showSelection
+  // showSelection
 }) => {
   const getCategoryName = useCallback((categoryId: string) => {
     return categories?.find(c => c.id === categoryId)?.name || 'Naməlum kateqoriya';
@@ -81,9 +81,9 @@ const ColumnItem: React.FC<ColumnItemProps> = React.memo(({
 
   const getStatusColor = useCallback((status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'inactive': return 'bg-yellow-100 text-yellow-800';
-      case 'deleted': return 'bg-red-100 text-red-800';
+      case 'active': { return 'bg-green-100 text-green-800';
+      case 'inactive': { return 'bg-yellow-100 text-yellow-800';
+      case 'deleted': { return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   }, []);
@@ -192,7 +192,7 @@ const ColumnItem: React.FC<ColumnItemProps> = React.memo(({
                   {onDuplicate && (
                     <DropdownMenuItem onClick={() => onDuplicate(column)}>
                       <Copy className="h-4 w-4 mr-2" />
-                      Kopyala
+                      // Kopyala
                     </DropdownMenuItem>
                   )}
                   {onToggleStatus && (
@@ -289,7 +289,7 @@ const EnhancedColumnList: React.FC<EnhancedColumnListProps> = ({
     onToggleColumnStatus, 
     onColumnSelection, 
     canManageColumns, 
-    showBulkActions
+    // showBulkActions
   ]);
 
   // NOW SAFE TO USE CONDITIONAL RETURNS AFTER ALL HOOKS

@@ -19,7 +19,7 @@ import {
   FileText,
   Globe,
   Activity,
-  RefreshCw
+  // RefreshCw
 } from 'lucide-react';
 import type { SupportedLanguage } from '@/types/translation';
 
@@ -276,7 +276,7 @@ export const TranslationDevPanel: React.FC = () => {
                       <Label>Missing Keys ({validationResults.missingKeys.length})</Label>
                       <Textarea 
                         value={validationResults.missingKeys.join('\n')}
-                        readOnly
+                        // readOnly
                         className="h-32"
                       />
                     </div>

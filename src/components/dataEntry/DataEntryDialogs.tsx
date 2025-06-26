@@ -27,7 +27,7 @@ export interface DataEntryDialogsProps {
 export const DataEntryDialogs: React.FC<DataEntryDialogsProps> = ({
   state,
   onClose,
-  onConfirm
+  // onConfirm
 }) => {
   const { t } = useLanguageSafe();
   

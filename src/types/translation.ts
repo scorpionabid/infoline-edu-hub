@@ -18,6 +18,7 @@ export type LanguageTranslations = {
   core: TranslationModule;
   dashboard: TranslationModule;
   dataEntry: TranslationModule;
+  dataManagement: TranslationModule;
   feedback: TranslationModule;
   general: TranslationModule;
   navigation: TranslationModule;
@@ -26,7 +27,10 @@ export type LanguageTranslations = {
   profile: TranslationModule;
   schools: TranslationModule;
   sectors: TranslationModule;
+  settings: TranslationModule;
+  statistics: TranslationModule;
   status: TranslationModule;
+  theme: TranslationModule;
   time: TranslationModule;
   ui: TranslationModule;
   user: TranslationModule;

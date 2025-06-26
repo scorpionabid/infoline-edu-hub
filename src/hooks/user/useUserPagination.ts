@@ -20,6 +20,6 @@ export const useUserPagination = () => {
     totalCount,
     setTotalCount,
     handlePageChange,
-    getTotalPages
+    // getTotalPages
   };
 };

@@ -48,7 +48,7 @@ const CacheStatsDisplay: React.FC<CacheStatsDisplayProps> = ({ stats }) => {
           <Clock className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{stats.avgResponseTime}ms</div>
+          <div className="text-2xl font-bold">{stats.avgResponseTime}, ms</div>
           <Badge variant={stats.avgResponseTime < 100 ? "default" : "secondary"}>
             {stats.avgResponseTime < 100 ? "Fast" : "Moderate"}
           </Badge>

@@ -1,5 +1,4 @@
-/* Enhanced Data Entry Styles */
-@import url('./styles/enhanced-data-entry.css');
+/* Enhanced Data Entry Styles - Removed duplicate import */
 
 /* Mobile-specific enhancements */
 @import url('./styles/mobile.css');

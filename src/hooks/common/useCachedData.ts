@@ -37,6 +37,6 @@ export function useCachedData<T>(key: string) {
     get,
     set,
     remove,
-    isLoading
+    // isLoading
   };
 }

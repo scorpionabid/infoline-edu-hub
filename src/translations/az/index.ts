@@ -1,7 +1,7 @@
 
 // Auto-generated index file for az translations
 import app from './app';
-import { auth } from './auth'; 
+import auth from './auth'; 
 import categories from './categories';
 import columns from './columns';
 import common from './common';

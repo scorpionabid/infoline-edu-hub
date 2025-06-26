@@ -90,7 +90,7 @@ export const useExcelOperations = (categories: any[], onDataImported: (data: Rec
   
   return {
     downloadExcelTemplate,
-    uploadExcelData
+    // uploadExcelData
   };
 };
 

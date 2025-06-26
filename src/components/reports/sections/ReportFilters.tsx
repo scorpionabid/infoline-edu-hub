@@ -46,7 +46,7 @@ const ReportFilters: React.FC<ReportFiltersProps> = ({
   sectors,
   categories,
   permissions,
-  onReset
+  // onReset
 }) => {
   return (
     <div className="space-y-4">

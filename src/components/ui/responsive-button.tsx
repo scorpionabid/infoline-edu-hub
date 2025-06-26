@@ -24,7 +24,7 @@ const ResponsiveButton = React.forwardRef<HTMLButtonElement, ResponsiveButtonPro
             // Text sizing
             'text-sm sm:text-base',
           ],
-          className
+          // className
         )}
         {...props}
       />

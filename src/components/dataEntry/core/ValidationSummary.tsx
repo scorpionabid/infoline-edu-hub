@@ -22,7 +22,7 @@ interface ValidationSummaryProps {
 const ValidationSummary: React.FC<ValidationSummaryProps> = ({
   errors,
   warnings,
-  isValid
+  // isValid
 }) => {
   if (isValid && warnings.length === 0) {
     return (

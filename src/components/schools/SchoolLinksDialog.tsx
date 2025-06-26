@@ -213,7 +213,7 @@ export const SchoolLinksDialog: React.FC<SchoolLinksDialogProps> = ({
                     onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                     placeholder="Link başlığını daxil edin"
                     disabled={isSubmitting}
-                    required
+                    // required
                   />
                 </div>
                 
@@ -226,7 +226,7 @@ export const SchoolLinksDialog: React.FC<SchoolLinksDialogProps> = ({
                     onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
                     placeholder="https://example.com"
                     disabled={isSubmitting}
-                    required
+                    // required
                   />
                 </div>
               </div>

@@ -54,7 +54,7 @@ const ReportFilter: React.FC<ReportFilterProps> = ({ filter, onFilterChange }) =
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">Filters</h3>
         <Button variant="outline" size="sm" onClick={resetFilters}>
-          Reset
+          // Reset
         </Button>
       </div>
 

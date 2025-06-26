@@ -90,6 +90,6 @@ export const useSchoolSelector = ({ isSectorAdmin, sectorId }: UseSchoolSelector
     setSchoolSearchQuery,
     handleSchoolChange,
     setSelectedSchoolId,
-    setSelectedSchoolName
+    // setSelectedSchoolName
   };
 };

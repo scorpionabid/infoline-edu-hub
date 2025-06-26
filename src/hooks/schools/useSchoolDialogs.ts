@@ -153,6 +153,6 @@ export const useSchoolDialogs = (): UseSchoolDialogsReturn => {
     handleAdminDialogOpen,
     handleDeleteDialogOpen,
     handleLinkDialogOpen,
-    handleFilesDialogOpen
+    // handleFilesDialogOpen
   };
 };

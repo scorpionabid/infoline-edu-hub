@@ -24,7 +24,7 @@ export const SchoolAdminDialog: React.FC<SchoolAdminDialogProps> = ({
   onClose,
   school,
   onSubmit,
-  isSubmitting
+  // isSubmitting
 }) => {
   const [adminEmail, setAdminEmail] = useState('');
   const [adminName, setAdminName] = useState('');
@@ -49,7 +49,7 @@ export const SchoolAdminDialog: React.FC<SchoolAdminDialogProps> = ({
               value={adminName}
               onChange={(e) => setAdminName(e.target.value)}
               placeholder="Admin adını daxil edin"
-              required
+              // required
             />
           </div>
           <div>
@@ -60,7 +60,7 @@ export const SchoolAdminDialog: React.FC<SchoolAdminDialogProps> = ({
               value={adminEmail}
               onChange={(e) => setAdminEmail(e.target.value)}
               placeholder="admin@example.com"
-              required
+              // required
             />
           </div>
           <div className="flex justify-end space-x-2">

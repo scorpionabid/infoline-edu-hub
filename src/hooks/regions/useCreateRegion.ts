@@ -62,7 +62,7 @@ export const useCreateRegion = () => {
 
   return {
     loading,
-    createRegion
+    // createRegion
   };
 };
 

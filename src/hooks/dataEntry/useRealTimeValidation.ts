@@ -9,7 +9,7 @@ interface UseRealTimeValidationOptions {
 
 export const useRealTimeValidation = ({
   columns,
-  data
+  // data
 }: UseRealTimeValidationOptions) => {
   
   const errors = useMemo(() => {

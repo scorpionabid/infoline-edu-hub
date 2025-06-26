@@ -18,7 +18,7 @@ export const useSchoolDialogHandlers = ({
   setSelectedSchoolForLinks,
   setIsAdminDialogOpen,
   setSchoolForAdmin,
-  setEditingSchool
+  // setEditingSchool
 }: UseSchoolDialogHandlersProps) => {
   
   const handleDeleteSchool = (school: any) => {
@@ -49,6 +49,6 @@ export const useSchoolDialogHandlers = ({
     handleViewFiles,
     handleViewLinks,
     handleAssignAdmin,
-    handleAddClick
+    // handleAddClick
   };
 };

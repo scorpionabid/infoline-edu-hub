@@ -17,7 +17,7 @@ const ListboxTrigger = React.forwardRef<
     ref={ref}
     className={cn(
       "flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
-      className
+      // className
     )}
     {...props}
   >
@@ -40,7 +40,7 @@ const ListboxContent = React.forwardRef<
         "relative z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md data-[side=bottom]:animate-in data-[side=left]:animate-in data-[side=right]:animate-in data-[side=top]:animate-in data-[side=bottom]:fade-in-0 data-[side=left]:fade-in-0 data-[side=right]:fade-in-0 data-[side=top]:fade-in-0 data-[side=bottom]:zoom-in-95 data-[side=left]:zoom-in-95 data-[side=right]:zoom-in-95 data-[side=top]:zoom-in-95",
         position === "popper" &&
           "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
-        className
+        // className
       )}
       position={position}
       {...props}
@@ -67,7 +67,7 @@ const ListboxItem = React.forwardRef<
     ref={ref}
     className={cn(
       "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-2 pr-8 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
-      className
+      // className
     )}
     {...props}
   >

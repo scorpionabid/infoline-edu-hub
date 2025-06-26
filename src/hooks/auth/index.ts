@@ -23,7 +23,7 @@ import {
   selectSignOut,
   shouldAuthenticate,
   isProtectedRoute,
-  getRedirectPath
+  // getRedirectPath
 } from './useAuthStore';
 
 export {
@@ -43,7 +43,7 @@ export {
   selectSignOut,
   shouldAuthenticate,
   isProtectedRoute,
-  getRedirectPath
+  // getRedirectPath
 };
 
 // Compatibility Hook for ForgotPassword, Register, ResetPassword pages
@@ -91,14 +91,14 @@ export const useSupabaseAuth = () => {
     updatePassword,
     resetPassword,
     signUp,
-    signOut
+    // signOut
   };
 };
 
 // ========== Permission System ==========
 export { 
   usePermissions,
-  useDataAccessControl
+  // useDataAccessControl
 } from './usePermissions';
 
 export {
@@ -111,7 +111,7 @@ export {
   checkUserRole,
   checkRegionAccessUtil,
   checkSectorAccessUtil,
-  checkSchoolAccessUtil
+  // checkSchoolAccessUtil
 } from './usePermissions';
 
 // ========== Type Exports ==========
@@ -127,7 +127,7 @@ export type {
   FullUserData,
   AuthState,
   AuthContextType,
-  UseAuthResult
+  // UseAuthResult
 } from '@/types/auth';
 
 // ========== Default Export ==========

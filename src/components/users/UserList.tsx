@@ -65,13 +65,13 @@ const UserList: React.FC<UserListProps> = ({
 
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
-      case "superadmin":
+      case "superadmin": {
         return "destructive";
-      case "regionadmin":
+      case "regionadmin": {
         return "default";
-      case "sectoradmin":
+      case "sectoradmin": {
         return "secondary";
-      case "schooladmin":
+      case "schooladmin": {
         return "outline";
       default:
         return "outline";

@@ -76,7 +76,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ categoryId, onSave }) => {
         <div className="flex justify-end gap-2">
           <Button onClick={handleSave}>
             <Save className="h-4 w-4 mr-2" />
-            Saxla
+            // Saxla
           </Button>
         </div>
       </CardContent>

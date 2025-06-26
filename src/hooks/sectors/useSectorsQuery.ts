@@ -17,7 +17,7 @@ export const useSectorsQuery = (): UseSectorsQueryResult => {
     isLoading,
     isError,
     error,
-    refetch
+    // refetch
   } = useQuery({
     queryKey: ['sectors'],
     queryFn: async () => {
@@ -37,7 +37,7 @@ export const useSectorsQuery = (): UseSectorsQueryResult => {
     isLoading,
     isError,
     error: error?.message || null,
-    refetch
+    // refetch
   };
 };
 

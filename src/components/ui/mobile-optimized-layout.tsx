@@ -36,7 +36,7 @@ export const MobileOptimizedLayout: React.FC<MobileOptimizedLayoutProps> = ({
       spacingClasses[spacing],
       paddingClasses[padding],
       isMobile && 'touch-manipulation',
-      className
+      // className
     )}>
       {children}
     </div>
@@ -58,7 +58,7 @@ export const ResponsiveGrid: React.FC<ResponsiveGridProps> = ({
   children,
   cols = { mobile: 1, tablet: 2, desktop: 3 },
   gap = 'md',
-  className
+  // className
 }) => {
   const gapClasses = {
     sm: 'gap-2 sm:gap-3',
@@ -73,7 +73,7 @@ export const ResponsiveGrid: React.FC<ResponsiveGridProps> = ({
       'grid',
       gridCols,
       gapClasses[gap],
-      className
+      // className
     )}>
       {children}
     </div>

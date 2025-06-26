@@ -129,5 +129,5 @@ export default {
   createDeadlineNotification,
   createApprovalNotification,
   getUserNotifications,
-  getNotifications
+  // getNotifications
 };

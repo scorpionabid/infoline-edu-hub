@@ -25,7 +25,7 @@ export function useUser(userId?: string) {
     user,
     loading,
     error,
-    fetchUser
+    // fetchUser
   };
 }
 

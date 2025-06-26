@@ -12,7 +12,7 @@ import {
   ChevronRight, 
   ChevronsLeft, 
   ChevronsRight,
-  Loader2
+  // Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PaginationState, PaginationActions } from '@/hooks/reports/usePaginatedReports';
@@ -45,14 +45,14 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
     totalPages,
     hasNextPage,
     hasPreviousPage,
-    isLoading
+    // isLoading
   } = pagination;
 
   const {
     goToPage,
     nextPage,
     previousPage,
-    setPageSize
+    // setPageSize
   } = actions;
 
   // Calculate visible page numbers
@@ -105,7 +105,7 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
     <div className={cn(
       'flex items-center justify-between space-x-4 py-4',
       compact && 'py-2',
-      className
+      // className
     )}>
       {/* Left side - Page info and page size selector */}
       <div className="flex items-center space-x-4">

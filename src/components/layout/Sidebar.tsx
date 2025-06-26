@@ -19,7 +19,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   isOpen = false, 
   onToggle, 
   onMenuClick = () => {},
-  userName
+  // userName
 }) => {
   const { userRole } = usePermissions();
   

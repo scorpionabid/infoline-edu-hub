@@ -30,7 +30,7 @@ export const useAutoSave = ({
         await saveDataEntry({
           schoolId,
           categoryId,
-          data
+          // data
         });
       } catch (error) {
         console.error('Auto-save failed:', error);
@@ -51,7 +51,7 @@ export const useAutoSave = ({
       await saveDataEntry({
         schoolId,
         categoryId,
-        data
+        // data
       });
       return true;
     } catch (error) {

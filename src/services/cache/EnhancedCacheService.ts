@@ -72,13 +72,13 @@ export class EnhancedCacheService {
    */
   private handleCrossTabMessage(message: CrossTabMessage): void {
     switch (message.type) {
-      case 'cache_update':
+      case 'cache_update': {
         if (message.key && message.data) {
           this.memoryCache.set(message.key, message.data);
           this.updateAccess(message.key);
         }
-        break;
-      case 'cache_clear':
+        break; }
+      case 'cache_clear': {
         if (message.key) {
           this.memoryCache.delete(message.key);
           this.accessOrder.delete(message.key);
@@ -86,10 +86,10 @@ export class EnhancedCacheService {
           this.memoryCache.clear();
           this.accessOrder.clear();
         }
-        break;
-      case 'cache_sync':
+        break; }
+      case 'cache_sync': {
         // Respond with current cache state if needed
-        break;
+        break; }
     }
   }
 

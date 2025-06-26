@@ -264,6 +264,6 @@ export const useSchoolsStore = () => {
     resetFilters,
     fetchSchools,
     setSchools,
-    userRole
+    // userRole
   };
 };

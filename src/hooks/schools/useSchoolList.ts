@@ -24,7 +24,7 @@ export function useSchoolList() {
     schools,
     loading,
     error,
-    fetchSchools
+    // fetchSchools
   };
 }
 

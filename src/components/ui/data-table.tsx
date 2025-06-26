@@ -7,7 +7,7 @@ import {
   getPaginationRowModel, 
   useReactTable,
   SortingState,
-  getSortedRowModel
+  // getSortedRowModel
 } from '@tanstack/react-table';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -52,7 +52,7 @@ export function DataTable<TData, TValue>({
     onSortingChange: setSorting,
     getSortedRowModel: getSortedRowModel(),
     state: {
-      sorting
+      // sorting
     },
     initialState: {
       pagination: {

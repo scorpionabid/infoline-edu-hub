@@ -62,7 +62,7 @@ const ReportChartView: React.FC<ReportChartViewProps> = ({
 
   // Render based on report type
   switch (report.type) {
-    case REPORT_TYPE_VALUES.BAR:
+    case REPORT_TYPE_VALUES.BAR: {
       return (
         <ResponsiveContainer width="100%" height={height}>
           <BarChart
@@ -87,7 +87,7 @@ const ReportChartView: React.FC<ReportChartViewProps> = ({
         </ResponsiveContainer>
       );
 
-    case REPORT_TYPE_VALUES.LINE:
+    case REPORT_TYPE_VALUES.LINE: {
       return (
         <ResponsiveContainer width="100%" height={height}>
           <LineChart
@@ -113,7 +113,7 @@ const ReportChartView: React.FC<ReportChartViewProps> = ({
         </ResponsiveContainer>
       );
 
-    case REPORT_TYPE_VALUES.PIE:
+    case REPORT_TYPE_VALUES.PIE: {
       return (
         <ResponsiveContainer width="100%" height={height}>
           <PieChart margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
@@ -143,7 +143,7 @@ const ReportChartView: React.FC<ReportChartViewProps> = ({
         </ResponsiveContainer>
       );
 
-    case REPORT_TYPE_VALUES.TABLE:
+    case REPORT_TYPE_VALUES.TABLE: {
       return (
         <div className="max-h-[500px] overflow-auto">
           <Table>
@@ -168,7 +168,7 @@ const ReportChartView: React.FC<ReportChartViewProps> = ({
         </div>
       );
 
-    case REPORT_TYPE_VALUES.METRICS:
+    case REPORT_TYPE_VALUES.METRICS: {
       return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {metrics.map((metric, index) => (

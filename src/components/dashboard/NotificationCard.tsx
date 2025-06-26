@@ -18,7 +18,7 @@ import {
   Eye,
   Trash2,
   MoreVertical,
-  ExternalLink
+  // ExternalLink
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -54,22 +54,22 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
     isLoading,
     markAsRead,
     markAllAsRead,
-    deleteNotification
+    // deleteNotification
   } = useNotifications(user?.id);
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'deadline':
-      case 'warning':
+      case 'deadline': {
+      case 'warning': {
         return <Clock className="w-4 h-4 text-orange-500" />;
-      case 'success':
-      case 'approval':
+      case 'success': {
+      case 'approval': {
         return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case 'error':
-      case 'rejection':
+      case 'error': {
+      case 'rejection': {
         return <AlertTriangle className="w-4 h-4 text-red-500" />;
-      case 'info':
-      case 'system':
+      case 'info': {
+      case 'system': {
         return <Bell className="w-4 h-4 text-blue-500" />;
       default:
         return <Bell className="w-4 h-4 text-gray-500" />;
@@ -78,11 +78,11 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'critical':
+      case 'critical': {
         return 'text-red-600 bg-red-50 border-red-200';
-      case 'high':
+      case 'high': {
         return 'text-orange-600 bg-orange-50 border-orange-200';
-      case 'normal':
+      case 'normal': {
         return 'text-blue-600 bg-blue-50 border-blue-200';
       default:
         return 'text-gray-600 bg-gray-50 border-gray-200';
@@ -278,7 +278,7 @@ const NotificationCard: React.FC<NotificationCardProps> = ({
                               className="flex items-center gap-2 text-red-600"
                             >
                               <Trash2 className="w-4 h-4" />
-                              Sil
+                              // Sil
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>

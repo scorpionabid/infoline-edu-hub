@@ -106,7 +106,7 @@ const ResetPassword = () => {
                   placeholder={t("auth.enterNewPassword")}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  required
+                  // required
                   disabled={isLoading}
                 />
               </div>
@@ -124,7 +124,7 @@ const ResetPassword = () => {
                   placeholder={t("auth.confirmNewPassword")}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
+                  // required
                   disabled={isLoading}
                 />
               </div>

@@ -84,11 +84,7 @@ const Statistics = () => {
             onFiltersChange={handleFiltersChange}
             onResetFilters={handleResetFilters}
             userRole={
-              isSuperAdmin
-                ? "superadmin"
-                : isRegionAdmin
-                  ? "regionadmin"
-                  : "sectoradmin"
+              isSuperAdmin ? "superadmin" : isRegionAdmin ? "regionadmin" : "sectoradmin"
             }
           />
 

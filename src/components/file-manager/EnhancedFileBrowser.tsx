@@ -112,11 +112,11 @@ export const EnhancedFileBrowser: React.FC<EnhancedFileBrowserProps> = ({
 
   const getFileIcon = (type: string) => {
     switch (type) {
-      case "document":
+      case "document": {
         return <FileText className="h-5 w-5" />;
-      case "report":
+      case "report": {
         return <BarChart3 className="h-5 w-5" />;
-      case "image":
+      case "image": {
         return <Image className="h-5 w-5" />;
       default:
         return <FolderOpen className="h-5 w-5" />;
@@ -143,22 +143,22 @@ export const EnhancedFileBrowser: React.FC<EnhancedFileBrowserProps> = ({
 
   const handleFileAction = (action: string, file: SchoolFile) => {
     switch (action) {
-      case "view":
+      case "view": {
         window.open(file.url, "_blank");
-        break;
-      case "download":
+        break; }
+      case "download": {
         // TODO: Implement actual download
         console.log("Downloading file:", file.name);
-        break;
-      case "delete":
+        break; }
+      case "delete": {
         // TODO: Implement actual deletion
         console.log("Deleting file:", file.name);
         setFiles((prev) => prev.filter((f) => f.id !== file.id));
-        break;
-      case "share":
+        break; }
+      case "share": {
         // TODO: Implement sharing
         console.log("Sharing file:", file.name);
-        break;
+        break; }
     }
   };
 

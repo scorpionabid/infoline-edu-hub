@@ -9,7 +9,7 @@ import {
   Link,
   UserPlus,
   MoreHorizontal,
-  Loader2
+  // Loader2
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -41,7 +41,7 @@ export const SchoolTable: React.FC<SchoolTableProps> = ({
   onViewLinks,
   onAssignAdmin,
   regionNames,
-  sectorNames
+  // sectorNames
 }) => {
   // Admin məlumatlarını yükləyirik - loop-u önləmək üçün sadəcə school id-ləri ötürürük
   const schoolIds = React.useMemo(() => schools.map(school => school.id), [schools]);
@@ -120,7 +120,7 @@ export const SchoolTable: React.FC<SchoolTableProps> = ({
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => onViewFiles(school)}>
                         <FileText className="h-4 w-4 mr-2" />
-                        Fayllar
+                        // Fayllar
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => onViewLinks(school)}>
                         <Link className="h-4 w-4 mr-2" />
@@ -132,7 +132,7 @@ export const SchoolTable: React.FC<SchoolTableProps> = ({
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => onDelete(school)} className="text-destructive">
                         <Trash2 className="h-4 w-4 mr-2" />
-                        Sil
+                        // Sil
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

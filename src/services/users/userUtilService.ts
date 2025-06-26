@@ -43,7 +43,7 @@ export async function fetchAdminEntityData(roleItem: any) {
           type: 'sector',
           name: sectorData.name,
           status: sectorData.status,
-          regionName
+          // regionName
         };
       }
     } else if (rolStr === 'schooladmin' && roleItem.school_id) {
@@ -68,7 +68,7 @@ export async function fetchAdminEntityData(roleItem: any) {
           status: schoolData.status,
           schoolType: schoolData.type,
           sectorName,
-          regionName
+          // regionName
         };
       }
     }

@@ -76,6 +76,6 @@ export const useMemoryOptimization = (options: MemoryOptimizationOptions = {}) =
     cleanupMemory,
     getMemoryUsage,
     forceCleanup,
-    getMemoryStats
+    // getMemoryStats
   };
 };

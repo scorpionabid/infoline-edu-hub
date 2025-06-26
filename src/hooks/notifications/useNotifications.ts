@@ -28,6 +28,6 @@ export const useNotifications = (): UseNotificationsResult => {
     isLoading,
     unreadCount: notifications.filter(n => !n.is_read).length,
     markAsRead,
-    markAllAsRead
+    // markAllAsRead
   };
 };

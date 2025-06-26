@@ -31,11 +31,11 @@ export class ExcelService {
       if (includeSampleData) {
         const sampleRow = category.columns?.map(col => {
           switch (col.type) {
-            case 'number':
+            case 'number': {
               return '100';
-            case 'date':
+            case 'date': {
               return '2024-01-01';
-            case 'select':
+            case 'select': {
               return col.options?.[0]?.label || 'Seçim';
             default:
               return 'Nümunə məlumat';

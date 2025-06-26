@@ -22,7 +22,7 @@ interface SectorAdminUserSelectorProps {
 }
 
 export const SectorAdminUserSelector: React.FC<
-  SectorAdminUserSelectorProps
+  // SectorAdminUserSelectorProps
 > = ({ users, loading, selectedUserId, onUserSelect, onRefresh }) => {
   const { t } = useTranslation();
 
@@ -38,13 +38,13 @@ export const SectorAdminUserSelector: React.FC<
   // İstifadəçi rolunu göstərmək üçün köməkçi funksiya
   const getUserRoleDisplay = (role: string) => {
     switch (role) {
-      case "superadmin":
+      case "superadmin": {
         return t("superAdmin") || "Super Admin";
-      case "regionadmin":
+      case "regionadmin": {
         return t("regionAdmin") || "Region Admin";
-      case "sectoradmin":
+      case "sectoradmin": {
         return t("sectorAdmin") || "Sektor Admin";
-      case "schooladmin":
+      case "schooladmin": {
         return t("schoolAdmin") || "Məktəb Admin";
       default:
         return t("user") || "İstifadəçi";

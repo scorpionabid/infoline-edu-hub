@@ -50,7 +50,7 @@ export const useSchoolDataForColumn = (): UseSchoolDataForColumnResult => {
             name,
             regions(
               id,
-              name
+              // name
             )
           )
         `)
@@ -121,7 +121,7 @@ export const useSchoolDataForColumn = (): UseSchoolDataForColumnResult => {
           updated_at,
           created_by,
           profiles(
-            full_name
+            // full_name
           )
         `)
         .eq('column_id', columnId)
@@ -192,7 +192,7 @@ export const useSchoolDataForColumn = (): UseSchoolDataForColumnResult => {
               currentValue: entry.value || undefined,
               status: entry.status as 'pending' | 'approved' | 'rejected',
               lastUpdated: entry.updated_at || undefined,
-              submittedBy
+              // submittedBy
             };
           }
         });
@@ -223,6 +223,6 @@ export const useSchoolDataForColumn = (): UseSchoolDataForColumnResult => {
     isLoadingSchoolData,
     error,
     loadSchoolData,
-    refreshSchoolData
+    // refreshSchoolData
   };
 };

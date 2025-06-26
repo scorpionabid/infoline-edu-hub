@@ -14,7 +14,7 @@ const DataEntryTabs: React.FC<DataEntryTabsProps> = ({
   categories,
   selectedCategory,
   onCategoryChange,
-  children
+  // children
 }) => {
   return (
     <Tabs value={selectedCategory} onValueChange={onCategoryChange} className="w-full">

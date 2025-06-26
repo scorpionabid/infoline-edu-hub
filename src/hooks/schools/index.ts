@@ -37,7 +37,7 @@ export const useSchoolDialogHandlers = (handlers: {
     handleViewFiles,
     handleViewLinks,
     handleAssignAdmin,
-    handleAddClick
+    // handleAddClick
   };
 };
 

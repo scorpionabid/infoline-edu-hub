@@ -76,7 +76,7 @@ export const ResetPasswordDialog: React.FC<ResetPasswordDialogProps> = ({
             <Input
               id="name"
               value={schoolName}
-              disabled
+              // disabled
               className="col-span-3"
             />
           </div>
@@ -87,7 +87,7 @@ export const ResetPasswordDialog: React.FC<ResetPasswordDialogProps> = ({
             <Input
               id="email"
               value={adminEmail || t("noEmailFound")}
-              disabled
+              // disabled
               className="col-span-3"
             />
           </div>

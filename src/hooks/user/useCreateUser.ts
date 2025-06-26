@@ -74,6 +74,6 @@ export const useCreateUser = () => {
 
   return {
     createUser,
-    isLoading
+    // isLoading
   };
 };

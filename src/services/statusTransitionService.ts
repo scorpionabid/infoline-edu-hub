@@ -313,7 +313,7 @@ export class StatusTransitionService {
         dataEntryId,
         oldStatus,
         newStatus,
-        comment
+        // comment
       );
       
       if (result.success) {
@@ -323,7 +323,7 @@ export class StatusTransitionService {
           oldStatus,
           newStatus,
           userId,
-          comment
+          // comment
         });
       } else {
         console.error('Failed to log status transition:', result.error);
@@ -334,7 +334,7 @@ export class StatusTransitionService {
           oldStatus,
           newStatus,
           userId,
-          comment
+          // comment
         );
       }
     } catch (error) {
@@ -346,7 +346,7 @@ export class StatusTransitionService {
         oldStatus,
         newStatus,
         userId,
-        comment
+        // comment
       );
     }
   }
@@ -518,7 +518,7 @@ export class StatusTransitionService {
         oldStatus,
         newStatus,
         userId,
-        comment
+        // comment
       });
     } catch (error) {
       console.error('Error logging status transition:', error);
@@ -542,7 +542,7 @@ export class StatusTransitionService {
         schoolId,
         categoryId,
         newStatus,
-        userId
+        // userId
       );
 
       // Create notifications
@@ -565,7 +565,7 @@ export class StatusTransitionService {
       console.log('Status change notifications sent:', {
         targets: notificationTargets.length,
         oldStatus,
-        newStatus
+        // newStatus
       });
     } catch (error) {
       console.error('Error sending status change notification:', error);
@@ -670,11 +670,11 @@ export class StatusTransitionService {
    */
   private static getNotificationPriority(status: DataEntryStatus): string {
     switch (status) {
-      case DataEntryStatus.APPROVED:
+      case DataEntryStatus.APPROVED: {
         return 'normal';
-      case DataEntryStatus.REJECTED:
+      case DataEntryStatus.REJECTED: {
         return 'high';
-      case DataEntryStatus.PENDING:
+      case DataEntryStatus.PENDING: {
         return 'medium';
       default:
         return 'normal';
@@ -724,13 +724,13 @@ export class StatusTransitionService {
    */
   static getStatusColor(status: DataEntryStatus): string {
     switch (status) {
-      case DataEntryStatus.DRAFT:
+      case DataEntryStatus.DRAFT: {
         return 'gray';
-      case DataEntryStatus.PENDING:
+      case DataEntryStatus.PENDING: {
         return 'blue';
-      case DataEntryStatus.APPROVED:
+      case DataEntryStatus.APPROVED: {
         return 'green';
-      case DataEntryStatus.REJECTED:
+      case DataEntryStatus.REJECTED: {
         return 'red';
       default:
         return 'gray';
@@ -759,13 +759,13 @@ export class StatusTransitionService {
    */
   static getStatusIcon(status: DataEntryStatus): string {
     switch (status) {
-      case DataEntryStatus.DRAFT:
+      case DataEntryStatus.DRAFT: {
         return 'FileEdit';
-      case DataEntryStatus.PENDING:
+      case DataEntryStatus.PENDING: {
         return 'Clock';
-      case DataEntryStatus.APPROVED:
+      case DataEntryStatus.APPROVED: {
         return 'CheckCircle';
-      case DataEntryStatus.REJECTED:
+      case DataEntryStatus.REJECTED: {
         return 'XCircle';
       default:
         return 'File';

@@ -19,42 +19,42 @@ const DataEntryStatus: React.FC<DataEntryStatusProps> = ({
   
   const getStatusConfig = () => {
     switch (status) {
-      case 'draft':
+      case 'draft': {
         return {
           label: t('draft'),
           variant: 'outline',
           className: 'bg-gray-100 text-gray-800 border-gray-200',
           icon: <FileText className="h-3 w-3 mr-1" />
         };
-      case 'pending':
+      case 'pending': {
         return {
           label: t('pending'),
           variant: 'outline',
           className: 'bg-amber-100 text-amber-800 border-amber-200',
           icon: <Clock className="h-3 w-3 mr-1" />
         };
-      case 'approved':
+      case 'approved': {
         return {
           label: t('approved'),
           variant: 'outline',
           className: 'bg-green-100 text-green-800 border-green-200',
           icon: <CheckCircle className="h-3 w-3 mr-1" />
         };
-      case 'rejected':
+      case 'rejected': {
         return {
           label: t('rejected'),
           variant: 'outline',
           className: 'bg-red-100 text-red-800 border-red-200',
           icon: <XCircle className="h-3 w-3 mr-1" />
         };
-      case 'not_started':
+      case 'not_started': {
         return {
           label: t('notStarted'),
           variant: 'outline', 
           className: 'bg-gray-100 text-gray-800 border-gray-200',
           icon: <HelpCircle className="h-3 w-3 mr-1" />
         };
-      case 'in_progress':
+      case 'in_progress': {
         return {
           label: t('inProgress'),
           variant: 'outline',

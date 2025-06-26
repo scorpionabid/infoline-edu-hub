@@ -14,7 +14,7 @@ const SchoolColumnPagination: React.FC<SchoolColumnPaginationProps> = ({
   totalPages,
   pageSize,
   totalItems,
-  onPageChange
+  // onPageChange
 }) => {
   if (totalItems <= pageSize) return null;
 

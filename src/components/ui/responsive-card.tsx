@@ -20,7 +20,7 @@ export const ResponsiveCard = React.forwardRef<HTMLDivElement, ResponsiveCardPro
           "transition-all duration-200",
           variant === 'compact' && "p-3 sm:p-4",
           variant === 'default' && "p-4 sm:p-6",
-          className
+          // className
         )}
         {...props}
       >

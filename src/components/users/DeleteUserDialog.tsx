@@ -23,7 +23,7 @@ const DeleteUserDialog: React.FC<DeleteUserDialogProps> = ({
   user,
   isOpen,
   onClose,
-  onConfirm
+  // onConfirm
 }) => {
   if (!user) return null;
 

@@ -17,7 +17,7 @@ interface FolderStructureProps {
 
 const FolderStructure: React.FC<FolderStructureProps> = ({ items, onItemClick }) => {
   const renderItem = (item: FolderItem, level: number = 0) => (
-    <div key={item.id} style={{ marginLeft: `${level * 20}px` }}>
+    <div key={item.id} style={{ marginLeft: `${level * 20}, px` }}>
       <Button
         variant="ghost"
         className="w-full justify-start p-2 h-auto"

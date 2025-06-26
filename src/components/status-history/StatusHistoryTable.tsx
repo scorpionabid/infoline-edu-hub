@@ -40,7 +40,7 @@ export const StatusHistoryTable: React.FC<StatusHistoryTableProps> = ({
     hasData, 
     refresh, 
     exportHistory,
-    testConnection
+    // testConnection
   } = useStatusHistory({ entryId, limit, autoRefresh });
 
   /**
@@ -48,17 +48,17 @@ export const StatusHistoryTable: React.FC<StatusHistoryTableProps> = ({
    */
   const getStatusColor = (status: string): string => {
     switch (status?.toLowerCase()) {
-      case 'draft':
-      case 'hazırlanır':
+      case 'draft': {
+      case 'hazırlanır': {
         return 'bg-gray-100 text-gray-800';
-      case 'pending':
-      case 'gözləyir':
+      case 'pending': {
+      case 'gözləyir': {
         return 'bg-blue-100 text-blue-800';
-      case 'approved':
-      case 'təsdiqlənib':
+      case 'approved': {
+      case 'təsdiqlənib': {
         return 'bg-green-100 text-green-800';
-      case 'rejected':
-      case 'rədd edilib':
+      case 'rejected': {
+      case 'rədd edilib': {
         return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
@@ -189,7 +189,7 @@ export const StatusHistoryTable: React.FC<StatusHistoryTableProps> = ({
                   variant="outline"
                   size="sm"
                 >
-                  Test
+                  // Test
                 </Button>
               </div>
             </AlertDescription>
@@ -232,7 +232,7 @@ export const StatusHistoryTable: React.FC<StatusHistoryTableProps> = ({
                   size="sm"
                 >
                   <Download className="h-4 w-4 mr-1" />
-                  Export
+                  // Export
                 </Button>
               )}
             </div>

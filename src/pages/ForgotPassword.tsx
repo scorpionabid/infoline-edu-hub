@@ -86,7 +86,7 @@ const ForgotPassword = () => {
                   placeholder={t("auth.enterEmail")}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  required
+                  // required
                   disabled={isLoading}
                 />
               </div>

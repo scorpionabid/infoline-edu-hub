@@ -84,7 +84,7 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
               onChange={(e) =>
                 setFormData((prev) => ({ ...prev, full_name: e.target.value }))
               }
-              required
+              // required
             />
           </div>
 
@@ -97,7 +97,7 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
               onChange={(e) =>
                 setFormData((prev) => ({ ...prev, email: e.target.value }))
               }
-              required
+              // required
             />
           </div>
 

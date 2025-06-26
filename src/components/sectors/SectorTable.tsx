@@ -15,7 +15,7 @@ interface SectorTableProps {
 export const SectorTable: React.FC<SectorTableProps> = ({
   onEdit,
   onDelete,
-  onAssignAdmin
+  // onAssignAdmin
 }) => {
   const { sectors, loading } = useSectorsStore();
 
@@ -59,7 +59,7 @@ export const SectorTable: React.FC<SectorTableProps> = ({
                       Admin təyin et
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => onDelete(sector)}>
-                      Sil
+                      // Sil
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>

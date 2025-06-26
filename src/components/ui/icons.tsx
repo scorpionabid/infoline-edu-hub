@@ -24,7 +24,7 @@ import {
   Type,
   ListFilter,
   LucideIcon,
-  LucideProps
+  // LucideProps
 } from "lucide-react";
 
 // Mövcud olmayan Icon-lar üçün aliaslar yaradırıq

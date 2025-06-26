@@ -19,23 +19,23 @@ interface NotificationConnectionStatusProps {
 }
 
 export const NotificationConnectionStatus: React.FC<
-  NotificationConnectionStatusProps
+  // NotificationConnectionStatusProps
 > = ({ status, health, onReconnect, className = "" }) => {
   const { t } = useTranslation();
 
   const getStatusBadge = () => {
     switch (health.health) {
-      case "excellent":
-      case "good":
+      case "excellent": {
+      case "good": {
         return null; // Don't show badge for good connections
-      case "poor":
+      case "poor": {
         return (
           <Badge variant="destructive">
             <AlertTriangle className="h-3 w-3 mr-1" />
             {t("unstable")}
           </Badge>
         );
-      case "offline":
+      case "offline": {
       default:
         return (
           <Badge variant="destructive">

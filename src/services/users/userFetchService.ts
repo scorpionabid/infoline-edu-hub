@@ -34,7 +34,7 @@ export const userFetchService = {
 
       return {
         ...data,
-        status
+        // status
       };
     } catch (error) {
       console.error('Error fetching user:', error);

@@ -10,7 +10,7 @@ export const validateColumnValue = (value: any, column: Column): { isValid: bool
   const validation = column.validation as ColumnValidation;
 
   switch (column.type) {
-    case 'number':
+    case 'number': {
       if (value === '') return { isValid: true };
       const numValue = Number(value);
       if (isNaN(numValue)) {
@@ -23,9 +23,10 @@ export const validateColumnValue = (value: any, column: Column): { isValid: bool
         return { isValid: false, error: `Maximum dəyər ${validation.maxValue} olmalıdır` };
       }
       break;
+    }
 
     case 'text':
-    case 'textarea':
+    case 'textarea': {
       if (typeof value !== 'string' && value !== '') {
         return { isValid: false, error: 'Mətn daxil edilməlidir' };
       }
@@ -49,14 +50,16 @@ export const validateColumnValue = (value: any, column: Column): { isValid: bool
         }
       }
       break;
+    }
 
-    case 'select':
+    case 'select': {
       if (value && !column.options?.some(opt => opt.value === value)) {
         return { isValid: false, error: 'Düzgün seçim edilməlidir' };
       }
       break;
+    }
 
-    case 'date':
+    case 'date': {
       if (value && !isValidDate(value)) {
         return { isValid: false, error: 'Düzgün tarix formatı daxil edilməlidir' };
       }
@@ -67,12 +70,14 @@ export const validateColumnValue = (value: any, column: Column): { isValid: bool
         return { isValid: false, error: `Maximum tarix ${formatDate(validation.maxDate)} olmalıdır` };
       }
       break;
+    }
 
-    case 'checkbox':
+    case 'checkbox': {
       if (typeof value !== 'boolean' && value !== '') {
         return { isValid: false, error: 'Düzgün seçim edilməlidir' };
       }
       break;
+    }
   }
 
   return { isValid: true };
@@ -80,16 +85,21 @@ export const validateColumnValue = (value: any, column: Column): { isValid: bool
 
 export const getDefaultValueForType = (type: ColumnType) => {
   switch (type) {
-    case 'number':
+    case 'number': {
       return null;
-    case 'checkbox':
+    }
+    case 'checkbox': {
       return false;
-    case 'select':
+    }
+    case 'select': {
       return '';
-    case 'date':
+    }
+    case 'date': {
       return null;
-    default:
+    }
+    default: {
       return '';
+    }
   }
 };
 
@@ -99,14 +109,18 @@ export const formatValueForDisplay = (value: any, type: ColumnType): string => {
   }
 
   switch (type) {
-    case 'date':
+    case 'date': {
       return formatDate(value);
-    case 'checkbox':
+    }
+    case 'checkbox': {
       return value ? 'Bəli' : 'Xeyr';
-    case 'number':
+    }
+    case 'number': {
       return value.toString();
-    default:
+    }
+    default: {
       return value;
+    }
   }
 };
 

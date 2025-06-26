@@ -32,11 +32,11 @@ export const ProgressWidget: React.FC<ProgressWidgetProps> = ({
   
   const getStatusColor = () => {
     switch (status) {
-      case 'on-track':
+      case 'on-track': {
         return 'text-green-600';
-      case 'at-risk':
+      case 'at-risk': {
         return 'text-yellow-600';
-      case 'behind':
+      case 'behind': {
         return 'text-red-600';
       default:
         return 'text-gray-600';

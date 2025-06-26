@@ -1,4 +1,3 @@
-
 import { ColumnValidationError, Column } from '@/types/column';
 
 export function validateColumnValue(value: string, column: Column): ColumnValidationError[] {
@@ -25,7 +24,7 @@ export function validateColumnValue(value: string, column: Column): ColumnValida
   if (!validation) return errors;
   
   switch (column.type) {
-    case 'number':
+    case 'number': {
       // Ədəd olub olmadığını yoxla
       if (isNaN(Number(value))) {
         errors.push({
@@ -56,11 +55,12 @@ export function validateColumnValue(value: string, column: Column): ColumnValida
         }
       }
       break;
+    }
       
     case 'text':
     case 'textarea':
     case 'password':
-    case 'richtext':
+    case 'richtext': {
       // Minimum uzunluğu yoxla
       if (validation.minLength !== undefined && value.length < validation.minLength) {
         errors.push({
@@ -80,8 +80,9 @@ export function validateColumnValue(value: string, column: Column): ColumnValida
         });
       }
       break;
+    }
       
-    case 'email':
+    case 'email': {
       // E-poçt formatını yoxla
       if (validation.email) {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -95,8 +96,9 @@ export function validateColumnValue(value: string, column: Column): ColumnValida
         }
       }
       break;
+    }
       
-    case 'url':
+    case 'url': {
       // URL formatını yoxla
       if (validation.url) {
         const urlRegex = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/;
@@ -110,8 +112,9 @@ export function validateColumnValue(value: string, column: Column): ColumnValida
         }
       }
       break;
+    }
       
-    case 'phone':
+    case 'phone': {
       // Telefon formatını yoxla
       const phoneRegex = /^\+?[0-9]{10,15}$/;
       if (!phoneRegex.test(value)) {
@@ -123,10 +126,11 @@ export function validateColumnValue(value: string, column: Column): ColumnValida
         });
       }
       break;
+    }
       
     case 'date':
     case 'datetime':
-    case 'time':
+    case 'time': {
       // Tarix formatını yoxla
       const dateObj = new Date(value);
       if (isNaN(dateObj.getTime())) {
@@ -138,8 +142,9 @@ export function validateColumnValue(value: string, column: Column): ColumnValida
         });
       }
       break;
+    }
       
-    case 'range':
+    case 'range': {
       // Range dəyəri yoxla
       if (isNaN(Number(value))) {
         errors.push({
@@ -168,6 +173,7 @@ export function validateColumnValue(value: string, column: Column): ColumnValida
         }
       }
       break;
+    }
   }
   
   // Pattern validasiyası
@@ -216,43 +222,62 @@ export function validateColumnValue(value: string, column: Column): ColumnValida
 // Sütun növləri üçün ön baxış mətnini qaytarır
 export function getColumnTypePreviewText(column: Column): string {
   switch (column.type) {
-    case 'text':
+    case 'text': {
       return 'Mətn sahəsi';
-    case 'textarea':
+    }
+    case 'textarea': {
       return 'Çoxsətirli mətn';
-    case 'number':
+    }
+    case 'number': {
       return 'Ədəd sahəsi';
-    case 'select':
+    }
+    case 'select': {
       return 'Açılan siyahı';
-    case 'date':
+    }
+    case 'date': {
       return 'Tarix seçimi';
-    case 'checkbox':
+    }
+    case 'checkbox': {
       return 'Çoxlu seçim';
-    case 'radio':
+    }
+    case 'radio': {
       return 'Tək seçim';
-    case 'file':
+    }
+    case 'file': {
       return 'Fayl yükləmə';
-    case 'email':
+    }
+    case 'email': {
       return 'E-poçt sahəsi';
-    case 'url':
+    }
+    case 'url': {
       return 'URL sahəsi';
-    case 'phone':
+    }
+    case 'phone': {
       return 'Telefon sahəsi';
-    case 'image':
+    }
+    case 'image': {
       return 'Şəkil yükləmə';
-    case 'range':
+    }
+    case 'range': {
       return 'Sürüşdürmə çubuğu';
-    case 'color':
+    }
+    case 'color': {
       return 'Rəng seçimi';
-    case 'password':
+    }
+    case 'password': {
       return 'Şifrə sahəsi';
-    case 'time':
+    }
+    case 'time': {
       return 'Vaxt seçimi';
-    case 'datetime':
+    }
+    case 'datetime': {
       return 'Tarix və vaxt';
-    case 'richtext':
+    }
+    case 'richtext': {
       return 'Formatlanmış mətn redaktoru';
-    default:
+    }
+    default: {
       return 'Bilinməyən sahə';
+    }
   }
 }

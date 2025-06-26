@@ -74,7 +74,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
               placeholder={t?.('auth.login.email') || 'Email'}
               value={formData.email}
               onChange={handleChange}
-              required
+              // required
               disabled={isLoading || isSubmitting}
             />
           </div>
@@ -85,7 +85,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ error, clearError }) => {
               placeholder={t?.('auth.login.password') || 'Password'}
               value={formData.password}
               onChange={handleChange}
-              required
+              // required
               disabled={isLoading || isSubmitting}
             />
           </div>

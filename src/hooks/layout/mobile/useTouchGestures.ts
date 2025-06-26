@@ -148,13 +148,13 @@ export const useTouchGestures = (
     handlers.onTap,
     minSwipeDistance,
     maxVerticalDistance,
-    preventDefaultEvents
+    // preventDefaultEvents
   ]);
 
   return {
     onTouchStart,
     onTouchMove,
     onTouchEnd,
-    isGesturing
+    // isGesturing
   };
 };

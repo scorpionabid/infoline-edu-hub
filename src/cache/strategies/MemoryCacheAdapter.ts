@@ -97,7 +97,7 @@ export class MemoryCacheAdapter<T = any> extends BaseCacheAdapter<T> {
     return Array.from(this.accessOrder.entries())
       .map(([key, accessTime]) => ({
         key: key.replace(`${this.prefix}_`, ''),
-        accessTime
+        // accessTime
       }))
       .sort((a, b) => b.accessTime - a.accessTime);
   }

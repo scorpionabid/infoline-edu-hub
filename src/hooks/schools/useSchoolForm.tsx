@@ -130,7 +130,7 @@ export const useSchoolForm = (): UseSchoolFormReturn => {
     setFormDataFromSchool,
     handleFormChange,
     resetForm,
-    validateForm
+    // validateForm
   };
 };
 

@@ -177,7 +177,7 @@ export function useCacheStats() {
   return {
     getStats,
     cleanup,
-    clear
+    // clear
   };
 }
 
@@ -211,7 +211,7 @@ export function useTranslationCache() {
   return {
     setTranslations,
     getTranslations,
-    clearTranslations
+    // clearTranslations
   };
 }
 
@@ -240,7 +240,7 @@ export function useSessionCache() {
   return {
     setUserSession,
     getUserSession,
-    clearUserSession
+    // clearUserSession
   };
 }
 
@@ -251,5 +251,5 @@ export default {
   usePreload,
   useCacheStats,
   useTranslationCache,
-  useSessionCache
+  // useSessionCache
 };

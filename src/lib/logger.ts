@@ -74,11 +74,11 @@ const logger = {
     try {
       const result = await fn();
       const duration = performance.now() - start;
-      console.log(`⏱️ ${label}: ${duration.toFixed(2)}ms`);
+      console.log(`⏱️ ${label}: ${duration.toFixed(2)}, ms`);
       return result;
     } catch (error) {
       const duration = performance.now() - start;
-      console.error(`⏱️ ${label} (failed after ${duration.toFixed(2)}ms):`, error);
+      console.error(`⏱️ ${label} (failed after ${duration.toFixed(2)}, ms):`, error);
       throw error;
     }
   }
@@ -102,18 +102,18 @@ function logWithLevel(level: LogLevel, message: string, options?: LogOptions) {
   const formattedMessage = `${emoji[level]} ${timestamp} ${contextStr} ${message} ${tagsStr}`;
   
   switch (level) {
-    case 'debug':
+    case 'debug': {
       console.debug(formattedMessage, data ? data : '');
-      break;
-    case 'info':
+      break; }
+    case 'info': {
       console.info(formattedMessage, data ? data : '');
-      break;
-    case 'warn':
+      break; }
+    case 'warn': {
       console.warn(formattedMessage, data ? data : '');
-      break;
-    case 'error':
+      break; }
+    case 'error': {
       console.error(formattedMessage, data ? data : '');
-      break;
+      break; }
   }
 }
 

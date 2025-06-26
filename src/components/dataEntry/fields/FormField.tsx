@@ -24,12 +24,12 @@ const FormField: React.FC<FormFieldProps> = ({
 }) => {
   const renderField = () => {
     switch (column.type) {
-      case 'text':
-      case 'email':
-      case 'phone':
-      case 'tel':
-      case 'url':
-      case 'password':
+      case 'text': {
+      case 'email': {
+      case 'phone': {
+      case 'tel': {
+      case 'url': {
+      case 'password': {
         return (
           <Input
             type={column.type === 'text' ? 'text' : column.type}
@@ -40,7 +40,7 @@ const FormField: React.FC<FormFieldProps> = ({
           />
         );
       
-      case 'textarea':
+      case 'textarea': {
         return (
           <Textarea
             value={value || ''}
@@ -51,7 +51,7 @@ const FormField: React.FC<FormFieldProps> = ({
           />
         );
       
-      case 'number':
+      case 'number': {
         return (
           <Input
             type="number"
@@ -62,7 +62,7 @@ const FormField: React.FC<FormFieldProps> = ({
           />
         );
 
-      case 'date':
+      case 'date': {
         return (
           <Input
             type="date"
@@ -72,7 +72,7 @@ const FormField: React.FC<FormFieldProps> = ({
           />
         );
 
-      case 'datetime-local':
+      case 'datetime-local': {
         return (
           <Input
             type="datetime-local"
@@ -82,7 +82,7 @@ const FormField: React.FC<FormFieldProps> = ({
           />
         );
 
-      case 'time':
+      case 'time': {
         return (
           <Input
             type="time"
@@ -92,7 +92,7 @@ const FormField: React.FC<FormFieldProps> = ({
           />
         );
       
-      case 'select':
+      case 'select': {
         return (
           <Select
             value={value || ''}
@@ -112,8 +112,8 @@ const FormField: React.FC<FormFieldProps> = ({
           </Select>
         );
       
-      case 'checkbox':
-      case 'boolean':
+      case 'checkbox': {
+      case 'boolean': {
         return (
           <Checkbox
             checked={value || false}

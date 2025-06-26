@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
-import { useRegionsStore, EnhancedRegion } from '@/hooks/useRegionsStore';
+import { regionsStore, EnhancedRegion } from '@/hooks/regions/useRegionsStore';
 
 interface RegionTableProps {
   onEdit: (region: EnhancedRegion) => void;
@@ -15,9 +15,10 @@ interface RegionTableProps {
 export const RegionTable: React.FC<RegionTableProps> = ({
   onEdit,
   onDelete,
-  onAssignAdmin
+  // onAssignAdmin
 }) => {
-  const { regions, loading } = useRegionsStore();
+  const regions = regionsStore(state => state.regions);
+  const loading = regionsStore(state => state.loading);
 
   if (loading) {
     return <div className="text-center py-4">Yüklənir...</div>;
@@ -57,7 +58,7 @@ export const RegionTable: React.FC<RegionTableProps> = ({
                       Admin təyin et
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => onDelete(region)}>
-                      Sil
+                      // Sil
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>

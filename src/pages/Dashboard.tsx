@@ -23,7 +23,7 @@ const normalizeRole = (role?: string | null): UserRole => {
     case 'region-admin':
       return 'regionadmin';
     case 'sectoradmin':
-    case 'sector_admin':  
+    case 'sector_admin':
     case 'sector-admin':
       return 'sectoradmin';
     case 'schooladmin':

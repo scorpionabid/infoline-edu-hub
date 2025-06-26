@@ -69,6 +69,6 @@ export const useColumnFilters = () => {
     setTypeFilter,
     setStatusFilter,
     resetFilters,
-    applyFilters
+    // applyFilters
   };
 };

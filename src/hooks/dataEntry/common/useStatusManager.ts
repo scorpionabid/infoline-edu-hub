@@ -21,6 +21,6 @@ export const useStatusManager = () => {
     status,
     setStatus,
     updateStatus,
-    canTransitionTo
+    // canTransitionTo
   };
 };

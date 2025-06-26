@@ -88,7 +88,7 @@ export const apiClient = {
         
         // Retry if we haven't exceeded the retry limit
         if (attempts <= opts.retries!) {
-          logger.info(`Retrying in ${opts.retryDelay}ms...`, {
+          logger.info(`Retrying in ${opts.retryDelay}, ms...`, {
             context: 'apiClient'
           });
           

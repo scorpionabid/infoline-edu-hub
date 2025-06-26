@@ -19,7 +19,7 @@ export {
   useIntersectionObserver,
   useMemoryOptimization,
   useOptimizedState,
-  useBatchedUpdates
+  // useBatchedUpdates
 } from '../../hooks/performance/usePerformanceOptimization';
 
 export {
@@ -27,7 +27,7 @@ export {
   NavigationItem,
   TableRow,
   PerformanceCard,
-  OptimizedList
+  // OptimizedList
 } from './MemoizedComponents';
 
 export { default as PerformanceDashboard } from './PerformanceDashboard';
@@ -36,7 +36,7 @@ export { default as PerformanceDashboard } from './PerformanceDashboard';
 export type {
   VirtualScrollOptions,
   PerformanceMetrics,
-  PerformanceIssue
+  // PerformanceIssue
 } from './types';
 
 // CSS class utilities for performance

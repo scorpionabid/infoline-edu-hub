@@ -18,27 +18,27 @@ export const useEntityLinks = (entityType: EntityType, entityId?: string) => {
       let query;
       
       switch (entityType) {
-        case 'school':
+        case 'school': {
           query = supabase
             .from('school_links')
             .select('*')
             .eq('school_id', entityId)
             .eq('is_active', true);
-          break;
-        case 'sector':
+          break; }
+        case 'sector': {
           query = supabase
             .from('school_links')
             .select('*, schools!inner(*)')
             .eq('schools.sector_id', entityId)
             .eq('is_active', true);
-          break;
-        case 'region':
+          break; }
+        case 'region': {
           query = supabase
             .from('school_links')
             .select('*, schools!inner(*)')
             .eq('schools.region_id', entityId)
             .eq('is_active', true);
-          break;
+          break; }
         default:
           throw new Error('Invalid entity type');
       }

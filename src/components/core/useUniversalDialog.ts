@@ -22,7 +22,7 @@ interface UseUniversalDialogReturn {
 export function useUniversalDialog({
   type,
   entity,
-  onConfirm
+  // onConfirm
 }: UseUniversalDialogProps): UseUniversalDialogReturn {
   const [isOpen, setIsOpen] = useState(false);
   const [data, setData] = useState<any>(null);
@@ -60,6 +60,6 @@ export function useUniversalDialog({
     isSubmitting,
     openDialog,
     closeDialog,
-    handleConfirm
+    // handleConfirm
   };
 }

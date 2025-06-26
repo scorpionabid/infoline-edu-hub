@@ -90,7 +90,7 @@ const SecureLoginForm: React.FC<SecureLoginFormProps> = ({ error, clearError }) 
                 placeholder={t?.('auth.login.emailPlaceholder') || 'Email ünvanınızı daxil edin'}
                 value={formData.email}
                 onChange={handleChange}
-                required
+                // required
                 disabled={isLoading || isSubmitting}
                 className="pl-10 h-11 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                 autoComplete="email"
@@ -112,7 +112,7 @@ const SecureLoginForm: React.FC<SecureLoginFormProps> = ({ error, clearError }) 
                 placeholder={t?.('auth.login.passwordPlaceholder') || 'Şifrənizi daxil edin'}
                 value={formData.password}
                 onChange={handleChange}
-                required
+                // required
                 disabled={isLoading || isSubmitting}
                 className="pl-10 pr-10 h-11 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                 autoComplete="current-password"

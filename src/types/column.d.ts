@@ -5,7 +5,7 @@ import {
   ColumnValidation,
   BaseColumn,
   Column,
-  ColumnFormValues
+  // ColumnFormValues
 } from './core/column';
 
 // Re-export core types
@@ -15,7 +15,7 @@ export type {
   ColumnValidation,
   BaseColumn,
   Column,
-  ColumnFormValues
+  // ColumnFormValues
 };
 
 // Column type selector component props

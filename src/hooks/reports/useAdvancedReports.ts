@@ -122,6 +122,6 @@ export const useAdvancedReports = () => {
     generateReport,
     saveTemplate: saveTemplate.mutate,
     isSavingTemplate: saveTemplate.isPending,
-    exportReport
+    // exportReport
   };
 };

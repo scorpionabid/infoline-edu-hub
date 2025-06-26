@@ -79,7 +79,7 @@ export const useRoleBasedReports = () => {
     canAccessReportType,
     getPermissionsSummary,
     permissions, // Direct access to permissions
-    getSchoolPerformanceReport
+    // getSchoolPerformanceReport
   };
 };
 

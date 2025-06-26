@@ -30,7 +30,7 @@ export const useColumnsQuery = ({
         includeArchived,
         includeDeleted,
         includeInactive,
-        status
+        // status
       });
       
       let query = supabase.from('columns').select('*');

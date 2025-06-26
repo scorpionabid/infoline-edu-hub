@@ -17,7 +17,7 @@ export const useUserData = (userId: string) => {
             role,
             region_id,
             sector_id,
-            school_id
+            // school_id
           )
         `)
         .eq('id', userId)

@@ -11,10 +11,10 @@ export { default as StatusHistoryDashboard } from './StatusHistoryDashboard';
 export type {
   StatusHistoryEntry,
   StatusHistoryOptions,
-  StatusHistoryServiceResponse
+  // StatusHistoryServiceResponse
 } from '@/services/statusHistoryService';
 
 export type {
   UseStatusHistoryOptions,
-  UseStatusHistoryReturn
+  // UseStatusHistoryReturn
 } from '@/hooks/useStatusHistory';

@@ -31,7 +31,7 @@ export const ExportButtons: React.FC<ExportButtonsProps> = ({
         ) : (
           <FileSpreadsheet className="h-4 w-4" />
         )}
-        Excel
+        // Excel
       </Button>
       {onExportPDF && (
         <Button
@@ -46,7 +46,7 @@ export const ExportButtons: React.FC<ExportButtonsProps> = ({
           ) : (
             <FileText className="h-4 w-4" />
           )}
-          PDF
+          // PDF
         </Button>
       )}
       <Button
@@ -61,7 +61,7 @@ export const ExportButtons: React.FC<ExportButtonsProps> = ({
         ) : (
           <File className="h-4 w-4" />
         )}
-        CSV
+        // CSV
       </Button>
     </div>
   );

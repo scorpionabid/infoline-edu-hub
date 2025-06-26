@@ -30,6 +30,6 @@ export const useUserFilters = () => {
   return {
     filters,
     updateFilter,
-    clearFilters
+    // clearFilters
   };
 };

@@ -18,7 +18,7 @@ export const OptimizedSchoolTable: React.FC<OptimizedSchoolTableProps> = memo(({
   schools,
   selectedSchools,
   onSchoolSelect,
-  onSelectAll
+  // onSelectAll
 }) => {
   const handleSchoolSelect = (schoolId: string, checked: boolean) => {
     onSchoolSelect(schoolId, checked);

@@ -1,6 +1,6 @@
 // Auto-generated index file for en translations
 import app from './app';
-import { auth } from './auth';
+import auth from './auth';
 import { categories } from './categories';
 import core from './core';
 import dashboard from './dashboard';

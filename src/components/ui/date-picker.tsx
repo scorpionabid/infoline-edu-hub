@@ -18,7 +18,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   value,
   onChange,
   placeholder,
-  className
+  // className
 }) => {
   const { t } = useTranslation();
 
@@ -38,7 +38,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
           mode="single"
           selected={value}
           onSelect={onChange}
-          initialFocus
+          // initialFocus
         />
       </PopoverContent>
     </Popover>

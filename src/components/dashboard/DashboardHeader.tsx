@@ -103,7 +103,7 @@ const DashboardHeader: React.FC = () => {
         schoolCount,
         activeUserCount,
         completionPercentage,
-        pendingFormCount
+        // pendingFormCount
       });
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);

@@ -25,7 +25,7 @@ export const StatisticsFilters: React.FC<StatisticsFiltersProps> = ({
   availableRegions = [],
   availableSectors = [],
   availableCategories = [],
-  userRole
+  // userRole
 }) => {
   const handleDateRangeChange = (field: 'startDate' | 'endDate', value: string) => {
     onFiltersChange({

@@ -22,7 +22,7 @@ export const userFetchService = {
           status,
           last_login,
           created_at,
-          updated_at
+          // updated_at
         `)
         .order('created_at', { ascending: false });
 

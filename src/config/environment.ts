@@ -66,17 +66,17 @@ const getEnvVar = (key: string, defaultValue?: string): string => {
   // Enhanced fallbacks for development/Lovable environments
   if (!isProduction()) {
     switch (key) {
-      case 'VITE_SUPABASE_URL':
+      case 'VITE_SUPABASE_URL': {
         return 'https://olbfnauhzpdskqnxtwav.supabase.co';
-      case 'VITE_SUPABASE_ANON_KEY':
+      case 'VITE_SUPABASE_ANON_KEY': {
         return 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9sYmZuYXVoenBkc2txbnh0d2F2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI3ODQwNzksImV4cCI6MjA1ODM2MDA3OX0.OfoO5lPaFGPm0jMqAQzYCcCamSaSr6E1dF8i4rLcXj4';
-      case 'VITE_APP_NAME':
+      case 'VITE_APP_NAME': {
         return 'İnfoLine';
-      case 'VITE_APP_VERSION':
+      case 'VITE_APP_VERSION': {
         return '1.0.0';
-      case 'VITE_APP_ENV':
+      case 'VITE_APP_ENV': {
         return 'development';
-      case 'VITE_BASE_URL':
+      case 'VITE_BASE_URL': {
         return typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
       default:
         return '';

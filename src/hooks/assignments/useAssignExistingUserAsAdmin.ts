@@ -259,6 +259,6 @@ export const useAssignExistingUserAsAdmin = (props?: UseAssignExistingUserProps)
     assignSectorAdmin,
     assignSchoolAdmin,
     isLoading,
-    error
+    // error
   };
 };

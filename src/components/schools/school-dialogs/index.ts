@@ -8,5 +8,5 @@ export {
   DeleteDialog,
   EditDialog,
   AddDialog,
-  AdminDialog
+  // AdminDialog
 };

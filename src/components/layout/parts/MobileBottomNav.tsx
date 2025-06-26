@@ -6,7 +6,7 @@ import {
   CheckSquare, 
   BarChart, 
   Building,
-  Plus
+  // Plus
 } from 'lucide-react';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -32,7 +32,7 @@ const MobileBottomNav: React.FC = () => {
     isSchoolAdmin,
     isSectorAdmin,
     canApproveData,
-    canViewReports
+    // canViewReports
   } = usePermissions();
 
   // Bottom navigation items (max 5 for optimal mobile UX)

@@ -15,7 +15,7 @@ export const DateInput: React.FC<DateInputProps> = ({
   value,
   onChange,
   placeholder,
-  className
+  // className
 }) => {
   const { t } = useTranslation();
 

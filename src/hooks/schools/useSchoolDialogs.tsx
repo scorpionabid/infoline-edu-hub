@@ -84,7 +84,7 @@ export const useSchoolDialogs = (): UseSchoolDialogsReturn => {
     openAddDialog,
     closeAddDialog,
     openAdminDialog,
-    closeAdminDialog
+    // closeAdminDialog
   };
 };
 

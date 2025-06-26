@@ -36,7 +36,7 @@ const RegionDialogs: React.FC<RegionDialogsProps> = ({
   onAddRegion,
   onEditRegion,
   onDeleteRegion,
-  isSubmitting
+  // isSubmitting
 }) => {
   const { assignRegionAdmin, isLoading: isAssigningAdmin } = useAssignUserAsAdmin();
 

@@ -28,7 +28,7 @@ export const useOptimizedUserList = () => {
         limit, 
         userRole || 'schooladmin', 
         regionId, 
-        sectorId
+        // sectorId
       );
       
       setUsers(result.data);
@@ -51,6 +51,6 @@ export const useOptimizedUserList = () => {
     error,
     totalCount,
     fetchUsers,
-    refreshUsers
+    // refreshUsers
   };
 };

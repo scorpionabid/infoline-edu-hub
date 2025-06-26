@@ -195,7 +195,7 @@ const PreferencesForm = () => {
                       <Switch
                         checked={field.value}
                         onCheckedChange={field.onChange}
-                        disabled
+                        // disabled
                       />
                     </FormControl>
                   </FormItem>
@@ -217,7 +217,7 @@ const PreferencesForm = () => {
                       <Switch
                         checked={field.value}
                         onCheckedChange={field.onChange}
-                        disabled
+                        // disabled
                       />
                     </FormControl>
                   </FormItem>

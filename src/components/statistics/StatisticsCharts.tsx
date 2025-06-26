@@ -16,7 +16,7 @@ import {
   CartesianGrid, 
   Tooltip, 
   ResponsiveContainer,
-  Legend
+  // Legend
 } from 'recharts';
 import { StatisticsData } from '@/services/statisticsService';
 

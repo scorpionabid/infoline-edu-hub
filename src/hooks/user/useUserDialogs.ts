@@ -48,7 +48,7 @@ export const useUserDialogs = () => {
     handleDeleteUser,
     handleViewUserDetails,
     handleEditUserConfirm,
-    handleDeleteUserConfirm
+    // handleDeleteUserConfirm
   };
 };
 

@@ -403,7 +403,7 @@ export const useDataEntryManager = (options?: DataEntryManagerOptions | Category
     isSubmitting,
     schoolId,
     categoryId,
-    performSave
+    // performSave
   ]);
 
   // Cleanup effect
@@ -452,6 +452,6 @@ export const useDataEntryManager = (options?: DataEntryManagerOptions | Category
     handleSubmit,
     handleSave,
     resetForm,
-    loadData
+    // loadData
   };
 };

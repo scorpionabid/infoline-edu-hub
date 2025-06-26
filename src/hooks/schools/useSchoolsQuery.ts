@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useLanguage } from '@/context/LanguageContext';
-import { useDebounce } from '@/hooks/useDebounce';
+import { useDebounce } from '@/hooks/common/useDebounce';
 import { useState } from 'react';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 
@@ -40,7 +40,7 @@ export const useSchoolsQuery = (options: SchoolsQueryOptions = {}) => {
     status || 'all',
     debouncedSearchTerm || 'all',
     page,
-    limit
+    // limit
   ];
   
   // Calculate pagination
@@ -98,7 +98,7 @@ export const useSchoolsQuery = (options: SchoolsQueryOptions = {}) => {
     isLoading,
     isError,
     error,
-    refetch
+    // refetch
   } = useQuery({
     queryKey,
     queryFn: fetchSchools,
@@ -116,7 +116,7 @@ export const useSchoolsQuery = (options: SchoolsQueryOptions = {}) => {
         queryKey: [
           ...queryKey.slice(0, -2),
           page + 1,
-          limit
+          // limit
         ],
         queryFn: fetchSchools,
       });
@@ -134,7 +134,7 @@ export const useSchoolsQuery = (options: SchoolsQueryOptions = {}) => {
     refetch,
     searchTerm,
     setSearchTerm,
-    prefetchNextPage
+    // prefetchNextPage
   };
 };
 

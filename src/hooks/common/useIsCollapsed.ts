@@ -10,7 +10,7 @@ export const useIsCollapsed = (initialState = false) => {
   return {
     isCollapsed,
     toggleCollapsed,
-    setIsCollapsed
+    // setIsCollapsed
   };
 };
 

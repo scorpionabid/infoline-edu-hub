@@ -173,11 +173,11 @@ export class NotificationService {
 
   private static getNotificationTitle(action: string): string {
     switch (action) {
-      case 'submitted':
+      case 'submitted': {
         return 'Yeni məlumat təsdiqi gözləyir';
-      case 'approved':
+      case 'approved': {
         return 'Məlumatlarınız təsdiqləndi';
-      case 'rejected':
+      case 'rejected': {
         return 'Məlumatlarınız rədd edildi';
       default:
         return 'Bildiriş';
@@ -187,11 +187,11 @@ export class NotificationService {
   private static getNotificationMessage(action: string, entries: any[]): string {
     const count = entries.length;
     switch (action) {
-      case 'submitted':
+      case 'submitted': {
         return `${count} məlumat sahəsi təsdiq üçün göndərildi`;
-      case 'approved':
+      case 'approved': {
         return `${count} məlumat sahəsi təsdiqləndi`;
-      case 'rejected':
+      case 'rejected': {
         return `${count} məlumat sahəsi rədd edildi`;
       default:
         return `${count} məlumat sahəsi yeniləndi`;

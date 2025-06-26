@@ -41,7 +41,7 @@ export const AssignAdminDialog: React.FC<AssignAdminDialogProps> = ({
   onClose,
   onAssign,
   entityType,
-  entityName
+  // entityName
 }) => {
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string>('');
@@ -105,9 +105,9 @@ export const AssignAdminDialog: React.FC<AssignAdminDialogProps> = ({
 
   const getEntityTypeName = () => {
     switch (entityType) {
-      case 'school': return 'məktəb';
-      case 'sector': return 'sektor';
-      case 'region': return 'region';
+      case 'school': { return 'məktəb';
+      case 'sector': { return 'sektor';
+      case 'region': { return 'region';
       default: return 'entity';
     }
   };
@@ -121,7 +121,7 @@ export const AssignAdminDialog: React.FC<AssignAdminDialogProps> = ({
             Admin təyin et
           </DialogTitle>
           <DialogDescription>
-            <strong>"{entityName}"</strong> {getEntityTypeName()}una admin təyin edin
+            <strong>"{entityName}"</strong> {getEntityTypeName()}, una admin təyin edin
           </DialogDescription>
         </DialogHeader>
 

@@ -26,7 +26,7 @@ export const createTestWrapper = (Component: React.ComponentType<any>) => {
 
 // Create comprehensive test wrapper with all necessary providers
 export const renderWithProviders = (ui: React.ReactElement, 
-  { authValues = { isAuthenticated: false, isLoading: false, user: null, error: null, login: vi.fn(), logout: vi.fn(), clearError: vi.fn(), updateUser: vi.fn() } } = {}) => {
+  { authValues = { isAuthenticated: false, isLoading: false, user: null, error: null, login: vi.fn(), logout: vi.fn(), clearError: vi.fn(), updateUser: vi.fn() } = {}) => {
   return render(
     <MemoryRouter>
       <AuthContext.Provider value={authValues}>
@@ -74,7 +74,7 @@ vi.mock('@/integrations/supabase/client', () => ({
     auth: {
       getSession: vi.fn().mockResolvedValue({ data: { session: null }, error: null }),
       onAuthStateChange: vi.fn(() => ({ 
-        data: { subscription: { unsubscribe: vi.fn() } } 
+        data: { subscription: { unsubscribe: vi.fn() } 
       })),
       signInWithPassword: vi.fn(),
       signOut: vi.fn()

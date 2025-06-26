@@ -12,7 +12,7 @@ export const NotificationComponent: React.FC = () => {
     unreadCount,
     markAsRead,
     markAllAsRead,
-    clearAll
+    // clearAll
   } = useNotifications();
 
   if (loading) {

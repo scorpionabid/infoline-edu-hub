@@ -23,7 +23,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { School } from '@/types/school';
-import { useRegions } from '@/hooks/regions/useRegions';
+import { useRegions } from '@/contexts/RegionsContext';
 import { useSectorsStore } from '@/hooks/useSectorsStore';
 
 interface EditSchoolDialogProps {
@@ -37,7 +37,7 @@ export const EditSchoolDialog: React.FC<EditSchoolDialogProps> = ({
   isOpen,
   onClose,
   school,
-  onSuccess
+  // onSuccess
 }) => {
   const [formData, setFormData] = useState({
     name: school.name || '',
@@ -125,7 +125,7 @@ export const EditSchoolDialog: React.FC<EditSchoolDialogProps> = ({
                 name="name"
                 value={formData.name}
                 onChange={handleInputChange}
-                required
+                // required
               />
             </div>
 

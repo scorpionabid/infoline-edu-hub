@@ -13,7 +13,7 @@ interface CompletionChartProps {
 export const CompletionChart: React.FC<CompletionChartProps> = ({
   percentage,
   total,
-  completed
+  // completed
 }) => {
   const remaining = total - completed;
   

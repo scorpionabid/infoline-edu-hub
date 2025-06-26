@@ -59,7 +59,7 @@ const EnhancedCard = React.forwardRef<HTMLDivElement, EnhancedCardProps>(
           hover && "hover:shadow-md transition-shadow duration-200",
           isClickable && "cursor-pointer hover:scale-[1.02] transition-transform duration-200",
           "rounded-xl overflow-hidden",
-          className
+          // className
         )}
         onClick={onClick}
         {...props}

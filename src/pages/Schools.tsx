@@ -34,7 +34,7 @@ const Schools = () => {
     prevPage,
     totalItems,
     startIndex,
-    endIndex
+    // endIndex
   } = usePagination(schools, 10);
 
   const [filters, setFilters] = useState({

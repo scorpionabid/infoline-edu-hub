@@ -16,7 +16,7 @@ export const useCategoriesQuery = ({
     data: categories = [],
     isLoading,
     error,
-    refetch
+    // refetch
   } = useQuery({
     queryKey: ['categories', assignment],
     queryFn: async (): Promise<Category[]> => {
@@ -57,13 +57,13 @@ export const useCategoriesQuery = ({
       });
       return data as Category[];
     },
-    enabled
+    // enabled
   });
 
   return {
     categories,
     isLoading,
     error: error as Error | null,
-    refetch
+    // refetch
   };
 };

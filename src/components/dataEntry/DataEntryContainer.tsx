@@ -49,11 +49,11 @@ export const DataEntryContainer: React.FC<DataEntryContainerProps> = ({ children
   // Render role-specific data entry component
   const renderDataEntryComponent = () => {
     switch (userRole) {
-      case 'schooladmin':
+      case 'schooladmin': {
         return <SchoolAdminDataEntry />;
       
-      case 'sectoradmin':
-      case 'regionadmin':
+      case 'sectoradmin': {
+      case 'regionadmin': {
         return (
           <Alert>
             <AlertCircle className="h-4 w-4" />
@@ -71,7 +71,7 @@ export const DataEntryContainer: React.FC<DataEntryContainerProps> = ({ children
           </Alert>
         );
       
-      case 'superadmin':
+      case 'superadmin': {
         return (
           <Alert>
             <AlertCircle className="h-4 w-4" />

@@ -33,7 +33,7 @@ export const useUserFetch = () => {
             role,
             region_id,
             sector_id,
-            school_id
+            // school_id
           )
         `, { count: 'exact' });
 
@@ -135,6 +135,6 @@ export const useUserFetch = () => {
     loading,
     error,
     totalCount,
-    fetchUsers
+    // fetchUsers
   };
 };

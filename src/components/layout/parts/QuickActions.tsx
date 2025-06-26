@@ -24,7 +24,7 @@ const QuickActions: React.FC = () => {
     isSchoolAdmin,
     isSectorAdmin,
     canManageSchools,
-    canViewReports
+    // canViewReports
   } = usePermissions();
 
   // Touch gestures for mobile interaction
@@ -102,7 +102,7 @@ const QuickActions: React.FC = () => {
                     : "translate-y-4 opacity-0 scale-95"
                 )}
                 style={{
-                  transitionDelay: `${index * 50}ms`
+                  transitionDelay: `${index * 50}, ms`
                 }}
               >
                 <Button

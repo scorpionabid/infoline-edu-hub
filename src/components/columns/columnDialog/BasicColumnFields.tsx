@@ -37,7 +37,7 @@ const BasicColumnFields: React.FC<BasicColumnFieldsProps> = ({
   categories,
   selectedType,
   onTypeChange,
-  isEditMode
+  // isEditMode
 }) => {
   return (
     <div className="space-y-4">

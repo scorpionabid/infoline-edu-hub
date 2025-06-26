@@ -39,16 +39,16 @@ export const NotificationSystem: React.FC = () => {
     error,
     markAsRead,
     markAllAsRead,
-    removeNotification
+    // removeNotification
   } = useNotifications() as UseNotificationsResult;
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'success':
+      case 'success': {
         return <CheckCircle className="h-4 w-4 text-green-600" />;
-      case 'warning':
+      case 'warning': {
         return <AlertTriangle className="h-4 w-4 text-yellow-600" />;
-      case 'error':
+      case 'error': {
         return <AlertCircle className="h-4 w-4 text-red-600" />;
       default:
         return <Info className="h-4 w-4 text-blue-600" />;

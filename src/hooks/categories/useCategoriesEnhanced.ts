@@ -22,7 +22,7 @@ export function useCategoriesEnhanced() {
     categories,
     isLoading,
     error,
-    refetch
+    // refetch
   };
 }
 

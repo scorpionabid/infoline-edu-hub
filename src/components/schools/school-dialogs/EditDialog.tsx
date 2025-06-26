@@ -63,7 +63,7 @@ const EditDialog: React.FC<EditDialogProps> = ({
                   name="name"
                   value={formData.name}
                   onChange={handleFormChange}
-                  required
+                  // required
                 />
               </div>
               <div className="space-y-2">

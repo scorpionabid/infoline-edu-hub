@@ -39,7 +39,7 @@ export const useSchoolValidation = (): UseSchoolValidationResult => {
 
   return {
     validateField,
-    validateForm
+    // validateForm
   };
 };
 

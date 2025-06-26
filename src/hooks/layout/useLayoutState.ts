@@ -56,6 +56,6 @@ export const useLayoutState = (): LayoutState => {
     setSidebarOpen,
     toggleSidebar,
     closeSidebar,
-    openSidebar
+    // openSidebar
   };
 };

@@ -17,7 +17,7 @@ export const useSchoolsQuery = (): UseSchoolsQueryResult => {
     isLoading,
     isError,
     error,
-    refetch
+    // refetch
   } = useQuery({
     queryKey: ['schools'],
     queryFn: async () => {
@@ -37,7 +37,7 @@ export const useSchoolsQuery = (): UseSchoolsQueryResult => {
     isLoading,
     isError,
     error,
-    refetch
+    // refetch
   };
 };
 

@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 
 import React, { createContext, useContext, ReactNode } from 'react';
 import { useNotifications, UseNotificationsResult } from '@/hooks/notifications/useNotifications';

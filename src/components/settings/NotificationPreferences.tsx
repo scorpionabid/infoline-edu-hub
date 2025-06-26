@@ -39,7 +39,7 @@ import {
   RotateCcw,
   TrendingUp,
   CheckCircle,
-  AlertCircle
+  // AlertCircle
 } from 'lucide-react';
 import { useNotificationPreferences } from '@/notifications';
 import { useAuthStore, selectUser } from '@/hooks/auth';
@@ -73,7 +73,7 @@ const NotificationPreferences: React.FC<NotificationPreferencesProps> = ({
     isTestingNotification,
     canReceiveEmail,
     canReceivePush,
-    deadlineRemindersEnabled
+    // deadlineRemindersEnabled
   } = useNotificationPreferences(userId);
 
   if (isLoading) {
@@ -263,7 +263,7 @@ const NotificationPreferences: React.FC<NotificationPreferencesProps> = ({
                   <CardHeader className="pb-3">
                     <CardTitle className="text-sm flex items-center gap-2">
                       <Mail className="w-4 h-4" />
-                      Email
+                      // Email
                       {canReceiveEmail && <Badge variant="secondary" className="text-xs">Aktiv</Badge>}
                     </CardTitle>
                   </CardHeader>

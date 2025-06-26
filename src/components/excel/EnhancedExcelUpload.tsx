@@ -172,7 +172,7 @@ const EnhancedExcelUpload: React.FC<EnhancedExcelUploadProps> = ({
                     {t("supportedFormats")}: {acceptedFormats.join(", ")}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {t("maxSize")}: {Math.round(maxFileSize / 1024 / 1024)}MB
+                    {t("maxSize")}: {Math.round(maxFileSize / 1024 / 1024)}, MB
                   </p>
                 </div>
                 <div className="flex gap-2 justify-center">

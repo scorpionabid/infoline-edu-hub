@@ -59,7 +59,7 @@ const ChartView: React.FC<ChartViewProps> = ({
     showLegend, 
     legendPosition,
     labelKey,
-    valueKey
+    // valueKey
   } = chartConfig;
 
   // Get all available data keys except the xAxisKey
@@ -70,7 +70,7 @@ const ChartView: React.FC<ChartViewProps> = ({
   // Render appropriate chart based on type
   const renderChart = () => {
     switch (type) {
-      case 'bar':
+      case 'bar': {
         return (
           <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
             {showGrid && <CartesianGrid strokeDasharray="3 3" />}
@@ -93,7 +93,7 @@ const ChartView: React.FC<ChartViewProps> = ({
           </BarChart>
         );
       
-      case 'line':
+      case 'line': {
         return (
           <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 30 }}>
             {showGrid && <CartesianGrid strokeDasharray="3 3" />}
@@ -117,7 +117,7 @@ const ChartView: React.FC<ChartViewProps> = ({
           </LineChart>
         );
       
-      case 'pie':
+      case 'pie': {
         return (
           <PieChart>
             <Pie

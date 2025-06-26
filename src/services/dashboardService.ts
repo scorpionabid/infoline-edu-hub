@@ -157,7 +157,7 @@ export const dashboardService = {
         pendingApprovals: pendingEntries,
         completionRate,
         stats,
-        forms
+        // forms
       };
     } catch (error) {
       console.error('Error fetching region admin stats:', error);

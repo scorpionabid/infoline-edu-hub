@@ -148,7 +148,7 @@ export const NotificationSettings: React.FC = () => {
                   {t("realTimeUpdates")}
                 </Label>
                 <Badge variant="secondary" className="text-xs">
-                  Live
+                  // Live
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground">

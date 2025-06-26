@@ -415,18 +415,18 @@ export class EmailService {
 
       data?.forEach(log => {
         switch (log.status) {
-          case 'sent':
+          case 'sent': {
             stats.sent++;
-            break;
-          case 'delivered':
+            break; }
+          case 'delivered': {
             stats.delivered++;
-            break;
-          case 'failed':
+            break; }
+          case 'failed': {
             stats.failed++;
-            break;
-          case 'bounced':
+            break; }
+          case 'bounced': {
             stats.bounced++;
-            break;
+            break; }
         }
       });
 

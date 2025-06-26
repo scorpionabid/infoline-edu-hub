@@ -62,6 +62,6 @@ export const useValidation = () => {
     errors,
     validate,
     validateField,
-    clearErrors
+    // clearErrors
   };
 };

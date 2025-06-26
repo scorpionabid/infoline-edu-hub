@@ -32,7 +32,7 @@ import {
   Workflow,
   BookOpen,
   GraduationCap,
-  MapPin
+  // MapPin
 } from "lucide-react";
 import { useTranslation } from "@/contexts/TranslationContext";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -319,7 +319,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                             "group relative flex items-center gap-3 rounded-xl px-3 py-3 text-sm transition-all duration-200",
                             "hover:bg-accent/50 hover:shadow-md hover:scale-[1.02] hover:-translate-y-0.5",
                             "min-h-[48px] touch-manipulation",
-                            isActive
+                            // isActive
                               ? "bg-gradient-to-r text-white shadow-lg transform scale-[1.02]"
                               : "text-muted-foreground hover:text-foreground",
                             isActive && item.gradient ? `bg-gradient-to-r ${item.gradient}` : ""
@@ -353,7 +353,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                             {item.badge && (
                               <div className={cn(
                                 "ml-auto flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold",
-                                isActive
+                                // isActive
                                   ? "bg-white/30 text-white"
                                   : "bg-primary text-primary-foreground"
                               )}>

@@ -22,7 +22,7 @@ import {
   Loader2,
   AlertCircle,
   Building2,
-  Users
+  // Users
 } from 'lucide-react';
 import { Category, Column, SchoolDataEntry, DataStats, DataManagementPermissions } from '@/hooks/dataManagement/useDataManagement';
 
@@ -151,7 +151,7 @@ export const SchoolDataGrid: React.FC<SchoolDataGridProps> = memo(({
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="sm" onClick={onBack}>
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Geri
+          // Geri
         </Button>
         <div>
           <h3 className="text-2xl font-bold">Məlumat İdarəetməsi</h3>

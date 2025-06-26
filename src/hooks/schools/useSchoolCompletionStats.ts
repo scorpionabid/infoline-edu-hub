@@ -41,7 +41,7 @@ export const useSchoolCompletionStats = (schoolIds: string[]) => {
         .select(`
           school_id,
           status,
-          updated_at
+          // updated_at
         `)
         .in('school_id', memoizedSchoolIds);
         
@@ -83,7 +83,7 @@ export const useSchoolCompletionStats = (schoolIds: string[]) => {
           pendingEntries,
           approvedEntries,
           rejectedEntries,
-          lastUpdated
+          // lastUpdated
         });
       });
       
@@ -144,7 +144,7 @@ export const useSchoolCompletionStats = (schoolIds: string[]) => {
     loading,
     error,
     getStatsForSchool,
-    refreshStats
+    // refreshStats
   };
 };
 

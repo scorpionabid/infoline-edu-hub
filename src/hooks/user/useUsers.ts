@@ -42,6 +42,6 @@ export const useUsers = (filters?: { role?: string; status?: string; searchTerm?
     users: filteredUsers,
     isLoading,
     error,
-    refetch
+    // refetch
   };
 };

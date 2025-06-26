@@ -35,15 +35,15 @@ export const useValidation = (): UseValidationResult => {
       // Type-specific validation
       if (value && String(value).trim() !== '') {
         switch (column.type) {
-          case 'number':
+          case 'number': {
             if (isNaN(Number(value))) {
               newErrors.push({
                 field: column.id,
                 message: `${column.name} sahəsi yalnız rəqəm olmalıdır`
               });
             }
-            break;
-          case 'email':
+            break; }
+          case 'email': {
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(String(value))) {
               newErrors.push({
@@ -51,7 +51,7 @@ export const useValidation = (): UseValidationResult => {
                 message: `${column.name} sahəsi düzgün e-poçt formatında olmalıdır`
               });
             }
-            break;
+            break; }
         }
       }
     });
@@ -73,7 +73,7 @@ export const useValidation = (): UseValidationResult => {
     isValid: errors.length === 0,
     validate,
     clearErrors,
-    addError
+    // addError
   };
 };
 

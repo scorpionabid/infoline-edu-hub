@@ -185,9 +185,9 @@ export const useResponsiveLayout = (): UseResponsiveLayoutReturn => {
   // Utility function to get breakpoint classes
   const getBreakpointClass = useCallback((breakpoint: keyof ResponsiveLayoutConfig['sidebar']['breakpoints']) => {
     switch (breakpoint) {
-      case 'mobile': return 'md:hidden';
-      case 'tablet': return 'hidden md:block lg:hidden';
-      case 'desktop': return 'hidden lg:block';
+      case 'mobile': { return 'md:hidden';
+      case 'tablet': { return 'hidden md:block lg:hidden';
+      case 'desktop': { return 'hidden lg:block';
       default: return '';
     }
   }, []);
@@ -195,9 +195,9 @@ export const useResponsiveLayout = (): UseResponsiveLayoutReturn => {
   // Check if current screen matches breakpoint
   const isBreakpoint = useCallback((breakpoint: keyof ResponsiveLayoutConfig['sidebar']['breakpoints']) => {
     switch (breakpoint) {
-      case 'mobile': return isMobile;
-      case 'tablet': return isTablet;
-      case 'desktop': return isDesktop;
+      case 'mobile': { return isMobile;
+      case 'tablet': { return isTablet;
+      case 'desktop': { return isDesktop;
       default: return false;
     }
   }, [isMobile, isTablet, isDesktop]);
@@ -225,6 +225,6 @@ export const useResponsiveLayout = (): UseResponsiveLayoutReturn => {
     
     // Utility functions
     getBreakpointClass,
-    isBreakpoint
+    // isBreakpoint
   };
 };

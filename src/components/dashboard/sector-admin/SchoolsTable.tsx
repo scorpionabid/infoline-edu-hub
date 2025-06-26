@@ -44,7 +44,7 @@ const SchoolsTable: React.FC<SchoolsTableProps> = ({
         sectorId: user?.sector_id,
         realSchoolsCount: realSchools.length,
         schoolsLoading,
-        schoolsError
+        // schoolsError
       });
     }
   }, [realSchools.length, user?.role]); // Only log when these change
@@ -83,7 +83,7 @@ const SchoolsTable: React.FC<SchoolsTableProps> = ({
     setPageSize,
     totalItems,
     startIndex,
-    endIndex
+    // endIndex
   } = usePagination(schoolStats, 5); // 5 schools per page
   
   if (schoolsLoading) {

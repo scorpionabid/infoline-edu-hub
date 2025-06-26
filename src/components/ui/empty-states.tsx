@@ -20,7 +20,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   title,
   description,
   action,
-  className
+  // className
 }) => (
   <Card className={cn('w-full', className)}>
     <CardContent className="flex flex-col items-center justify-center py-12 text-center">

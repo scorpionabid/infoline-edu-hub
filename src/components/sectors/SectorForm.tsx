@@ -67,7 +67,7 @@ const SectorForm: React.FC<SectorFormProps> = ({
           value={formData.name || ""}
           onChange={(e) => handleInputChange("name", e.target.value)}
           placeholder={t("sectors.enterSectorName")}
-          required
+          // required
           disabled={isSubmitting}
         />
       </div>

@@ -33,13 +33,13 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
 
   const getBadgeVariant = (status: string) => {
     switch (status) {
-      case "active":
+      case "active": {
         return "default";
-      case "draft":
+      case "draft": {
         return "secondary";
-      case "inactive":
+      case "inactive": {
         return "outline";
-      case "archived":
+      case "archived": {
         return "destructive";
       default:
         return "default";

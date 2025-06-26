@@ -93,6 +93,6 @@ export const useAssignUserAsAdmin = () => {
     assignRegionAdmin,
     assignSectorAdmin,
     isLoading,
-    error
+    // error
   };
 };

@@ -20,7 +20,7 @@ export const SimpleSchoolSelector: React.FC<SimpleSchoolSelectorProps> = ({
   selectedSchoolId,
   onSchoolSelect,
   searchQuery,
-  onSearchChange
+  // onSearchChange
 }) => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 

@@ -47,7 +47,7 @@ export class DevTools {
     return () => {
       const duration = performance.now() - start;
       if (process.env.NODE_ENV === 'development') {
-        console.log(`⏱️ ${label}: ${duration.toFixed(2)}ms`);
+        console.log(`⏱️ ${label}: ${duration.toFixed(2)}, ms`);
       }
       return duration;
     };

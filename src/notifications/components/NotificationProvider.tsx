@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 /**
  * İnfoLine Unified Notification System - Provider Component
  * React context və provider komponenti
@@ -52,7 +53,7 @@ export const UnifiedNotificationProvider: React.FC<UnifiedNotificationProviderPr
     markAllAsRead,
     deleteNotification,
     clearAll,
-    refetch
+    // refetch
   } = notificationHook;
 
   // Show toast notifications for new notifications
@@ -82,38 +83,38 @@ export const UnifiedNotificationProvider: React.FC<UnifiedNotificationProviderPr
 
       // Show different toast types based on notification type
       switch (latestNotification.type) {
-        case 'success':
-        case 'approval':
+        case 'success': {
+        case 'approval': {
           toast.success(latestNotification.title, {
             description: latestNotification.message,
             ...toastOptions
           });
-          break;
+          break; }
           
-        case 'error':
-        case 'rejection':
+        case 'error': {
+        case 'rejection': {
           toast.error(latestNotification.title, {
             description: latestNotification.message,
             ...toastOptions
           });
-          break;
+          break; }
           
-        case 'warning':
-        case 'deadline':
+        case 'warning': {
+        case 'deadline': {
           toast.warning(latestNotification.title, {
             description: latestNotification.message,
             ...toastOptions
           });
-          break;
+          break; }
           
-        case 'info':
-        case 'system':
+        case 'info': {
+        case 'system': {
         default:
           toast.info(latestNotification.title, {
             description: latestNotification.message,
             ...toastOptions
           });
-          break;
+          break; }
       }
     }
   }, [notifications, enableToasts, toastConfig, markAsRead]);
@@ -191,7 +192,7 @@ export const UnifiedNotificationProvider: React.FC<UnifiedNotificationProviderPr
     markAllAsRead,
     deleteNotification,
     clearAll,
-    refetch
+    // refetch
   };
 
   return (
@@ -234,5 +235,5 @@ export default {
   UnifiedNotificationProvider,
   NotificationProvider,
   useNotificationContext,
-  withNotifications
+  // withNotifications
 };

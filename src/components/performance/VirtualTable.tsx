@@ -23,7 +23,7 @@ export function VirtualTable<T>(props: VirtualTableProps<T>) {
     height,
     renderItem,
     className = '',
-    onScrollEnd
+    // onScrollEnd
   } = props;
 
   // Simple virtual scrolling implementation

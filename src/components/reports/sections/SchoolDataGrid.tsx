@@ -45,7 +45,7 @@ interface SchoolDataGridProps {
 const SchoolDataGrid: React.FC<SchoolDataGridProps> = ({
   schoolColumnData,
   selectedColumns,
-  loading
+  // loading
 }) => {
   const getStatusBadge = (status: string) => {
     const statusConfig = {
