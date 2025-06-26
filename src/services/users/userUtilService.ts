@@ -18,7 +18,7 @@ export async function fetchAdminEntityData(roleItem: any) {
         .from('regions')
         .select('name, status')
         .eq('id', roleItem.region_id)
-        .maybeSingle();
+        .single();
       
       if (regionData) {
         adminEntity = {
@@ -32,14 +32,18 @@ export async function fetchAdminEntityData(roleItem: any) {
         .from('sectors')
         .select('name, status, regions!inner(name)')
         .eq('id', roleItem.sector_id)
-        .maybeSingle();
+        .single();
       
-      if (sectorData && sectorData.regions) {
+      if (sectorData) {
+        const regionName = Array.isArray(sectorData.regions) 
+          ? sectorData.regions[0]?.name || 'Unknown'
+          : (sectorData.regions as any)?.name || 'Unknown';
+          
         adminEntity = {
           type: 'sector',
           name: sectorData.name,
           status: sectorData.status,
-          regionName: Array.isArray(sectorData.regions) ? sectorData.regions[0]?.name : sectorData.regions.name
+          regionName
         };
       }
     } else if (rolStr === 'schooladmin' && roleItem.school_id) {
@@ -47,16 +51,24 @@ export async function fetchAdminEntityData(roleItem: any) {
         .from('schools')
         .select('name, status, type, sectors!inner(name), regions!inner(name)')
         .eq('id', roleItem.school_id)
-        .maybeSingle();
+        .single();
       
       if (schoolData) {
+        const sectorName = Array.isArray(schoolData.sectors)
+          ? schoolData.sectors[0]?.name || 'Unknown'
+          : (schoolData.sectors as any)?.name || 'Unknown';
+          
+        const regionName = Array.isArray(schoolData.regions)
+          ? schoolData.regions[0]?.name || 'Unknown'
+          : (schoolData.regions as any)?.name || 'Unknown';
+          
         adminEntity = {
           type: 'school',
           name: schoolData.name,
           status: schoolData.status,
           schoolType: schoolData.type,
-          sectorName: Array.isArray(schoolData.sectors) ? schoolData.sectors[0]?.name : schoolData.sectors?.name,
-          regionName: Array.isArray(schoolData.regions) ? schoolData.regions[0]?.name : schoolData.regions?.name
+          sectorName,
+          regionName
         };
       }
     }

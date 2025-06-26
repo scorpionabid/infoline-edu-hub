@@ -149,7 +149,8 @@ export const linkService = {
 
       const total = data?.length || 0;
       const active = data?.filter(link => link.is_active).length || 0;
-      const categories = [...new Set(data?.map(link => link.category).filter(Boolean))] || [];
+      const uniqueCategories = data?.map(link => link.category).filter(Boolean) || [];
+      const categories = [...new Set(uniqueCategories)];
 
       return { total, active, categories };
     } catch (error) {

@@ -2,7 +2,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { FullUserData, UserRole } from '@/types/auth';
 import { toast } from 'sonner';
-import { getUser } from './userFetchService';
 
 // Define UpdateUserData locally
 export interface UpdateUserData {
@@ -22,6 +21,56 @@ export interface UpdateUserData {
 // Mock audit log function - simplified
 const addAuditLog = async (action: string, entityType: string, entityId: string, oldData: any, newData: any) => {
   console.log('Audit log:', { action, entityType, entityId, oldData, newData });
+};
+
+// Simple user fetch function
+const getUser = async (userId: string): Promise<FullUserData | null> => {
+  try {
+    const [profileResult, roleResult] = await Promise.all([
+      supabase.from('profiles').select('*').eq('id', userId).single(),
+      supabase.from('user_roles').select('*').eq('user_id', userId).single()
+    ]);
+
+    if (profileResult.error || roleResult.error) {
+      console.error('Error fetching user:', profileResult.error || roleResult.error);
+      return null;
+    }
+
+    const profile = profileResult.data;
+    const role = roleResult.data;
+
+    return {
+      id: userId,
+      email: profile.email || '',
+      name: profile.full_name || '',
+      full_name: profile.full_name || '',
+      role: role.role || 'user',
+      region_id: role.region_id,
+      sector_id: role.sector_id,
+      school_id: role.school_id,
+      regionId: role.region_id,
+      sectorId: role.sector_id,
+      schoolId: role.school_id,
+      avatar: profile.avatar || '',
+      phone: profile.phone || '',
+      position: profile.position || '',
+      language: profile.language || 'az',
+      status: profile.status || 'active',
+      lastLogin: profile.last_login || null,
+      last_login: profile.last_login || null,
+      createdAt: profile.created_at || new Date().toISOString(),
+      updatedAt: profile.updated_at || new Date().toISOString(),
+      created_at: profile.created_at || new Date().toISOString(),
+      updated_at: profile.updated_at || new Date().toISOString(),
+      notificationSettings: {
+        email: true,
+        system: true
+      }
+    };
+  } catch (error) {
+    console.error('Error in getUser:', error);
+    return null;
+  }
 };
 
 // İstifadəçini yenilə

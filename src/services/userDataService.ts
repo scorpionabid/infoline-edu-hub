@@ -6,7 +6,26 @@
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { FullUserData, UserRole } from '@/types/supabase';
-import { CACHE_KEYS, getCache, setCache, CACHE_EXPIRY } from '@/lib/cache';
+
+// Simple cache implementation since the main cache module has issues
+const cache = new Map<string, { data: any; expiry: number }>();
+const CACHE_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes
+
+const getCache = <T>(key: string): T | null => {
+  const cached = cache.get(key);
+  if (cached && cached.expiry > Date.now()) {
+    return cached.data;
+  }
+  cache.delete(key);
+  return null;
+};
+
+const setCache = <T>(key: string, data: T): void => {
+  cache.set(key, {
+    data,
+    expiry: Date.now() + CACHE_EXPIRY_MS
+  });
+};
 
 // Anti-loop məntiqini əlavə edək
 const EVENT_THROTTLE_MS = 500;
@@ -15,10 +34,6 @@ let lastFetchedUserId: string | null = null;
 
 /**
  * İstifadəçi məlumatlarını əldə etmək
- * @param userId İstifadəçi ID-si
- * @param sessionData Cari sessiya
- * @param forceRefresh Keşi yeniləmək
- * @returns İstifadəçi məlumatları
  */
 export async function fetchUserData(
   userId: string,
@@ -39,7 +54,7 @@ export async function fetchUserData(
 
     // Əvvəlcə keşdən yoxlayırıq
     if (!forceRefresh) {
-      const cachedUser = getCache<FullUserData>(CACHE_KEYS.USER_PROFILE);
+      const cachedUser = getCache<FullUserData>(`user_profile_${userId}`);
       if (cachedUser && cachedUser.id === userId) {
         console.log('Using cached user data');
         return cachedUser;
@@ -66,7 +81,7 @@ export async function fetchUserData(
       const userData: FullUserData = {
         id: userId,
         email: sessionData.user.email || '',
-        role: rpcData.role || 'user',
+        role: rpcData.role || ('user' as UserRole),
         region_id: rpcData.region_id,
         sector_id: rpcData.sector_id,
         school_id: rpcData.school_id,
@@ -86,13 +101,6 @@ export async function fetchUserData(
         updatedAt: rpcData.updated_at || new Date().toISOString(),
         created_at: rpcData.created_at || new Date().toISOString(),
         updated_at: rpcData.updated_at || new Date().toISOString(),
-        adminEntity: {
-          type: rpcData.role,
-          name: rpcData.full_name || '',
-          schoolName: rpcData.school_name || '',
-          sectorName: rpcData.sector_name || '',
-          regionName: rpcData.region_name || ''
-        },
         notificationSettings: {
           email: true,
           system: true
@@ -104,7 +112,7 @@ export async function fetchUserData(
       lastFetchTime = now;
       
       // Keşdə saxlayırıq
-      setCache(CACHE_KEYS.USER_PROFILE, userData, CACHE_EXPIRY.MEDIUM);
+      setCache(`user_profile_${userId}`, userData);
       
       return userData;
     }
@@ -127,7 +135,7 @@ export async function fetchUserData(
     ]);
 
     // User role məlumatlarını alırıq
-    const userRole = roleResult.data?.role || 'user';
+    const userRole = roleResult.data?.role || ('user' as UserRole);
     const regionId = roleResult.data?.region_id;
     const sectorId = roleResult.data?.sector_id;
     const schoolId = roleResult.data?.school_id;
@@ -192,13 +200,6 @@ export async function fetchUserData(
       updatedAt: profile?.updated_at || new Date().toISOString(),
       created_at: profile?.created_at || new Date().toISOString(),
       updated_at: profile?.updated_at || new Date().toISOString(),
-      adminEntity: {
-        type: userRole,
-        name: profile?.full_name || '',
-        schoolName: '',
-        sectorName: '',
-        regionName: ''
-      },
       notificationSettings: {
         email: true,
         system: true
@@ -210,7 +211,7 @@ export async function fetchUserData(
     lastFetchTime = now;
     
     // Keşdə saxlayırıq
-    setCache(CACHE_KEYS.USER_PROFILE, userData, CACHE_EXPIRY.MEDIUM);
+    setCache(`user_profile_${userId}`, userData);
     
     return userData;
   } catch (error) {
@@ -252,12 +253,12 @@ export async function updateUserProfile(
     }
     
     // Keşi yeniləyirik
-    const cachedUser = getCache<FullUserData>(CACHE_KEYS.USER_PROFILE);
+    const cachedUser = getCache<FullUserData>(`user_profile_${userId}`);
     if (cachedUser && cachedUser.id === userId) {
-      setCache(CACHE_KEYS.USER_PROFILE, {
+      setCache(`user_profile_${userId}`, {
         ...cachedUser,
         ...updates
-      }, CACHE_EXPIRY.MEDIUM);
+      });
     }
     
     return true;
@@ -315,8 +316,6 @@ export async function createUser(userData: {
 
 /**
  * Rolları normallaşdırmaq
- * @param role Rol adı
- * @returns Normallaşdırılmış rol adı
  */
 export function normalizeRole(role: string): UserRole {
   // Kiçik hərflərə çeviririk və boşluqları silirik
@@ -333,13 +332,11 @@ export function normalizeRole(role: string): UserRole {
   }
   
   // Default olaraq user qaytarırıq
-  return 'user';
+  return 'user' as UserRole;
 }
 
 /**
  * Rol massivini normallaşdırmaq
- * @param roles Rol massivi
- * @returns Normallaşdırılmış rol massivi
  */
 export function normalizeRoleArray(roles: string[]): UserRole[] {
   return roles.map(normalizeRole).filter((role, index, self) => self.indexOf(role) === index);
