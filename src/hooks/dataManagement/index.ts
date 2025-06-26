@@ -1,4 +1,5 @@
 
+
 export { useDataManagement } from './useDataManagement';
 export type { 
   DataManagementStep,
@@ -8,7 +9,7 @@ export type {
   DataStats
 } from './useDataManagement';
 
-// Add the missing DataManagementState type export
+// DataManagementState type definition
 export type DataManagementState = {
   currentStep: DataManagementStep;
   selectedCategory: Category | null;
@@ -17,3 +18,4 @@ export type DataManagementState = {
   isLoading: boolean;
   error: string | null;
 };
+

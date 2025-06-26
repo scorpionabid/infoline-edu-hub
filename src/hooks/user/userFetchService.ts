@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { FullUserData } from '@/types/auth';
+import { FullUserData } from '@/types/user'; // Use user types consistently
 
 export const userFetchService = {
   async fetchAllUsers(): Promise<FullUserData[]> {
@@ -94,6 +94,10 @@ export const userFetchService = {
     }
   }
 };
+
+// Export individual functions for backward compatibility
+export const getUsers = userFetchService.fetchAllUsers;
+export const getUser = userFetchService.fetchUserById;
 
 // Add the missing fetchUserData function that useOptimizedUserList expects
 export const fetchUserData = async (

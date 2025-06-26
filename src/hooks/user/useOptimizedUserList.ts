@@ -1,12 +1,12 @@
 
 import { useState, useCallback } from 'react';
 import { userFetchService, fetchUserData } from './userFetchService';
-import { FullUserData as AuthFullUserData } from '@/types/auth';
+import { FullUserData } from '@/types/user'; // Use user types instead of auth types
 import { UserFilter } from '@/types/user';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 
 export const useOptimizedUserList = () => {
-  const [users, setUsers] = useState<AuthFullUserData[]>([]);
+  const [users, setUsers] = useState<FullUserData[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [totalCount, setTotalCount] = useState(0);
