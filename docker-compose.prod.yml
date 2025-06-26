@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  infoline-web:
+    build:
+      context: .
+      target: production
+    container_name: infoline-edu-hub
+    restart: unless-stopped
+    ports:
+      - "3000:8080"
+    environment:
+      - NODE_ENV=production
+      - TZ=Asia/Baku
+    volumes:
+      - ./logs:/var/log/nginx:rw
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/health-check.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - infoline-network
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: infoline-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-infolineredis2025}
+    volumes:
+      - redis-data:/data
+    networks:
+      - infoline-network
+
+networks:
+  infoline-network:
+    driver: bridge
+
+volumes:
+  redis-data:
+    driver: local

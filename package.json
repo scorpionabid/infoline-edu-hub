@@ -19,7 +19,12 @@
     "test:integration:watch": "vitest src/__tests__/integration",
     "test:all": "vitest run",
     "validate:translations": "tsx scripts/validate-translations-clean.ts",
-    "i18n:convert": "tsx scripts/convert-json-to-ts.ts"
+    "i18n:convert": "tsx scripts/convert-json-to-ts.ts",
+    "docker:build": "docker build -t infoline-edu-hub .",
+    "docker:dev": "docker-compose up --build",
+    "docker:prod": "docker-compose -f docker-compose.prod.yml up --build -d",
+    "docker:stop": "docker-compose down",
+    "deploy": "chmod +x deploy.sh && ./deploy.sh"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

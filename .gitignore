@@ -22,3 +22,16 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Docker & Deployment
+logs/
+ssl/
+*.pem
+*.key
+redis-data/
+.env.production
+docker-compose.override.yml
+
+# Backup files
+backup/
+*.backup
