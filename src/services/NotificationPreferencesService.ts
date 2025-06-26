@@ -1,3 +1,4 @@
+
 /**
  * Notification Preferences Service
  * User notification ayarlarını idarə edən service
@@ -149,12 +150,12 @@ export class NotificationPreferencesService {
       if (error) throw error;
 
       return {
-        total_received: data.total || 0,
-        total_read: data.read || 0,
+        total_received: data?.total || 0,
+        total_read: data?.read || 0,
         email_sent: 0, // TODO: Implement email tracking
         push_sent: 0, // TODO: Implement push tracking
         most_common_type: 'info', // TODO: Calculate from data
-        read_rate: data.read_rate || 0
+        read_rate: data?.read_rate || 0
       };
     } catch (error) {
       console.error('Error fetching notification stats:', error);
@@ -167,24 +168,22 @@ export class NotificationPreferencesService {
    */
   static async sendTestNotification(userId: string): Promise<boolean> {
     try {
-      const { notificationManager } = await import('@/notifications');
-      
-      const notification = await notificationManager.createNotification(
-        userId,
-        'Test Bildirişi',
-        'Bu test bildirişidir. Notification sisteminiz düzgün işləyir! 🎉',
-        'info',
-        {
+      const { data, error } = await supabase
+        .from('notifications')
+        .insert({
+          user_id: userId,
+          title: 'Test Bildirişi',
+          message: 'Bu test bildirişidir. Notification sisteminiz düzgün işləyir! 🎉',
+          type: 'info',
           priority: 'normal',
-          channels: ['inApp'],
-          metadata: {
-            test: true,
-            sent_at: new Date().toISOString()
-          }
-        }
-      );
+          channel: 'inApp',
+          is_read: false
+        })
+        .select()
+        .single();
 
-      return notification !== null;
+      if (error) throw error;
+      return data !== null;
     } catch (error) {
       console.error('Error sending test notification:', error);
       return false;

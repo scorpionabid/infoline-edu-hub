@@ -1,14 +1,12 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { SchoolLink, CreateSchoolLinkData, UpdateSchoolLinkData } from '@/types/link';
-import { ENV } from '@/config/environment';
 
 export const linkService = {
   // Get all links for a school
   async getSchoolLinks(schoolId: string): Promise<SchoolLink[]> {
     try {
       console.log('🔍 Loading links for school:', schoolId);
-      console.log('🔗 Supabase URL:', ENV.supabase.url);
-      console.log('🔑 API Key present:', !!ENV.supabase.anonKey);
       
       // Check authentication first
       const { data: { user }, error: authError } = await supabase.auth.getUser();
