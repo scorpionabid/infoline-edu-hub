@@ -30,22 +30,22 @@ export async function fetchAdminEntityData(roleItem: any) {
     } else if (rolStr === 'sectoradmin' && roleItem.sector_id) {
       const { data: sectorData } = await supabase
         .from('sectors')
-        .select('name, status, regions(name)')
+        .select('name, status, regions!inner(name)')
         .eq('id', roleItem.sector_id)
         .maybeSingle();
       
-      if (sectorData) {
+      if (sectorData && sectorData.regions) {
         adminEntity = {
           type: 'sector',
           name: sectorData.name,
           status: sectorData.status,
-          regionName: sectorData.regions?.name
+          regionName: Array.isArray(sectorData.regions) ? sectorData.regions[0]?.name : sectorData.regions.name
         };
       }
     } else if (rolStr === 'schooladmin' && roleItem.school_id) {
       const { data: schoolData } = await supabase
         .from('schools')
-        .select('name, status, type, sectors(name), regions(name)')
+        .select('name, status, type, sectors!inner(name), regions!inner(name)')
         .eq('id', roleItem.school_id)
         .maybeSingle();
       
@@ -55,8 +55,8 @@ export async function fetchAdminEntityData(roleItem: any) {
           name: schoolData.name,
           status: schoolData.status,
           schoolType: schoolData.type,
-          sectorName: schoolData.sectors?.name,
-          regionName: schoolData.regions?.name
+          sectorName: Array.isArray(schoolData.sectors) ? schoolData.sectors[0]?.name : schoolData.sectors?.name,
+          regionName: Array.isArray(schoolData.regions) ? schoolData.regions[0]?.name : schoolData.regions?.name
         };
       }
     }

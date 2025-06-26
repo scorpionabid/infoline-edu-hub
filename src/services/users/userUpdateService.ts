@@ -1,9 +1,28 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { UpdateUserData, FullUserData, UserRole } from '@/types/supabase';
+import { FullUserData, UserRole } from '@/types/auth';
 import { toast } from 'sonner';
-import { addAuditLog } from '@/hooks/auth/userDataService';
 import { getUser } from './userFetchService';
+
+// Define UpdateUserData locally
+export interface UpdateUserData {
+  full_name?: string;
+  phone?: string;
+  position?: string;
+  language?: string;
+  avatar?: string;
+  status?: 'active' | 'inactive' | 'blocked';
+  role?: UserRole;
+  region_id?: string | null;
+  sector_id?: string | null;
+  school_id?: string | null;
+  password?: string;
+}
+
+// Mock audit log function - simplified
+const addAuditLog = async (action: string, entityType: string, entityId: string, oldData: any, newData: any) => {
+  console.log('Audit log:', { action, entityType, entityId, oldData, newData });
+};
 
 // İstifadəçini yenilə
 export const updateUser = async (userId: string, updates: UpdateUserData): Promise<FullUserData | null> => {

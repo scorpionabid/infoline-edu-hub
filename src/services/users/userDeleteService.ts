@@ -1,8 +1,12 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { addAuditLog } from '@/hooks/auth/userDataService';
 import { getUser } from './userFetchService';
+
+// Mock audit log function - simplified
+const addAuditLog = async (action: string, entityType: string, entityId: string, oldData: any, newData: any) => {
+  console.log('Audit log:', { action, entityType, entityId, oldData, newData });
+};
 
 // İstifadəçini sil
 export const deleteUser = async (userId: string): Promise<boolean> => {

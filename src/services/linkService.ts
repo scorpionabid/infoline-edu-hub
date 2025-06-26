@@ -105,7 +105,7 @@ export const linkService = {
     }
   },
 
-  // Delete a link (soft delete)
+  // Delete a link (soft delete)  
   async deleteLink(linkId: string): Promise<void> {
     try {
       console.log('Deleting link:', linkId);
