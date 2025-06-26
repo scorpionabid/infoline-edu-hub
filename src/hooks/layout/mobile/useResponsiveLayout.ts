@@ -199,10 +199,14 @@ export const useResponsiveLayout = (): UseResponsiveLayoutReturn => {
   // Check if current screen matches breakpoint
   const isBreakpoint = useCallback((breakpoint: keyof ResponsiveLayoutConfig['sidebar']['breakpoints']) => {
     switch (breakpoint) {
-      case 'mobile': { return isMobile;
-      case 'tablet': { return isTablet;
-      case 'desktop': { return isDesktop;
-      default: return false;
+      case 'mobile': 
+        return isMobile;
+      case 'tablet': 
+        return isTablet;
+      case 'desktop': 
+        return isDesktop;
+      default: 
+        return false;
     }
   }, [isMobile, isTablet, isDesktop]);
 
