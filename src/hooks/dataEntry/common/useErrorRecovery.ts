@@ -380,7 +380,7 @@ export const useErrorRecovery = ({
             variant: 'default'
           });
           return true;
-      }
+        }
       
       throw new Error(`Recovery strategy ${strategy} failed`);
       

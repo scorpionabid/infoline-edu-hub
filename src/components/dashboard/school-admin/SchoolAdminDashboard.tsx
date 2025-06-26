@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { FilesCard } from "./FilesCard";
 import { LinksCard } from "./LinksCard";
-import NotificationCard from "@/components/dashboard/NotificationCard";
+import NotificationsCard from "@/components/dashboard/common/NotificationsCard";
 import EnhancedCard from "@/components/ui/enhanced-card";
 import { EnhancedStatsGrid } from "../enhanced/EnhancedStatsGrid";
 import { TranslationWrapper } from "@/components/translation/TranslationWrapper";
@@ -218,7 +218,7 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
           <FilesCard />
           
           {/* Notifications Section */}
-          <NotificationCard maxItems={5} />
+          <NotificationsCard maxNotifications={5} />
         </div>
         
         {/* Additional Tools Section */}

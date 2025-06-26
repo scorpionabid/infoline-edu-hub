@@ -13,7 +13,7 @@ export interface DataTransformationResult {
 }
 
 export const useDataTransformation = ({
-  // category
+  category
 }: DataTransformationOptions): DataTransformationResult => {
 
   const normalizeValue = useCallback((fieldId: string, value: any) => {
@@ -77,7 +77,8 @@ export const useDataTransformation = ({
             // Format numbers for display
             transformed[fieldId] = typeof value === 'number' ? 
               value.toLocaleString() : value;
-            break; }
+            break;
+          }
           
           case 'date': {
             // Format dates for display
@@ -89,11 +90,12 @@ export const useDataTransformation = ({
             } else {
               transformed[fieldId] = value;
             }
-            break; }
+            break;
+          }
           
           default:
             transformed[fieldId] = value;
-            break; }
+            break;
         }
       } else {
         transformed[fieldId] = value;
@@ -106,7 +108,7 @@ export const useDataTransformation = ({
   return {
     transformForSave,
     transformForDisplay,
-    // normalizeValue
+    normalizeValue
   };
 };
 
