@@ -1,5 +1,5 @@
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase as _supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 // Mock audit log function - simplified
@@ -8,7 +8,7 @@ const addAuditLog = async (action: string, entityType: string, entityId: string,
 };
 
 // İstifadəçi şifrəsini sıfırla
-export const resetUserPassword = async (userId: string, newPassword: string): Promise<boolean> => {
+export const resetUserPassword = async (userId: string, _newPassword: string): Promise<boolean> => {
   try {
     // Həqiqi layihədə bu edge function ilə edilməlidir
     console.log('İstifadəçi parolu sıfırlanır:', userId);

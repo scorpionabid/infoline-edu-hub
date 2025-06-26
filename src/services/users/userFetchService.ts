@@ -29,7 +29,7 @@ export const userFetchService = {
       if (!data) return null;
 
       // Ensure status is properly typed
-      const status: UserStatus = data.status === 'blocked' ? 'inactive' : 
+      const _status: UserStatus = data.status === 'blocked' ? 'inactive' : 
                                  data.status === 'active' ? 'active' : 'inactive';
 
       return {

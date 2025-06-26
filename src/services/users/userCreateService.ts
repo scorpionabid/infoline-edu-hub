@@ -1,5 +1,5 @@
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase as _supabase } from '@/integrations/supabase/client';
 import { UserRole } from '@/types/auth';
 import { toast } from 'sonner';
 

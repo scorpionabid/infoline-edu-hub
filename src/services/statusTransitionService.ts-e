@@ -493,7 +493,7 @@ export class StatusTransitionService {
     oldStatus: DataEntryStatus,
     newStatus: DataEntryStatus,
     userId: string,
-    _comment?: string
+    comment?: string
   ): Promise<void> {
     try {
       // For now, we'll use audit_logs table

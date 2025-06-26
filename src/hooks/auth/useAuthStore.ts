@@ -324,8 +324,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  hasPermission: (permission: string) => {
-    const state = get();
+  hasPermission: (_permission: string) => {
+    const _state = get();
     // Basic permission check 
     const { user } = get();
     if (!user) return false;

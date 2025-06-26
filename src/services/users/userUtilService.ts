@@ -35,7 +35,7 @@ export async function fetchAdminEntityData(roleItem: any) {
         .single();
       
       if (sectorData) {
-        const regionName = Array.isArray(sectorData.regions) 
+        const _regionName = Array.isArray(sectorData.regions) 
           ? sectorData.regions[0]?.name || 'Unknown'
           : (sectorData.regions as any)?.name || 'Unknown';
           
@@ -58,7 +58,7 @@ export async function fetchAdminEntityData(roleItem: any) {
           ? schoolData.sectors[0]?.name || 'Unknown'
           : (schoolData.sectors as any)?.name || 'Unknown';
           
-        const regionName = Array.isArray(schoolData.regions)
+        const _regionName = Array.isArray(schoolData.regions)
           ? schoolData.regions[0]?.name || 'Unknown'
           : (schoolData.regions as any)?.name || 'Unknown';
           

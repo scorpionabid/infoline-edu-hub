@@ -172,7 +172,7 @@ export class StatusValidationService {
    */
   private static async validateApprovalPermission(
     userRole: string,
-    schoolId: string
+    _schoolId: string
   ): Promise<StatusValidationResult> {
     try {
       // Əsas rol yoxlaması

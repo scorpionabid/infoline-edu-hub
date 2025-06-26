@@ -8,7 +8,7 @@ import userEvent from '@testing-library/user-event';
 
 // Mocking contexts that might not exist yet
 const mockAuthContext = {
-  Provider: ({ children, value }: { children: React.ReactNode; value: any }) => <div>{children}</div>
+  Provider: ({ children, value: _value }: { children: React.ReactNode; value: any }) => <div>{children}</div>
 };
 
 const mockLanguageProvider = ({ children }: { children: React.ReactNode }) => <div>{children}</div>;

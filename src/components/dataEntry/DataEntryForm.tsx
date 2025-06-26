@@ -1,13 +1,13 @@
 import React, { useMemo, useEffect, useRef } from 'react';
 import { CategoryWithColumns } from '@/types/category';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card as _Card, CardContent as _CardContent, CardHeader as _CardHeader, CardTitle as _CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert as _Alert, AlertDescription as _AlertDescription } from '@/components/ui/alert';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
@@ -48,9 +48,9 @@ const formatDate = (date: Date | string) => {
 
 export const DataEntryForm: React.FC<DataEntryFormProps> = ({
   category,
-  schoolId,
+  schoolId: _schoolId,
   formData,
-  onFormDataChange,
+  onFormDataChange: _onFormDataChange,
   onFieldChange,
   readOnly = false,
   isLoading = false,
