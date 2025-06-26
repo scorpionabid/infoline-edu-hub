@@ -21,17 +21,17 @@ export const StatusCards: React.FC<StatusCardsProps> = ({
 }) => {
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'approved': {
+      case 'approved':
         return 'text-green-600 bg-green-100 border-green-300';
-      case 'pending': {
+      case 'pending':
         return 'text-yellow-600 bg-yellow-100 border-yellow-300';
-      case 'rejected': {
+      case 'rejected':
         return 'text-red-600 bg-red-100 border-red-300';
-      case 'draft': {
+      case 'draft':
         return 'text-gray-600 bg-gray-100 border-gray-300';
-      case 'dueSoon': {
+      case 'dueSoon':
         return 'text-orange-600 bg-orange-100 border-orange-300';
-      case 'overdue': {
+      case 'overdue':
         return 'text-pink-600 bg-pink-100 border-pink-300';
       default:
         return 'text-gray-600 bg-gray-100 border-gray-300';

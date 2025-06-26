@@ -28,11 +28,11 @@ export const ResponsiveDashboardCard: React.FC<ResponsiveDashboardCardProps> = (
 }) => {
   const getVariantStyles = () => {
     switch (variant) {
-      case 'success': {
+      case 'success':
         return 'border-green-200 bg-green-50';
-      case 'warning': {
+      case 'warning':
         return 'border-yellow-200 bg-yellow-50';
-      case 'error': {
+      case 'error':
         return 'border-red-200 bg-red-50';
       default:
         return '';

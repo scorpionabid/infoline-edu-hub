@@ -1,3 +1,4 @@
+
 import React from "react";
 import {
   AlertDialog,
@@ -116,7 +117,7 @@ export const UniversalDialog: React.FC<UniversalDialogProps> = ({
                   {loadingText}
                 </>
               ) : (
-                // confirmText
+                confirmText
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -165,7 +166,7 @@ export const UniversalDialog: React.FC<UniversalDialogProps> = ({
                 {loadingText}
               </>
             ) : (
-              // confirmText
+              confirmText
             )}
           </Button>
         </DialogFooter>

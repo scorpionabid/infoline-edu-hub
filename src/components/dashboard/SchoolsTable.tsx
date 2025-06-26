@@ -1,3 +1,4 @@
+
 import React from "react";
 import {
   Table,
@@ -37,22 +38,22 @@ const SchoolsTable: React.FC<SchoolsTableProps> = ({
 
   const getStatusBadge = (status?: string) => {
     switch (status) {
-      case "active": {
+      case "active":
         return (
           <Badge
             variant="outline"
             className="bg-green-50 text-green-700 border-green-200"
           >
-            // Active
+            Active
           </Badge>
         );
-      case "inactive": {
+      case "inactive":
         return (
           <Badge
             variant="outline"
             className="bg-gray-50 text-gray-700 border-gray-200"
           >
-            // Inactive
+            Inactive
           </Badge>
         );
       default:
@@ -61,7 +62,7 @@ const SchoolsTable: React.FC<SchoolsTableProps> = ({
             variant="outline"
             className="bg-blue-50 text-blue-700 border-blue-200"
           >
-            // Unknown
+            Unknown
           </Badge>
         );
     }

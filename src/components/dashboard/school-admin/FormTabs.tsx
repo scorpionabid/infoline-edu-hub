@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -81,11 +82,11 @@ const FormTabs: React.FC<FormTabsProps> = ({
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case "high": {
+      case "high":
         return "text-red-600";
-      case "medium": {
+      case "medium":
         return "text-yellow-600";
-      case "low": {
+      case "low":
         return "text-green-600";
       default:
         return "text-gray-600";

@@ -11,15 +11,12 @@ export const useStatistics = (filters?: StatisticsFilters) => {
     if (!user || !userRole) return undefined;
     
     switch (userRole) {
-      case 'regionadmin': {
+      case 'regionadmin':
         return user.region_id;
-      }
-      case 'sectoradmin': {
+      case 'sectoradmin':
         return user.sector_id;
-      }
-      case 'schooladmin': {
+      case 'schooladmin':
         return user.school_id;
-      }
       default:
         return undefined;
     }
@@ -35,7 +32,7 @@ export const useStatistics = (filters?: StatisticsFilters) => {
       return await statisticsService.getStatistics(
         userRole as any,
         getEntityId(),
-        // filters
+        filters
       );
     },
     enabled: !!userRole && ['superadmin', 'regionadmin', 'sectoradmin'].includes(userRole),
