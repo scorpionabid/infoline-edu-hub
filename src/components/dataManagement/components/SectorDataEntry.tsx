@@ -209,6 +209,7 @@ export const SectorDataEntry: React.FC<SectorDataEntryProps> = ({
             Saxlanır...
           </div>
         );
+      }
       case 'saved': {
         return (
           <div className="flex items-center gap-2 text-green-600 text-sm">
@@ -216,6 +217,7 @@ export const SectorDataEntry: React.FC<SectorDataEntryProps> = ({
             Saxlanıldı {lastSaved && `(${lastSaved.toLocaleTimeString('az-AZ')})`}
           </div>
         );
+      }
       case 'error': {
         return (
           <div className="flex items-center gap-2 text-red-600 text-sm">
@@ -223,6 +225,7 @@ export const SectorDataEntry: React.FC<SectorDataEntryProps> = ({
             Saxlama xətası
           </div>
         );
+      }
       default:
         return null;
     }

@@ -399,10 +399,13 @@ export class ReportExportService {
       switch (format) {
         case 'excel': {
           return await ExcelExportService.exportToExcel(data, columns, exportOptions);
+        }
         case 'pdf': {
           return await PDFExportService.exportToPDF(data, columns, exportOptions);
+        }
         case 'csv': {
           return await CSVExportService.exportToCSV(data, columns, exportOptions);
+        }
         default:
           throw new Error(`Dəstəklənməyən format: ${format}`);
       }
@@ -431,10 +434,13 @@ export class ReportExportService {
       switch (format) {
         case 'excel': {
           return await ExcelExportService.exportToExcel(data, columns, exportOptions);
+        }
         case 'pdf': {
           return await PDFExportService.exportToPDF(data, columns, exportOptions);
+        }
         case 'csv': {
           return await CSVExportService.exportToCSV(data, columns, exportOptions);
+        }
         default:
           throw new Error(`Dəstəklənməyən format: ${format}`);
       }
@@ -464,10 +470,13 @@ export class ReportExportService {
       switch (format) {
         case 'excel': {
           return await ExcelExportService.exportToExcel(data, columns, exportOptions);
+        }
         case 'pdf': {
           return await PDFExportService.exportToPDF(data, columns, exportOptions);
+        }
         case 'csv': {
           return await CSVExportService.exportToCSV(data, columns, exportOptions);
+        }
         default:
           throw new Error(`Dəstəklənməyən format: ${format}`);
       }
@@ -497,10 +506,13 @@ export class ReportExportService {
       switch (format) {
         case 'excel': {
           return await ExcelExportService.exportToExcel(data, columns, exportOptions);
+        }
         case 'pdf': {
           return await PDFExportService.exportToPDF(data, columns, exportOptions);
+        }
         case 'csv': {
           return await CSVExportService.exportToCSV(data, columns, exportOptions);
+        }
         default:
           throw new Error(`Dəstəklənməyən format: ${format}`);
       }

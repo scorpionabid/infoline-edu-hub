@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useSupabase } from '@/lib/supabase/SupabaseProvider';
+import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/hooks/auth/useAuthStore';
 
 interface RegionAdmin {
@@ -15,7 +15,7 @@ export function useRegionAdmins(regionId?: string) {
   const [admins, setAdmins] = useState<RegionAdmin[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const { supabase } = useSupabase();
+  // Birbaşa import edilən supabase client istifadə olunur
   const session = useAuthStore(state => state.session);
 
   useEffect(() => {
@@ -59,8 +59,8 @@ export function useRegionAdmins(regionId?: string) {
           user_id: admin.user_id,
           region_id: admin.region_id,
           created_at: admin.created_at,
-          user_email: admin.profiles?.email,
-          user_full_name: admin.profiles?.full_name
+          user_email: admin.profiles && admin.profiles[0]?.email,
+          user_full_name: admin.profiles && admin.profiles[0]?.full_name
         })) || [];
 
         setAdmins(formattedData);

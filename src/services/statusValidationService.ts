@@ -62,7 +62,7 @@ export class StatusValidationService {
     return {
       isValid: errors.length === 0,
       errors,
-      // warnings
+      warnings
     };
   }
   
@@ -76,9 +76,11 @@ export class StatusValidationService {
     switch (rule) {
       case 'all_required_fields_completed': {
         return await this.validateRequiredFields(context.schoolId, context.categoryId);
+      }
         
       case 'has_approval_permission': {
         return await this.validateApprovalPermission(context.userRole, context.schoolId);
+      }
         
       case 'rejection_reason_provided': {
         return {
@@ -86,6 +88,7 @@ export class StatusValidationService {
           errors: context.rejectionReason ? [] : ['Rejection reason is required'],
           warnings: []
         };
+      }
         
       default:
         console.warn(`Unknown validation rule: ${rule}`);
@@ -183,7 +186,7 @@ export class StatusValidationService {
       }
       
       // İstifadəçi məlumatlarını əldə et
-      const { data: { user } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
         return { 

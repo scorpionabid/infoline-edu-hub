@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import * as XLSX from 'xlsx';
 
 export interface UseExcelIntegrationOptions {

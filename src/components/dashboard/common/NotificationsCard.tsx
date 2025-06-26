@@ -81,17 +81,17 @@ const NotificationsCard: React.FC<NotificationsCardProps> = ({
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'deadline': {
-      case 'warning': {
+      case 'deadline':
+      case 'warning':
         return <Clock className="w-4 h-4 text-orange-500" />;
-      case 'success': {
-      case 'approval': {
+      case 'success':
+      case 'approval':
         return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case 'error': {
-      case 'rejection': {
+      case 'error':
+      case 'rejection':
         return <AlertTriangle className="w-4 h-4 text-red-500" />;
-      case 'info': {
-      case 'system': {
+      case 'info':
+      case 'system':
         return <Bell className="w-4 h-4 text-blue-500" />;
       default:
         return <Bell className="w-4 h-4 text-gray-500" />;
@@ -100,11 +100,11 @@ const NotificationsCard: React.FC<NotificationsCardProps> = ({
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'critical': {
+      case 'critical':
         return 'bg-red-500 text-white';
-      case 'high': {
+      case 'high':
         return 'bg-orange-500 text-white';
-      case 'normal': {
+      case 'normal':
         return 'bg-blue-500 text-white';
       default:
         return 'bg-gray-500 text-white';
@@ -127,15 +127,16 @@ const NotificationsCard: React.FC<NotificationsCardProps> = ({
     let filtered = notifications;
 
     switch (filter) {
-      case 'unread': {
+      case 'unread':
         filtered = filtered.filter(n => !n.is_read);
-        break; }
-      case 'urgent': {
+        break;
+      case 'urgent':
         filtered = filtered.filter(n => n.priority === 'critical' || n.priority === 'high');
-        break; }
-      case 'all': {
+        break;
+      case 'all':
       default:
-        break; }
+        // No filtering for 'all'
+        break;
     }
 
     return filtered.slice(0, maxNotifications);

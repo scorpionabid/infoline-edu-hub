@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
-import { School, Region, Sector } from '@/types/school';
+import { School } from '@/types/school';
+import { Region } from '@/types/region';
+import { Sector } from '@/types/sector';
 import { SchoolTable } from './SchoolTable';
 import { SchoolHeader } from './SchoolHeader';
 import { SchoolFilters } from './SchoolFilters';
-import { SchoolPagination } from './SchoolPagination';
+import SchoolPagination from './SchoolPagination';
 import AddSchoolDialog from './AddSchoolDialog';
-import EditSchoolDialog from './EditSchoolDialog';
-import DeleteSchoolDialog from './DeleteSchoolDialog';
-import AssignAdminDialog from './AssignAdminDialog';
-import SchoolFilesDialog from './SchoolFilesDialog';
-import SchoolLinksDialog from './SchoolLinksDialog';
+import { EditSchoolDialog } from './EditSchoolDialog';
+import { DeleteSchoolDialog } from './DeleteSchoolDialog';
+import { AssignAdminDialog } from './AssignAdminDialog';
+import { SchoolFilesDialog } from './SchoolFilesDialog';
+import { SchoolLinksDialog } from './SchoolLinksDialog';
 
 interface SchoolsContainerProps {
   schools: School[];
@@ -153,14 +155,20 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <SchoolHeader onAdd={handleAdd} onRefresh={onRefresh} />
+      <SchoolHeader onAddClick={handleAdd} />
 
       {/* Filters */}
       <SchoolFilters
-        filters={filters}
-        onFilterChange={onFilterChange}
+        searchQuery={filters.search}
+        setSearchQuery={(query) => onFilterChange({ ...filters, search: query })}
+        selectedRegion={filters.regionId}
+        setSelectedRegion={(regionId) => onFilterChange({ ...filters, regionId })}
+        selectedSector={filters.sectorId}
+        setSelectedSector={(sectorId) => onFilterChange({ ...filters, sectorId })}
         regions={regions}
         sectors={sectors}
+        loadingRegions={false}
+        loadingSectors={false}
       />
 
       {/* Table */}
@@ -179,13 +187,17 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
       {/* Pagination */}
       <SchoolPagination
         currentPage={currentPage}
-        pageSize={pageSize}
-        totalCount={totalCount}
+        totalPages={Math.ceil(totalCount / pageSize)}
         onPageChange={onPageChange}
-        onPageSizeChange={onPageSizeChange}
       />
 
       {/* Dialogs */}
+      <SchoolFilesDialog
+        open={filesDialogOpen}
+        onOpenChange={(open) => setFilesDialogOpen(open)}
+        schoolId={selectedSchool?.id || ''}
+      />
+
       <AddSchoolDialog
         isOpen={addDialogOpen}
         onClose={() => setAddDialogOpen(false)}
@@ -220,9 +232,8 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
               setDeleteDialogOpen(false);
               setSelectedSchool(null);
             }}
-            onConfirm={handleDeleteConfirm}
-            isDeleting={isSubmitting}
-            school={selectedSchool}
+            onConfirm={() => selectedSchool && handleDelete(selectedSchool)}
+            school={selectedSchool!}
           />
 
           <AssignAdminDialog
@@ -232,26 +243,26 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
               setSelectedSchool(null);
             }}
             onAssign={handleAdminAssign}
-            isAssigning={isSubmitting}
-            school={selectedSchool}
+            entityType="school"
+            entityName={selectedSchool?.name || ''}
           />
 
           <SchoolFilesDialog
-            isOpen={filesDialogOpen}
-            onClose={() => {
-              setFilesDialogOpen(false);
-              setSelectedSchool(null);
+            open={filesDialogOpen}
+            onOpenChange={(open) => {
+              setFilesDialogOpen(open);
+              if (!open) setSelectedSchool(null);
             }}
-            school={selectedSchool}
+            schoolId={selectedSchool?.id || ''}
           />
 
           <SchoolLinksDialog
-            isOpen={linksDialogOpen}
-            onClose={() => {
-              setLinksDialogOpen(false);
-              setSelectedSchool(null);
+            open={linksDialogOpen}
+            onOpenChange={(open) => {
+              setLinksDialogOpen(open);
+              if (!open) setSelectedSchool(null);
             }}
-            school={selectedSchool}
+            schoolId={selectedSchool?.id || ''}
           />
         </>
       )}

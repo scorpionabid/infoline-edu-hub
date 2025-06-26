@@ -62,11 +62,11 @@ class StatisticsService {
   ): Promise<StatisticsData> {
     try {
       switch (userRole) {
-        case 'superadmin': {
+        case 'superadmin': 
           return await this.getSuperAdminStatistics(filters);
-        case 'regionadmin': {
+        case 'regionadmin': 
           return await this.getRegionAdminStatistics(entityId!, filters);
-        case 'sectoradmin': {
+        case 'sectoradmin': 
           return await this.getSectorAdminStatistics(entityId!, filters);
         default:
           throw new Error('Bu rol üçün statistika mövcud deyil');
@@ -411,7 +411,7 @@ class StatisticsService {
     if (!entries) return [];
     
     // Günlük məlumatları qruplaşdır
-    const dailyStats: { [key: string]: { submissions: number; approvals: number } = {};
+    const dailyStats: { [key: string]: { submissions: number; approvals: number } } = {};
     
     entries.forEach(entry => {
       const date = new Date(entry.created_at).toISOString().split('T')[0];

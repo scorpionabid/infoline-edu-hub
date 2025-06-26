@@ -67,3 +67,4 @@ export const DeleteSchoolDialog: React.FC<DeleteSchoolDialogProps> = ({
     </AlertDialog>
   );
 };
+

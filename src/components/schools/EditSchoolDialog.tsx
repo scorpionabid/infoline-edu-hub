@@ -23,40 +23,52 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { School } from '@/types/school';
+import { Region } from '@/types/region';
+import { Sector } from '@/types/sector';
 import { useRegions } from '@/contexts/RegionsContext';
-import { useSectorsStore } from '@/hooks/useSectorsStore';
+import { useSectorsQuery } from '@/hooks/sectors/useSectorsQuery';
 
 interface EditSchoolDialogProps {
   isOpen: boolean;
   onClose: () => void;
   school: School;
-  onSuccess: () => void;
+  onSubmit: (schoolData: School) => Promise<void>;
+  isSubmitting: boolean;
+  regions: Region[];
+  sectors: Sector[];
+  regionNames: Record<string, string>;
+  sectorNames: Record<string, string>;
 }
 
 export const EditSchoolDialog: React.FC<EditSchoolDialogProps> = ({
   isOpen,
   onClose,
   school,
-  // onSuccess
+  onSubmit,
+  isSubmitting,
+  regions,
+  sectors,
+  regionNames,
+  sectorNames
 }) => {
   const [formData, setFormData] = useState({
     name: school.name || '',
-    region_id: school.region_id || '',
-    sector_id: school.sector_id || '',
     address: school.address || '',
     phone: school.phone || '',
     email: school.email || '',
-    principal_name: school.principal_name || '',
-    student_count: school.student_count || 0,
-    teacher_count: school.teacher_count || 0,
-    type: school.type || 'full_secondary',
-    language: school.language || 'az',
+    website: (school as any).website || '',
+    principal_name: (school as any).principal_name || '',
+    student_count: (school as any).student_count || 0,
+    teacher_count: (school as any).teacher_count || 0,
+    type: (school as any).type || '',
+    language: (school as any).language || '',
+    region_id: school.region_id || '',
+    sector_id: school.sector_id || '',
     status: school.status || 'active',
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const { regions = [] } = useRegions() || {};
-  const { sectors = [] } = useSectorsStore() || {};
+  // Using regions and sectors from props instead of fetching them again
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -83,7 +95,7 @@ export const EditSchoolDialog: React.FC<EditSchoolDialogProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
+    setIsLoading(true);
 
     try {
       const { error } = await supabase
@@ -94,13 +106,17 @@ export const EditSchoolDialog: React.FC<EditSchoolDialogProps> = ({
       if (error) throw error;
 
       toast.success('Məktəb uğurla yeniləndi');
-      onSuccess();
+      // Call the onSubmit callback with the updated school data
+      await onSubmit({
+        ...school, // Preserve id and created_at from original school
+        ...formData,
+      });
       onClose();
     } catch (error: any) {
       console.error('Məktəb yeniləmə xətası:', error);
       toast.error('Məktəb yeniləmərkən xəta: ' + error.message);
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
 
@@ -300,14 +316,14 @@ export const EditSchoolDialog: React.FC<EditSchoolDialogProps> = ({
             <Button variant="outline" type="button" onClick={onClose} disabled={isSubmitting}>
               Ləğv et
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting} className="w-full">
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Yenilənir...
+                  Yüklənir
                 </>
               ) : (
-                'Yenilə'
+                'Yadda saxla'
               )}
             </Button>
           </DialogFooter>
@@ -316,3 +332,5 @@ export const EditSchoolDialog: React.FC<EditSchoolDialogProps> = ({
     </Dialog>
   );
 };
+
+
