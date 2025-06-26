@@ -26,31 +26,34 @@ const addAuditLog = async (action: string, entityType: string, entityId: string,
 // Simple user fetch function
 const getUser = async (userId: string): Promise<FullUserData | null> => {
   try {
-    const [profileResult, roleResult] = await Promise.all([
-      supabase.from('profiles').select('*').eq('id', userId).single(),
-      supabase.from('user_roles').select('*').eq('user_id', userId).single()
-    ]);
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select(`
+        *,
+        user_roles!inner(role, region_id, sector_id, school_id)
+      `)
+      .eq('id', userId)
+      .single();
 
-    if (profileResult.error || roleResult.error) {
-      console.error('Error fetching user:', profileResult.error || roleResult.error);
+    if (profileError) {
+      console.error('Error fetching user:', profileError);
       return null;
     }
 
-    const profile = profileResult.data;
-    const role = roleResult.data;
+    const userRole = profile.user_roles?.role || 'schooladmin';
 
     return {
       id: userId,
       email: profile.email || '',
       name: profile.full_name || '',
       full_name: profile.full_name || '',
-      role: role.role || 'user',
-      region_id: role.region_id,
-      sector_id: role.sector_id,
-      school_id: role.school_id,
-      regionId: role.region_id,
-      sectorId: role.sector_id,
-      schoolId: role.school_id,
+      role: userRole,
+      region_id: profile.user_roles?.region_id,
+      sector_id: profile.user_roles?.sector_id,
+      school_id: profile.user_roles?.school_id,
+      regionId: profile.user_roles?.region_id,
+      sectorId: profile.user_roles?.sector_id,
+      schoolId: profile.user_roles?.school_id,
       avatar: profile.avatar || '',
       phone: profile.phone || '',
       position: profile.position || '',

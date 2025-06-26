@@ -82,7 +82,7 @@ export async function fetchUserData(
       const userData: FullUserData = {
         id: userId,
         email: sessionData.user.email || '',
-        role: rpcData.role || ('user' as UserRole),
+        role: (rpcData.role || 'schooladmin') as UserRole,
         region_id: rpcData.region_id,
         sector_id: rpcData.sector_id,
         school_id: rpcData.school_id,
@@ -132,7 +132,7 @@ export async function fetchUserData(
     ]);
 
     // User role məlumatlarını alırıq
-    const userRole = roleResult.data?.role || ('user' as UserRole);
+    const userRole = (roleResult.data?.role || 'schooladmin') as UserRole;
     const regionId = roleResult.data?.region_id;
     const sectorId = roleResult.data?.sector_id;
     const schoolId = roleResult.data?.school_id;
@@ -315,7 +315,7 @@ export function normalizeRole(role: string): UserRole {
   const normalizedRole = role.toLowerCase().trim().replace(/\s+/g, '');
   
   // Standart rol adları
-  const standardRoles: UserRole[] = ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin', 'user'];
+  const standardRoles: UserRole[] = ['superadmin', 'regionadmin', 'sectoradmin', 'schooladmin'];
   
   // Əgər rol standart rollardan birinə uyğundursa, onu qaytarırıq
   for (const stdRole of standardRoles) {
@@ -324,8 +324,8 @@ export function normalizeRole(role: string): UserRole {
     }
   }
   
-  // Default olaraq user qaytarırıq
-  return 'user' as UserRole;
+  // Default olaraq schooladmin qaytarırıq
+  return 'schooladmin' as UserRole;
 }
 
 /**

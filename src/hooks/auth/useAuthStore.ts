@@ -1,11 +1,10 @@
-
 import { create } from 'zustand';
 import { supabase } from '@/integrations/supabase/client';
 import { AuthState, FullUserData } from '@/types/auth';
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
-  isLoading: true,
+  isLoading: false,
   isAuthenticated: false,
   error: null,
   session: null,
@@ -25,10 +24,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       if (error) throw error;
 
-      // Fetch user profile
+      // Fetch user profile with role
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('*')
+        .select(`
+          *,
+          user_roles!inner(role, region_id, sector_id, school_id)
+        `)
         .eq('id', data.user.id)
         .single();
 
@@ -37,23 +39,31 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         throw profileError;
       }
 
+      const userRole = profile.user_roles?.role || 'schooladmin';
+
       const userData: FullUserData = {
         id: profile.id,
-        email: profile.email,
-        full_name: profile.full_name,
-        name: profile.full_name,
-        role: profile.role,
-        region_id: profile.region_id,
-        sector_id: profile.sector_id,
-        school_id: profile.school_id,
+        email: data.user.email || profile.email || '',
+        full_name: profile.full_name || '',
+        name: profile.full_name || '',
+        role: userRole,
+        region_id: profile.user_roles?.region_id,
+        sector_id: profile.user_roles?.sector_id,
+        school_id: profile.user_roles?.school_id,
+        regionId: profile.user_roles?.region_id,
+        sectorId: profile.user_roles?.sector_id,
+        schoolId: profile.user_roles?.school_id,
         phone: profile.phone,
         position: profile.position,
-        language: profile.language,
+        language: profile.language || 'az',
         avatar: profile.avatar,
-        status: profile.status,
+        status: profile.status || 'active',
         last_login: profile.last_login,
         created_at: profile.created_at,
-        updated_at: profile.updated_at
+        updated_at: profile.updated_at,
+        lastLogin: profile.last_login,
+        createdAt: profile.created_at,
+        updatedAt: profile.updated_at
       };
 
       set({
@@ -61,7 +71,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         session: data.session,
         isAuthenticated: true,
         isLoading: false,
-        error: null
+        error: null,
+        initialized: true
       });
 
       console.log('✅ [Auth] Sign in successful', { userId: userData.id, role: userData.role });
@@ -72,7 +83,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         session: null,
         isAuthenticated: false,
         isLoading: false,
-        error: error.message
+        error: error.message,
+        initialized: true
       });
       throw error;
     }
@@ -90,7 +102,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         session: null,
         isAuthenticated: false,
         isLoading: false,
-        error: null
+        error: null,
+        initialized: true
       });
 
       console.log('🔓 [Auth] Sign out successful');
@@ -114,28 +127,39 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     const { data: profile } = await supabase
       .from('profiles')
-      .select('*')
+      .select(`
+        *,
+        user_roles!inner(role, region_id, sector_id, school_id)
+      `)
       .eq('id', user.id)
       .single();
 
     if (profile) {
+      const userRole = profile.user_roles?.role || 'schooladmin';
+
       const userData: FullUserData = {
         id: profile.id,
-        email: profile.email,
-        full_name: profile.full_name,
-        name: profile.full_name,
-        role: profile.role,
-        region_id: profile.region_id,
-        sector_id: profile.sector_id,
-        school_id: profile.school_id,
+        email: user.email || profile.email || '',
+        full_name: profile.full_name || '',
+        name: profile.full_name || '',
+        role: userRole,
+        region_id: profile.user_roles?.region_id,
+        sector_id: profile.user_roles?.sector_id,
+        school_id: profile.user_roles?.school_id,
+        regionId: profile.user_roles?.region_id,
+        sectorId: profile.user_roles?.sector_id,
+        schoolId: profile.user_roles?.school_id,
         phone: profile.phone,
         position: profile.position,
-        language: profile.language,
+        language: profile.language || 'az',
         avatar: profile.avatar,
-        status: profile.status,
+        status: profile.status || 'active',
         last_login: profile.last_login,
         created_at: profile.created_at,
-        updated_at: profile.updated_at
+        updated_at: profile.updated_at,
+        lastLogin: profile.last_login,
+        createdAt: profile.created_at,
+        updatedAt: profile.updated_at
       };
 
       set({ user: userData });
@@ -155,40 +179,62 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   initializeAuth: async (loginOnly = false): Promise<void> => {
     const state = get();
     
-    if (state.initializationAttempted && !loginOnly) {
+    // Prevent multiple initialization attempts
+    if (state.initialized && !loginOnly) {
+      return;
+    }
+
+    // Prevent concurrent initialization
+    if (state.isLoading && !loginOnly) {
       return;
     }
 
     set({ isLoading: true, initializationAttempted: true });
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        throw sessionError;
+      }
       
       if (session?.user) {
-        const { data: profile } = await supabase
+        // Fetch user profile with role
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('*')
+          .select(`
+            *,
+            user_roles!inner(role, region_id, sector_id, school_id)
+          `)
           .eq('id', session.user.id)
-          .single();
+          .maybeSingle();
 
-        if (profile) {
+        if (profile && !profileError) {
+          const userRole = profile.user_roles?.role || 'schooladmin';
+
           const userData: FullUserData = {
             id: profile.id,
-            email: profile.email,
-            full_name: profile.full_name,
-            name: profile.full_name,
-            role: profile.role,
-            region_id: profile.region_id,
-            sector_id: profile.sector_id,
-            school_id: profile.school_id,
+            email: session.user.email || profile.email || '',
+            full_name: profile.full_name || '',
+            name: profile.full_name || '',
+            role: userRole,
+            region_id: profile.user_roles?.region_id,
+            sector_id: profile.user_roles?.sector_id,
+            school_id: profile.user_roles?.school_id,
+            regionId: profile.user_roles?.region_id,
+            sectorId: profile.user_roles?.sector_id,
+            schoolId: profile.user_roles?.school_id,
             phone: profile.phone,
             position: profile.position,
-            language: profile.language,
+            language: profile.language || 'az',
             avatar: profile.avatar,
-            status: profile.status,
+            status: profile.status || 'active',
             last_login: profile.last_login,
             created_at: profile.created_at,
-            updated_at: profile.updated_at
+            updated_at: profile.updated_at,
+            lastLogin: profile.last_login,
+            createdAt: profile.created_at,
+            updatedAt: profile.updated_at
           };
 
           set({
@@ -196,7 +242,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             session,
             isAuthenticated: true,
             isLoading: false,
-            initialized: true
+            initialized: true,
+            error: null
+          });
+          
+          console.log('✅ [Auth] Initialization successful', { userId: userData.id, role: userData.role });
+        } else {
+          console.warn('Profile not found or error:', profileError);
+          set({
+            user: null,
+            session: null,
+            isAuthenticated: false,
+            isLoading: false,
+            initialized: true,
+            error: profileError?.message || 'Profile not found'
           });
         }
       } else {
@@ -205,11 +264,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           session: null,
           isAuthenticated: false,
           isLoading: false,
-          initialized: true
+          initialized: true,
+          error: null
         });
+        console.log('🔓 [Auth] No active session');
       }
     } catch (error: any) {
-      console.error('Error initializing auth:', error);
+      console.error('❌ [Auth] Initialization failed', { error: error.message });
       set({
         user: null,
         session: null,
