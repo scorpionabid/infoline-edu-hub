@@ -35,39 +35,54 @@ export function useUserContext(): UserContextData {
         // Fetch region name if user has region_id
         if (user.region_id) {
           promises.push(
-            supabase
-              .from('regions')
-              .select('name')
-              .eq('id', user.region_id)
-              .single()
-              .then(({ data }) => ({ type: 'region', name: data?.name }))
-              .catch(() => ({ type: 'region', name: null }))
+            (async () => {
+              try {
+                const { data } = await supabase
+                  .from('regions')
+                  .select('name')
+                  .eq('id', user.region_id)
+                  .single();
+                return { type: 'region', name: data?.name };
+              } catch {
+                return { type: 'region', name: null };
+              }
+            })()
           );
         }
 
         // Fetch sector name if user has sector_id
         if (user.sector_id) {
           promises.push(
-            supabase
-              .from('sectors')
-              .select('name')
-              .eq('id', user.sector_id)
-              .single()
-              .then(({ data }) => ({ type: 'sector', name: data?.name }))
-              .catch(() => ({ type: 'sector', name: null }))
+            (async () => {
+              try {
+                const { data } = await supabase
+                  .from('sectors')
+                  .select('name')
+                  .eq('id', user.sector_id)
+                  .single();
+                return { type: 'sector', name: data?.name };
+              } catch {
+                return { type: 'sector', name: null };
+              }
+            })()
           );
         }
 
         // Fetch school name if user has school_id
         if (user.school_id) {
           promises.push(
-            supabase
-              .from('schools')
-              .select('name')
-              .eq('id', user.school_id)
-              .single()
-              .then(({ data }) => ({ type: 'school', name: data?.name }))
-              .catch(() => ({ type: 'school', name: null }))
+            (async () => {
+              try {
+                const { data } = await supabase
+                  .from('schools')
+                  .select('name')
+                  .eq('id', user.school_id)
+                  .single();
+                return { type: 'school', name: data?.name };
+              } catch {
+                return { type: 'school', name: null };
+              }
+            })()
           );
         }
 

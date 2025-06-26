@@ -18,7 +18,6 @@ export const useDeadlineNotifications = () => {
       const message = t('deadlineNotificationBody', { days: daysLeft });
       
       notificationManager.add({
-        id: `deadline-${categoryId}-${Date.now()}`,
         user_id: user.id,
         title,
         message,
