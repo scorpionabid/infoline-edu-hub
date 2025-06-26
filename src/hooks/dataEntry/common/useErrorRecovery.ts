@@ -394,24 +394,21 @@ export const useErrorRecovery = ({
         const delay = Math.min(retryDelay * Math.pow(2, errorState.recoveryAttempts), 10000);
         
         retryTimeoutRef.current = setTimeout(() => {
-          recover('retry');
-        }, delay);
-      } else {
-        toast({
-          title: 'Bərpa uğursuz',
-          description: 'Bərpa cəhdləri tükəndi, manual müdaxilə lazımdır',
-          variant: 'destructive'
-        });
       }
-      
-      return false;
-    }
-  }, [errorState, clearError, restoreBackup, toast, maxRetries, retryDelay]);
-  
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (retryTimeoutRef.current) {
+
+      case 'useLocal': {
+        const localData = restoreBackup();
+        if (localData) {
+          // Use local backup data
+          clearError();
+          toast({
+            title: 'Lokal məlumatlar istifadə edildi',
+            description: 'Əvvəlki saxlanılmış məlumatlar bərpa edildi',
+            variant: 'default'
+          });
+          return true;
+        }
+        break;
         clearTimeout(retryTimeoutRef.current);
       }
     };
