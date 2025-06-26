@@ -7,12 +7,18 @@ interface PaginationProps {
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
+  previousLabel?: string;
+  nextLabel?: string;
+  pageLabel?: (page: number) => string;
 }
 
 export const Pagination: React.FC<PaginationProps> = ({
   currentPage,
   totalPages,
-  onPageChange
+  onPageChange,
+  previousLabel = 'Əvvəlki',
+  nextLabel = 'Növbəti',
+  pageLabel = (page) => `Səhifə ${page} / ${totalPages}`
 }) => {
   if (totalPages <= 1) return null;
 
@@ -25,10 +31,11 @@ export const Pagination: React.FC<PaginationProps> = ({
         disabled={currentPage <= 1}
       >
         <ChevronLeft className="h-4 w-4" />
+        {previousLabel}
       </Button>
       
       <span className="text-sm text-muted-foreground">
-        Səhifə {currentPage} / {totalPages}
+        {pageLabel(currentPage)}
       </span>
       
       <Button
@@ -37,6 +44,7 @@ export const Pagination: React.FC<PaginationProps> = ({
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage >= totalPages}
       >
+        {nextLabel}
         <ChevronRight className="h-4 w-4" />
       </Button>
     </div>

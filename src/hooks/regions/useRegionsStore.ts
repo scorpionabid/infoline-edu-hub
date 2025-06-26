@@ -80,10 +80,16 @@ export const regionsStore = create<RegionsStoreState>((set, get) => ({
       
       const regions = await fetchRegionsFromAPI();
       
+      // Ensure proper type casting for status field
+      const typedRegions: EnhancedRegion[] = regions.map(region => ({
+        ...region,
+        status: (region.status === 'active' || region.status === 'inactive') ? region.status : 'active' as const
+      }));
+      
       setFetchInProgress(false);
-      setRegionsCache(regions);
-      set({ regions, loading: false });
-      return regions;
+      setRegionsCache(typedRegions);
+      set({ regions: typedRegions, loading: false });
+      return typedRegions;
     } catch (error) {
       console.error('Unexpected error in fetchRegions:', error);
       const errorMessage = t 
@@ -107,12 +113,18 @@ export const regionsStore = create<RegionsStoreState>((set, get) => ({
       
       const newRegion = await addRegionToAPI(regionData);
       
-      const updatedRegions = [...get().regions, newRegion];
+      // Ensure proper type casting
+      const typedRegion: EnhancedRegion = {
+        ...newRegion,
+        status: (newRegion.status === 'active' || newRegion.status === 'inactive') ? newRegion.status : 'active' as const
+      };
+      
+      const updatedRegions = [...get().regions, typedRegion];
       set({ regions: updatedRegions, loading: false });
       
       clearCache();
       
-      return newRegion;
+      return typedRegion;
     } catch (err) {
       console.error('Error adding region:', err);
       const errorMessage = t 
