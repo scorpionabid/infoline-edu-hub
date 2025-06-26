@@ -15,7 +15,8 @@ export const useDeadlineNotifications = () => {
     setLoading(true);
     try {
       const title = t('deadlineNotificationTitle');
-      const message = t('deadlineNotificationBody', { days: daysLeft });
+      // Fix: Use template string instead of passing object to t()
+      const message = t('deadlineNotificationBody').replace('{days}', daysLeft.toString());
       
       notificationManager.add({
         user_id: user.id,
