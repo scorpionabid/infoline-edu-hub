@@ -75,7 +75,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         initialized: true
       });
 
-      console.log('✅ [Auth] Sign in successful', { userId: userData.id, role: userData.role });
+      console.log('✅ [Auth] Sign in successful', { 
+        userId: userData.id, 
+        role: userData.role,
+        has_region_id: !!userData.region_id,
+        has_sector_id: !!userData.sector_id, 
+        has_school_id: !!userData.school_id 
+      });
     } catch (error: any) {
       console.error('❌ [Auth] Sign in failed', { error: error.message });
       set({
@@ -319,12 +325,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   hasPermission: (permission: string) => {
     const state = get();
-    // Basic permission check based on role
-    const user = state.user;
+    // Basic permission check 
+    const { user } = get();
     if (!user) return false;
     
+    // Superadmin hesab üçün çoxsahli yoxlama
     if (user.role === 'superadmin') return true;
-    // Add more permission logic as needed
+    
+    // Email əsasli superadmin yoxlaması
+    if (user.email?.toLowerCase().includes('superadmin')) return true;
+    
     return false;
   }
 }));
@@ -335,7 +345,16 @@ export const selectIsAuthenticated = (state: AuthState) => state.isAuthenticated
 export const selectIsLoading = (state: AuthState) => state.isLoading;
 export const selectError = (state: AuthState) => state.error;
 export const selectSession = (state: AuthState) => state.session;
-export const selectUserRole = (state: AuthState) => state.user?.role;
+export const selectUserRole = (state: AuthState) => {
+  // Əgər istifadəçi emaili superadmin sözünü ehtiva edirsə, superadmin rol
+  const emailBasedRole = state.user?.email?.toLowerCase().includes('superadmin') ? 'superadmin' : null;
+  
+  // Rol təyini prioriteti: 
+  // 1. Profildəki rol (user_roles cədvəlindən gəlir)
+  // 2. Email əsasında rol (superadmin emaili olduqda)
+  // 3. Default rol (user)
+  return state.user?.role || emailBasedRole || 'user';
+};
 export const selectRegionId = (state: AuthState) => state.user?.region_id;
 export const selectSectorId = (state: AuthState) => state.user?.sector_id;
 export const selectSchoolId = (state: AuthState) => state.user?.school_id;

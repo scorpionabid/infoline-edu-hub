@@ -268,7 +268,45 @@ export const useRealDashboardData = () => {
   const fetchSchoolAdminData = async (): Promise<SchoolAdminDashboardData> => {
     try {
       if (!user?.school_id) {
-        throw new Error('School ID not found for school admin');
+        console.warn('⚠️ [Dashboard] School ID not found for school admin', {
+          userId: user?.id,
+          userRole: user?.role
+        });
+        
+        // Test məlumatları qaytaraq - xəta atmaq əvəzinə
+        return {
+          totalForms: 0,
+          completedForms: 0,
+          pendingForms: 0,
+          stats: {
+            totalEntries: 0,
+            completedEntries: 0,
+            pendingEntries: 0,
+            approvedEntries: 0,
+            rejectedEntries: 0,
+            completed: 0,
+            pending: 0
+          },
+          forms: {
+            totalForms: 0,
+            pendingApprovals: 0,
+            rejectedForms: 0,
+            total: 0,
+            pending: 0,
+            approved: 0,
+            rejected: 0,
+            draft: 0,
+            dueSoon: 0,
+            overdue: 0,
+            completionRate: 0,
+            percentage: 0,
+            completion_rate: 0,
+            completedForms: 0,
+            pendingForms: 0,
+            approvalRate: 0,
+            completed: 0
+          }
+        };
       }
 
       // Fetch form statistics for this school

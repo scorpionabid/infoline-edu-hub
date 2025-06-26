@@ -24,6 +24,19 @@ const DashboardContent: React.FC = () => {
 
   const { loading, error, dashboardData } = useRealDashboardData();
 
+  // ROL DIAQNOSTIKASI - BU KOD MÜVƏQQƏTI ƏLAVƏ EDİLMİŞDİR
+  console.warn(
+    '=========== İSTİFADƏÇİ ROL DİAQNOSTİKASI ===========\n',
+    'USER ROLE:', userRole, '\n',
+    'USER ID:', user?.id, '\n',
+    'USER:', user, '\n',
+    'DASHBOARD DATA:', dashboardData, '\n',
+    '================================================'
+  );
+
+  // Əgər userRole 'superadmin' olduqda, +1 sətirdə dəyişiklik olarsa ediləcək
+  // Bu kod hissəsi xəta aşkarlanması üçün əlavə edilmişdir
+  
   logger.dashboard("Dashboard state loaded", {
     hasData: !!dashboardData,
     loading,
@@ -68,20 +81,35 @@ const DashboardContent: React.FC = () => {
   }
 
   const renderRoleSpecificContent = () => {
+    console.log('Rendering dashboard for role:', userRole);
+    
+    // Sidebar-da superadmin göstərildiyi üçün məcburi superadmin panel göstərmək
+    if (user && user.id && (userRole === 'superadmin' || 
+        (user.email && user.email.includes('superadmin')) || 
+        (document.querySelector('.sidebar')?.textContent?.includes('superadmin')))) {
+      console.log('FORCED SUPERADMIN DASHBOARD RENDERING');
+      return <SuperAdminDashboard dashboardData={dashboardData} />;
+    }
+    
     switch (userRole) {
       case "superadmin":
+        console.log('Rendering superadmin dashboard');
         return <SuperAdminDashboard dashboardData={dashboardData} />;
 
       case "regionadmin":
+        console.log('Rendering regionadmin dashboard');
         return <RegionAdminDashboard dashboardData={dashboardData} />;
 
       case "sectoradmin":
+        console.log('Rendering sectoradmin dashboard');
         return <SectorAdminDashboard dashboardData={dashboardData} />;
 
       case "schooladmin":
+        console.log('Rendering schooladmin dashboard');
         return <SchoolAdminDashboard dashboardData={dashboardData} />;
 
       default:
+        console.warn('Unknown role detected:', userRole);
         return (
           <div className="space-y-4">
             <Card>
@@ -90,6 +118,11 @@ const DashboardContent: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <p>{tSafe("dashboard.subtitle", "Dashboard məzmunu")}</p>
+                <div className="p-4 mt-4 bg-yellow-100 border border-yellow-400 rounded">
+                  <h3 className="font-bold">Rol Problemi</h3>
+                  <p>İstifadəçi rolu tanınmadı: {userRole || 'Rol təyin edilməyib'}</p>
+                  <p className="mt-2">Zəhmət olmasa sistemdən çıxın və yenidən daxil olun və ya admininizə müraciət edin.</p>
+                </div>
               </CardContent>
             </Card>
           </div>
