@@ -10,12 +10,26 @@ export interface DashboardStats {
 
 // Dashboard form statistics interface
 export interface DashboardFormStats {
+  // Əsas xassələr
   total: number;
   completed: number;
   pending: number;
   rejected: number;
   approved: number;
   completionRate: number;
+  
+  // Əlavə xassələr
+  totalForms: number;
+  completedForms: number;
+  pendingForms: number;
+  pendingApprovals: number;
+  rejectedForms: number;
+  approvalRate: number;
+  draft: number;
+  dueSoon: number;
+  overdue: number;
+  percentage: number;
+  completion_rate: number; // completionRate-in alternativ variantı
 }
 
 // Enhanced dashboard data for complete information

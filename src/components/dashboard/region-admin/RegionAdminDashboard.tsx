@@ -1,19 +1,20 @@
 import React from "react";
 import { useTranslation } from "@/contexts/TranslationContext";
-import { DashboardFormStats } from "@/types/dashboard";
+import { DashboardFormStats, EnhancedDashboardData } from "@/types/dashboard";
 import StatsGrid from "../StatsGrid";
 import DashboardChart from "../DashboardChart";
 import SectorStatsTable from "./SectorStatsTable";
 import NotificationsCard from "@/components/dashboard/common/NotificationsCard";
 
 interface RegionAdminDashboardProps {
-  dashboardData?: any;
+  dashboardData?: EnhancedDashboardData;
 }
 
 const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({
   dashboardData,
 }) => {
   const { t } = useTranslation();
+  console.log('🏫 [RegionAdminDashboard] Rendering with data:', dashboardData);
 
   if (!dashboardData) {
     return (
@@ -23,63 +24,49 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({
 
   // Real Backend Data with all required properties
   const formStats: DashboardFormStats = {
-    totalForms: dashboardData.formStats?.total || 0,
-    completedForms: dashboardData.formStats?.completedForms || 0,
-    pendingApprovals: dashboardData.formStats?.pendingForms || 0,
-    rejectedForms: dashboardData.formStats?.rejected || 0,
-    pendingForms: dashboardData.formStats?.pendingForms || 0,
-    approvalRate: dashboardData.formStats?.approvalRate || 0,
     total: dashboardData.formStats?.total || 0,
     completed: dashboardData.formStats?.completed || 0,
-    approved: dashboardData.formStats?.approved || 0,
     pending: dashboardData.formStats?.pending || 0,
     rejected: dashboardData.formStats?.rejected || 0,
-    draft: dashboardData.formStats?.draft || 0,
-    dueSoon: dashboardData.formStats?.dueSoon || 0,
-    overdue: dashboardData.formStats?.overdue || 0,
-    percentage: dashboardData.formStats?.percentage || 0,
-    completion_rate: dashboardData.formStats?.completion_rate || 0,
-    completionRate: dashboardData.formStats?.completionRate || 0,
+    approved: dashboardData.formStats?.approved || 0,
+    completionRate: dashboardData.formStats?.completionRate || dashboardData.completionRate || 0,
   };
 
-  // Məcburi xassələri təyin edirik
-  formStats.totalForms = formStats.total || 0;
-  formStats.pendingApprovals = formStats.pendingForms || 0;
-  formStats.rejectedForms = formStats.rejected || 0;
-
+  // Display statistics for region admin dashboard
   const statsGridData = [
     {
-      title: t("dashboard.totalApproved") || "Təsdiqlənmiş",
-      value: formStats.approved || 0,
-      icon: "check-circle",
-      color: "text-green-600",
-      description: t("approved") || "Təsdiqləndi",
+      title: t("dashboard.totalSchools") || "Ümumi məktəblər",
+      value: dashboardData.totalSchools || 0,
+      icon: "school",
+      color: "text-blue-600",
+      description: t("schools") || "Məktəb",
     },
     {
-      title: t("dashboard.totalPending") || "Gözləyən",
-      value: formStats.pending || 0,
-      icon: "clock", 
+      title: t("dashboard.totalSectors") || "Ümumi sektorlar",
+      value: dashboardData.totalSectors || 0,
+      icon: "layers", 
+      color: "text-indigo-600",
+      description: t("sectors") || "Sektor",
+    },
+    {
+      title: t("dashboard.pendingApprovals") || "Təsdiq gözləyənlər",
+      value: dashboardData.pendingApprovals || 0,
+      icon: "clock",
       color: "text-yellow-600",
       description: t("pending") || "Gözləyir",
     },
     {
-      title: t("dashboard.totalRejected") || "Rədd edilmiş",
-      value: formStats.rejected || 0,
-      icon: "x-circle",
-      color: "text-red-600",
-      description: t("rejected") || "Rədd edildi",
-    },
-    {
       title: t("dashboard.completion") || "Tamamlanma",
-      value: `${Math.round(formStats.percentage || 0)}%`,
+      value: `${Math.round(dashboardData.completionRate || 0)}%`,
       icon: "pie-chart",
-      color: "text-blue-600",
+      color: "text-green-600",
       description: t("completionRate") || "Tamamlanma dərəcəsi",
     },
   ];
 
-  // Real sector data
-  const sectors = dashboardData.sectors || [];
+  // Get sectors from the correct path in data structure
+  const sectors = dashboardData.stats?.sectors || [];
+  console.log('🏫 [RegionAdminDashboard] Sectors data:', sectors);
 
   return (
     <div className="space-y-6">

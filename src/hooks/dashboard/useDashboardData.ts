@@ -68,38 +68,87 @@ export const useDashboardData = (options: UseDashboardDataOptions = {}) => {
           }
         };
       } else if (userRole === 'sectoradmin') {
-        // Sektor admin üçün data
-        const { data: sectorStats, error: sectorError } = await supabase
-          .from('sector_stats')
-          .select('*')
-          .eq('sector_id', user?.sector_id || '')
-          .single();
-          
-        if (sectorError) throw sectorError;
+        console.log('📊 [useDashboardData] Sektoradmin üçün məlumatlar yüklənir...');
         
-        const { data: schools, error: schoolsError } = await supabase
-          .from('schools')
-          .select('id, name, status, completion_rate')
-          .eq('sector_id', user?.sector_id || '');
+        try {
+          // 1. Sektor məlumatlarını cədvəldən əldə edirik
+          const { data: sector, error: sectorFetchError } = await supabase
+            .from('sectors')
+            .select('*')
+            .eq('id', user?.sector_id || '')
+            .single();
+            
+          if (sectorFetchError) throw sectorFetchError;
+          console.log('📊 [useDashboardData] Sektor məlumatları:', sector);
           
-        if (schoolsError) throw schoolsError;
+          // 2. Məktəb məlumatlarını əldə edirik
+          const { data: schools, error: schoolsError } = await supabase
+            .from('schools')
+            .select('id, name, status, completion_rate')
+            .eq('sector_id', user?.sector_id || '');
+            
+          if (schoolsError) throw schoolsError;
+          console.log(`📊 [useDashboardData] Sektorda ${schools?.length || 0} məktəb tapıldı`);
           
-        dashboardData = {
-          totalSchools: schools?.length || 0,
-          pendingApprovals: sectorStats?.pending_approvals || 0,
-          completionRate: sectorStats?.completion_rate || 0,
-          stats: {
-            schools: schools || []
-          },
-          formStats: {
-            total: sectorStats?.total_forms || 0,
-            completed: sectorStats?.completed_forms || 0,
-            pending: sectorStats?.pending_forms || 0,
-            rejected: sectorStats?.rejected_forms || 0,
-            approved: sectorStats?.approved_forms || 0,
-            completionRate: sectorStats?.completion_rate || 0
-          }
-        };
+          // 3. Form statuslarını əldə edirik
+          const { data: formEntries, error: formError } = await supabase
+            .from('data_entries')
+            .select('school_id, status')
+            .eq('sector_id', user?.sector_id || '');
+            
+          if (formError) throw formError;
+          
+          // Status saylarını hesablayırıq
+          const counts = {
+            total: formEntries?.length || 0,
+            pending: formEntries?.filter(e => e.status === 'pending').length || 0,
+            approved: formEntries?.filter(e => e.status === 'approved').length || 0,
+            rejected: formEntries?.filter(e => e.status === 'rejected').length || 0,
+            completed: formEntries?.filter(e => e.status === 'approved').length || 0
+          };
+          
+          const completionRate = counts.total > 0 
+            ? Math.round((counts.approved / counts.total) * 100)
+            : 0;
+
+          // Form statistikalarını təyin edirik
+          const formStats = {
+            total: counts.total,
+            completed: counts.approved,
+            pending: counts.pending,
+            rejected: counts.rejected,
+            approved: counts.approved,
+            completionRate: completionRate
+          };
+          
+          // Nəticə obyektini yaradırıq
+          dashboardData = {
+            totalSchools: schools?.length || 0,
+            pendingApprovals: counts.pending,
+            completionRate: completionRate,
+            stats: {
+              schools: schools || [],
+              summary: {
+                total: counts.total,
+                completed: counts.approved,
+                pending: counts.pending,
+                rejected: counts.rejected,
+                approved: counts.approved,
+                completionRate: completionRate,
+                approvalRate: completionRate,
+                draft: 0, // Əlavə statistik məlumatlar
+                dueSoon: 0, // Əlavə statistik məlumatlar
+                overdue: 0 // Əlavə statistik məlumatlar
+              }
+            },
+            formStats: formStats,
+            sectorInfo: sector
+          };
+          
+        } catch (error) {
+          console.error('📊 [useDashboardData] Sektoradmin məlumatları yüklənərkən xəta:', error);
+          throw error;
+        }
       } else if (userRole === 'schooladmin') {
         // Məktəb admin üçün data
         const { data: schoolStats, error: schoolError } = await supabase

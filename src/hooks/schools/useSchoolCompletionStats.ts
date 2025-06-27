@@ -38,11 +38,7 @@ export const useSchoolCompletionStats = (schoolIds: string[]) => {
       // Simplified approach - just get basic data entries count for now
       const { data: dataEntries, error: entriesError } = await supabase
         .from('data_entries')
-        .select(`
-          school_id,
-          status,
-          // updated_at
-        `)
+        .select('school_id, status, updated_at')
         .in('school_id', memoizedSchoolIds);
         
       if (entriesError) {
@@ -68,9 +64,20 @@ export const useSchoolCompletionStats = (schoolIds: string[]) => {
         const completionRate = totalEntries > 0 ? Math.round((approvedEntries / totalEntries) * 100) : 0;
         
         // Get last updated date
-        const lastUpdated = schoolEntries.length > 0 
-          ? new Date(Math.max(...schoolEntries.map(entry => new Date(entry.updated_at).getTime())))
-          : undefined;
+        let lastUpdated: Date | undefined = undefined;
+        try {
+          if (schoolEntries.length > 0) {
+            const validDates = schoolEntries
+              .filter(entry => entry.updated_at)
+              .map(entry => new Date(entry.updated_at));
+            
+            if (validDates.length > 0) {
+              lastUpdated = new Date(Math.max(...validDates.map(d => d.getTime())));
+            }
+          }
+        } catch (err) {
+          console.warn('Tarix hesablama xətası:', err);
+        }
         
         schoolStatsMap.set(schoolId, {
           schoolId,
@@ -83,7 +90,7 @@ export const useSchoolCompletionStats = (schoolIds: string[]) => {
           pendingEntries,
           approvedEntries,
           rejectedEntries,
-          // lastUpdated
+          lastUpdated // Artıq düzgün təyin edilib
         });
       });
       
