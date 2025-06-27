@@ -1,42 +1,17 @@
-import React, { useState, useCallback, useMemo, useEffect } from "react";
+import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore, selectUser } from "@/hooks/auth/useAuthStore";
 import { useDataEntryManager } from "@/hooks/dataEntry/useDataEntryManager";
-import { DataEntryForm } from "@/components/dataEntry/DataEntryForm";
-import AutoSaveIndicator from "@/components/dataEntry/core/AutoSaveIndicator";
-import ProgressTracker from "@/components/dataEntry/core/ProgressTracker";
-import ExcelIntegrationPanel from "@/components/dataEntry/enhanced/ExcelIntegrationPanel";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
-import { 
-  Loader2, 
-  Save, 
-  Send, 
-  RefreshCw, 
-  AlertCircle, 
-  ChevronLeft, 
-  ChevronRight,
-  Grid3X3,
-  Edit,
-  Eye,
-  CheckCircle2,
-  Clock,
-  // FileSpreadsheet
-} from "lucide-react";
+import { Loader2, RefreshCw, AlertCircle } from "lucide-react";
 import { useTranslation } from "@/contexts/TranslationContext";
 import { CategoryWithColumns } from "@/types/category";
-
-type ViewMode = 'category-selection' | 'data-entry' | 'review-submit';
+import { CategorySelectionMode } from "./modes/CategorySelectionMode";
+import { DataEntryMode } from "./modes/DataEntryMode";
+import { ReviewSubmitMode } from "./modes/ReviewSubmitMode";
+import { ViewMode, CompletionStats } from "./types";
 
 /**
  * Məktəb Admin Məlumat Daxil Etmə Komponenti
@@ -54,24 +29,30 @@ const SchoolAdminDataEntry: React.FC = () => {
   const navigate = useNavigate();
   const user = useAuthStore(selectUser);
   
-  // Navigation state from dashboard
-  const navigationState = location.state as {
-    mode?: ViewMode;
-    categoryId?: string;
-    focusColumnId?: string;
-    returnUrl?: string;
-  } | null;
+  // Navigation state from dashboard - memoize edilib
+  const navigationState = useMemo(() => 
+    location.state as {
+      mode?: ViewMode;
+      categoryId?: string;
+      focusColumnId?: string;
+      returnUrl?: string;
+    } | null, 
+    [location.state]
+  );
 
   // View mode state
-  const [mode, setMode] = useState<ViewMode>(navigationState?.mode || 'category-selection');
+  const [mode, setMode] = useState<ViewMode>(() => navigationState?.mode || 'category-selection');
   const [selectedCategory, setSelectedCategory] = useState<CategoryWithColumns | null>(null);
-  const [focusColumnId, setFocusColumnId] = useState<string | null>(navigationState?.focusColumnId || null);
-  const [returnUrl, setReturnUrl] = useState<string>(navigationState?.returnUrl || '/dashboard');
+  const [focusColumnId, setFocusColumnId] = useState<string | null>(() => navigationState?.focusColumnId || null);
+  const [returnUrl] = useState<string>(() => navigationState?.returnUrl || '/dashboard');
   const [autoSaveError, setAutoSaveError] = useState<string | null>(null);
   const [saveAttempts, setSaveAttempts] = useState(0);
 
-  // Get school ID from user data
-  const schoolId = user?.school_id || user?.schoolId;
+  // Navigation state initialization flag - sadəcə bir dəfə işləmək üçün
+  const navigationInitializedRef = useRef(false);
+
+  // Get school ID from user data - memoize edilib
+  const schoolId = useMemo(() => user?.school_id || user?.schoolId, [user?.school_id, user?.schoolId]);
 
   // Create a specific data manager for the selected category
   const dataManager = useDataEntryManager({
@@ -114,42 +95,32 @@ const SchoolAdminDataEntry: React.FC = () => {
     resetForm,
   } = dataManager;
 
-  // Handle navigation from dashboard
+  // Handle navigation from dashboard - yalnız bir dəfə işləsin
   useEffect(() => {
-    console.log('Navigation state changed:', navigationState);
-    if (navigationState?.categoryId && categories.length > 0) {
-      const category = categories.find(cat => cat.id === navigationState.categoryId);
-      if (category) {
-        console.log('Setting category and focus column:', category.name, navigationState.focusColumnId);
-        setSelectedCategory(category);
-        setMode('data-entry');
-        // Set focus column after category is selected
-        if (navigationState.focusColumnId) {
-          setFocusColumnId(navigationState.focusColumnId);
-        }
-      }
+    if (navigationInitializedRef.current || !navigationState?.categoryId || categories.length === 0) {
+      return;
     }
-  }, [navigationState, categories]);
 
-  // Clear navigation state after initial setup is complete
-  useEffect(() => {
-    if (navigationState && selectedCategory && mode === 'data-entry') {
-      // Only clear navigation state after we've set up the component properly
-      const timer = setTimeout(() => {
-        navigate(location.pathname, { replace: true });
-      }, 100); // Small delay to ensure state is set
+    const category = categories.find(cat => cat.id === navigationState.categoryId);
+    if (category) {
+      console.log('Initializing navigation:', category.name, navigationState.focusColumnId);
+      setSelectedCategory(category);
+      setMode('data-entry');
       
-      return () => clearTimeout(timer);
+      if (navigationState.focusColumnId) {
+        setFocusColumnId(navigationState.focusColumnId);
+      }
+      
+      navigationInitializedRef.current = true;
+      
+      // Clear navigation state
+      setTimeout(() => {
+        navigate(location.pathname, { replace: true });
+      }, 100);
     }
-  }, [navigationState, selectedCategory, mode, navigate, location.pathname]);
+  }, [navigationState?.categoryId, navigationState?.focusColumnId, categories, navigate, location.pathname]);
 
-  // Load data when category changes
-  useEffect(() => {
-    if (selectedCategory && schoolId) {
-      // Use direct data fetching instead of the loadData function
-      refetch();
-    }
-  }, [selectedCategory, schoolId, refetch]);
+
 
   // Calculate completion statistics
   const completionStats = useMemo(() => {
@@ -175,24 +146,19 @@ const SchoolAdminDataEntry: React.FC = () => {
       }).length;
 
       const completionPercentage = totalColumns > 0 ? Math.round((filledColumns / totalColumns) * 100) : 0;
-      const isComplete = requiredColumns === filledRequiredColumns;
-
+      
+      // CompletionStats interface'ə uyğun sahələr
       return {
         categoryId: category.id,
-        categoryName: category.name,
-        totalColumns,
-        requiredColumns,
-        filledColumns,
-        filledRequiredColumns,
         completionPercentage,
-        // isComplete
+        fieldsCompleted: filledColumns,  // filledColumns -> fieldsCompleted
+        totalFields: totalColumns        // totalColumns -> totalFields
       };
     });
 
     const overallCompletion = categories.length > 0 ? 
       Math.round(stats.reduce((sum, stat) => sum + stat.completionPercentage, 0) / categories.length) : 0;
     
-    // Define categories as complete if they have 100% completion percentage
     const completedCategories = stats.filter(stat => stat.completionPercentage === 100).length;
 
     return {
@@ -200,8 +166,8 @@ const SchoolAdminDataEntry: React.FC = () => {
       overallCompletion,
       completedCategories,
       totalCategories: categories.length
-    };
-  }, [categories, formData, selectedCategory]);
+    } as CompletionStats; // Tipləmənin düzgün olmasını təmin etmək üçün
+  }, [categories, formData, selectedCategory?.id]);
 
   // Auto-save handlers
   const handleManualSave = useCallback(async () => {
@@ -241,7 +207,7 @@ const SchoolAdminDataEntry: React.FC = () => {
     handleFormDataChange(newFormData);
   }, [formData, handleFormDataChange]);
 
-  // Navigation handlers
+  // Navigation handlers - stable reference
   const handleCategorySelect = useCallback((category: CategoryWithColumns) => {
     setSelectedCategory(category);
     setMode('data-entry');
@@ -249,7 +215,7 @@ const SchoolAdminDataEntry: React.FC = () => {
     if (category.id !== selectedCategory?.id) {
       setFocusColumnId(null);
     }
-  }, [selectedCategory]);
+  }, [selectedCategory?.id]);
 
   const handleBackToSelection = useCallback(() => {
     // If there's a return URL, navigate back to dashboard
@@ -437,372 +403,6 @@ const SchoolAdminDataEntry: React.FC = () => {
   );
 };
 
-// Category Selection Mode Component
-interface CategorySelectionModeProps {
-  categories: CategoryWithColumns[];
-  completionStats: any;
-  onCategorySelect: (category: CategoryWithColumns) => void;
-  onExcelImport: (data: any[]) => void;
-}
 
-const CategorySelectionMode: React.FC<CategorySelectionModeProps> = ({
-  categories,
-  completionStats,
-  onCategorySelect,
-  onExcelImport
-}) => {
-  return (
-    <div className="space-y-6">
-      {/* Progress Overview */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Grid3X3 className="h-5 w-5" />
-            Ümumi Progress
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div>
-              <div className="flex justify-between text-sm mb-1">
-                <span>Ümumi Tamamlanma</span>
-                <span>{completionStats.overallCompletion}%</span>
-              </div>
-              <Progress value={completionStats.overallCompletion} className="h-2" />
-            </div>
-            <div className="grid grid-cols-3 gap-4 text-center">
-              <div>
-                <div className="text-2xl font-bold text-blue-600">
-                  {completionStats.totalCategories}
-                </div>
-                <div className="text-sm text-muted-foreground">Toplam</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-green-600">
-                  {completionStats.completedCategories}
-                </div>
-                <div className="text-sm text-muted-foreground">Tamamlandı</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-yellow-600">
-                  {completionStats.totalCategories - completionStats.completedCategories}
-                </div>
-                <div className="text-sm text-muted-foreground">Qalıb</div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Excel Integration */}
-      <ExcelIntegrationPanel 
-        category={null}
-        data={[]}
-        onImportComplete={onExcelImport}
-      />
-
-      <Separator />
-
-      {/* Category Grid */}
-      <div>
-        <h2 className="text-xl font-semibold mb-4">Kateqoriyalar</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {categories.map((category) => {
-            const categoryStats = completionStats.categories.find(
-              (stat: any) => stat.categoryId === category.id
-            );
-            
-            return (
-              <CategoryCard
-                key={category.id}
-                category={category}
-                stats={categoryStats}
-                onSelect={() => onCategorySelect(category)}
-              />
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Category Card Component
-interface CategoryCardProps {
-  category: CategoryWithColumns;
-  stats: any;
-  onSelect: () => void;
-}
-
-const CategoryCard: React.FC<CategoryCardProps> = ({ category, stats, onSelect }) => {
-  return (
-    <Card 
-      className="cursor-pointer transition-all hover:shadow-md hover:scale-105 border-l-4"
-      style={{
-        borderLeftColor: stats?.isComplete ? '#16a34a' : 
-                         stats?.completionPercentage > 0 ? '#eab308' : '#e5e7eb'
-      }}
-      onClick={onSelect}
-    >
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">{category.name}</CardTitle>
-          {stats?.isComplete ? (
-            <CheckCircle2 className="h-5 w-5 text-green-600" />
-          ) : stats?.completionPercentage > 0 ? (
-            <Clock className="h-5 w-5 text-yellow-600" />
-          ) : (
-            <div className="h-5 w-5 rounded-full border-2 border-gray-300" />
-          )}
-        </div>
-        {category.description && (
-          <CardDescription className="text-sm">{category.description}</CardDescription>
-        )}
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div>
-          <div className="flex justify-between text-sm mb-1">
-            <span>Progress</span>
-            <span>{stats?.completionPercentage || 0}%</span>
-          </div>
-          <Progress value={stats?.completionPercentage || 0} className="h-1.5" />
-        </div>
-        
-        <div className="flex justify-between text-sm text-muted-foreground">
-          <span>{stats?.filledColumns || 0} / {stats?.totalColumns || 0} sahə</span>
-          <span>{stats?.filledRequiredColumns || 0} / {stats?.requiredColumns || 0} məcburi</span>
-        </div>
-
-        <Button variant="ghost" size="sm" className="w-full">
-          <Edit className="h-4 w-4 mr-2" />
-          Redaktə et
-        </Button>
-      </CardContent>
-    </Card>
-  );
-};
-
-// Data Entry Mode Component
-interface DataEntryModeProps {
-  category: CategoryWithColumns;
-  schoolId: string;
-  formData: Record<string, any>;
-  onFormDataChange: (data: Record<string, any>) => void;
-  onFieldChange: (columnId: string, value: any) => void;
-  entryStatus: string;
-  isLoading: boolean;
-  isSaving: boolean;
-  isDataModified: boolean;
-  lastSaved: Date | null;
-  autoSaveError: string | null;
-  saveAttempts: number;
-  onManualSave: () => void;
-  onRetryAutoSave: () => void;
-  onResetAutoSaveError: () => void;
-  onBack: () => void;
-  onNext: () => void;
-  completionStats: any;
-  focusColumnId?: string | null;
-  returnUrl?: string;
-}
-
-const DataEntryMode: React.FC<DataEntryModeProps> = ({
-  category,
-  schoolId,
-  formData,
-  onFormDataChange,
-  onFieldChange,
-  entryStatus,
-  isLoading,
-  isSaving,
-  isDataModified,
-  lastSaved,
-  autoSaveError,
-  saveAttempts,
-  onManualSave,
-  onRetryAutoSave,
-  onResetAutoSaveError,
-  onBack,
-  onNext,
-  completionStats,
-  focusColumnId,
-  returnUrl
-}) => {
-  const categoryStats = completionStats.categories.find(
-    (stat: any) => stat.categoryId === category.id
-  );
-
-  // Determine back button text based on return URL
-  const backButtonText = returnUrl === '/dashboard' ? 'Dashboard-a qayıt' : 'Kateqoriyalara qayıt';
-
-  return (
-    <div className="space-y-6">
-      {/* Navigation */}
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" onClick={onBack}>
-          <ChevronLeft className="h-4 w-4 mr-2" />
-          {backButtonText}
-        </Button>
-        <Button onClick={onNext}>
-          Yekun baxış
-          <ChevronRight className="h-4 w-4 ml-2" />
-        </Button>
-      </div>
-
-      {/* Auto Save Indicator */}
-      <AutoSaveIndicator
-        isSaving={isSaving}
-        autoSaveEnabled={true}
-        lastSaveTime={lastSaved}
-        saveError={autoSaveError}
-        saveAttempts={saveAttempts}
-        hasUnsavedChanges={isDataModified}
-        onManualSave={onManualSave}
-        onRetry={onRetryAutoSave}
-        onResetError={onResetAutoSaveError}
-      />
-
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Form Content */}
-        <div className="lg:col-span-3">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                {category.name}
-                <Badge variant="outline">{category.columns.length} sahə</Badge>
-              </CardTitle>
-              {category.description && (
-                <CardDescription>{category.description}</CardDescription>
-              )}
-            </CardHeader>
-            <CardContent>
-              <DataEntryForm
-                category={category}
-                schoolId={schoolId}
-                formData={formData}
-                onFormDataChange={onFormDataChange}
-                onFieldChange={onFieldChange}
-                readOnly={entryStatus === "approved"}
-                isLoading={isLoading}
-                focusColumnId={focusColumnId}
-              />
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Progress Sidebar */}
-        <div className="lg:col-span-1">
-          <ProgressTracker
-            columns={category.columns}
-            formData={formData}
-            completionPercentage={categoryStats?.completionPercentage || 0}
-            hasAllRequiredFields={categoryStats?.isComplete || false}
-            isValid={true}
-          />
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Review Submit Mode Component
-interface ReviewSubmitModeProps {
-  categories: CategoryWithColumns[];
-  formData: Record<string, any>;
-  completionStats: any;
-  isSubmitting: boolean;
-  onBack: () => void;
-  onSubmit: () => void;
-  onEditCategory: (category: CategoryWithColumns) => void;
-}
-
-const ReviewSubmitMode: React.FC<ReviewSubmitModeProps> = ({
-  categories,
-  formData,
-  completionStats,
-  isSubmitting,
-  onBack,
-  onSubmit,
-  onEditCategory
-}) => {
-  return (
-    <div className="space-y-6">
-      {/* Navigation */}
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" onClick={onBack}>
-          <ChevronLeft className="h-4 w-4 mr-2" />
-          Redaktəyə qayıt
-        </Button>
-        <Button onClick={onSubmit} disabled={isSubmitting}>
-          {isSubmitting ? (
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-          ) : (
-            <Send className="h-4 w-4 mr-2" />
-          )}
-          Təsdiq üçün göndər
-        </Button>
-      </div>
-
-      {/* Summary */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Eye className="h-5 w-5" />
-            Məlumatların İcmalı
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-            <div>
-              <div className="text-2xl font-bold">{completionStats.totalCategories}</div>
-              <div className="text-sm text-muted-foreground">Toplam kateqoriya</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-green-600">{completionStats.completedCategories}</div>
-              <div className="text-sm text-muted-foreground">Tamamlanmış</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold">{completionStats.overallCompletion}%</div>
-              <div className="text-sm text-muted-foreground">Ümumi progress</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Category Review */}
-      <div className="space-y-4">
-        {categories.map((category) => {
-          const categoryStats = completionStats.categories.find(
-            (stat: any) => stat.categoryId === category.id
-          );
-          
-          return (
-            <Card key={category.id}>
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">{category.name}</CardTitle>
-                  <div className="flex items-center gap-2">
-                    <Badge variant={categoryStats?.isComplete ? "default" : "secondary"}>
-                      {categoryStats?.completionPercentage || 0}%
-                    </Badge>
-                    <Button variant="ghost" size="sm" onClick={() => onEditCategory(category)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <Progress value={categoryStats?.completionPercentage || 0} className="mb-2" />
-                <div className="text-sm text-muted-foreground">
-                  {categoryStats?.filledRequiredColumns || 0} / {categoryStats?.requiredColumns || 0} məcburi sahə doldurulub
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
 
 export default SchoolAdminDataEntry;

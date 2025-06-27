@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useRef } from 'react';
+import React, { useMemo, useEffect, useRef, useCallback } from 'react';
 import { CategoryWithColumns } from '@/types/category';
 import { Card as _Card, CardContent as _CardContent, CardHeader as _CardHeader, CardTitle as _CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -46,7 +46,7 @@ const formatDate = (date: Date | string) => {
   });
 };
 
-export const DataEntryForm: React.FC<DataEntryFormProps> = ({
+export const DataEntryForm: React.FC<DataEntryFormProps> = React.memo(({
   category,
   schoolId: _schoolId,
   formData,
@@ -62,10 +62,18 @@ export const DataEntryForm: React.FC<DataEntryFormProps> = ({
   // Fokuslanma üçün ref-lər saxlayırıq
   const fieldRefs = useRef<Record<string, HTMLElement | null>>({});
   
-  // Fokuslanma effekti
+  // Fokuslanma effekti - yalnız dəyər dəyişdikdə işləsin
+  const lastFocusColumnId = useRef<string | null>(null);
+  
   useEffect(() => {
-    console.log('DataEntryForm focusColumnId changed:', focusColumnId);
-    if (focusColumnId && fieldRefs.current[focusColumnId]) {
+    if (focusColumnId && focusColumnId !== lastFocusColumnId.current && fieldRefs.current[focusColumnId]) {
+      lastFocusColumnId.current = focusColumnId;
+      
+      // Debug log - production-də silinə bilər
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Focusing on column:', focusColumnId);
+      }
+      
       // Kiçik gecikmə əlavə edirik ki, DOM tam yüklənsin
       const timer = setTimeout(() => {
         const element = fieldRefs.current[focusColumnId];
@@ -165,9 +173,9 @@ export const DataEntryForm: React.FC<DataEntryFormProps> = ({
     return validations;
   }, [category.columns, formData]);
 
-  const handleFieldChange = (columnId: string, value: any) => {
+  const handleFieldChange = useCallback((columnId: string, value: any) => {
     onFieldChange(columnId, value);
-  };
+  }, [onFieldChange]);
 
   const renderFieldValidation = (columnId: string) => {
     if (!showValidation) return null;
@@ -496,6 +504,9 @@ export const DataEntryForm: React.FC<DataEntryFormProps> = ({
       )}
     </div>
   );
-};
+});
+
+
+DataEntryForm.displayName = 'DataEntryForm';
 
 export default DataEntryForm;

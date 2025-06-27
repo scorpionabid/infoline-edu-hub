@@ -378,12 +378,12 @@ export const useDataEntryManager = (options?: DataEntryManagerOptions | Category
       return;
     }
 
-    console.log('Setting auto-save timeout');
+    // console.log('Setting auto-save timeout'); // Commented out for performance
     // Set new timeout
     autoSaveTimeoutRef.current = setTimeout(async () => {
-      console.log('Auto-save timeout triggered');
       if (autoSaveState.pendingChanges && schoolId && categoryId) {
-        await performSave('draft', true);
+        console.log('Auto-save triggered');
+      await performSave('draft', true);
       }
     }, autoSaveState.interval);
 
@@ -421,8 +421,8 @@ export const useDataEntryManager = (options?: DataEntryManagerOptions | Category
 
   // Debug effect for categoryId and schoolId changes
   useEffect(() => {
-    console.log('UseEffect dependency change:', { schoolId, categoryId });
     if (schoolId && categoryId) {
+      console.log('Loading data for category change:', { schoolId, categoryId });
       loadData();
     }
   }, [schoolId, categoryId, loadData]);
