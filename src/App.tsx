@@ -1,9 +1,10 @@
 
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useState, useCallback } from "react";
 import { Toaster } from "sonner";
 import AppRoutes from "./routes/AppRoutes";
 import ErrorBoundary from "./components/ErrorBoundary";
 import TranslationWrapper from "./components/translation/TranslationWrapper";
+import { useAuthStore } from "./hooks/auth/useAuthStore";
 import "./App.css";
 
 // Simple loading fallback
@@ -12,36 +13,43 @@ const AppLoading = () => (
     <div className="text-center space-y-4">
       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
       <p className="text-sm text-muted-foreground">İnfoLine yüklənir...</p>
-      <p className="text-xs text-muted-foreground">Cache təmizləndi, yeni data yüklənir</p>
     </div>
   </div>
 );
 
 function App() {
   useEffect(() => {
-    // Force fresh data loading
-    console.log('🔄 App component mounted - forcing fresh data load');
+    // Enhanced startup logging
+    console.log('🚀 [App] İnfoLine application starting with enhanced auth system...');
     
-    // Clear any remaining stale data
+    // Performance monitoring
+    const startTime = performance.now();
+    
+    // Cleanup function
+    return () => {
+      const loadTime = performance.now() - startTime;
+      console.log(`✅ [App] Application cleanup - ran for ${Math.round(loadTime)}ms`);
+    };
+  }, []);
+  
+  // Clear any stale auth data on app startup
+  useEffect(() => {
     try {
-      // Remove specific cache keys that might contain old data
-      const keysToRemove = [
-        'last-route',
-        'user-preferences',
-        'dashboard-state',
-        'translation-state'
+      // Remove specific cache keys that might interfere with auth
+      const authKeysToRemove = [
+        'sb-olbfnauhzpdskqnxtwav-auth-token',
+        'supabase.auth.token',
+        'auth-storage-key'
       ];
       
-      keysToRemove.forEach(key => {
-        localStorage.removeItem(key);
+      authKeysToRemove.forEach(key => {
         sessionStorage.removeItem(key);
       });
+      
+      console.log('🧹 [App] Stale auth cache cleared');
     } catch (error) {
-      console.warn('Could not clear stale data keys:', error);
+      console.warn('⚠️ [App] Could not clear auth cache:', error);
     }
-
-    // Log current timestamp for debugging
-    console.log(`App loaded at: ${new Date().toISOString()}`);
   }, []);
 
   return (

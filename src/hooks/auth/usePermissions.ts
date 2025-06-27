@@ -1,21 +1,16 @@
 // ============================================================================
-// İnfoLine Unified Permission System
+// İnfoLine Optimized Permission System
 // ============================================================================
-// Bu fayl bütün permission sisteminini birləşdirir:
-// - usePermissions.ts (əsas permission hook)
-// - useDataAccessControl.ts (data access control)
-// - permissionCheckers.ts (server-side checkers)
-// - permissionUtils.ts (utility functions)
+// Bu fayl permission sistemini optimallaşdırır:
+// - Memoization əlavə edir
+// - Təkrarlanan logic-i azaldır
+// - Performance-i artırır
 
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useAuthStore } from './useAuthStore';
 import { supabase } from '@/integrations/supabase/client';
 import type { 
   UsePermissionsResult, 
-  DataAccessConfig, 
-  DataAccessResult,
-  PermissionLevel,
-  PermissionResult,
   UserRole
 } from '@/types/auth';
 
@@ -23,7 +18,7 @@ import type {
 // Role Hierarchy Definition
 // ============================================================================
 
-const roleHierarchy = [
+const roleHierarchy: UserRole[] = [
   'user',
   'teacher', 
   'schooladmin',
@@ -32,134 +27,230 @@ const roleHierarchy = [
   'superadmin'
 ];
 
+// Memoized role hierarchy map for O(1) lookups
+const roleHierarchyMap = new Map(roleHierarchy.map((role, index) => [role, index]));
+
 // ============================================================================
-// Main Permission Hook
+// Main Permission Hook (Optimized)
 // ============================================================================
 
 export const usePermissions = (): UsePermissionsResult => {
-  const userRole = useAuthStore(state => state.user?.role);
-  const userRegionId = useAuthStore(state => state.user?.region_id);
-  const userSectorId = useAuthStore(state => state.user?.sector_id);
-  const userSchoolId = useAuthStore(state => state.user?.school_id);
+  const user = useAuthStore(state => state.user);
+  const userRole = user?.role;
+  const userRegionId = user?.region_id;
+  const userSectorId = user?.sector_id;
+  const userSchoolId = user?.school_id;
   
-  // ========== Basic Role Checks ==========
+  // Memoized basic role checks
+  const roleChecks = useMemo(() => {
+    const isSuperAdmin = userRole === 'superadmin';
+    const isRegionAdmin = userRole === 'regionadmin';
+    const isSectorAdmin = userRole === 'sectoradmin';
+    const isSchoolAdmin = userRole === 'schooladmin';
+    const isTeacher = userRole === 'teacher';
+    const isUser = userRole === 'user';
+    
+    return {
+      isSuperAdmin,
+      isRegionAdmin,
+      isSectorAdmin,
+      isSchoolAdmin,
+      isTeacher,
+      isUser
+    };
+  }, [userRole]);
   
-  const hasRole = (role: string | string[]): boolean => {
+  // Memoized permission calculations
+  const permissions = useMemo(() => {
+    const { isSuperAdmin, isRegionAdmin, isSectorAdmin, isSchoolAdmin } = roleChecks;
+    
+    return {
+      canManageCategories: isSuperAdmin || isRegionAdmin,
+      canManageColumns: isSuperAdmin || isRegionAdmin || isSectorAdmin,
+      canManageSchools: isSuperAdmin || isRegionAdmin,
+      canManageSectors: isSuperAdmin || isRegionAdmin,
+      canManageRegions: isSuperAdmin,
+      canManageUsers: isSuperAdmin || isRegionAdmin,
+      canApproveData: isSuperAdmin || isRegionAdmin || isSectorAdmin,
+      canEditData: isSuperAdmin || isRegionAdmin || isSectorAdmin || isSchoolAdmin,
+      canViewReports: isSuperAdmin || isRegionAdmin || isSectorAdmin,
+      canEditCategory: !isSectorAdmin, // Sector admin cannot edit categories
+      canDeleteCategory: !isSectorAdmin,
+      canAddCategory: !isSectorAdmin,
+      hasSubmitPermission: true // All authenticated users can submit
+    };
+  }, [roleChecks]);
+  
+  // Optimized role checking functions
+  const hasRole = useCallback((role: string | string[]): boolean => {
     if (!userRole) return false;
-    
-    if (Array.isArray(role)) {
-      return role.includes(userRole);
-    }
-    
-    return userRole === role;
-  };
+    return Array.isArray(role) ? role.includes(userRole) : userRole === role;
+  }, [userRole]);
   
-  const hasRoleAtLeast = (minimumRole: string): boolean => {
+  const hasRoleAtLeast = useCallback((minimumRole: string): boolean => {
     if (!userRole || !minimumRole) return false;
     
-    const userRoleIndex = roleHierarchy.indexOf(userRole);
-    const minimumRoleIndex = roleHierarchy.indexOf(minimumRole);
+    const userRoleIndex = roleHierarchyMap.get(userRole as UserRole);
+    const minimumRoleIndex = roleHierarchyMap.get(minimumRole as UserRole);
     
-    if (userRoleIndex === -1 || minimumRoleIndex === -1) return false;
+    if (userRoleIndex === undefined || minimumRoleIndex === undefined) return false;
     
     return userRoleIndex >= minimumRoleIndex;
-  };
+  }, [userRole]);
   
-  const canAccessRoute = (allowedRoles: string[]): boolean => {
+  const canAccessRoute = useCallback((allowedRoles: string[]): boolean => {
     if (!userRole) return false;
     if (allowedRoles.length === 0) return true;
     return allowedRoles.includes(userRole);
-  };
+  }, [userRole]);
   
-  // ========== Entity ID Helper ==========
-  
-  const getUserEntityId = (): string | undefined => {
+  const getUserEntityId = useCallback((): string | undefined => {
     if (!userRole) return undefined;
     
     switch (userRole) {
-      case 'superadmin': {
-        return 'all';
-      }
-      case 'regionadmin': {
-        return userRegionId;
-      }
-      case 'sectoradmin': {
-        return userSectorId;
-      }
-      case 'schooladmin': {
-        return userSchoolId;
-      }
-      default:
-        return undefined;
+      case 'superadmin': return 'all';
+      case 'regionadmin': return userRegionId;
+      case 'sectoradmin': return userSectorId;
+      case 'schooladmin': return userSchoolId;
+      default: return undefined;
     }
-  };
-  
-  // ========== Role Type Checkers ==========
-  
-  const isSuperAdmin = hasRole('superadmin');
-  const isRegionAdmin = hasRole('regionadmin');
-  const isSectorAdmin = hasRole('sectoradmin');
-  const isSchoolAdmin = hasRole('schooladmin');
-  const isTeacher = hasRole('teacher');
-  const isUser = hasRole('user');
-  
-  // ========== Permission Flags ==========
-  
-  const canManageCategories = hasRoleAtLeast('regionadmin');
-  const canManageColumns = hasRoleAtLeast('sectoradmin');
-  const canManageSchools = hasRoleAtLeast('regionadmin');
-  const canManageSectors = hasRoleAtLeast('regionadmin');
-  const canManageRegions = hasRoleAtLeast('superadmin');
-  const canManageUsers = hasRoleAtLeast('regionadmin');
-  const canApproveData = hasRoleAtLeast('sectoradmin');
-  const canViewReports = hasRoleAtLeast('sectoradmin');
-  
-  // Specific category permissions for sectoradmin
-  const canEditCategory = !isSectorAdmin;
-  const canDeleteCategory = !isSectorAdmin;
-  const canAddCategory = !isSectorAdmin;
-  const canEditData = isSuperAdmin || isRegionAdmin || isSectorAdmin || isSchoolAdmin;
-  const hasSubmitPermission = isSuperAdmin || isRegionAdmin || isSectorAdmin || isSchoolAdmin || isTeacher || isUser;
-  
-  const userEntityId = getUserEntityId();
+  }, [userRole, userRegionId, userSectorId, userSchoolId]);
   
   return {
     hasRole,
     hasRoleAtLeast,
     canAccessRoute,
-    isSuperAdmin,
-    isRegionAdmin,
-    isSectorAdmin,
-    isSchoolAdmin,
-    isTeacher,
-    isUser,
-    userEntityId,
+    ...roleChecks,
+    userEntityId: getUserEntityId(),
     userRole,
     regionId: userRegionId,
     sectorId: userSectorId,
     schoolId: userSchoolId,
-    canManageCategories,
-    canManageColumns,
-    canManageSchools,
-    canManageSectors,
-    canManageRegions,
-    canManageUsers,
-    canApproveData,
-    canEditData,
-    canViewReports,
-    canEditCategory,
-    canDeleteCategory,
-    canAddCategory,
-    hasSubmitPermission
+    ...permissions
   };
 };
 
 // ============================================================================
-// Data Access Control Hook
+// Simplified Server-Side Permission Checkers
+// ============================================================================
+
+// Memoized permission checker factory
+const createPermissionChecker = (rpcFunction: string) => {
+  const cache = new Map<string, { result: boolean; timestamp: number }>();
+  const CACHE_TTL = 30000; // 30 seconds
+  
+  return async (id: string): Promise<boolean> => {
+    const cacheKey = `${rpcFunction}_${id}`;
+    const cached = cache.get(cacheKey);
+    
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      return cached.result;
+    }
+    
+    try {
+      const { data, error } = await supabase.rpc(rpcFunction, { 
+        [`${rpcFunction.replace('has_', '').replace('_access', '')}_id_param`]: id 
+      });
+      
+      if (error) {
+        console.error(`Error checking ${rpcFunction}:`, error);
+        return false;
+      }
+      
+      const result = data || false;
+      cache.set(cacheKey, { result, timestamp: Date.now() });
+      return result;
+    } catch (error) {
+      console.error(`Error in ${rpcFunction}:`, error);
+      return false;
+    }
+  };
+};
+
+export const checkRegionAccess = createPermissionChecker('has_region_access');
+export const checkSectorAccess = createPermissionChecker('has_sector_access');
+export const checkSchoolAccess = createPermissionChecker('has_school_access');
+
+// Simplified role checkers
+export const checkIsSuperAdmin = async (): Promise<boolean> => {
+  try {
+    const { data } = await supabase.rpc('is_superadmin');
+    return data || false;
+  } catch {
+    return false;
+  }
+};
+
+export const checkIsRegionAdmin = async (): Promise<boolean> => {
+  try {
+    const { data } = await supabase.rpc('is_regionadmin');
+    return data || false;
+  } catch {
+    return false;
+  }
+};
+
+export const checkIsSectorAdmin = async (): Promise<boolean> => {
+  try {
+    const { data } = await supabase.rpc('is_sectoradmin');
+    return data || false;
+  } catch {
+    return false;
+  }
+};
+
+// ============================================================================
+// Utility Functions (Simplified)
+// ============================================================================
+
+export const checkUserRole = (userRole: UserRole | undefined, rolesToCheck: UserRole | UserRole[]): boolean => {
+  if (!userRole) return false;
+  return Array.isArray(rolesToCheck) ? rolesToCheck.includes(userRole) : userRole === rolesToCheck;
+};
+
+export const checkRegionAccessUtil = (
+  userRole: UserRole | undefined,
+  userRegionId: string | undefined, 
+  regionIdToCheck: string
+): boolean => {
+  if (!userRole) return false;
+  if (userRole === 'superadmin') return true;
+  if (userRole === 'regionadmin') return userRegionId === regionIdToCheck;
+  return false;
+};
+
+export const checkSectorAccessUtil = (
+  userRole: UserRole | undefined,
+  userRegionId: string | undefined,
+  userSectorId: string | undefined,
+  sectorIdToCheck: string,
+  sectorRegionMap?: Record<string, string>
+): boolean => {
+  if (!userRole) return false;
+  if (userRole === 'superadmin') return true;
+  if (userRole === 'regionadmin' && userRegionId && sectorRegionMap) {
+    return sectorRegionMap[sectorIdToCheck] === userRegionId;
+  }
+  if (userRole === 'sectoradmin') return userSectorId === sectorIdToCheck;
+  return false;
+};
+
+export const checkSchoolAccessUtil = (
+  userRole: UserRole | undefined,
+  userSchoolId: string | undefined,
+  schoolIdToCheck: string
+): boolean => {
+  if (!userRole) return false;
+  if (userRole === 'superadmin') return true;
+  if (userRole === 'schooladmin') return userSchoolId === schoolIdToCheck;
+  return false;
+};
+
+// ============================================================================
+// Data Access Control (Simplified)
 // ============================================================================
 
 export const useDataAccessControl = () => {
-  const user = useAuthStore(state => state.user);
   const { 
     isSuperAdmin, 
     isRegionAdmin, 
@@ -169,19 +260,19 @@ export const useDataAccessControl = () => {
     sectorId,
     schoolId
   } = usePermissions();
+  
+  const user = useAuthStore(state => state.user);
 
   const checkDataAccess = useCallback(async (schoolId: string, categoryId: string): Promise<boolean> => {
     if (!user) return false;
 
     try {
-      const { data: hasAccess } = await supabase.rpc('can_access_data_entry', {
+      const { data } = await supabase.rpc('can_access_data_entry', {
         user_id_param: user.id,
         entry_id_param: categoryId
       });
-
-      return hasAccess || false;
-    } catch (error) {
-      console.error('Error checking data access:', error);
+      return data || false;
+    } catch {
       return false;
     }
   }, [user]);
@@ -194,7 +285,7 @@ export const useDataAccessControl = () => {
         user_id_param: user.id
       });
 
-      if (schoolIds && schoolIds.length > 0) {
+      if (schoolIds?.length > 0) {
         const { data: schools } = await supabase
           .from('schools')
           .select('id, name, region_id, sector_id')
@@ -202,10 +293,8 @@ export const useDataAccessControl = () => {
 
         return schools || [];
       }
-
       return [];
-    } catch (error) {
-      console.error('Error fetching accessible schools:', error);
+    } catch {
       return [];
     }
   }, [user]);
@@ -222,10 +311,9 @@ export const useDataAccessControl = () => {
     }
 
     try {
-      const { data: categories } = await query;
-      return categories || [];
-    } catch (error) {
-      console.error('Error fetching accessible categories:', error);
+      const { data } = await query;
+      return data || [];
+    } catch {
       return [];
     }
   }, [user, isSchoolAdmin, isSectorAdmin]);
@@ -245,182 +333,7 @@ export const useDataAccessControl = () => {
 };
 
 // ============================================================================
-// Server-Side Permission Checkers
-// ============================================================================
-
-export const checkRegionAccess = async (regionId: string): Promise<boolean> => {
-  try {
-    const { data, error } = await supabase.rpc('has_region_access', { 
-      region_id_param: regionId 
-    });
-    
-    if (error) {
-      console.error('Error checking region access:', error);
-      return false;
-    }
-    
-    return data || false;
-  } catch (error) {
-    console.error('Error in checkRegionAccess:', error);
-    return false;
-  }
-};
-
-export const checkSectorAccess = async (sectorId: string): Promise<boolean> => {
-  try {
-    const { data, error } = await supabase.rpc('has_sector_access', { 
-      sector_id_param: sectorId 
-    });
-    
-    if (error) {
-      console.error('Error checking sector access:', error);
-      return false;
-    }
-    
-    return data || false;
-  } catch (error) {
-    console.error('Error in checkSectorAccess:', error);
-    return false;
-  }
-};
-
-export const checkSchoolAccess = async (schoolId: string): Promise<boolean> => {
-  try {
-    const { data, error } = await supabase.rpc('has_school_access', { 
-      school_id_param: schoolId 
-    });
-    
-    if (error) {
-      console.error('Error checking school access:', error);
-      return false;
-    }
-    
-    return data || false;
-  } catch (error) {
-    console.error('Error in checkSchoolAccess:', error);
-    return false;
-  }
-};
-
-export const checkIsSuperAdmin = async (): Promise<boolean> => {
-  try {
-    const { data, error } = await supabase.rpc('is_superadmin');
-    
-    if (error) {
-      console.error('Error checking superadmin status:', error);
-      return false;
-    }
-    
-    return data || false;
-  } catch (error) {
-    console.error('Error in checkIsSuperAdmin:', error);
-    return false;
-  }
-};
-
-export const checkIsRegionAdmin = async (): Promise<boolean> => {
-  try {
-    const { data, error } = await supabase.rpc('is_regionadmin');
-    
-    if (error) {
-      console.error('Error checking region admin status:', error);
-      return false;
-    }
-    
-    return data || false;
-  } catch (error) {
-    console.error('Error in checkIsRegionAdmin:', error);
-    return false;
-  }
-};
-
-export const checkIsSectorAdmin = async (): Promise<boolean> => {
-  try {
-    const { data, error } = await supabase.rpc('is_sectoradmin');
-    
-    if (error) {
-      console.error('Error checking sector admin status:', error);
-      return false;
-    }
-    
-    return data || false;
-  } catch (error) {
-    console.error('Error in checkIsSectorAdmin:', error);
-    return false;
-  }
-};
-
-// ============================================================================
-// Permission Utility Functions
-// ============================================================================
-
-export const checkUserRole = (userRole: UserRole | undefined, rolesToCheck: UserRole | UserRole[]): boolean => {
-  if (!userRole) return false;
-  
-  if (Array.isArray(rolesToCheck)) {
-    return rolesToCheck.includes(userRole);
-  }
-  
-  return userRole === rolesToCheck;
-};
-
-export const checkRegionAccessUtil = (
-  userRole: UserRole | undefined,
-  userRegionId: string | undefined, 
-  regionIdToCheck: string
-): boolean => {
-  if (!userRole) return false;
-  
-  if (userRole === 'superadmin') return true;
-  
-  if (userRole === 'regionadmin') {
-    return userRegionId === regionIdToCheck;
-  }
-  
-  return false;
-};
-
-export const checkSectorAccessUtil = (
-  userRole: UserRole | undefined,
-  userRegionId: string | undefined,
-  userSectorId: string | undefined,
-  sectorIdToCheck: string,
-  sectorRegionMap?: Record<string, string>
-): boolean => {
-  if (!userRole) return false;
-  
-  if (userRole === 'superadmin') return true;
-  
-  if (userRole === 'regionadmin' && userRegionId && sectorRegionMap) {
-    const sectorRegionId = sectorRegionMap[sectorIdToCheck];
-    return sectorRegionId === userRegionId;
-  }
-  
-  if (userRole === 'sectoradmin') {
-    return userSectorId === sectorIdToCheck;
-  }
-  
-  return false;
-};
-
-export const checkSchoolAccessUtil = (
-  userRole: UserRole | undefined,
-  userSchoolId: string | undefined,
-  schoolIdToCheck: string
-): boolean => {
-  if (!userRole) return false;
-  
-  if (userRole === 'superadmin') return true;
-  
-  if (userRole === 'schooladmin') {
-    return userSchoolId === schoolIdToCheck;
-  }
-  
-  return false;
-};
-
-// ============================================================================
-// Default Exports
+// Default Export
 // ============================================================================
 
 export default usePermissions;

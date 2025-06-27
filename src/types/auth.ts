@@ -114,6 +114,7 @@ export interface AuthState {
   updateUser: (userData: Partial<FullUserData>) => void;
   clearError: () => void;
   initializeAuth: (loginOnly?: boolean) => Promise<void>;
+  performInitialization: (loginOnly?: boolean) => Promise<void>;
   updateProfile: (updates: Partial<FullUserData>) => Promise<{ success: boolean, error?: any }>;
   updatePassword: (newPassword: string) => Promise<{ success: boolean, error?: any }>;
   hasPermission: (permission: string) => boolean;

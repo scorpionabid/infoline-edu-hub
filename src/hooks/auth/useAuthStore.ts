@@ -3,13 +3,49 @@ import { supabase } from '@/integrations/supabase/client';
 import { AuthState, FullUserData, UserRole } from '@/types/auth';
 
 // Auth hadisələrini izləmək üçün listener əlavə edirik
-supabase.auth.onAuthStateChange((event, session) => {
+supabase.auth.onAuthStateChange(async (event, session) => {
   console.log('🔄 [AuthStateChange]', { event, session: session?.user?.id });
+  
+  // Handle only essential events to prevent loops
+  switch (event) {
+    case 'INITIAL_SESSION':
+    case 'SIGNED_IN':
+      if (session?.user) {
+        console.log('🔄 [AuthStateChange] Processing session:', event);
+        const state = useAuthStore.getState();
+        
+        // Only process if we don't already have a user
+        if (!state.user && !state.isLoading) {
+          console.log('🔄 [AuthStateChange] Initializing user from session');
+          await state.performInitialization(true);
+        }
+      }
+      break;
+      
+    case 'SIGNED_OUT':
+      console.log('🔄 [AuthStateChange] User signed out, clearing state');
+      useAuthStore.setState({
+        user: null,
+        session: null,
+        isAuthenticated: false,
+        error: null,
+        initialized: true,
+        isLoading: false
+      });
+      break;
+      
+    case 'TOKEN_REFRESHED':
+      console.log('🔄 [AuthStateChange] Token refreshed');
+      if (session) {
+        useAuthStore.setState({ session });
+      }
+      break;
+  }
 });
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
-  isLoading: false,
+  isLoading: false, // Start with false to prevent endless loading
   isAuthenticated: false,
   error: null,
   session: null,
@@ -35,7 +71,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         email: data.user.email
       });
 
-      // Fetch user profile with role (inner join əvəzinə normal join istifadə edirik)
+      // Fetch user profile with role (maybeSingle istifadə edirik)
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select(`
@@ -53,21 +89,29 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         throw profileError;
       }
 
-      // user_roles məlumatlarını yoxlayırıq
-      console.log('🔍 [Auth] User roles raw data:', profile.user_roles);
+      // user_roles məlumatlarını normalize edirik
+      console.log('🔍 [Auth] User roles raw data:', profile?.user_roles);
       
-      // Rol təyinatını dəqiqləşdiririk
+      // Rol təyinatını dəqiqləşdiririk - robust role detection
       let userRole: UserRole = 'user' as UserRole; // default
+      let regionId, sectorId, schoolId;
+      
       const isKnownSuperAdmin = data.user.email?.toLowerCase() === 'superadmin@infoline.az';
       
       if (isKnownSuperAdmin) {
         userRole = 'superadmin' as UserRole;
-      } else if (profile?.user_roles && Array.isArray(profile.user_roles) && profile.user_roles.length > 0) {
-        // Əgər user_roles massivdirsə
-        userRole = (profile.user_roles[0].role || 'user') as UserRole;
-      } else if (profile?.user_roles && typeof profile.user_roles === 'object' && profile.user_roles.role) {
-        // Əgər user_roles obyektdirsə
-        userRole = profile.user_roles.role as UserRole;
+      } else if (profile?.user_roles) {
+        // Normalize user_roles - həm array həm də object case-lərini handle edirik
+        const roleData = Array.isArray(profile.user_roles) 
+          ? profile.user_roles[0] 
+          : profile.user_roles;
+          
+        if (roleData?.role) {
+          userRole = roleData.role as UserRole;
+          regionId = roleData.region_id;
+          sectorId = roleData.sector_id;
+          schoolId = roleData.school_id;
+        }
       }
       
       // Roll təyinatı haqqında ətraflı məlumat ver
@@ -80,19 +124,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         finalRole: userRole 
       });
 
-      // User məlumatlarını strukturlaşdırırıq
-      // user_roles bir obyekt və ya massiv ola bilər, ona görə tipə görə işləyirik
-      let regionId, sectorId, schoolId;
-      
-      if (Array.isArray(profile.user_roles) && profile.user_roles.length > 0) {
-        regionId = profile.user_roles[0].region_id;
-        sectorId = profile.user_roles[0].sector_id;
-        schoolId = profile.user_roles[0].school_id;
-      } else if (typeof profile.user_roles === 'object' && profile.user_roles !== null) {
-        regionId = profile.user_roles.region_id;
-        sectorId = profile.user_roles.sector_id;
-        schoolId = profile.user_roles.school_id;
-      }
+      // Role data artıq yuxarıda extract edilib
 
       const userData: FullUserData = {
         id: profile.id,
@@ -137,16 +169,34 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         has_school_id: !!userData.school_id 
       });
     } catch (error: any) {
-      console.error('❌ [Auth] Sign in failed', { error: error.message });
+      console.error('❌ [Auth] Sign in failed', { 
+        error: error.message, 
+        code: error.code || 'unknown',
+        details: error.details || 'No additional details'
+      });
+      
+      // Enhanced error handling with user-friendly messages
+      let userFriendlyError = 'Giriş xətası baş verdi';
+      
+      if (error.message?.includes('Invalid login credentials')) {
+        userFriendlyError = 'E-poçt və ya şifrə səhvdir';
+      } else if (error.message?.includes('Email not confirmed')) {
+        userFriendlyError = 'E-poçt təsdiqlənməyib. Zəhmət olmasa e-poçtunuzu yoxlayın';
+      } else if (error.message?.includes('Too many requests')) {
+        userFriendlyError = 'Çox təz-təz cəhd edir. Zəhmət olmasa bir az gözləyin';
+      } else if (error.message?.includes('Network')) {
+        userFriendlyError = 'Şəbəkə bağlantısı xətası. Zəhmət olmasa yenidən cəhd edin';
+      }
+      
       set({
         user: null,
         session: null,
         isAuthenticated: false,
         isLoading: false,
-        error: error.message,
+        error: userFriendlyError,
         initialized: true
       });
-      throw error;
+      throw new Error(userFriendlyError);
     }
   },
 
@@ -182,48 +232,81 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   fetchUser: async () => {
-    const { data } = await supabase.auth.getUser();
-    if (!data.user) return;
-    const user = data.user;
+    try {
+      const { data, error: userError } = await supabase.auth.getUser();
+      if (userError || !data.user) {
+        console.log('⚠️ [Auth] No user found during fetchUser');
+        return;
+      }
+      
+      const user = data.user;
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select(`
-        *,
-        user_roles!inner(role, region_id, sector_id, school_id)
-      `)
-      .eq('id', user.id)
-      .single();
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select(`
+          *,
+          user_roles(role, region_id, sector_id, school_id)
+        `)
+        .eq('id', user.id)
+        .single();
 
-    if (profile) {
-      const userRole = profile.user_roles?.role || 'schooladmin';
+      if (profileError) {
+        console.error('❌ [Auth] Error fetching profile in fetchUser:', profileError);
+        return;
+      }
 
-      const userData: FullUserData = {
-        id: profile.id,
-        email: user.email || profile.email || '',
-        full_name: profile.full_name || '',
-        name: profile.full_name || '',
-        role: userRole,
-        region_id: profile.user_roles?.region_id,
-        sector_id: profile.user_roles?.sector_id,
-        school_id: profile.user_roles?.school_id,
-        regionId: profile.user_roles?.region_id,
-        sectorId: profile.user_roles?.sector_id,
-        schoolId: profile.user_roles?.school_id,
-        phone: profile.phone,
-        position: profile.position,
-        language: profile.language || 'az',
-        avatar: profile.avatar,
-        status: profile.status || 'active',
-        last_login: profile.last_login,
-        created_at: profile.created_at,
-        updated_at: profile.updated_at,
-        lastLogin: profile.last_login,
-        createdAt: profile.created_at,
-        updatedAt: profile.updated_at
-      };
+      if (profile) {
+        // Normalize user_roles - robust approach
+        let userRole: UserRole = 'user' as UserRole;
+        let regionId, sectorId, schoolId;
+        
+        const isKnownSuperAdmin = user.email?.toLowerCase() === 'superadmin@infoline.az';
+        
+        if (isKnownSuperAdmin) {
+          userRole = 'superadmin' as UserRole;
+        } else if (profile?.user_roles) {
+          const roleData = Array.isArray(profile.user_roles) 
+            ? profile.user_roles[0] 
+            : profile.user_roles;
+            
+          if (roleData?.role) {
+            userRole = roleData.role as UserRole;
+            regionId = roleData.region_id;
+            sectorId = roleData.sector_id;
+            schoolId = roleData.school_id;
+          }
+        }
 
-      set({ user: userData });
+        const userData: FullUserData = {
+          id: profile.id,
+          email: user.email || profile.email || '',
+          full_name: profile.full_name || '',
+          name: profile.full_name || '',
+          role: userRole,
+          region_id: regionId,
+          sector_id: sectorId,
+          school_id: schoolId,
+          regionId: regionId,
+          sectorId: sectorId,
+          schoolId: schoolId,
+          phone: profile.phone,
+          position: profile.position,
+          language: profile.language || 'az',
+          avatar: profile.avatar,
+          status: profile.status || 'active',
+          last_login: profile.last_login,
+          created_at: profile.created_at,
+          updated_at: profile.updated_at,
+          lastLogin: profile.last_login,
+          createdAt: profile.created_at,
+          updatedAt: profile.updated_at
+        };
+
+        set({ user: userData });
+        console.log('✅ [Auth] fetchUser successful', { userId: userData.id, role: userData.role });
+      }
+    } catch (error: any) {
+      console.error('❌ [Auth] fetchUser failed:', error);
     }
   },
 
@@ -240,9 +323,27 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   initializeAuth: async (loginOnly = false): Promise<void> => {
     const state = get();
     
-    // Prevent multiple initialization attempts
-    if (state.initialized && !loginOnly) {
-      console.log('🔄 [Auth] Initialization already completed, skipping...');
+    // Prevent concurrent initialization
+    if (state.isLoading) {
+      console.log('🔄 [Auth] Already loading, skipping initialization');
+      return;
+    }
+    
+    // If already initialized with user, skip
+    if (state.initialized && state.user && !loginOnly) {
+      console.log('🔄 [Auth] Already initialized with user, skipping');
+      return;
+    }
+    
+    await get().performInitialization(loginOnly);
+  },
+
+  performInitialization: async (loginOnly = false): Promise<void> => {
+    const state = get();
+    
+    // Enhanced initialization guard
+    if (state.initialized && !loginOnly && state.user) {
+      console.log('🔄 [Auth] Initialization already completed with user, skipping...');
       return;
     }
 
@@ -250,6 +351,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (state.isLoading && !loginOnly) {
       console.log('🔄 [Auth] Initialization already in progress, skipping...');
       return;
+    }
+    
+    // Session recovery attempt
+    if (!loginOnly && !state.session) {
+      console.log('🔄 [Auth] Attempting session recovery...');
+      try {
+        const { data: { session: recoveredSession } } = await supabase.auth.getSession();
+        if (recoveredSession) {
+          console.log('✅ [Auth] Session recovered successfully');
+          set({ session: recoveredSession });
+        }
+      } catch (error) {
+        console.warn('⚠️ [Auth] Session recovery failed:', error);
+      }
     }
 
     set({ isLoading: true, initializationAttempted: true });
@@ -266,7 +381,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (session?.user) {
         console.log('🔐 [Auth] Found session for user:', { userId: session.user.id, email: session.user.email });
         
-        // Fetch user profile with role (inner join əvəzinə normal join istifadə edirik)
+        // Fetch user profile with role
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select(`
@@ -274,7 +389,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             user_roles(role, region_id, sector_id, school_id)
           `)
           .eq('id', session.user.id)
-          .maybeSingle();
+          .single();
 
         // Ətraflı profil məlumatlarını log edirik
         console.log('👤 [Auth] Profile data for initialization:', profile);
@@ -285,21 +400,29 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         }
 
         if (profile) {
-          // user_roles məlumatlarını yoxlayırıq
-          console.log('🔍 [Auth] User roles raw data during initialization:', profile.user_roles);
+          // user_roles məlumatlarını normalize edirik (initialization)
+          console.log('🔍 [Auth] User roles raw data during initialization:', profile?.user_roles);
           
-          // Rol təyinatını dəqiqləşdiririk
+          // Rol təyinatını dəqiqləşdiririk - robust role detection
           let userRole: UserRole = 'user' as UserRole; // default
+          let regionId, sectorId, schoolId;
+          
           const isKnownSuperAdmin = session.user.email?.toLowerCase() === 'superadmin@infoline.az';
           
           if (isKnownSuperAdmin) {
             userRole = 'superadmin' as UserRole;
-          } else if (profile?.user_roles && Array.isArray(profile.user_roles) && profile.user_roles.length > 0) {
-            // Əgər user_roles massivdirsə
-            userRole = (profile.user_roles[0].role || 'user') as UserRole;
-          } else if (profile?.user_roles && typeof profile.user_roles === 'object' && profile.user_roles.role) {
-            // Əgər user_roles obyektdirsə
-            userRole = profile.user_roles.role as UserRole;
+          } else if (profile?.user_roles) {
+            // Normalize user_roles - həm array həm də object case-lərini handle edirik
+            const roleData = Array.isArray(profile.user_roles) 
+              ? profile.user_roles[0] 
+              : profile.user_roles;
+              
+            if (roleData?.role) {
+              userRole = roleData.role as UserRole;
+              regionId = roleData.region_id;
+              sectorId = roleData.sector_id;
+              schoolId = roleData.school_id;
+            }
           }
           
           // Roll təyinatı haqqında ətraflı məlumat ver
@@ -312,19 +435,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             finalRole: userRole 
           });
 
-          // User məlumatlarını strukturlaşdırırıq
-          // user_roles bir obyekt və ya massiv ola bilər, ona görə tipə görə işləyirik
-          let regionId, sectorId, schoolId;
-          
-          if (Array.isArray(profile.user_roles) && profile.user_roles.length > 0) {
-            regionId = profile.user_roles[0].region_id;
-            sectorId = profile.user_roles[0].sector_id;
-            schoolId = profile.user_roles[0].school_id;
-          } else if (typeof profile.user_roles === 'object' && profile.user_roles !== null) {
-            regionId = profile.user_roles.region_id;
-            sectorId = profile.user_roles.sector_id;
-            schoolId = profile.user_roles.school_id;
-          }
+          // Role data artıq yuxarıda extract edilib (initialization)
 
           const userData: FullUserData = {
             id: profile.id,
@@ -388,7 +499,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           initialized: true,
           error: null
         });
-        console.log('🔓 [Auth] No active session');
+        console.log('🔓 [Auth] No active session found');
       }
     } catch (error: any) {
       console.error('❌ [Auth] Initialization failed', { error: error.message });
@@ -438,26 +549,35 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  hasPermission: (_permission: string) => {
-    const _state = get();
-    // Basic permission check 
+  hasPermission: (permission: string) => {
     const { user } = get();
-    if (!user) return false;
+    if (!user) {
+      console.log('🔒 [Auth] No user found for permission check');
+      return false;
+    }
     
-    // Rol yoxlamalarını daha ətraflı loqlayırıq
+    // Robust permission check
     console.log('🔒 [Auth] Checking permission', { 
-      permission: _permission,
+      permission,
       userRole: user.role,
       email: user.email
     });
     
-    // Superadmin hesab üçün çoxsahli yoxlama
+    // SuperAdmin checks
     if (user.role === 'superadmin') return true;
+    if (user.email?.toLowerCase() === 'superadmin@infoline.az') return true;
     
-    // Email əsasli superadmin yoxlaması
-    if (user.email?.toLowerCase().includes('superadmin')) return true;
-    
-    return false;
+    // Basic role-based permissions
+    switch (permission) {
+      case 'read':
+        return ['regionadmin', 'sectoradmin', 'schooladmin', 'teacher', 'user'].includes(user.role);
+      case 'write':
+        return ['regionadmin', 'sectoradmin', 'schooladmin'].includes(user.role);
+      case 'admin':
+        return ['regionadmin', 'sectoradmin'].includes(user.role);
+      default:
+        return false;
+    }
   }
 }));
 

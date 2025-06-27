@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useCallback, useState, useMemo } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useAuthStore, selectIsAuthenticated, selectIsLoading } from "@/hooks/auth/useAuthStore";
 import { usePermissions } from "@/hooks/auth/usePermissions";
@@ -32,6 +32,27 @@ import DataManagement from "@/pages/DataManagement";
 
 import { UserRole } from "@/types/auth";
 
+// Simplified loading state management
+const useLoadingState = () => {
+  const isAuthLoading = useAuthStore(selectIsLoading);
+  const isAuthenticated = useAuthStore(selectIsAuthenticated);
+  const initialized = useAuthStore(state => state.initialized);
+  
+  // Simple one-time initialization
+  useEffect(() => {
+    if (!initialized && !isAuthLoading) {
+      console.log('🔄 [Routes] Triggering simple auth initialization');
+      useAuthStore.getState().initializeAuth();
+    }
+  }, [initialized, isAuthLoading]);
+  
+  return {
+    isLoading: !initialized || isAuthLoading,
+    isAuthenticated,
+    initialized
+  };
+};
+
 interface ProtectedRouteProps {
   children: React.ReactNode;
   allowedRoles?: UserRole[];
@@ -43,37 +64,51 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   allowedRoles,
   redirectUrl = "/login" 
 }) => {
-  const isAuthenticated = useAuthStore(selectIsAuthenticated);
-  const isLoading = useAuthStore(selectIsLoading);
+  const { isLoading, isAuthenticated } = useLoadingState();
   const { hasRole } = usePermissions();
   const location = useLocation();
   
-  console.log('[ProtectedRoute] State:', { 
+  // Memoize logging to prevent excessive console output
+  const logAuthState = useMemo(() => {
+    const authState = useAuthStore.getState();
+    return {
+      user: authState.user ? { id: authState.user.id, role: authState.user.role, email: authState.user.email } : null,
+      session: authState.session ? 'exists' : 'null',
+      initialized: authState.initialized,
+      error: authState.error
+    };
+  }, []);
+  
+  console.log('[ProtectedRoute] Enhanced State:', { 
     isAuthenticated, 
     isLoading, 
     pathname: location.pathname,
     allowedRoles,
-    authStoreState: {
-      user: useAuthStore.getState().user ? 'exists' : 'null',
-      session: useAuthStore.getState().session ? 'exists' : 'null',
-      initialized: useAuthStore.getState().initialized
-    }
+    authState: logAuthState
   });
   
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [location.pathname]);
+  // Scroll to top on route change - memoized
+  const scrollToTop = useCallback(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
   
+  useEffect(() => {
+    scrollToTop();
+  }, [location.pathname, scrollToTop]);
+  
+  // Show loading screen while authentication is being determined
   if (isLoading) {
-    console.log('[ProtectedRoute] Showing loading screen - isLoading is true');
-    return <LoadingScreen message="Zəhmət olmasa gözləyin..." />;
+    console.log('[ProtectedRoute] Showing enhanced loading screen');
+    return <LoadingScreen message="Sistem yüklənir..." progress={true} />;
   }
   
+  // Redirect to login if not authenticated
   if (!isAuthenticated) {
     console.log('[ProtectedRoute] Not authenticated, redirecting to login');
     return <Navigate to={redirectUrl} state={{ from: location }} replace />;
   }
   
+  // Check role permissions
   if (allowedRoles && !hasRole(allowedRoles)) {
     console.log('[ProtectedRoute] Access denied - insufficient role');
     return <AccessDenied />;
@@ -89,20 +124,26 @@ interface PublicRouteProps {
 }
 
 const PublicRoute: React.FC<PublicRouteProps> = ({ children, restricted = false }) => {
-  const isAuthenticated = useAuthStore(selectIsAuthenticated);
-  const isLoading = useAuthStore(selectIsLoading);
+  const { isLoading, isAuthenticated } = useLoadingState();
   const location = useLocation();
   
   console.log('[PublicRoute] State:', { isAuthenticated, isLoading, restricted, pathname: location.pathname });
   
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [location.pathname]);
+  // Scroll to top on route change - memoized
+  const scrollToTop = useCallback(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
   
+  useEffect(() => {
+    scrollToTop();
+  }, [location.pathname, scrollToTop]);
+  
+  // Show loading while auth state is being determined
   if (isLoading) {
-    return <LoadingScreen message="Zəhmət olmasa gözləyin..." />;
+    return <LoadingScreen message="Yüklənir..." />;
   }
   
+  // Redirect authenticated users away from restricted routes
   if (isAuthenticated && restricted) {
     const from = location.state?.from?.pathname || "/dashboard";
     console.log('[PublicRoute] Authenticated user on restricted route, redirecting to:', from);
