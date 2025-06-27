@@ -1,6 +1,8 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { ToastAction } from '@/components/ui/toast';
+// Import React for JSX usage
+import React from 'react';
 
 export interface ErrorRecoveryConfig {
   autoRetry?: boolean;
@@ -32,7 +34,7 @@ export interface ErrorRecoveryState {
 export interface UseErrorRecoveryResult {
   errorState: ErrorRecoveryState;
   reportError: (error: Error | string, data?: any) => void;
-  recover: (strategy?: 'retry' | 'useLocal' | 'useServer' | 'merge') => Promise<boolean>;
+  recover: (strategy?: 'retry' | 'useLocal' | 'useServer' | 'merge' | 'restore') => Promise<boolean>;
   clearError: () => void;
   createBackup: (data: any) => void;
   restoreBackup: () => any | null;
@@ -42,28 +44,23 @@ export interface UseErrorRecoveryResult {
 
 /**
  * Təkmilləşdirilmiş Error Recovery Hook
- * 
- * Bu hook aşağıdakı funksiyaları təmin edir:
- * - Auto-retry failed operations
- * - Local storage backup mechanism
- * - Conflict detection and resolution
- * - Data recovery mechanisms
- * - Network failure handling
- * - User-friendly error management
  */
-export const useErrorRecovery = ({
-  autoRetry = true,
-  maxRetries = 3,
-  retryDelay = 1000,
-  localStorageBackup = true,
-  enableConflictResolution = true,
-  backupKey = 'dataEntry_backup'
-}: ErrorRecoveryConfig = {}): UseErrorRecoveryResult => {
+export const useErrorRecovery = (config: ErrorRecoveryConfig = {}): UseErrorRecoveryResult => {
+  const {
+    autoRetry = true,
+    maxRetries = 3,
+    retryDelay = 1000,
+    localStorageBackup = true,
+    enableConflictResolution = true,
+    backupKey = 'dataEntry_backup'
+  } = config;
+
   const { toast } = useToast();
   const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastErrorRef = useRef<{ error: Error | string; data?: any }>();
+  // Reference for recover function to break circular dependency
+  const recoverRef = useRef<(strategy?: 'retry' | 'useLocal' | 'useServer' | 'merge' | 'restore') => Promise<boolean>>();
 
-  // Base error recovery state
   const [errorState, setErrorState] = useState<ErrorRecoveryState>({
     hasError: false,
     errorMessage: null,
@@ -75,32 +72,25 @@ export const useErrorRecovery = ({
     lastBackupTime: null
   });
 
-  // Check if local backup exists
+  // Helper functions
   const checkLocalBackup = useCallback((): boolean => {
     if (!localStorageBackup) return false;
-
     try {
-      const backup = localStorage.getItem(backupKey);
-      return backup !== null;
-    } catch (error) {
-      console.error('Error checking local backup:', error);
+      return localStorage.getItem(backupKey) !== null;
+    } catch {
       return false;
     }
   }, [localStorageBackup, backupKey]);
 
-  // Create local backup
   const createBackup = useCallback((data: any) => {
     if (!localStorageBackup) return;
-
     try {
       const backup = {
         data,
         timestamp: new Date().toISOString(),
         version: '1.0'
       };
-
       localStorage.setItem(backupKey, JSON.stringify(backup));
-
       setErrorState(prev => ({
         ...prev,
         hasLocalBackup: true,
@@ -111,44 +101,42 @@ export const useErrorRecovery = ({
     }
   }, [localStorageBackup, backupKey]);
 
-  // Restore backup
   const restoreBackup = useCallback((): any | null => {
     if (!localStorageBackup) return null;
-
     try {
       const backupJson = localStorage.getItem(backupKey);
       if (!backupJson) return null;
-
       const backup = JSON.parse(backupJson);
-      setErrorState(prev => ({ ...prev, lastBackupTime: new Date(backup.timestamp) }));
-
+      setErrorState(prev => ({ 
+        ...prev, 
+        lastBackupTime: new Date(backup.timestamp) 
+      }));
       return backup.data;
-    } catch (error) {
-      console.error('Error restoring backup:', error);
+    } catch {
       return null;
     }
   }, [backupKey, localStorageBackup]);
 
-  // Clean up backup
   const clearBackup = useCallback(() => {
     if (!localStorageBackup) return;
-
     try {
       localStorage.removeItem(backupKey);
-      setErrorState(prev => ({ ...prev, hasLocalBackup: false, lastBackupTime: null }));
+      setErrorState(prev => ({ 
+        ...prev, 
+        hasLocalBackup: false, 
+        lastBackupTime: null 
+      }));
     } catch (error) {
       console.error('Error clearing backup:', error);
     }
   }, [backupKey, localStorageBackup]);
 
-  // Error clearing function
   const clearError = useCallback(() => {
     if (retryTimeoutRef.current) {
       clearTimeout(retryTimeoutRef.current);
       retryTimeoutRef.current = null;
     }
-
-    setErrorState({
+    setErrorState(prev => ({
       hasError: false,
       errorMessage: null,
       canRecover: false,
@@ -156,13 +144,11 @@ export const useErrorRecovery = ({
       isRecovering: false,
       hasLocalBackup: checkLocalBackup(),
       conflictData: null,
-      lastBackupTime: errorState.lastBackupTime
-    });
-
+      lastBackupTime: prev.lastBackupTime
+    }));
     lastErrorRef.current = undefined;
-  }, [checkLocalBackup, errorState.lastBackupTime]);
+  }, [checkLocalBackup]);
 
-  // Resolve conflicts between local and server data
   const resolveConflict = useCallback(async (
     resolution: 'local' | 'server' | 'merge',
     mergedData?: any
@@ -174,53 +160,40 @@ export const useErrorRecovery = ({
       setErrorState(prev => ({ ...prev, isRecovering: true }));
 
       let resolvedData;
-
-      switch (resolution) {
-        case 'local': {
-          resolvedData = conflictData.localData;
-          break;
-        }
-        case 'server': {
-          resolvedData = conflictData.serverData;
-          break;
-        }
-        case 'merge': {
-          resolvedData = mergedData || { ...conflictData.serverData, ...conflictData.localData };
-          break;
-        }
-        default:
-          throw new Error('Invalid resolution strategy');
+      if (resolution === 'local') {
+        resolvedData = conflictData.localData;
+      } else if (resolution === 'server') {
+        resolvedData = conflictData.serverData;
+      } else {
+        resolvedData = mergedData || { 
+          ...conflictData.serverData, 
+          ...conflictData.localData 
+        };
       }
 
-      // Here you would implement logic to save the resolved data
-      // This is a simulation for demonstration purposes
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       clearError();
       toast({
         title: 'Konflikt həll edildi',
-        description: `Məlumatlar ${resolution} strategiyası ilə birləşdirildi`,
-        variant: 'default'
+        description: `Məlumatlar ${resolution} strategiyası ilə birləşdirildi`
       });
 
       return true;
     } catch (error) {
       console.error('Conflict resolution failed:', error);
       setErrorState(prev => ({ ...prev, isRecovering: false }));
-
       toast({
         title: 'Konflikt həlli uğursuz',
         description: 'Konflikt həll edilə bilmədi, yenidən cəhd edin',
         variant: 'destructive'
       });
-
       return false;
     }
   }, [errorState, toast, clearError]);
 
-  // Main recovery function
   const recover = useCallback(async (
-    strategy: 'retry' | 'useLocal' | 'useServer' | 'merge' = 'retry'
+    strategy: 'retry' | 'useLocal' | 'useServer' | 'merge' | 'restore' = 'retry'
   ): Promise<boolean> => {
     if (!errorState.hasError || errorState.isRecovering) return false;
 
@@ -231,83 +204,55 @@ export const useErrorRecovery = ({
         recoveryAttempts: prev.recoveryAttempts + 1
       }));
 
-      switch (strategy) {
-        case 'retry': {
-          // Retry the original operation
-          if (lastErrorRef.current) {
-            // Simulate retry logic - in real implementation, 
-            // you would re-execute the failed operation
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            // Check if retry should succeed (simulation)
-            const shouldSucceed = Math.random() > 0.3; // 70% success rate
-
-            if (shouldSucceed) {
-              clearError();
-              toast({
-                title: 'Bərpa uğurlu',
-                description: 'Əməliyyat uğurla təkrarlandı',
-                variant: 'default'
-              });
-              return true;
-            } else {
-              throw new Error('Retry failed');
-            }
-          }
-          break;
-        }
-
-        case 'useLocal': {
-          const localData = restoreBackup();
-          if (localData) {
-            // Use local backup data
-            clearError();
-            toast({
-              title: 'Lokal məlumatlar istifadə edildi',
-              description: 'Əvvəlki saxlanılmış məlumatlar bərpa edildi',
-              variant: 'default'
-            });
-            return true;
-          }
-          break;
-        }
-
-        case 'useServer': {
-          // Use server data (implementation depends on context)
+      if (strategy === 'retry' && lastErrorRef.current) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        const shouldSucceed = Math.random() > 0.3;
+        if (shouldSucceed) {
           clearError();
           toast({
-            title: 'Server məlumatları istifadə edildi',
-            description: 'Ən son server məlumatları yükləndi',
-            variant: 'default'
+            title: 'Bərpa uğurlu',
+            description: 'Əməliyyat uğurla təkrarlandı'
+          });
+          return true;
+        } else {
+          throw new Error('Retry failed');
+        }
+      } else if (strategy === 'useLocal' || strategy === 'restore') {
+        const localData = restoreBackup();
+        if (localData) {
+          clearError();
+          toast({
+            title: 'Lokal məlumatlar istifadə edildi',
+            description: 'Əvvəlki saxlanılmış məlumatlar bərpa edildi'
           });
           return true;
         }
-
-        case 'merge': {
-          // Handle merge strategy (implementation depends on context)
-          clearError();
-          toast({
-            title: 'Məlumatlar birləşdirildi',
-            description: 'Lokal və server məlumatları birləşdirildi',
-            variant: 'default'
-          });
-          return true;
-        }
+      } else if (strategy === 'useServer') {
+        clearError();
+        toast({
+          title: 'Server məlumatları istifadə edildi',
+          description: 'Ən son server məlumatları yükləndi'
+        });
+        return true;
+      } else if (strategy === 'merge') {
+        clearError();
+        toast({
+          title: 'Məlumatlar birləşdirildi',
+          description: 'Lokal və server məlumatları birləşdirildi'
+        });
+        return true;
       }
 
       throw new Error(`Recovery strategy ${strategy} failed`);
 
     } catch (error) {
       console.error('Recovery failed:', error);
-
       setErrorState(prev => ({ ...prev, isRecovering: false }));
 
-      // Check if we should continue retrying
       if (strategy === 'retry' && errorState.recoveryAttempts < maxRetries) {
         const delay = Math.min(retryDelay * Math.pow(2, errorState.recoveryAttempts), 10000);
-
         retryTimeoutRef.current = setTimeout(() => {
-          recover('retry');
+          if (recoverRef.current) recoverRef.current('retry');
         }, delay);
       } else {
         toast({
@@ -316,15 +261,13 @@ export const useErrorRecovery = ({
           variant: 'destructive'
         });
       }
-
       return false;
     }
-  }, [clearError, errorState, maxRetries, recover, restoreBackup, retryDelay, toast]);
+  }, [errorState, maxRetries, retryDelay, clearError, restoreBackup, toast]);
 
-  // Error reporting function
-  const reportError = useCallback((error: Error | string, data?: any) => {
+  const reportError = useCallback((error: Error | string, data?: any): void => {
     const errorMsg = error instanceof Error ? error.message : error;
-    const shouldAutoRetry = autoRetry && !error.toString().includes('CONFLICT');
+    const shouldAutoRetry = autoRetry && !errorMsg.includes('CONFLICT');
 
     lastErrorRef.current = { error, data };
 
@@ -345,49 +288,66 @@ export const useErrorRecovery = ({
     toast({
       title: 'Xəta baş verdi',
       description: errorMsg,
-      variant: 'destructive',
-      action: shouldAutoRetry ? undefined : <ToastAction altText="Yenidən cəhd et"> Yenidən cəhd et</ ToastAction >
+      variant: 'destructive'
     });
+    
+    // Show retry toast separately
+    if (recoverRef.current) {
+      toast({
+        title: 'Bərpa seçimləri',
+        description: 'Yenidən cəhd etmək istəyirsiniz?'
+      });
+    }
+    
+    // Handle auto-retry
+    if (shouldAutoRetry && recoverRef.current) {
+      recoverRef.current('retry').catch(console.error);
+    }
+    
+    if (enableConflictResolution && errorMsg.includes('CONFLICT') && data) {
+      const { localData, serverData, conflictFields } = data;
+      setErrorState(prev => ({
+        ...prev,
+        conflictData: {
+          localData,
+          serverData,
+          conflictFields: conflictFields || [],
+          timestamp: new Date()
+        }
+      }));
+    }
+  }, [autoRetry, checkLocalBackup, createBackup, enableConflictResolution, toast]);
 
-  // Handle auto-retry
-  if (shouldAutoRetry) {
-    recover('retry').catch(console.error);
-  }
-
-  // Check for conflicts between local and server data
-  if (enableConflictResolution && error.toString().includes('CONFLICT') && data) {
-    const { localData, serverData, conflictFields } = data;
-
+  useEffect(() => {
     setErrorState(prev => ({
       ...prev,
-      conflictData: {
-        localData,
-        serverData,
-        conflictFields: conflictFields || [],
-        timestamp: new Date()
-      }
+      hasLocalBackup: checkLocalBackup()
     }));
-  }
-}, [autoRetry, checkLocalBackup, createBackup, enableConflictResolution, recover, toast]);
+  }, [checkLocalBackup]);
 
-// Update backup status on component mount
-useEffect(() => {
-  setErrorState(prev => ({
-    ...prev,
-    hasLocalBackup: checkLocalBackup()
-  }));
-}, [checkLocalBackup]);
+  // Assign recover to ref to break circular dependency
+  useEffect(() => {
+    recoverRef.current = recover;
+  }, [recover]);
 
-return {
-  errorState,
-  reportError,
-  recover,
-  clearError,
-  createBackup,
-  restoreBackup,
-  clearBackup,
-  resolveConflict
-};
+  useEffect(() => {
+    return () => {
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+      }
+    };
+  }, []);
+
+    return {
+    errorState,
+    reportError,
+    recover,
+    clearError,
+    createBackup,
+    restoreBackup,
+    clearBackup,
+    resolveConflict
+  };
 };
 
 export default useErrorRecovery;
