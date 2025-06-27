@@ -544,15 +544,76 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (session?.user) {
         console.log('🔐 [Auth] Found session for user:', { userId: session.user.id, email: session.user.email });
         
-        // Fetch user profile with role
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select(`
-            *,
-            user_roles(role, region_id, sector_id, school_id)
-          `)
-          .eq('id', session.user.id)
-          .single();
+        // Set a safety timeout for profile fetch
+        const profileFetchPromise = new Promise<any>(async (resolve, reject) => {
+          try {
+            // Add timeout protection for profile fetch
+            const fetchTimeout = setTimeout(() => {
+              console.warn('⚠️ [Auth] Profile fetch timed out after 15s');
+              resolve({ profile: null, error: 'Profile fetch timeout' });
+            }, 15000);
+            
+            console.log('💬 [Auth] Sending profile fetch request...');
+            
+            // First try - fetch profile
+            let profileResult = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', session.user.id)
+              .single();
+              
+            // If we got the profile, fetch roles separately
+            if (profileResult.data) {
+              console.log('💬 [Auth] Profile fetch successful, fetching roles...');
+              const rolesResult = await supabase
+                .from('user_roles')
+                .select('*')
+                .eq('user_id', session.user.id)
+                .maybeSingle();
+                
+              clearTimeout(fetchTimeout);
+              
+              // Combine the data
+              const combinedProfile = {
+                ...profileResult.data,
+                user_roles: rolesResult.data
+              };
+              
+              resolve({ profile: combinedProfile, error: profileResult.error || rolesResult.error });
+            } else {
+              clearTimeout(fetchTimeout);
+              resolve({ profile: null, error: profileResult.error });
+            }
+          } catch (error) {
+            console.error('❌ [Auth] Profile fetch error:', error);
+            reject(error);
+          }
+        });
+        
+        // Wait for profile fetch with timeout protection
+        let profile;
+        let profileError;
+        
+        try {
+          const result = await profileFetchPromise;
+          profile = result.profile;
+          profileError = result.error;
+        } catch (e) {
+          console.error('❌ [Auth] Profile fetch promise failed:', e);
+          profileError = e;
+          profile = null;
+        }
+        
+        // Force continue even if profile fetch had issues
+        if (!profile && session?.user) {
+          console.warn('⚠️ [Auth] Creating minimal profile from session data');
+          profile = {
+            id: session.user.id,
+            email: session.user.email,
+            full_name: '',
+            user_roles: null
+          };
+        }
 
         // Ətraflı profil məlumatlarını log edirik
         console.log('👤 [Auth] Profile data for initialization:', profile);

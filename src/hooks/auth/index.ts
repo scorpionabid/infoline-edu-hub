@@ -3,7 +3,13 @@
 // ============================================================================
 // Bu fayl təmizlənmiş auth sisteminin əsas export point-idir
 
+// Yeni refaktor edilmiş auth strukturu - modular və daha idarə oluna bilən
+
+// Import supabase (needed for legacy compatibility functions)
 import { supabase } from '@/integrations/supabase/client';
+
+// Auth types export
+export * from './authTypes';
 
 // ========== Auth Store ==========
 import {
@@ -23,8 +29,7 @@ import {
   selectSignOut,
   shouldAuthenticate,
   isProtectedRoute,
-  // getRedirectPath
-} from './useAuthStore';
+} from './authStore';
 
 export {
   useAuthStore,
@@ -52,8 +57,15 @@ export const useSupabaseAuth = () => {
   const updatePassword = useAuthStore(selectUpdatePassword);
   const signOut = useAuthStore(selectSignOut);
   
-  // resetPassword funksiyası - ForgotPassword səhifəsi üçün
+  // resetPassword funksiyası - ForgotPassword səhifəsi üçün - Legacy Support
   const resetPassword = async (email: string) => {
+    // Prioritize new implementation via store
+    const authState = useAuthStore.getState();
+    if (authState?.resetPassword) {
+      return authState.resetPassword(email);
+    }
+    
+    // Fallback to direct implementation
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`,
@@ -67,7 +79,7 @@ export const useSupabaseAuth = () => {
     }
   };
   
-  // signUp funksiyası - Register səhifəsi üçün
+  // signUp funksiyası - Register səhifəsi üçün - Legacy Support
   const signUp = async (email: string, password: string, metadata: Record<string, any>) => {
     try {
       const { data, error } = await supabase.auth.signUp({
@@ -80,7 +92,7 @@ export const useSupabaseAuth = () => {
       });
       
       if (error) throw error;
-      return { success: true, data };
+      return { success: true, data }; 
     } catch (error) {
       console.error('Error signing up:', error);
       return { success: false, error };
