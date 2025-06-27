@@ -84,7 +84,7 @@ const SchoolsTable: React.FC<SchoolsTableProps> = ({
     setPageSize,
     totalItems,
     startIndex,
-    // endIndex
+    endIndex
   } = usePagination(schoolStats, 5); // 5 schools per page
   
   if (schoolsLoading) {

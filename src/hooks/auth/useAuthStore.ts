@@ -1,6 +1,11 @@
 import { create } from 'zustand';
 import { supabase } from '@/integrations/supabase/client';
-import { AuthState, FullUserData } from '@/types/auth';
+import { AuthState, FullUserData, UserRole } from '@/types/auth';
+
+// Auth hadisələrini izləmək üçün listener əlavə edirik
+supabase.auth.onAuthStateChange((event, session) => {
+  console.log('🔄 [AuthStateChange]', { event, session: session?.user?.id });
+});
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
@@ -17,6 +22,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       console.log('🔐 [Auth] Attempting sign in', { email });
       
+      // Auth girişi
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -24,32 +30,69 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       if (error) throw error;
 
-      // Fetch user profile with role
+      console.log('📊 [Auth] Success Auth Response', { 
+        userId: data.user.id, 
+        email: data.user.email
+      });
+
+      // Fetch user profile with role (inner join əvəzinə normal join istifadə edirik)
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select(`
           *,
-          user_roles!inner(role, region_id, sector_id, school_id)
+          user_roles(role, region_id, sector_id, school_id)
         `)
         .eq('id', data.user.id)
         .single();
 
+      // Ətraflı profil məlumatlarını log edirik
+      console.log('👤 [Auth] Profile data:', profile);
+
       if (profileError) {
-        console.error('Error fetching profile:', profileError);
+        console.error('❌ [Auth] Error fetching profile:', profileError);
         throw profileError;
       }
 
-      // Email əsasında superadmin təyin etmə
+      // user_roles məlumatlarını yoxlayırıq
+      console.log('🔍 [Auth] User roles raw data:', profile.user_roles);
+      
+      // Rol təyinatını dəqiqləşdiririk
+      let userRole: UserRole = 'user' as UserRole; // default
       const isKnownSuperAdmin = data.user.email?.toLowerCase() === 'superadmin@infoline.az';
-      const userRole = isKnownSuperAdmin ? 'superadmin' : (profile.user_roles?.role || 'user');
+      
+      if (isKnownSuperAdmin) {
+        userRole = 'superadmin' as UserRole;
+      } else if (profile?.user_roles && Array.isArray(profile.user_roles) && profile.user_roles.length > 0) {
+        // Əgər user_roles massivdirsə
+        userRole = (profile.user_roles[0].role || 'user') as UserRole;
+      } else if (profile?.user_roles && typeof profile.user_roles === 'object' && profile.user_roles.role) {
+        // Əgər user_roles obyektdirsə
+        userRole = profile.user_roles.role as UserRole;
+      }
       
       // Roll təyinatı haqqında ətraflı məlumat ver
       console.log('🔑 [Auth] Role determination', { 
         email: data.user.email, 
-        isKnownSuperAdmin, 
-        roleFromDB: profile.user_roles?.role || 'none',
+        isKnownSuperAdmin,
+        profileExists: !!profile,
+        userRolesData: profile?.user_roles,
+        userRolesType: profile?.user_roles ? typeof profile.user_roles : 'undefined',
         finalRole: userRole 
       });
+
+      // User məlumatlarını strukturlaşdırırıq
+      // user_roles bir obyekt və ya massiv ola bilər, ona görə tipə görə işləyirik
+      let regionId, sectorId, schoolId;
+      
+      if (Array.isArray(profile.user_roles) && profile.user_roles.length > 0) {
+        regionId = profile.user_roles[0].region_id;
+        sectorId = profile.user_roles[0].sector_id;
+        schoolId = profile.user_roles[0].school_id;
+      } else if (typeof profile.user_roles === 'object' && profile.user_roles !== null) {
+        regionId = profile.user_roles.region_id;
+        sectorId = profile.user_roles.sector_id;
+        schoolId = profile.user_roles.school_id;
+      }
 
       const userData: FullUserData = {
         id: profile.id,
@@ -57,12 +100,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         full_name: profile.full_name || '',
         name: profile.full_name || '',
         role: userRole,
-        region_id: profile.user_roles?.region_id,
-        sector_id: profile.user_roles?.sector_id,
-        school_id: profile.user_roles?.school_id,
-        regionId: profile.user_roles?.region_id,
-        sectorId: profile.user_roles?.sector_id,
-        schoolId: profile.user_roles?.school_id,
+        region_id: regionId,
+        sector_id: sectorId,
+        school_id: schoolId,
+        regionId: regionId,
+        sectorId: sectorId,
+        schoolId: schoolId,
         phone: profile.phone,
         position: profile.position,
         language: profile.language || 'az',
@@ -199,36 +242,89 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     
     // Prevent multiple initialization attempts
     if (state.initialized && !loginOnly) {
+      console.log('🔄 [Auth] Initialization already completed, skipping...');
       return;
     }
 
     // Prevent concurrent initialization
     if (state.isLoading && !loginOnly) {
+      console.log('🔄 [Auth] Initialization already in progress, skipping...');
       return;
     }
 
     set({ isLoading: true, initializationAttempted: true });
+    console.log('🔄 [Auth] Starting initialization...');
 
     try {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError) {
+        console.error('❌ [Auth] Session error:', sessionError);
         throw sessionError;
       }
       
       if (session?.user) {
-        // Fetch user profile with role
+        console.log('🔐 [Auth] Found session for user:', { userId: session.user.id, email: session.user.email });
+        
+        // Fetch user profile with role (inner join əvəzinə normal join istifadə edirik)
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select(`
             *,
-            user_roles!inner(role, region_id, sector_id, school_id)
+            user_roles(role, region_id, sector_id, school_id)
           `)
           .eq('id', session.user.id)
           .maybeSingle();
 
-        if (profile && !profileError) {
-          const userRole = profile.user_roles?.role || 'schooladmin';
+        // Ətraflı profil məlumatlarını log edirik
+        console.log('👤 [Auth] Profile data for initialization:', profile);
+
+        if (profileError) {
+          console.error('❌ [Auth] Error fetching profile during initialization:', profileError);
+          throw profileError;
+        }
+
+        if (profile) {
+          // user_roles məlumatlarını yoxlayırıq
+          console.log('🔍 [Auth] User roles raw data during initialization:', profile.user_roles);
+          
+          // Rol təyinatını dəqiqləşdiririk
+          let userRole: UserRole = 'user' as UserRole; // default
+          const isKnownSuperAdmin = session.user.email?.toLowerCase() === 'superadmin@infoline.az';
+          
+          if (isKnownSuperAdmin) {
+            userRole = 'superadmin' as UserRole;
+          } else if (profile?.user_roles && Array.isArray(profile.user_roles) && profile.user_roles.length > 0) {
+            // Əgər user_roles massivdirsə
+            userRole = (profile.user_roles[0].role || 'user') as UserRole;
+          } else if (profile?.user_roles && typeof profile.user_roles === 'object' && profile.user_roles.role) {
+            // Əgər user_roles obyektdirsə
+            userRole = profile.user_roles.role as UserRole;
+          }
+          
+          // Roll təyinatı haqqında ətraflı məlumat ver
+          console.log('🔑 [Auth] Role determination during initialization', { 
+            email: session.user.email, 
+            isKnownSuperAdmin,
+            profileExists: !!profile,
+            userRolesData: profile?.user_roles,
+            userRolesType: profile?.user_roles ? typeof profile.user_roles : 'undefined',
+            finalRole: userRole 
+          });
+
+          // User məlumatlarını strukturlaşdırırıq
+          // user_roles bir obyekt və ya massiv ola bilər, ona görə tipə görə işləyirik
+          let regionId, sectorId, schoolId;
+          
+          if (Array.isArray(profile.user_roles) && profile.user_roles.length > 0) {
+            regionId = profile.user_roles[0].region_id;
+            sectorId = profile.user_roles[0].sector_id;
+            schoolId = profile.user_roles[0].school_id;
+          } else if (typeof profile.user_roles === 'object' && profile.user_roles !== null) {
+            regionId = profile.user_roles.region_id;
+            sectorId = profile.user_roles.sector_id;
+            schoolId = profile.user_roles.school_id;
+          }
 
           const userData: FullUserData = {
             id: profile.id,
@@ -236,12 +332,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             full_name: profile.full_name || '',
             name: profile.full_name || '',
             role: userRole,
-            region_id: profile.user_roles?.region_id,
-            sector_id: profile.user_roles?.sector_id,
-            school_id: profile.user_roles?.school_id,
-            regionId: profile.user_roles?.region_id,
-            sectorId: profile.user_roles?.sector_id,
-            schoolId: profile.user_roles?.school_id,
+            region_id: regionId,
+            sector_id: sectorId,
+            school_id: schoolId,
+            regionId: regionId,
+            sectorId: sectorId,
+            schoolId: schoolId,
             phone: profile.phone,
             position: profile.position,
             language: profile.language || 'az',
@@ -264,16 +360,23 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             error: null
           });
           
-          console.log('✅ [Auth] Initialization successful', { userId: userData.id, role: userData.role });
+          console.log('✅ [Auth] Initialization successful', { 
+            userId: userData.id, 
+            role: userData.role,
+            email: userData.email,
+            has_region_id: !!userData.region_id,
+            has_sector_id: !!userData.sector_id, 
+            has_school_id: !!userData.school_id 
+          });
         } else {
-          console.warn('Profile not found or error:', profileError);
+          console.warn('⚠️ [Auth] Profile not found during initialization');
           set({
             user: null,
             session: null,
             isAuthenticated: false,
             isLoading: false,
             initialized: true,
-            error: profileError?.message || 'Profile not found'
+            error: 'Profile not found'
           });
         }
       } else {
@@ -341,6 +444,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const { user } = get();
     if (!user) return false;
     
+    // Rol yoxlamalarını daha ətraflı loqlayırıq
+    console.log('🔒 [Auth] Checking permission', { 
+      permission: _permission,
+      userRole: user.role,
+      email: user.email
+    });
+    
     // Superadmin hesab üçün çoxsahli yoxlama
     if (user.role === 'superadmin') return true;
     
@@ -359,13 +469,13 @@ export const selectError = (state: AuthState) => state.error;
 export const selectSession = (state: AuthState) => state.session;
 export const selectUserRole = (state: AuthState) => {
   // Əgər istifadəçi emaili superadmin sözünü ehtiva edirsə, superadmin rol
-  const emailBasedRole = state.user?.email?.toLowerCase().includes('superadmin') ? 'superadmin' : null;
+  const emailBasedRole = state.user?.email?.toLowerCase().includes('superadmin') ? 'superadmin' as UserRole : null;
   
   // Rol təyini prioriteti: 
   // 1. Profildəki rol (user_roles cədvəlindən gəlir)
   // 2. Email əsasında rol (superadmin emaili olduqda)
   // 3. Default rol (user)
-  return state.user?.role || emailBasedRole || 'user';
+  return state.user?.role || emailBasedRole || ('user' as UserRole);
 };
 export const selectRegionId = (state: AuthState) => state.user?.region_id;
 export const selectSectorId = (state: AuthState) => state.user?.sector_id;
