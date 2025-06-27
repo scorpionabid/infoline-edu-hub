@@ -48,7 +48,7 @@ export const EnhancedDashboardCard: React.FC<EnhancedDashboardCardProps> = ({
   trend,
   variant = 'default',
   className,
-  // onClick
+  onClick
 }) => {
   return (
     <EnhancedCard
@@ -59,7 +59,7 @@ export const EnhancedDashboardCard: React.FC<EnhancedDashboardCardProps> = ({
       className={cn(
         getVariantClasses(variant),
         'animate-fade-in-up',
-        // className
+        className
       )}
     >
       <div className="flex items-center justify-between">

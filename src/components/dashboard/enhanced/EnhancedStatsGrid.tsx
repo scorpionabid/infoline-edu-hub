@@ -26,7 +26,7 @@ interface EnhancedStatsGridProps {
 
 export const EnhancedStatsGrid: React.FC<EnhancedStatsGridProps> = ({
   stats,
-  // className
+  className
 }) => {
   return (
     <ResponsiveGrid
