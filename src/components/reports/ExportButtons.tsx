@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -6,7 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
-  // DropdownMenuLabel
+  DropdownMenuLabel
 } from '@/components/ui/dropdown-menu';
 import { Download, FileSpreadsheet, FileText, File, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -46,7 +47,7 @@ const ExportButtons: React.FC<ExportButtonsProps> = ({
 
       // Report type-a görə müvafiq export funksiyasını çağırırıq
       switch (reportType) {
-        case 'school-performance': {
+        case 'school-performance':
           if (!canExportAdvanced) {
             toast({
               title: 'İcazə xətası',
@@ -56,9 +57,9 @@ const ExportButtons: React.FC<ExportButtonsProps> = ({
             return;
           }
           fileName = await ReportExportService.exportSchoolPerformance(format, filters);
-          break; }
+          break;
           
-        case 'regional-comparison': {
+        case 'regional-comparison':
           if (!canExportRegional) {
             toast({
               title: 'İcazə xətası',
@@ -68,9 +69,9 @@ const ExportButtons: React.FC<ExportButtonsProps> = ({
             return;
           }
           fileName = await ReportExportService.exportRegionalComparison(format);
-          break; }
+          break;
           
-        case 'category-completion': {
+        case 'category-completion':
           if (!categoryId) {
             toast({
               title: 'Səhv',
@@ -80,11 +81,11 @@ const ExportButtons: React.FC<ExportButtonsProps> = ({
             return;
           }
           fileName = await ReportExportService.exportCategoryCompletion(categoryId, format);
-          break; }
+          break;
           
-        case 'school-column-data': {
+        case 'school-column-data':
           fileName = await ReportExportService.exportSchoolColumnData(filters, format);
-          break; }
+          break;
           
         default:
           throw new Error(`Bilinməyən hesabat növü: ${reportType}`);
@@ -118,11 +119,11 @@ const ExportButtons: React.FC<ExportButtonsProps> = ({
 
   const getIconByFormat = (format: string) => {
     switch (format) {
-      case 'excel': {
+      case 'excel':
         return <FileSpreadsheet className="mr-2 h-4 w-4 text-green-600" />;
-      case 'pdf': {
+      case 'pdf':
         return <FileText className="mr-2 h-4 w-4 text-red-600" />;
-      case 'csv': {
+      case 'csv':
         return <File className="mr-2 h-4 w-4 text-blue-600" />;
       default:
         return <Download className="mr-2 h-4 w-4" />;

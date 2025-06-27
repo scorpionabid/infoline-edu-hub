@@ -40,7 +40,7 @@ export const StatusHistoryTable: React.FC<StatusHistoryTableProps> = ({
     hasData, 
     refresh, 
     exportHistory,
-    // testConnection
+    testConnection
   } = useStatusHistory({ entryId, limit, autoRefresh });
 
   /**
@@ -48,17 +48,17 @@ export const StatusHistoryTable: React.FC<StatusHistoryTableProps> = ({
    */
   const getStatusColor = (status: string): string => {
     switch (status?.toLowerCase()) {
-      case 'draft': {
-      case 'hazırlanır': {
+      case 'draft':
+      case 'hazırlanır':
         return 'bg-gray-100 text-gray-800';
-      case 'pending': {
-      case 'gözləyir': {
+      case 'pending':
+      case 'gözləyir':
         return 'bg-blue-100 text-blue-800';
-      case 'approved': {
-      case 'təsdiqlənib': {
+      case 'approved':
+      case 'təsdiqlənib':
         return 'bg-green-100 text-green-800';
-      case 'rejected': {
-      case 'rədd edilib': {
+      case 'rejected':
+      case 'rədd edilib':
         return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
@@ -72,7 +72,6 @@ export const StatusHistoryTable: React.FC<StatusHistoryTableProps> = ({
     try {
       const data = await exportHistory();
       if (data) {
-        // Convert to CSV or trigger download
         const csv = convertToCSV(data);
         downloadCSV(csv, 'status-history.csv');
       }
@@ -189,7 +188,7 @@ export const StatusHistoryTable: React.FC<StatusHistoryTableProps> = ({
                   variant="outline"
                   size="sm"
                 >
-                  // Test
+                  Test
                 </Button>
               </div>
             </AlertDescription>
@@ -232,7 +231,7 @@ export const StatusHistoryTable: React.FC<StatusHistoryTableProps> = ({
                   size="sm"
                 >
                   <Download className="h-4 w-4 mr-1" />
-                  // Export
+                  Export
                 </Button>
               )}
             </div>
@@ -258,7 +257,6 @@ export const StatusHistoryTable: React.FC<StatusHistoryTableProps> = ({
               >
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
-                    {/* Status Transition */}
                     <div className="flex items-center space-x-2 mb-2">
                       <Badge className={getStatusColor(entry.old_status)}>
                         {entry.old_status}
@@ -269,7 +267,6 @@ export const StatusHistoryTable: React.FC<StatusHistoryTableProps> = ({
                       </Badge>
                     </div>
                     
-                    {/* Comment */}
                     {entry.comment && (
                       <div className="flex items-start space-x-2 mb-2 text-sm text-gray-600">
                         <MessageSquare className="h-4 w-4 mt-0.5 flex-shrink-0" />
@@ -277,7 +274,6 @@ export const StatusHistoryTable: React.FC<StatusHistoryTableProps> = ({
                       </div>
                     )}
                     
-                    {/* Changed By */}
                     <div className="flex items-center space-x-2 text-sm text-gray-500">
                       <User className="h-4 w-4" />
                       <span>{entry.changed_by_name}</span>
@@ -287,7 +283,6 @@ export const StatusHistoryTable: React.FC<StatusHistoryTableProps> = ({
                     </div>
                   </div>
                   
-                  {/* Timestamp */}
                   <div className="text-right text-sm text-gray-500 flex-shrink-0 ml-4">
                     <div className="flex items-center space-x-1">
                       <Clock className="h-4 w-4" />
@@ -304,7 +299,6 @@ export const StatusHistoryTable: React.FC<StatusHistoryTableProps> = ({
                   </div>
                 </div>
                 
-                {/* Metadata (if exists) */}
                 {entry.metadata && Object.keys(entry.metadata).length > 0 && (
                   <div className="mt-3 pt-3 border-t border-gray-100">
                     <details className="text-xs text-gray-500">
