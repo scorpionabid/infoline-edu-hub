@@ -112,7 +112,6 @@ const SchoolAdminDataEntry: React.FC = () => {
     handleSubmit,
     handleSave,
     resetForm,
-    loadData,
   } = dataManager;
 
   // Handle navigation from dashboard
@@ -147,9 +146,10 @@ const SchoolAdminDataEntry: React.FC = () => {
   // Load data when category changes
   useEffect(() => {
     if (selectedCategory && schoolId) {
-      loadData();
+      // Use direct data fetching instead of the loadData function
+      refetch();
     }
-  }, [selectedCategory, schoolId, loadData]);
+  }, [selectedCategory, schoolId, refetch]);
 
   // Calculate completion statistics
   const completionStats = useMemo(() => {
@@ -192,7 +192,8 @@ const SchoolAdminDataEntry: React.FC = () => {
     const overallCompletion = categories.length > 0 ? 
       Math.round(stats.reduce((sum, stat) => sum + stat.completionPercentage, 0) / categories.length) : 0;
     
-    const completedCategories = stats.filter(stat => stat.isComplete).length;
+    // Define categories as complete if they have 100% completion percentage
+    const completedCategories = stats.filter(stat => stat.completionPercentage === 100).length;
 
     return {
       categories: stats,
@@ -448,7 +449,7 @@ const CategorySelectionMode: React.FC<CategorySelectionModeProps> = ({
   categories,
   completionStats,
   onCategorySelect,
-  // onExcelImport
+  onExcelImport
 }) => {
   return (
     <div className="space-y-6">
@@ -625,7 +626,7 @@ const DataEntryMode: React.FC<DataEntryModeProps> = ({
   onNext,
   completionStats,
   focusColumnId,
-  // returnUrl
+  returnUrl
 }) => {
   const categoryStats = completionStats.categories.find(
     (stat: any) => stat.categoryId === category.id
@@ -722,7 +723,7 @@ const ReviewSubmitMode: React.FC<ReviewSubmitModeProps> = ({
   isSubmitting,
   onBack,
   onSubmit,
-  // onEditCategory
+  onEditCategory
 }) => {
   return (
     <div className="space-y-6">

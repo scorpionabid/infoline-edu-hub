@@ -150,38 +150,72 @@ export const useDashboardData = (options: UseDashboardDataOptions = {}) => {
           throw error;
         }
       } else if (userRole === 'schooladmin') {
-        // Məktəb admin üçün data
-        const { data: schoolStats, error: schoolError } = await supabase
-          .from('school_stats')
-          .select('*')
-          .eq('school_id', user?.school_id || '')
-          .single();
-          
-        if (schoolError) throw schoolError;
+        // Məktəb admin üçün data - school_stats olmadığı üçün alternativ sorğu
+        console.log('📊 [useDashboardData] Məktəbadmin üçün məlumatlar yüklənir...', user?.school_id);
         
-        const { data: categories, error: categoriesError } = await supabase
-          .from('categories')
-          .select('id, name, completion_rate, status');
+        try {
+          // 1. Məktəbin əsas məlumatlarını əldə edirik
+          const { data: school, error: schoolFetchError } = await supabase
+            .from('schools')
+            .select('*')
+            .eq('id', user?.school_id || '')
+            .single();
+            
+          if (schoolFetchError) throw schoolFetchError;
+          console.log('📊 [useDashboardData] Məktəb məlumatları:', school);
           
-        if (categoriesError) throw categoriesError;
-        
-        dashboardData = {
-          totalCategories: categories?.length || 0,
-          completedCategories: categories?.filter(c => c.status === 'completed')?.length || 0,
-          pendingCategories: categories?.filter(c => c.status === 'pending')?.length || 0,
-          completionRate: schoolStats?.completion_rate || 0,
-          stats: {
-            categories: categories || []
-          },
-          formStats: {
-            total: schoolStats?.total_forms || 0,
-            completed: schoolStats?.completed_forms || 0,
-            pending: schoolStats?.pending_forms || 0,
-            rejected: schoolStats?.rejected_forms || 0,
-            approved: schoolStats?.approved_forms || 0,
-            completionRate: schoolStats?.completion_rate || 0
-          }
-        };
+          // 2. Kateqoriyaları əldə edirik
+          const { data: categories, error: categoriesError } = await supabase
+            .from('categories')
+            .select('id, name, status, created_at');
+            
+          if (categoriesError) throw categoriesError;
+          console.log(`📊 [useDashboardData] ${categories?.length || 0} kateqoriya tapıldı`);
+          
+          // 3. Məlumat giriş statistikalarını əldə edirik
+          const { data: dataEntries, error: entriesError } = await supabase
+            .from('data_entries')
+            .select('*')
+            .eq('school_id', user?.school_id || '');
+            
+          if (entriesError) throw entriesError;
+          console.log(`📊 [useDashboardData] ${dataEntries?.length || 0} məlumat girişi tapıldı`);
+
+          // Status saylarını hesablayırıq
+          const statusCounts = {
+            total: dataEntries?.length || 0,
+            completed: dataEntries?.filter(e => e.status === 'completed').length || 0,
+            pending: dataEntries?.filter(e => e.status === 'pending').length || 0,
+            rejected: dataEntries?.filter(e => e.status === 'rejected').length || 0,
+            approved: dataEntries?.filter(e => e.status === 'approved').length || 0,
+          };
+          
+          // Tamamlanma nisbəti
+          const completionRate = statusCounts.total > 0
+            ? Math.round((statusCounts.completed / statusCounts.total) * 100)
+            : 0;
+          
+          dashboardData = {
+            totalCategories: categories?.length || 0,
+            completedCategories: categories?.filter(c => c.status === 'completed')?.length || 0,
+            pendingCategories: categories?.filter(c => c.status === 'pending')?.length || 0,
+            completionRate: completionRate,
+            stats: {
+              categories: categories || []
+            },
+            formStats: {
+              total: statusCounts.total,
+              completed: statusCounts.completed,
+              pending: statusCounts.pending,
+              rejected: statusCounts.rejected,
+              approved: statusCounts.approved,
+              completionRate: completionRate
+            }
+          };
+        } catch (error) {
+          console.error('📊 [useDashboardData] Məktəbadmin məlumatları yüklənərkən xəta:', error);
+          throw error;
+        }
       }
       
       console.log('📊 [useDashboardData] Yüklənmə uğurlu:', { dashboardData });
