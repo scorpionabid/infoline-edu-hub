@@ -86,6 +86,15 @@ export interface SchoolStat {
   lastUpdated?: string;
 }
 
+// StatsGridItem - SuperAdminDashboard üçün
+export interface StatsGridItem {
+  title: string;
+  value: number | string;
+  color: string;
+  description: string;
+  icon: string;
+}
+
 // Missing exports that were causing build errors
 export interface DashboardNotification {
   id: string;

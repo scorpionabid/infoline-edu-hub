@@ -70,9 +70,7 @@ const SecureLoginForm: React.FC<SecureLoginFormProps> = ({ error, clearError }) 
   return (
     <Card className="w-full max-w-md mx-auto shadow-lg">
       <CardHeader className="space-y-1 pb-4">
-        <CardTitle className="text-2xl font-bold text-center text-gray-900">
-          {t?.('auth.login.title') || 'Təhlükəsiz giriş'}
-        </CardTitle>
+        {/* Başlıq silindi */}
       </CardHeader>
       <CardContent className="space-y-4">
         <form onSubmit={handleSubmit} className="space-y-4">

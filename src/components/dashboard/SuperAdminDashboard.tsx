@@ -76,8 +76,8 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
   ];
 
   return (
-    <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="space-y-8">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -85,7 +85,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
             </CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="py-4">
             <div className="text-2xl font-bold">
               {dashboardData.totalUsers || 0}
             </div>
@@ -102,7 +102,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
             </CardTitle>
             <School className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="py-4">
             <div className="text-2xl font-bold">
               {dashboardData.totalSchools || 0}
             </div>
@@ -119,7 +119,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
             </CardTitle>
             <MapPin className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="py-4">
             <div className="text-2xl font-bold">
               {dashboardData.totalRegions || 0}
             </div>
@@ -136,7 +136,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
             </CardTitle>
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="py-4">
             <div className="text-2xl font-bold">
               {Math.round(dashboardData.completionRate || 0)}%
             </div>
@@ -147,7 +147,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
         </Card>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
         <Card className="col-span-4">
           <CardHeader>
             <CardTitle>
@@ -160,7 +160,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
         </Card>
         
         {/* Notification Card */}
-        <div className="col-span-3 space-y-4">
+        <div className="col-span-3 space-y-6">
           <NotificationsCard maxNotifications={6} />
           
           {/* Recent Activity Card */}
@@ -168,11 +168,11 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
             <CardHeader>
               <CardTitle>{t("general.recent_activity")}</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
+            <CardContent className="py-4">
+              <div className="space-y-5">
                 {dashboardData.regions?.slice(0, 3).map((region: any) => (
-                  <div key={region.id} className="flex items-center">
-                    <div className="ml-4 space-y-1">
+                  <div key={region.id} className="flex items-center p-3 rounded-md hover:bg-slate-50">
+                    <div className="ml-4 space-y-2">
                       <p className="text-sm font-medium leading-none">
                         {region.name}
                       </p>
@@ -196,7 +196,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
         </div>
       </div>
 
-      <StatsGrid stats={statsGridData} />
+      <StatsGrid stats={statsGridData} className="mt-2" />
     </div>
   );
 };
