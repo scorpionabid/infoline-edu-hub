@@ -154,7 +154,7 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleLanguageChange('en')}>
                 <span className="text-lg mr-2">🇬🇧</span>
-                // English
+                English
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleLanguageChange('ru')}>
                 <span className="text-lg mr-2">🇷🇺</span>

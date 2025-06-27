@@ -147,7 +147,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
         </Card>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
+      <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-7">
         <Card className="col-span-4">
           <CardHeader>
             <CardTitle>
@@ -160,7 +160,7 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
         </Card>
         
         {/* Notification Card */}
-        <div className="col-span-3 space-y-6">
+        <div className="col-span-3 space-y-8">
           <NotificationsCard maxNotifications={6} />
           
           {/* Recent Activity Card */}
@@ -168,11 +168,11 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
             <CardHeader>
               <CardTitle>{t("general.recent_activity")}</CardTitle>
             </CardHeader>
-            <CardContent className="py-4">
-              <div className="space-y-5">
+            <CardContent className="py-6">
+              <div className="space-y-6">
                 {dashboardData.regions?.slice(0, 3).map((region: any) => (
                   <div key={region.id} className="flex items-center p-3 rounded-md hover:bg-slate-50">
-                    <div className="ml-4 space-y-2">
+                    <div className="ml-4 space-y-1.5 w-full">
                       <p className="text-sm font-medium leading-none">
                         {region.name}
                       </p>

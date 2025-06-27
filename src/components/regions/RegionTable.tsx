@@ -58,7 +58,7 @@ export const RegionTable: React.FC<RegionTableProps> = ({
                       Admin təyin et
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => onDelete(region)}>
-                      // Sil
+                      Sil
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
