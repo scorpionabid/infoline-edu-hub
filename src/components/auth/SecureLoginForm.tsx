@@ -83,7 +83,7 @@ const SecureLoginForm: React.FC<SecureLoginFormProps> = ({ error, clearError }) 
             </label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
+              <input
                 id="email"
                 name="email"
                 type="email"
@@ -92,7 +92,7 @@ const SecureLoginForm: React.FC<SecureLoginFormProps> = ({ error, clearError }) 
                 onChange={handleChange}
                 required
                 disabled={isLoading || isSubmitting}
-                className="pl-10 h-11 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                className="flex h-10 w-full rounded-md border px-3 py-2 text-sm pl-12 h-11 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                 autoComplete="email"
               />
             </div>
@@ -105,7 +105,7 @@ const SecureLoginForm: React.FC<SecureLoginFormProps> = ({ error, clearError }) 
             </label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
+              <input
                 id="password"
                 name="password"
                 type={showPassword ? 'text' : 'password'}
@@ -114,7 +114,7 @@ const SecureLoginForm: React.FC<SecureLoginFormProps> = ({ error, clearError }) 
                 onChange={handleChange}
                 required
                 disabled={isLoading || isSubmitting}
-                className="pl-10 pr-10 h-11 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                className="flex h-10 w-full rounded-md border px-3 py-2 text-sm pl-12 pr-10 h-11 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                 autoComplete="current-password"
               />
               <button
@@ -162,18 +162,7 @@ const SecureLoginForm: React.FC<SecureLoginFormProps> = ({ error, clearError }) 
           </Button>
         </form>
 
-        {/* Sign Up Link */}
-        <div className="text-center pt-4 border-t border-gray-200">
-          <p className="text-sm text-gray-600">
-            {t?.('auth.login.noAccount') || 'Hesabınız yoxdur?'}{' '}
-            <Link
-              to="/register"
-              className="text-blue-600 hover:text-blue-800 font-medium hover:underline focus:outline-none focus:underline"
-            >
-              {t?.('auth.login.signUp') || 'Qeydiyyatdan keçin'}
-            </Link>
-          </p>
-        </div>
+        {/* No Sign Up Link - Registration process disabled */}
       </CardContent>
     </Card>
   );

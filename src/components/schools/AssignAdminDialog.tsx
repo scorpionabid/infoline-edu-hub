@@ -41,7 +41,7 @@ export const AssignAdminDialog: React.FC<AssignAdminDialogProps> = ({
   onClose,
   onAssign,
   entityType,
-  // entityName
+  entityName
 }) => {
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string>('');
