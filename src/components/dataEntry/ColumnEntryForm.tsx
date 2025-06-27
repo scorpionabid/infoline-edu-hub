@@ -18,10 +18,10 @@ const ColumnEntryForm: React.FC<ColumnEntryFormProps> = ({
   column, 
   value, 
   onChange,
-  // error
+  error
 }) => {
   switch (column.type) {
-    case 'checkbox': {
+    case 'checkbox':
       return (
         <FormItem className="flex flex-row items-start space-x-3 space-y-0">
           <FormControl>
@@ -42,7 +42,7 @@ const ColumnEntryForm: React.FC<ColumnEntryFormProps> = ({
         </FormItem>
       );
       
-    case 'select': {
+    case 'select':
       return (
         <FormItem>
           <FormLabel>{column.name}</FormLabel>

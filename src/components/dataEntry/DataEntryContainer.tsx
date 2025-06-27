@@ -1,8 +1,8 @@
+
 import React from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 import SchoolAdminDataEntry from '@/components/dataEntry/SchoolAdminDataEntry';
-// Deprecated: import UnifiedSectorDataEntry from '@/components/dataEntry/unified/UnifiedSectorDataEntry';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -49,11 +49,11 @@ export const DataEntryContainer: React.FC<DataEntryContainerProps> = ({ children
   // Render role-specific data entry component
   const renderDataEntryComponent = () => {
     switch (userRole) {
-      case 'schooladmin': {
+      case 'schooladmin':
         return <SchoolAdminDataEntry />;
       
-      case 'sectoradmin': {
-      case 'regionadmin': {
+      case 'sectoradmin':
+      case 'regionadmin':
         return (
           <Alert>
             <AlertCircle className="h-4 w-4" />
@@ -71,7 +71,7 @@ export const DataEntryContainer: React.FC<DataEntryContainerProps> = ({ children
           </Alert>
         );
       
-      case 'superadmin': {
+      case 'superadmin':
         return (
           <Alert>
             <AlertCircle className="h-4 w-4" />
