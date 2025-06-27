@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore, selectIsAuthenticated, selectIsLoading, selectUser, selectUserRole } from '@/hooks/auth/useAuthStore';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 import LoadingScreen from '@/components/auth/LoadingScreen';
 import { UserRole } from '@/types/auth';
 
-// Normalize role function (moved from deleted role.ts)
+// Normalize role function
 const normalizeRole = (role?: string | null): UserRole => {
   if (!role) return 'schooladmin';
   
@@ -40,96 +40,66 @@ const Dashboard: React.FC = () => {
   const isLoading = useAuthStore(selectIsLoading);
   const user = useAuthStore(selectUser);
   const rawUserRole = useAuthStore(selectUserRole);
-  
-  // Ensure we have a properly normalized role
   const userRole = normalizeRole(rawUserRole);
   
-  const [authInitialized, setAuthInitialized] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
-  console.log('[Dashboard.tsx] Component rendering. State:', { 
-    loading: isLoading, 
-    authInitialized,
+  console.log('[Dashboard] Rendering with state:', { 
+    isLoading, 
     isAuthenticated, 
-    user: user ? { id: user.id, role: user.role, email: user.email } : null,
-    rawUserRole,
-    normalizedRole: userRole
+    hasUser: !!user,
+    userRole
   });
 
-  // Initialize auth once
+  // Single auth check effect
   useEffect(() => {
-    const initializeAuth = async () => {
-      if (!authInitialized) {
-        console.log('[Dashboard.tsx] Initializing auth');
-        try {
-          await useAuthStore.getState().initializeAuth();
-        } catch (error) {
-          console.error('[Dashboard.tsx] Auth initialization failed:', error);
-        } finally {
-          setAuthInitialized(true);
-        }
-      }
-    };
-
-    initializeAuth();
-  }, [authInitialized]);
-
-  // Handle authentication state changes
-  useEffect(() => {
-    if (!authInitialized) {
-      return; // Wait for auth to initialize
-    }
-
-    console.log('[Dashboard.tsx] Auth state effect triggered. State:', { 
+    console.log('[Dashboard] Auth state check:', { 
       isAuthenticated, 
       isLoading, 
-      user: !!user,
-      userRole 
+      hasUser: !!user 
     });
 
-    // If not loading and not authenticated, redirect to login
-    if (!isLoading && !isAuthenticated) {
-      console.log("[Dashboard.tsx] Not authenticated, redirecting to login.");
+    // Don't redirect while loading
+    if (isLoading) {
+      return;
+    }
+
+    // Redirect if not authenticated
+    if (!isAuthenticated) {
+      console.log('[Dashboard] Not authenticated, redirecting to login');
       navigate('/login', { state: { from: location }, replace: true });
       return;
     }
 
-    // If authenticated but no user data, show error and logout
+    // Handle authenticated but no user data
     if (isAuthenticated && !user) {
-      console.error("[Dashboard.tsx] Authenticated but no user data available");
-      toast.error('İstifadəçi məlumatları yüklənərkən xəta baş verdi', {
+      console.error('[Dashboard] Authenticated but no user data');
+      toast.error('İstifadəçi məlumatları yüklənə bilmədi', {
         description: 'Zəhmət olmasa, yenidən daxil olun',
       });
       
-      // Logout and redirect to login
-      useAuthStore.getState().logout();
+      useAuthStore.getState().signOut();
       navigate('/login', { replace: true });
       return;
     }
 
-    // If authenticated and user exists but no role, try to refresh
-    if (isAuthenticated && user && !user.role) {
-      console.warn("[Dashboard.tsx] User exists but role is missing, refreshing session");
-      useAuthStore.getState().initializeAuth(true);
-    }
-  }, [authInitialized, isAuthenticated, isLoading, user, navigate, location, userRole]);
+  }, [isAuthenticated, isLoading, user, navigate, location]);
 
-  // Show loading state during initialization or auth loading
-  if (!authInitialized || isLoading) {
-    console.log('[Dashboard.tsx] Showing loading spinner');
-    return <LoadingScreen message="Yüklənir, zəhmət olmasa gözləyin..." />;
+  // Show loading during auth check
+  if (isLoading) {
+    console.log('[Dashboard] Showing loading screen');
+    return <LoadingScreen message="Yüklənir..." />;
   }
 
-  // Not authenticated, will be redirected in useEffect
+  // Not authenticated - will redirect
   if (!isAuthenticated || !user) {
-    console.log('[Dashboard.tsx] Not authenticated or no user, returning null');
+    console.log('[Dashboard] Not authenticated or no user');
     return null;
   }
   
-  console.log('[Dashboard.tsx] Rendering authenticated dashboard', { user: user.id, userRole });
+  console.log('[Dashboard] Rendering authenticated dashboard');
 
-  // Check if user is a school admin for showing the setup check
   const isSchoolAdmin = userRole === 'schooladmin';
 
   return (

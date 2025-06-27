@@ -1,11 +1,11 @@
+
 // ============================================================================
-// İnfoLine Auth System - Auth Store
+// İnfoLine Auth System - Auth Store (Simplified & Stabilized)
 // ============================================================================
 // Bu fayl auth sisteminin əsas zustand store komponentini təmin edir
 
 import { create } from 'zustand';
 import { AuthState } from './authTypes';
-import { AUTH_TIMEOUT_CONFIG } from './authTypes';
 import { 
   signIn, 
   signOut, 
@@ -16,7 +16,7 @@ import {
   hasPermission
 } from './authActions';
 import { initializeAuth, performInitialization } from './authInitializer';
-import { setupSessionTimeout, clearSessionTimeout, forceRefreshSession } from './sessionManager';
+import { setupSessionTimeout, clearSessionTimeout } from './sessionManager';
 
 // Create the auth store
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -104,58 +104,46 @@ export const isProtectedRoute = (pathname: string) => {
          !pathname.includes('/forgot-password');
 };
 
-// Set up auth state change listener
+// ========== Simplified Auth State Change Listener ==========
 import { supabase } from '@/integrations/supabase/client';
 
-// Auth hadisələrini izləmək üçün təkmilləşdirilmiş listener
-// CRITICAL FIX: Prevent race condition between INITIAL_SESSION and SIGNED_IN
+// Enhanced auth state change listener with simplified logic
 let isProcessingEvent = false;
-let lastProcessedSessionId: string | null = null;
+let lastEventTimestamp = 0;
 
 supabase.auth.onAuthStateChange(async (event, session) => {
-  const sessionId = session?.user?.id || null;
-  console.log('🔄 [AuthStateChange]', { event, sessionId, isProcessing: isProcessingEvent });
+  const eventTimestamp = Date.now();
   
-  // Prevent concurrent processing of the same session
-  if (isProcessingEvent && sessionId === lastProcessedSessionId) {
-    console.log('⚠️ [AuthStateChange] Skipping duplicate event processing', { event, sessionId });
+  // Prevent rapid duplicate events
+  if (eventTimestamp - lastEventTimestamp < 100) {
+    console.log('⚠️ [AuthStateChange] Skipping duplicate event within 100ms');
     return;
   }
   
-  // Handle only essential events to prevent loops
-  switch (event) {
-    case 'INITIAL_SESSION':
-      console.log('🔄 [AuthStateChange] Received INITIAL_SESSION event with user:', sessionId);
-      
-      if (session?.user) {
-        console.log('🔄 [AuthStateChange] Processing initial session with user');
+  lastEventTimestamp = eventTimestamp;
+  
+  console.log('🔄 [AuthStateChange]', { 
+    event, 
+    hasSession: !!session, 
+    userId: session?.user?.id,
+    isProcessing: isProcessingEvent 
+  });
+  
+  // Prevent concurrent processing
+  if (isProcessingEvent) {
+    console.log('⚠️ [AuthStateChange] Already processing event, skipping');
+    return;
+  }
+  
+  isProcessingEvent = true;
+  
+  try {
+    switch (event) {
+      case 'INITIAL_SESSION':
+        console.log('🔄 [AuthStateChange] Processing INITIAL_SESSION');
         
-        // FAST PATH: If we have a session and user, set state immediately
-        const currentState = useAuthStore.getState();
-        
-        // Quick check - if we already have the same user, just update session
-        if (currentState.user?.id === session.user.id && currentState.isAuthenticated) {
-          console.log('✅ [AuthStateChange] Same user, quick session update');
-          useAuthStore.setState({ session });
-          setupSessionTimeout(session);
-          return;
-        }
-        
-        // Prevent concurrent processing
-        if (isProcessingEvent) {
-          console.log('⚠️ [AuthStateChange] Already processing, skipping');
-          return;
-        }
-        
-        isProcessingEvent = true;
-        lastProcessedSessionId = sessionId;
-        
-        try {
-          // Clear existing timeouts
-          clearSessionTimeout();
-          setupSessionTimeout(session);
-          
-          // FAST INITIALIZATION - Set state immediately, fetch profile async
+        if (session?.user) {
+          // FAST PATH: Set basic session immediately
           useAuthStore.setState({
             session,
             isLoading: true,
@@ -163,144 +151,116 @@ supabase.auth.onAuthStateChange(async (event, session) => {
             error: null
           });
           
-          // Background profile fetch with timeout
-          const profileTimeout = setTimeout(() => {
-            console.warn('⚠️ [AuthStateChange] Profile fetch timeout, using session data');
-            // Use basic session data as fallback
+          // Setup session timeout
+          clearSessionTimeout();
+          setupSessionTimeout(session);
+          
+          // Initialize in background with timeout
+          const initTimeout = setTimeout(() => {
+            console.warn('⚠️ [AuthStateChange] Initialization timeout, using fallback');
             useAuthStore.setState({
               user: {
                 id: session.user.id,
                 email: session.user.email || '',
                 full_name: session.user.user_metadata?.full_name || '',
                 name: session.user.user_metadata?.full_name || '',
-                role: 'user' as any // Will be updated when profile loads
+                role: 'schooladmin' as any
               },
               isAuthenticated: true,
               isLoading: false,
-              initialized: true
+              initialized: true,
+              loadingStartTime: null
             });
-            isProcessingEvent = false;
-          }, 5000); // 5 second timeout
+          }, 3000); // 3 second timeout
           
-          // Fetch profile in background
-          const state = useAuthStore.getState();
-          await state.performInitialization(false);
-          clearTimeout(profileTimeout);
-          
-        } catch (error) {
-          console.error('❌ [AuthStateChange] INITIAL_SESSION processing failed:', error);
-          // Fallback to basic session data
+          try {
+            await useAuthStore.getState().performInitialization(false);
+            clearTimeout(initTimeout);
+          } catch (error) {
+            console.error('❌ [AuthStateChange] Initialization failed:', error);
+            clearTimeout(initTimeout);
+            // Fallback will handle the state
+          }
+        } else {
+          // No session - clear loading state
+          console.log('🔓 [AuthStateChange] No initial session');
           useAuthStore.setState({
-            user: {
-              id: session.user.id,
-              email: session.user.email || '',
-              full_name: session.user.user_metadata?.full_name || '',
-              name: session.user.user_metadata?.full_name || '',
-              role: 'user' as any
-            },
-            isAuthenticated: true,
+            user: null,
+            session: null,
+            isAuthenticated: false,
             isLoading: false,
             initialized: true,
+            initializationAttempted: true,
+            loadingStartTime: null,
             error: null
           });
-        } finally {
-          isProcessingEvent = false;
         }
-      } else {
-        // No session on initial load - normal case for logged out users
-        console.log('🔓 [AuthStateChange] No initial session, clearing loading state');
+        break;
         
-        useAuthStore.setState({
-          isLoading: false,
-          initialized: true,
-          initializationAttempted: true,
-          loadingStartTime: null,
-          user: null,
-          session: null,
-          isAuthenticated: false
-        });
-      }
-      break;
-      
-    case 'SIGNED_IN':
-      if (session?.user) {
-        console.log('🔄 [AuthStateChange] User signed in');
-        
-        // Skip if we already processed this session in INITIAL_SESSION
-        if (sessionId === lastProcessedSessionId) {
-          console.log('ℹ️ [AuthStateChange] SIGNED_IN skipped - already processed in INITIAL_SESSION');
-          return;
-        }
-        
-        isProcessingEvent = true;
-        lastProcessedSessionId = sessionId;
-        
-        try {
-          const state = useAuthStore.getState();
+      case 'SIGNED_IN':
+        if (session?.user) {
+          console.log('🔄 [AuthStateChange] Processing SIGNED_IN');
           
-          // Clear any existing timeout for session cleanup
+          // Check if this is a duplicate of INITIAL_SESSION
+          const currentState = useAuthStore.getState();
+          if (currentState.user?.id === session.user.id && currentState.isAuthenticated) {
+            console.log('ℹ️ [AuthStateChange] SIGNED_IN skipped - user already authenticated');
+            break;
+          }
+          
+          // Clear existing timeout
           clearSessionTimeout();
-          
-          // Setup automatic session refresh checker
           setupSessionTimeout(session);
           
-          // For SIGNED_IN always initialize
-          console.log('🔄 [AuthStateChange] Initializing after sign in');
-          await state.performInitialization(true);
-          
-        } catch (error) {
-          console.error('❌ [AuthStateChange] SIGNED_IN processing failed:', error);
-          useAuthStore.setState({
-            isLoading: false,
-            error: 'Giriş xətası baş verdi'
-          });
-        } finally {
-          isProcessingEvent = false;
+          // Initialize for fresh sign-in
+          await useAuthStore.getState().performInitialization(true);
         }
-      }
-      break;
-      
-    case 'SIGNED_OUT':
-      console.log('🔄 [AuthStateChange] User signed out, clearing state');
-      // Clear any existing timeout for session cleanup
-      clearSessionTimeout();
-      
-      // Reset state completely on sign out
-      useAuthStore.setState({
-        user: null,
-        session: null,
-        isAuthenticated: false,
-        error: null,
-        initialized: true,
-        isLoading: false,
-        initializationAttempted: true,
-        loadingStartTime: null,
-        signInAttemptTime: null
-      });
-      break;
-      
-    case 'TOKEN_REFRESHED':
-      console.log('🔄 [AuthStateChange] Token refreshed');
-      if (session) {
-        // Update session in state first
-        useAuthStore.setState({ session });
+        break;
         
-        // Reset the session timeout with enhanced manager
+      case 'SIGNED_OUT':
+        console.log('🔄 [AuthStateChange] Processing SIGNED_OUT');
         clearSessionTimeout();
-        setupSessionTimeout(session);
         
-        console.log('✅ [AuthStateChange] Session updated and timeout reset');
-      }
-      break;
-      
-    case 'USER_UPDATED':
-      if (session?.user) {
-        console.log('🔄 [AuthStateChange] User updated, refreshing profile');
-        const state = useAuthStore.getState();
-        if (state.user) {
-          state.fetchUser();
+        useAuthStore.setState({
+          user: null,
+          session: null,
+          isAuthenticated: false,
+          error: null,
+          initialized: true,
+          isLoading: false,
+          initializationAttempted: true,
+          loadingStartTime: null,
+          signInAttemptTime: null
+        });
+        break;
+        
+      case 'TOKEN_REFRESHED':
+        if (session) {
+          console.log('🔄 [AuthStateChange] Token refreshed');
+          useAuthStore.setState({ session });
+          clearSessionTimeout();
+          setupSessionTimeout(session);
         }
-      }
-      break;
+        break;
+        
+      case 'USER_UPDATED':
+        if (session?.user) {
+          console.log('🔄 [AuthStateChange] User updated');
+          const state = useAuthStore.getState();
+          if (state.user) {
+            state.fetchUser();
+          }
+        }
+        break;
+    }
+  } catch (error) {
+    console.error('❌ [AuthStateChange] Event processing failed:', error);
+    useAuthStore.setState({
+      isLoading: false,
+      error: 'Auth state change failed',
+      loadingStartTime: null
+    });
+  } finally {
+    isProcessingEvent = false;
   }
 });
