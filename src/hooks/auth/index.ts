@@ -107,6 +107,22 @@ export const useSupabaseAuth = () => {
   };
 };
 
+// ========== Session Monitoring ==========
+export {
+  useSessionMonitor,
+  useSessionHealth,
+  useSessionExpiry
+} from './useSessionMonitor';
+
+// ========== Enhanced Session Management ==========
+export {
+  setupSessionTimeout,
+  clearSessionTimeout,
+  checkAndRefreshSession,
+  forceRefreshSession,
+  getSessionManagerStatus
+} from './sessionManager';
+
 // ========== Permission System ==========
 export { 
   usePermissions,
