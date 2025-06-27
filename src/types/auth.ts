@@ -106,6 +106,8 @@ export interface AuthState {
   session: any;
   initialized: boolean;
   initializationAttempted: boolean;
+  loadingStartTime?: number; // Track when loading state started
+  signInAttemptTime?: number; // Track when sign-in attempts start
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   logout: () => Promise<void>;

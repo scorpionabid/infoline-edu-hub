@@ -75,7 +75,7 @@ export const UserFilters: React.FC<UserFiltersProps> = ({
           <SelectValue placeholder={t("role")} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">{t("allRoles")}</SelectItem>
+          <SelectItem value="all_roles">{t("allRoles")}</SelectItem>
           {roleOptions.map((role) => (
             <SelectItem key={role.value} value={role.value}>
               {role.label}
@@ -89,7 +89,7 @@ export const UserFilters: React.FC<UserFiltersProps> = ({
           <SelectValue placeholder={t("status")} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">{t("allStatuses")}</SelectItem>
+          <SelectItem value="all_statuses">{t("allStatuses")}</SelectItem>
           {statusOptions.map((status) => (
             <SelectItem key={status.value} value={status.value}>
               {status.label}
@@ -104,7 +104,7 @@ export const UserFilters: React.FC<UserFiltersProps> = ({
             <SelectValue placeholder={t("region")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">{t("allRegions")}</SelectItem>
+            <SelectItem value="all_regions">{t("allRegions")}</SelectItem>
             {regions.map((region) => (
               <SelectItem key={region.value} value={region.value}>
                 {region.label}

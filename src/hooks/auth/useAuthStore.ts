@@ -2,7 +2,14 @@ import { create } from 'zustand';
 import { supabase } from '@/integrations/supabase/client';
 import { AuthState, FullUserData, UserRole } from '@/types/auth';
 
-// Auth hadisələrini izləmək üçün listener əlavə edirik
+// Session timeout handling - global variables
+let sessionTimeoutCleaner: number | null = null;
+let initRetryCount = 0;
+const MAX_RETRIES = 3;
+const INIT_TIMEOUT = 30000; // 30 seconds - much more reasonable for auth initialization
+const RETRY_DELAY = 5000; // 5 seconds between retries
+
+// Auth hadisələrini izləmək üçün təkmilləşdirilmiş listener
 supabase.auth.onAuthStateChange(async (event, session) => {
   console.log('🔄 [AuthStateChange]', { event, session: session?.user?.id });
   
@@ -14,8 +21,17 @@ supabase.auth.onAuthStateChange(async (event, session) => {
         console.log('🔄 [AuthStateChange] Processing session:', event);
         const state = useAuthStore.getState();
         
-        // Only process if we don't already have a user
-        if (!state.user && !state.isLoading) {
+        // Clear any existing timeout for session cleanup
+        if (sessionTimeoutCleaner) {
+          clearTimeout(sessionTimeoutCleaner);
+          sessionTimeoutCleaner = null;
+        }
+        
+        // Setupu automatic session refresh checker
+        setupSessionTimeout(session);
+        
+        // Only process if we don't already have a user or if state is currently loading
+        if ((!state.user && !state.isLoading) || state.isLoading) {
           console.log('🔄 [AuthStateChange] Initializing user from session');
           await state.performInitialization(true);
         }
@@ -24,24 +40,102 @@ supabase.auth.onAuthStateChange(async (event, session) => {
       
     case 'SIGNED_OUT':
       console.log('🔄 [AuthStateChange] User signed out, clearing state');
+      // Clear any existing timeout for session cleanup
+      if (sessionTimeoutCleaner) {
+        clearTimeout(sessionTimeoutCleaner);
+        sessionTimeoutCleaner = null;
+      }
+      
       useAuthStore.setState({
         user: null,
         session: null,
         isAuthenticated: false,
         error: null,
         initialized: true,
-        isLoading: false
+        isLoading: false,
+        initializationAttempted: true
       });
       break;
       
     case 'TOKEN_REFRESHED':
       console.log('🔄 [AuthStateChange] Token refreshed');
       if (session) {
+        // Reset the session timeout when token is refreshed
+        if (sessionTimeoutCleaner) {
+          clearTimeout(sessionTimeoutCleaner);
+          sessionTimeoutCleaner = null;
+        }
+        setupSessionTimeout(session);
+        
+        // Update session in state
         useAuthStore.setState({ session });
+      }
+      break;
+      
+    case 'USER_UPDATED':
+      if (session?.user) {
+        console.log('🔄 [AuthStateChange] User updated, refreshing profile');
+        const state = useAuthStore.getState();
+        if (state.user) {
+          state.fetchUser();
+        }
       }
       break;
   }
 });
+
+// Setup session timeout checker
+function setupSessionTimeout(session: any) {
+  // Get expiry from session if available
+  const expiresAt = session?.expires_at || 0;
+  const now = Math.floor(Date.now() / 1000);
+  
+  // Calculate time until 10 minutes before expiry (more conservative)
+  const timeUntilRefresh = expiresAt ? (expiresAt - now - 600) * 1000 : 3600000; // Default 1h
+  
+  // Ensure refresh time is reasonable (between 5 minutes and 12 hours)
+  const normalizedRefreshTime = Math.min(
+    Math.max(timeUntilRefresh, 5 * 60 * 1000), // At least 5 minutes
+    12 * 60 * 60 * 1000 // Max 12 hours
+  );
+  
+  console.log(`🕒 [Auth] Session expiry check scheduled in ${Math.floor(normalizedRefreshTime/60000)} minutes`);
+  
+  // Setup timeout to check session before it expires
+  // Clear existing timeout if there is one
+  if (sessionTimeoutCleaner) {
+    clearTimeout(sessionTimeoutCleaner);
+    sessionTimeoutCleaner = null;
+  }
+  
+  sessionTimeoutCleaner = window.setTimeout(() => {
+    console.log('🔄 [Auth] Checking session validity before expiry');
+    const state = useAuthStore.getState();
+    
+    // Only reset loading state if it's been stuck for a while
+    if (state.isLoading) {
+      const loadingStart = state.loadingStartTime || 0;
+      const loadingDuration = Date.now() - loadingStart;
+      
+      if (loadingDuration > 30000) { // 30 seconds
+        console.warn(`⚠️ [Auth] Detected stuck loading state for ${Math.floor(loadingDuration/1000)}s, resetting`);
+        useAuthStore.setState({ isLoading: false });
+      }
+    }
+    
+    // Silent refresh - try to refresh the token without user interaction
+    supabase.auth.refreshSession().then(({ data, error }) => {
+      if (error) {
+        console.warn('⚠️ [Auth] Silent refresh failed, falling back to full initialization', error);
+        state.performInitialization(false);
+      } else if (data.session) {
+        console.log('✅ [Auth] Session refreshed successfully');
+        useAuthStore.setState({ session: data.session });
+        setupSessionTimeout(data.session); // Setup next refresh cycle
+      }
+    });
+  }, normalizedRefreshTime);
+}
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
@@ -53,16 +147,39 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   initializationAttempted: false,
 
   signIn: async (email: string, password: string) => {
-    set({ isLoading: true, error: null });
+    // Prevent sign-in attempts if one is already in progress
+    const state = get();
+    if (state.isLoading && state.signInAttemptTime && Date.now() - state.signInAttemptTime < 20000) {
+      console.warn('⚠️ [Auth] Sign-in already in progress, please wait...');
+      return;
+    }
+    
+    set({ isLoading: true, error: null, signInAttemptTime: Date.now() });
     
     try {
       console.log('🔐 [Auth] Attempting sign in', { email });
+      
+      // Set a sign-in timeout to prevent indefinite loading
+      const signInTimeout = setTimeout(() => {
+        const currentState = get();
+        if (currentState.isLoading && currentState.signInAttemptTime) {
+          console.warn('⚠️ [Auth] Sign-in timed out after 20s');
+          set({ 
+            isLoading: false, 
+            error: 'Giriş vaxtı bitdi. Zəhmət olmasa, yenidən cəhd edin.',
+            signInAttemptTime: null
+          });
+        }
+      }, 20000); // 20 second timeout
       
       // Auth girişi
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
+      
+      // Clear the timeout since we got a response
+      clearTimeout(signInTimeout);
 
       if (error) throw error;
 
@@ -70,6 +187,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         userId: data.user.id, 
         email: data.user.email
       });
+      
+      // Reset the sign-in attempt time
+      set({ signInAttemptTime: null });
 
       // Fetch user profile with role (maybeSingle istifadə edirik)
       const { data: profile, error: profileError } = await supabase
@@ -341,19 +461,59 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   performInitialization: async (loginOnly = false): Promise<void> => {
     const state = get();
     
-    // Enhanced initialization guard
+    // Add timeout protection with retry mechanism
+    const initTimeout = setTimeout(() => {
+      const currentState = get();
+      if (currentState.isLoading) {
+        console.warn(`⚠️ [Auth] Initialization timed out after ${INIT_TIMEOUT/1000}s`);
+        
+        // Try to retry initialization a few times before giving up
+        if (initRetryCount < MAX_RETRIES) {
+          initRetryCount++;
+          console.log(`🔄 [Auth] Retrying initialization (attempt ${initRetryCount} of ${MAX_RETRIES})`);
+          
+          // Don't reset loading state for retries
+          setTimeout(() => {
+            const state = get();
+            state.performInitialization(loginOnly);
+          }, RETRY_DELAY);
+        } else {
+          console.error('❌ [Auth] Max retry attempts reached, resetting state');
+          set({ 
+            isLoading: false,
+            initialized: true,
+            initializationAttempted: true,
+            error: 'Authentication timed out after multiple attempts'
+          });
+          initRetryCount = 0; // Reset for next time
+        }
+      }
+    }, INIT_TIMEOUT); // 30 second timeout
+    
+    // Enhanced initialization guard with safety reset
     if (state.initialized && !loginOnly && state.user) {
       console.log('🔄 [Auth] Initialization already completed with user, skipping...');
+      clearTimeout(initTimeout);
       return;
     }
 
-    // Prevent concurrent initialization
+    // Prevent concurrent initialization but with timeout protection
     if (state.isLoading && !loginOnly) {
-      console.log('🔄 [Auth] Initialization already in progress, skipping...');
-      return;
+      console.log('🔄 [Auth] Initialization already in progress, checking duration...');
+      // If already loading for more than 10 seconds, reset the state
+      const loadingStart = state.loadingStartTime || 0;
+      const loadingDuration = Date.now() - loadingStart;
+      
+      if (loadingDuration > 10000) {
+        console.warn(`⚠️ [Auth] Loading state stuck for ${loadingDuration/1000}s, resetting...`);
+        set({ isLoading: false });
+      } else {
+        clearTimeout(initTimeout);
+        return;
+      }
     }
     
-    // Session recovery attempt
+    // Session recovery attempt with more robust error handling
     if (!loginOnly && !state.session) {
       console.log('🔄 [Auth] Attempting session recovery...');
       try {
@@ -361,13 +521,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         if (recoveredSession) {
           console.log('✅ [Auth] Session recovered successfully');
           set({ session: recoveredSession });
+          // Setup session timeout monitor for the recovered session
+          setupSessionTimeout(recoveredSession);
         }
       } catch (error) {
         console.warn('⚠️ [Auth] Session recovery failed:', error);
       }
     }
 
-    set({ isLoading: true, initializationAttempted: true });
+    // Track when loading started to detect stuck states
+    set({ isLoading: true, initializationAttempted: true, loadingStartTime: Date.now() });
     console.log('🔄 [Auth] Starting initialization...');
 
     try {

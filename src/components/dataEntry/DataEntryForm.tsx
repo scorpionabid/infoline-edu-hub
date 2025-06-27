@@ -324,16 +324,16 @@ export const DataEntryForm: React.FC<DataEntryFormProps> = React.memo(({
         return (
           <div>
             <Select
-              value={value || ''}
+              value={value || undefined}
               onValueChange={(val) => handleFieldChange(column.id, val)}
               required={column.is_required}
               disabled={fieldProps.disabled}
             >
               <SelectTrigger id={column.id}>
-                <SelectValue placeholder={column.placeholder} />
+                <SelectValue placeholder={column.placeholder || "- Seçin -"} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">- Seçin -</SelectItem>
+                {/* Boş dəyər əvəzinə placeholder istifadə edirik */}
                 {column.options?.map((opt) => (
                   <SelectItem key={opt.value} value={opt.value}>
                     {opt.label}

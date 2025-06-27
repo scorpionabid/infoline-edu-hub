@@ -170,7 +170,7 @@ const Categories = () => {
                   <SelectValue placeholder={t("status")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">{t("all")}</SelectItem>
+                  <SelectItem value="all">{t("all")}</SelectItem>
                   <SelectItem value="active">{t("active")}</SelectItem>
                   <SelectItem value="inactive">{t("inactive")}</SelectItem>
                   <SelectItem value="draft">{t("draft")}</SelectItem>
@@ -186,7 +186,7 @@ const Categories = () => {
                   <SelectValue placeholder={t("assignment")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">{t("allAssignments")}</SelectItem>
+                  <SelectItem value="all_assignments">{t("allAssignments")}</SelectItem>
                   <SelectItem value="all">{t("allEntities")}</SelectItem>
                   <SelectItem value="sectors">{t("sectorsOnly")}</SelectItem>
                   <SelectItem value="schools">{t("schoolsOnly")}</SelectItem>

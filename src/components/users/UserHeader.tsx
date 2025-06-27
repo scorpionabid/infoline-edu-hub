@@ -137,7 +137,7 @@ const UserHeader: React.FC<UserHeaderProps> = ({
                 <SelectValue placeholder={t("users.selectRole")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">{t("users.allRoles")}</SelectItem>
+                <SelectItem value="all_roles">{t("users.allRoles")}</SelectItem>
                 {userRoles.map((role) => (
                   <SelectItem key={role} value={role}>
                     {t(`roles.${role}`)}
@@ -161,7 +161,7 @@ const UserHeader: React.FC<UserHeaderProps> = ({
                 <SelectValue placeholder={t("users.selectStatus")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">{t("users.allStatuses")}</SelectItem>
+                <SelectItem value="all_statuses">{t("users.allStatuses")}</SelectItem>
                 {userStatuses.map((status) => (
                   <SelectItem key={status} value={status}>
                     {t(`common.${status}`)}
