@@ -16,7 +16,7 @@ export const NavItem: React.FC<NavItemProps> = ({ href, icon, label, isActive, o
     to={href}
     className={cn(
       "flex items-center space-x-3 px-3 py-2 rounded-md transition-colors",
-      // isActive
+      isActive
         ? "bg-primary/10 text-primary font-medium"
         : "text-muted-foreground hover:bg-muted"
     )}

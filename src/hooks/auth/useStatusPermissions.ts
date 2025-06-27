@@ -98,7 +98,7 @@ export const useStatusPermissions = (
     
     // Status-based permission calculation
     switch (entryStatus) {
-      case DataEntryStatus.DRAFT: { {
+      case DataEntryStatus.DRAFT:
         const canEdit = isOwnSchool || isSuperAdmin || isRegionAdmin || isSectorAdmin;
         const canSubmit = isOwnSchool; // Only school admin can submit their own data
         
@@ -133,9 +133,8 @@ export const useStatusPermissions = (
             actionRequired: canSubmit
           }
         };
-      }
       
-      case DataEntryStatus.PENDING: { {
+      case DataEntryStatus.PENDING:
         return {
           canEdit: false, // No editing while pending
           canSubmit: false,
@@ -168,9 +167,8 @@ export const useStatusPermissions = (
             actionRequired: canApproveThisEntry
           }
         };
-      }
       
-      case DataEntryStatus.APPROVED: { {
+      case DataEntryStatus.APPROVED:
         return {
           canEdit: false, // Approved entries are locked
           canSubmit: false,
@@ -194,9 +192,8 @@ export const useStatusPermissions = (
             actionRequired: false
           }
         };
-      }
       
-      case DataEntryStatus.REJECTED: { {
+      case DataEntryStatus.REJECTED:
         const canReset = isOwnSchool; // Only school admin can reset their rejected data
         
         return {
@@ -229,9 +226,8 @@ export const useStatusPermissions = (
             actionRequired: canReset
           }
         };
-      }
       
-      default: {
+      default:
         return {
           canEdit: false,
           canSubmit: false,
@@ -255,7 +251,6 @@ export const useStatusPermissions = (
             actionRequired: false
           }
         };
-      }
     }
   }, [entryStatus, user, permissions, categoryId, schoolId]);
 };
@@ -274,13 +269,13 @@ export const useStatusUIConfig = (
   return useMemo(() => {
     const getStatusBadgeVariant = () => {
       switch (entryStatus) {
-        case DataEntryStatus.DRAFT: {
+        case DataEntryStatus.DRAFT:
           return 'outline';
-        case DataEntryStatus.PENDING: {
+        case DataEntryStatus.PENDING:
           return 'secondary';
-        case DataEntryStatus.APPROVED: {
+        case DataEntryStatus.APPROVED:
           return 'default';
-        case DataEntryStatus.REJECTED: {
+        case DataEntryStatus.REJECTED:
           return 'destructive';
         default:
           return 'outline';
@@ -289,13 +284,13 @@ export const useStatusUIConfig = (
     
     const getStatusColor = () => {
       switch (entryStatus) {
-        case DataEntryStatus.DRAFT: {
+        case DataEntryStatus.DRAFT:
           return 'gray';
-        case DataEntryStatus.PENDING: {
+        case DataEntryStatus.PENDING:
           return 'blue';
-        case DataEntryStatus.APPROVED: {
+        case DataEntryStatus.APPROVED:
           return 'green';
-        case DataEntryStatus.REJECTED: {
+        case DataEntryStatus.REJECTED:
           return 'red';
         default:
           return 'gray';
@@ -304,13 +299,13 @@ export const useStatusUIConfig = (
     
     const getStatusIcon = () => {
       switch (entryStatus) {
-        case DataEntryStatus.DRAFT: {
+        case DataEntryStatus.DRAFT:
           return 'FileEdit';
-        case DataEntryStatus.PENDING: {
+        case DataEntryStatus.PENDING:
           return 'Clock';
-        case DataEntryStatus.APPROVED: {
+        case DataEntryStatus.APPROVED:
           return 'CheckCircle';
-        case DataEntryStatus.REJECTED: {
+        case DataEntryStatus.REJECTED:
           return 'XCircle';
         default:
           return 'File';
@@ -319,13 +314,13 @@ export const useStatusUIConfig = (
     
     const getAlertVariant = () => {
       switch (entryStatus) {
-        case DataEntryStatus.APPROVED: {
+        case DataEntryStatus.APPROVED:
           return 'default';
-        case DataEntryStatus.PENDING: {
+        case DataEntryStatus.PENDING:
           return 'default';
-        case DataEntryStatus.REJECTED: {
+        case DataEntryStatus.REJECTED:
           return 'destructive';
-        case DataEntryStatus.DRAFT: {
+        case DataEntryStatus.DRAFT:
         default:
           return 'default';
       }

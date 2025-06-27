@@ -263,13 +263,13 @@ export function usePaginatedReports<T = any>({
     hasPreviousPage,
     isLoading,
     isLoadingMore,
-    // error
+    error
   };
 
   return {
     data,
     pagination,
-    // actions
+    actions
   };
 }
 

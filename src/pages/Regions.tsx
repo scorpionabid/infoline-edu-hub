@@ -28,9 +28,8 @@ const Regions = () => {
   const handleAddRegion = regionsStore((state) => state.handleAddRegion);
   const handleUpdateRegion = regionsStore((state) => state.handleUpdateRegion);
   const handleDeleteRegion = useCallback(async (region: EnhancedRegion) => {
-    const { t } = useTranslation();
     return await regionsStore.getState().handleDeleteRegion(region.id, t);
-  }, []);
+  }, [t]);
   const fetchRegions = regionsStore((state) => state.fetchRegions);
 
   const [openRegionDialog, setOpenRegionDialog] = useState(false);

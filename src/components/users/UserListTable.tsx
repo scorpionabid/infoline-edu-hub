@@ -41,13 +41,13 @@ const UserListTable: React.FC<UserListTableProps> = ({
 
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
-      case "superadmin": {
+      case "superadmin":
         return "default";
-      case "regionadmin": {
+      case "regionadmin":
         return "secondary";
-      case "sectoradmin": {
+      case "sectoradmin":
         return "warning";
-      case "schooladmin": {
+      case "schooladmin":
         return "success";
       default:
         return "outline";
@@ -56,13 +56,13 @@ const UserListTable: React.FC<UserListTableProps> = ({
 
   const getRoleText = (role: string) => {
     switch (role) {
-      case "superadmin": {
+      case "superadmin":
         return t("superadmin");
-      case "regionadmin": {
+      case "regionadmin":
         return t("regionAdmin");
-      case "sectoradmin": {
+      case "sectoradmin":
         return t("sectorAdmin");
-      case "schooladmin": {
+      case "schooladmin":
         return t("schoolAdmin");
       default:
         return t("user");

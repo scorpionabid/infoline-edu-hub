@@ -10,17 +10,17 @@ export function cn(...inputs: ClassValue[]) {
 // Status badge rəngləri üçün köməkçi funksiya
 export function getBadgeVariantFromStatus(status: string): 'default' | 'destructive' | 'warning' | 'success' | 'info' | 'outline' | 'secondary' {
   switch (status.toLowerCase()) {
-    case 'active': {
+    case 'active':
       return 'success';
-    case 'inactive': {
+    case 'inactive':
       return 'secondary';
-    case 'pending': {
+    case 'pending':
       return 'warning';
-    case 'approved': {
+    case 'approved':
       return 'success';
-    case 'rejected': {
+    case 'rejected':
       return 'destructive';
-    case 'draft': {
+    case 'draft':
       return 'outline';
     default:
       return 'default';
@@ -63,17 +63,17 @@ export function formatNumber(number: number | string | null | undefined): string
 // Data statusları üçün mətnlər
 export function getStatusText(status: string, t: (key: string) => string): string {
   switch (status.toLowerCase()) {
-    case 'active': {
+    case 'active':
       return t('active');
-    case 'inactive': {
+    case 'inactive':
       return t('inactive');
-    case 'pending': {
+    case 'pending':
       return t('pending');
-    case 'approved': {
+    case 'approved':
       return t('approved');
-    case 'rejected': {
+    case 'rejected':
       return t('rejected');
-    case 'draft': {
+    case 'draft':
       return t('draft');
     default:
       return status;

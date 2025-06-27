@@ -10,7 +10,7 @@ export const useTranslationValidation = () => {
   }, [tSafe]);
 
   const tValidation = useCallback((rule: string, field: string, params?: Record<string, any>) => {
-    return tSafe(`validation.${rule}`, undefined, { interpolation: { field, ...params });
+    return tSafe(`validation.${rule}`, undefined, { interpolation: { field, ...params } });
   }, [tSafe]);
 
   const tComponent = useCallback((component: string, key: string, params?: Record<string, any>) => {
@@ -23,6 +23,6 @@ export const useTranslationValidation = () => {
     tContext,
     tModule,
     tValidation,
-    // tComponent
+    tComponent,
   };
 };

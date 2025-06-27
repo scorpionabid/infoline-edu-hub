@@ -19,7 +19,7 @@ export const useRealTimeUpdates = ({
   filter,
   onInsert,
   onUpdate,
-  // onDelete
+  onDelete
 }: UseRealTimeUpdatesProps) => {
   const channelRef = useRef<RealtimeChannel | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<string>('DISCONNECTED');
@@ -73,15 +73,15 @@ export const useRealTimeUpdates = ({
           console.log('Real-time update received:', payload);
           
           switch (payload.eventType) {
-            case 'INSERT': {
+            case 'INSERT':
               callbacksRef.current.onInsert?.(payload);
-              break; }
-            case 'UPDATE': {
+              break;
+            case 'UPDATE':
               callbacksRef.current.onUpdate?.(payload);
-              break; }
-            case 'DELETE': {
+              break;
+            case 'DELETE':
               callbacksRef.current.onDelete?.(payload);
-              break; }
+              break;
           }
         })
         .subscribe((status) => {
@@ -124,13 +124,8 @@ export const useDataEntryRealTime = (schoolId: string, onUpdate: (data: any) => 
     return () => clearTimeout(timeoutId);
   }, [onUpdate]);
   
-  // Only create a new subscription if schoolId is valid
-  if (!schoolId) {
-    console.log('No schoolId provided for real-time updates');
-    return;
-  }
-  
-  return useRealTimeUpdates({
+  // Always call useRealTimeUpdates, but conditionally set up the subscription
+  const realTimeProps = schoolId ? {
     tableName: 'data_entries',
     filter: {
       column: 'school_id',
@@ -139,7 +134,15 @@ export const useDataEntryRealTime = (schoolId: string, onUpdate: (data: any) => 
     onInsert: debouncedCallback,
     onUpdate: debouncedCallback,
     onDelete: debouncedCallback
-  });
+  } : {
+    tableName: 'data_entries',
+    // No filter when no schoolId
+    onInsert: undefined,
+    onUpdate: undefined,
+    onDelete: undefined
+  };
+  
+  return useRealTimeUpdates(realTimeProps);
 };
 
 // Specific hook for approval updates with improved behavior

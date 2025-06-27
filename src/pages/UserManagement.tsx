@@ -31,13 +31,15 @@ const UserManagement: React.FC = () => {
   const [activeTab, setActiveTab] = useState("overview");
 
   // Access control - yalnız SuperAdmin üçün
-  if (!hasRole(["superadmin"])) {
-    return <Navigate to="/users" replace />;
-  }
-
+  const hasAdminAccess = hasRole(["superadmin"]);
+  
   useEffect(() => {
     document.title = `${t("userManagement.title")} | InfoLine`;
   }, [t]);
+  
+  if (!hasAdminAccess) {
+    return <Navigate to="/users" replace />;
+  }
 
   return (
     <>
