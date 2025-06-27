@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Plus, Filter, Search, CheckSquare, Square } from "lucide-react";
 import { useTranslation } from "@/contexts/TranslationContext";
 import { Input } from "@/components/ui/input";
-import { usePermissions } from '@/hooks/auth/permissions/usePermissions';
+import { usePermissions } from '@/hooks/auth/usePermissions';
 import {
   Select,
   SelectContent,

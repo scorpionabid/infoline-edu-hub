@@ -33,7 +33,7 @@ export class AuthService {
     try {
       const result = await supabase.auth.signInWithPassword({
         email,
-        // password
+        password
       });
 
       const { data, error } = result;

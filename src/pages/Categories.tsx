@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useCategoryOperations } from "@/hooks/categories/useCategoryOperations";
 import { useTranslation } from "@/contexts/TranslationContext";
 import { Button } from "@/components/ui/button";
-import { usePermissions } from '@/hooks/auth/permissions/usePermissions';
+import { usePermissions } from '@/hooks/auth/usePermissions';
 import { Input } from "@/components/ui/input";
 import {
   Select,

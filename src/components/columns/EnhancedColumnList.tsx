@@ -73,7 +73,7 @@ const ColumnItem: React.FC<ColumnItemProps> = React.memo(({
   onToggleStatus,
   onSelection,
   canManage,
-  // showSelection
+  showSelection
 }) => {
   const getCategoryName = useCallback((categoryId: string) => {
     return categories?.find(c => c.id === categoryId)?.name || 'Naməlum kateqoriya';

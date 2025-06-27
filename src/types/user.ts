@@ -1,40 +1,20 @@
 
-// User types with proper enums
-export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'teacher' | 'user';
+// ============================================================================
+// İnfoLine User Types - Re-exports from auth.ts
+// ============================================================================
+// Bu fayl auth.ts-dən core user tipləri re-export edir
+// Təkrarçılığı önləmək üçün central type definitions auth.ts-də saxlanılır
 
-export type UserStatus = 'active' | 'inactive';
-
-export interface FullUserData {
-  id: string;
-  email: string;
-  full_name: string;
-  name?: string;
-  role?: UserRole;
-  region_id?: string;
-  regionId?: string;
-  sector_id?: string;
-  sectorId?: string;
-  school_id?: string;
-  schoolId?: string;
-  phone?: string;
-  position?: string;
-  language?: string;
-  avatar?: string;
-  status?: UserStatus;
-  last_login?: string;
-  lastLogin?: string;
-  created_at?: string;
-  createdAt?: string;
-  updated_at?: string;
-  updatedAt?: string;
-  entity_name?: string;
-  entityName?: string;
-  notification_settings?: NotificationSettings;
-}
+// Re-export core types from auth.ts
+export type {
+  UserRole,
+  UserStatus,
+  FullUserData,
+  NotificationSettings
+} from './auth';
 
 // Legacy aliases for backward compatibility
-export type User = FullUserData;
-export type UserData = FullUserData;
+export type { FullUserData as User, FullUserData as UserData } from './auth';
 
 export interface UserCreateData {
   email: string;

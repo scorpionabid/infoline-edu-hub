@@ -388,7 +388,8 @@ export const useRealDashboardData = () => {
           case 'sectoradmin': {
             data = await fetchSectorAdminData();
             break; }
-          case 'schooladmin': {
+          case 'schooladmin':
+          case 'user': { // user rolunu da schooladmin kimi emal edirik
             data = await fetchSchoolAdminData();
             break; }
           default:

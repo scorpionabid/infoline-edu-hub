@@ -4,7 +4,7 @@
 // Bu fayl bütün auth-related type definitions-ları birləşdirir
 // Əvvəlki duplikat fayllar: hooks/auth/types.ts, hooks/auth/permissionTypes.ts
 
-export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin';
+export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'teacher' | 'user';
 
 export type UserStatus = 'active' | 'inactive' | 'pending' | 'suspended';
 
@@ -16,7 +16,7 @@ export interface FullUserData {
   id: string;
   email: string;
   full_name: string;
-  name: string;
+  name?: string;
   role: UserRole;
   region_id?: string;
   regionId?: string;

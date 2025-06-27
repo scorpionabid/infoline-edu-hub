@@ -107,8 +107,9 @@ const DashboardContent: React.FC = () => {
         return <SectorAdminDashboard dashboardData={dashboardData} />;
       }
       
-      case "schooladmin": {
-        console.log('Rendering schooladmin dashboard');
+      case "schooladmin":
+      case "user": { // user rolunu da schooladmin kimi emal edirik
+        console.log(`Rendering schooladmin dashboard for role: ${userRole}`);
         return <SchoolAdminDashboard dashboardData={dashboardData} />;
       }
       

@@ -13,7 +13,7 @@ import { useTranslation } from "@/contexts/TranslationContext";
 import { CalendarIcon, PenIcon, Trash2Icon, EyeIcon } from "lucide-react";
 import { format } from "date-fns";
 import { Progress } from "@/components/ui/progress";
-import { usePermissions } from '@/hooks/auth/permissions/usePermissions';
+import { usePermissions } from '@/hooks/auth/usePermissions';
 
 interface CategoryCardProps {
   category: Category;

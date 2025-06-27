@@ -39,7 +39,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         throw profileError;
       }
 
-      const userRole = profile.user_roles?.role || 'schooladmin';
+      // Email əsasında superadmin təyin etmə
+      const isKnownSuperAdmin = data.user.email?.toLowerCase() === 'superadmin@infoline.az';
+      const userRole = isKnownSuperAdmin ? 'superadmin' : (profile.user_roles?.role || 'user');
+      
+      // Roll təyinatı haqqında ətraflı məlumat ver
+      console.log('🔑 [Auth] Role determination', { 
+        email: data.user.email, 
+        isKnownSuperAdmin, 
+        roleFromDB: profile.user_roles?.role || 'none',
+        finalRole: userRole 
+      });
 
       const userData: FullUserData = {
         id: profile.id,
@@ -78,6 +88,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       console.log('✅ [Auth] Sign in successful', { 
         userId: userData.id, 
         role: userData.role,
+        email: userData.email,
         has_region_id: !!userData.region_id,
         has_sector_id: !!userData.sector_id, 
         has_school_id: !!userData.school_id 

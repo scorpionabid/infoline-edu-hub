@@ -14,7 +14,7 @@ const ColumnTabs: React.FC<ColumnTabsProps> = ({
   activeTab,
   onTabChange,
   activeCount,
-  // archivedCount
+  archivedCount
 }) => {
   return (
     <div className="flex items-center space-x-1 mb-6">
@@ -48,7 +48,7 @@ const ColumnTabs: React.FC<ColumnTabsProps> = ({
           activeTab === 'archived' && "bg-primary text-primary-foreground"
         )}
       >
-        // Arxiv
+        Arxiv
         {archivedCount > 0 && (
           <Badge 
             variant="secondary" 

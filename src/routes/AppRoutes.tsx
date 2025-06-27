@@ -30,7 +30,7 @@ import Performance from "@/pages/Performance";
 import UserManagement from "@/pages/UserManagement";
 import DataManagement from "@/pages/DataManagement";
 
-import { UserRole } from "@/types/supabase";
+import { UserRole } from "@/types/auth";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
