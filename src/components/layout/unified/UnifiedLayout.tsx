@@ -41,7 +41,7 @@ const UnifiedLayout: React.FC<UnifiedLayoutProps> = memo(({
     sidebarWidth,
     headerHeight,
     contentPadding,
-    // sidebarVariant
+    sidebarVariant
   } = useResponsiveLayout();
   
   console.log('[UnifiedLayout] Render state:', { 

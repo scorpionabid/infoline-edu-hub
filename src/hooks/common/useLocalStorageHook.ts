@@ -33,30 +33,33 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
     (value: T | ((val: T) => T)) => {
       try {
         // Allow value to be a function to conform to React.useState pattern
-        const valueToStore = value instanceof Function ? value(storedValue) : value;
-        
-        // Save state
-        setStoredValue(valueToStore);
-        
-        // Check if window is defined (for SSR)
-        if (typeof window !== 'undefined') {
-          // Save to localStorage
-          window.localStorage.setItem(key, JSON.stringify(valueToStore));
+        // Dolayı storedValue -ni useState-dən gələn funksiyadan alaq ki,
+        // asılılıq array-də storedValue-ni ehtiva etməyək
+        setStoredValue((prevStoredValue) => {
+          const valueToStore = value instanceof Function ? value(prevStoredValue) : value;
+          
+          // Check if window is defined (for SSR)
+          if (typeof window !== 'undefined') {
+            // Save to localStorage
+            window.localStorage.setItem(key, JSON.stringify(valueToStore));
 
-          // Create and dispatch custom event for cross-tab synchronization
-          const event = new StorageEvent('storage', {
-            key: key,
-            newValue: JSON.stringify(valueToStore),
-            storageArea: localStorage,
-            url: window.location.href
-          });
-          window.dispatchEvent(event);
-        }
+            // Create and dispatch custom event for cross-tab synchronization
+            const event = new StorageEvent('storage', {
+              key: key,
+              newValue: JSON.stringify(valueToStore),
+              storageArea: localStorage,
+              url: window.location.href
+            });
+            window.dispatchEvent(event);
+          }
+          
+          return valueToStore;
+        });
       } catch (error) {
         console.warn(`Error setting localStorage key "${key}":`, error);
       }
     },
-    [storedValue, key]
+    [key] // storedValue asılılığı burada artıq lazım deyil
   );
 
   // Update state when storage events occur on other tabs
@@ -65,10 +68,9 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
       if (e.key === key && e.storageArea === localStorage) {
         // Get new value from other tab
         const newValue = e.newValue ? parseJSON(e.newValue) as T : initialValue;
-        // Update state only if it differs to avoid loop
-        if (JSON.stringify(newValue) !== JSON.stringify(storedValue)) {
-          setStoredValue(newValue);
-        }
+        // Update state if event is from another tab to avoid loop
+        // Loop problemini həll etmək üçün event qaynağına əhəmiyyət veririk
+        setStoredValue(newValue);
       }
     }
 
@@ -79,7 +81,7 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
-  }, [key, storedValue, initialValue]);
+  }, [key, initialValue]); // storedValue asılılığını çıxartdıq
 
   // Read stored value on mount
   useEffect(() => {

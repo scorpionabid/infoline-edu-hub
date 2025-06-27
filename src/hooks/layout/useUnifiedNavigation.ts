@@ -285,7 +285,8 @@ export const useUnifiedNavigation = () => {
     });
 
     return crumbs;
-  }, [location.pathname, navigationConfig, t]);
+  }, [location.pathname, t]);
+  // navigationConfig çıxarıldı çünki o artıq hook daxilində hazırlanır
 
   return {
     navigationConfig,

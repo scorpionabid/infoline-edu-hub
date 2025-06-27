@@ -85,7 +85,7 @@ export const useNotifications = (userId?: string) => {
     isLoading,
     realTimeEnabled,
     toggleRealTime,
-    // refetch
+    refetch
   };
 };
 

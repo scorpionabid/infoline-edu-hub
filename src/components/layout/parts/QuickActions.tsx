@@ -24,7 +24,7 @@ const QuickActions: React.FC = () => {
     isSchoolAdmin,
     isSectorAdmin,
     canManageSchools,
-    // canViewReports
+    canViewReports
   } = usePermissions();
 
   // Touch gestures for mobile interaction

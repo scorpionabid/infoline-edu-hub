@@ -1,14 +1,42 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ChevronRight, Home } from 'lucide-react';
 import { useLocation, Link } from 'react-router-dom';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { useUnifiedNavigation } from '@/hooks/layout/useUnifiedNavigation';
+// useUnifiedNavigation əvəzinə bilavasitə useLocation istifadə edərək breadcrumbs yaradacağıq
+// import { useUnifiedNavigation } from '@/hooks/layout/useUnifiedNavigation';
 import { cn } from '@/lib/utils';
 
-const BreadcrumbNav: React.FC = () => {
+// Sonsuz loopdan qaçınmaq üçün React.memo ilə komponentimizi əhatə edəcəyik
+const BreadcrumbNav = React.memo(() => {
   const { t } = useTranslation();
-  const { breadcrumbs } = useUnifiedNavigation();
   const location = useLocation();
+  
+  // Breadcrumbs-ı useUnifiedNavigation hook-undan istifadə etmədən bilavasitə hesablayaq
+  const breadcrumbs = useMemo(() => {
+    const pathSegments = location.pathname.split('/').filter(Boolean);
+    const crumbs: Array<{ label: string; href: string }> = [
+      { label: t("navigation.home") || "Ana səhifə", href: "/" }
+    ];
+
+    // Sadə yol segmentləri əsasında naviqasiya yaradaq
+    let currentPath = '';
+    
+    pathSegments.forEach(segment => {
+      currentPath += `/${segment}`;
+      // Segment adını başlıq formatına çevirək
+      const label = segment
+        .split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+        
+      crumbs.push({ 
+        label: t(`navigation.${segment}`) || label, 
+        href: currentPath 
+      });
+    });
+    
+    return crumbs;
+  }, [location.pathname, t]);
 
   // Don't show breadcrumbs on dashboard/home
   if (location.pathname === '/' || location.pathname === '/dashboard') {
@@ -72,6 +100,7 @@ const BreadcrumbNav: React.FC = () => {
       </ol>
     </nav>
   );
-};
+})
 
+// React.memo istifadə etdiyimiz üçün export edirik
 export default BreadcrumbNav;

@@ -19,7 +19,7 @@ import {
   Filter,
   Wifi,
   WifiOff,
-  // RefreshCw
+  RefreshCw
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { az } from 'date-fns/locale';
@@ -44,7 +44,7 @@ const NotificationsCard: React.FC<NotificationsCardProps> = ({
   showFilters = false,
   showRealTimeStatus = true,
   autoRefresh = true,
-  // className
+  className
 }) => {
   const { user } = useAuth();
   const [filter, setFilter] = useState<'all' | 'unread' | 'urgent'>('unread');
@@ -59,7 +59,7 @@ const NotificationsCard: React.FC<NotificationsCardProps> = ({
     deleteNotification,
     realTimeEnabled,
     toggleRealTime,
-    // refetch
+    refetch
   } = useNotifications(user?.id);
 
   // Auto-refresh every 30 seconds if real-time is disabled
