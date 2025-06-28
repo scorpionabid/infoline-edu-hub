@@ -9,20 +9,32 @@ export interface ToastOptions {
 }
 
 const toast = (options: string | ToastOptions) => {
+  // Əgər string olarsa, birbaşa göstər
   if (typeof options === 'string') {
     sonnerToast(options);
+    return;
+  }
+  
+  // Obyektin içərisində obyekt olub-olmadığını yoxla
+  const title = typeof options.title === 'object' && options.title !== null 
+    ? JSON.stringify(options.title) 
+    : options.title || '';
+    
+  const description = typeof options.description === 'object' && options.description !== null 
+    ? JSON.stringify(options.description) 
+    : options.description || '';
+  
+  // Variant tipinə görə müvafiq toast növünü göstər
+  if (options.variant === 'destructive') {
+    sonnerToast.error(title, {
+      description,
+      duration: options.duration
+    });
   } else {
-    if (options.variant === 'destructive') {
-      sonnerToast.error(options.title || 'Error', {
-        description: options.description,
-        duration: options.duration
-      });
-    } else {
-      sonnerToast.success(options.title || 'Success', {
-        description: options.description,
-        duration: options.duration
-      });
-    }
+    sonnerToast.success(title, {
+      description,
+      duration: options.duration
+    });
   }
 };
 

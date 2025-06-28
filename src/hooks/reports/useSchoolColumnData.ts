@@ -321,7 +321,7 @@ export const useSchoolColumnData = (
     dataLoading,
     error,
     
-    // Permissions - include the actual permissions object
-    // permissions
+    // Permissions
+    permissions
   };
 };

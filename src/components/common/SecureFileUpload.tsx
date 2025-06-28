@@ -54,7 +54,8 @@ const SecureFileUpload: React.FC<SecureFileUploadProps> = ({
 
     // File name security check
     const suspiciousPattern = /[<>:"/\\|?*]/;
-    // Control characters check separately
+    // Control characters check separately - ESLint-friendly version
+    // eslint-disable-next-line no-control-regex
     const hasControlChars = /[\x00-\x1F]/.test(file.name);
     if (suspiciousPattern.test(file.name) || hasControlChars) {
       const context = getClientContext();

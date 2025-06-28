@@ -39,6 +39,6 @@ export const useSchoolColumnFilters = () => {
     filters,
     debouncedSearchQuery,
     updateFilter,
-    // resetFilters
+    resetFilters
   };
 };

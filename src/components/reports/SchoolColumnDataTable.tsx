@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { useTranslation } from "@/contexts/TranslationContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -62,12 +62,34 @@ const SchoolColumnDataTable: React.FC = () => {
     permissions,
   } = useSchoolColumnData(filters, debouncedSearchQuery);
 
-  const { handleExport } = useSchoolColumnExport();
+  const { handleExport, isExporting } = useSchoolColumnExport();
 
   const { currentPage, pageSize, goToPage: setCurrentPage, setPageSize, totalPages } =
     usePagination(schoolColumnData, 10);
 
-  // Event handlers
+  // Export handlers - görünən və bütün məlumatlar üçün
+  const handleExportWithType = useCallback((format: 'excel' | 'csv' | 'pdf', exportType: 'visible' | 'all') => {
+    try {
+      const selectedColumns = columns.filter((col) =>
+        selectedColumnIds.includes(col.id),
+      );
+      
+      const visibleData = schoolColumnData.slice(
+        (currentPage - 1) * pageSize,
+        currentPage * pageSize
+      );
+      
+      handleExport(
+        format,
+        schoolColumnData, // bütün məlumatlar
+        visibleData, // görünən məlumatlar
+        selectedColumns,
+        { exportType, includeMetadata: true }
+      );
+    } catch (error) {
+      console.error('Export error:', error);
+    }
+  }, [columns, selectedColumnIds, schoolColumnData, currentPage, pageSize, handleExport]);
   const handleColumnSelect = (columnId: string, checked: boolean) => {
     if (checked) {
       setSelectedColumnIds((prev) => [...prev, columnId]);
@@ -216,21 +238,15 @@ const SchoolColumnDataTable: React.FC = () => {
 
       {/* Export Buttons */}
       <div className="flex justify-between items-center">
-        <div className="text-sm text-muted-foreground">{selectionStats}</div>
+        <div className="text-sm text-muted-foreground">{String(selectionStats)}</div>
         <ExportButtons
-          onExportExcel={() =>
-            handleExport("excel", schoolColumnData, selectedColumns)
-          }
-          onExportPDF={() =>
-            handleExport("pdf", schoolColumnData, selectedColumns)
-          }
-          onExportCSV={() =>
-            handleExport("csv", schoolColumnData, selectedColumns)
-          }
-          isLoading={dataLoading}
-          disabled={
-            selectedColumnIds.length === 0 || schoolColumnData.length === 0
-          }
+          onExportExcel={(exportType) => handleExportWithType('excel', exportType)}
+          onExportPDF={(exportType) => handleExportWithType('pdf', exportType)}
+          onExportCSV={(exportType) => handleExportWithType('csv', exportType)}
+          isLoading={isExporting || dataLoading}
+          disabled={selectedColumnIds.length === 0 || schoolColumnData.length === 0}
+          visibleCount={Math.min(pageSize, Math.max(0, schoolColumnData.length - (currentPage - 1) * pageSize)) || 0}
+          totalCount={schoolColumnData.length}
         />
       </div>
 

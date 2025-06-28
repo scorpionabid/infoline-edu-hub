@@ -138,19 +138,34 @@ export const CacheUtils = {
 // Migration helpers for React Query integration
 export const QueryCacheUtils = {
   /**
-   * Function that returns a hook to convert old useCachedQuery to new implementation
-   * MUST be used as a hook (in React components or other hooks)
+   * Function to convert old query format to new useCachedQuery implementation
+   * This is not a hook itself, but a utility that formats parameters for useCachedQuery
    */
-  useConvertOldQuery: () => {
-    return (queryKey: string[], queryFn: () => Promise<any>, options?: any) => {
-      return useCachedQuery(queryKey.join('_'), queryFn, {
-        cacheOptions: {
-          storage: 'memory',
-          ttl: options?.staleTime || CACHE_TTL.MEDIUM
-        },
-        queryOptions: options
-      });
+  convertOldQuery: (queryKey: string[], queryFn: () => Promise<any>, options?: any) => {
+    const cacheKey = queryKey.join('_');
+    return {
+      cacheKey,
+      queryFn,
+      cacheOptions: {
+        storage: 'memory',
+        ttl: options?.staleTime || CACHE_TTL.MEDIUM
+      },
+      queryOptions: options
     };
+  },
+  
+  /**
+   * Hook to use old query format with new implementation
+   * This is the correct way to implement this as a React Hook
+   */
+  useConvertedQuery: (queryKey: string[], queryFn: () => Promise<any>, options?: any) => {
+    return useCachedQuery(queryKey.join('_'), queryFn, {
+      cacheOptions: {
+        storage: 'memory',
+        ttl: options?.staleTime || CACHE_TTL.MEDIUM
+      },
+      queryOptions: options
+    });
   }
 };
 

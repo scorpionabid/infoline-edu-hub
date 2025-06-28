@@ -98,7 +98,15 @@ export const formatDataForExport = (
     selectedColumns.forEach(col => {
       const columnData = schoolData.columns[col.id];
       row[col.name] = columnData?.value || 'Daxil edilməyib';
-      row[`${col.name} - Status`] = columnData?.status || 'pending';
+      
+      // Status üçün ayrı sütun əlavə edək 
+      if (columnData) {
+        const statusLabel = columnData.status === 'approved' ? 'Təsdiqlənmiş' :
+                          columnData.status === 'rejected' ? 'Rədd edilmiş' : 'Gözləmədə';
+        row[`${col.name} (Status)`] = statusLabel;
+      } else {
+        row[`${col.name} (Status)`] = 'Boş';
+      }
     });
     
     return row;
@@ -158,11 +166,13 @@ export const getSelectionStats = (
   }
   
   if (dataCount > 0) {
+    const startIndex = (currentPage - 1) * pageSize + 1;
+    const endIndex = Math.min(currentPage * pageSize, dataCount);
     stats.push(`${dataCount} məktəb cədvəldə`);
     
     if (dataCount > pageSize) {
       const totalPages = Math.ceil(dataCount / pageSize);
-      stats.push(`Səhifə ${currentPage}/${totalPages} (${pageSize} məktəb/səhifə)`);
+      stats.push(`Görünən: ${startIndex}-${endIndex} (Səhifə ${currentPage}/${totalPages})`);
     }
   }
   
