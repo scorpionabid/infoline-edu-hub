@@ -4,7 +4,7 @@
 // Bu fayl istifadəçi profili və rol məlumatlarının əldə edilməsi və işlənməsini təmin edir
 
 import { supabase } from '@/integrations/supabase/client';
-import { FullUserData, UserRole } from './authTypes';
+import type { FullUserData, UserRole } from '@/types/auth'; // Updated to unified types
 import { Session } from '@supabase/supabase-js';
 
 /**

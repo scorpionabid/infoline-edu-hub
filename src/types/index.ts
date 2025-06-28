@@ -37,6 +37,11 @@ export type {
   // AuthErrorCode
 } from './auth';
 
+// Auth Constants
+export {
+  AUTH_TIMEOUT_CONFIG
+} from './auth';
+
 // Core Business Types - Explicit exports
 export type {
   // Category

@@ -22,6 +22,18 @@ export type DataStatus = DatabaseEnums['data_status'];
 export type UserStatus = 'active' | 'inactive' | 'pending' | 'suspended';
 
 // ============================================================================
+// Auth Configuration Constants
+// ============================================================================
+
+// Timeout configuration
+export const AUTH_TIMEOUT_CONFIG = {
+  MAX_RETRIES: 3,
+  INIT_TIMEOUT: 30000, // 30 seconds
+  RETRY_DELAY: 5000,   // 5 seconds
+  SIGNIN_TIMEOUT: 20000 // 20 seconds
+};
+
+// ============================================================================
 // Core User Interfaces
 // ============================================================================
 

@@ -9,7 +9,7 @@ import { StoreApi } from 'zustand';
 
 type SetState<T> = StoreApi<T>['setState'];
 type GetState<T> = StoreApi<T>['getState'];
-import { AuthState } from './authTypes';
+import type { AuthState } from '@/types/auth'; // Updated to unified types
 import { fetchUserProfile, normalizeUserProfile, createMinimalProfile } from './profileManager';
 import { setupSessionTimeout, checkAndRefreshSession } from './sessionManager';
 

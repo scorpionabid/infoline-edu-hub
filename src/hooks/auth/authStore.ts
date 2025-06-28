@@ -5,7 +5,7 @@
 // Bu fayl auth sisteminin əsas zustand store komponentini təmin edir
 
 import { create } from 'zustand';
-import { AuthState } from './authTypes';
+import type { AuthState } from '@/types/auth'; // Updated to unified types
 import { 
   signIn, 
   signOut, 

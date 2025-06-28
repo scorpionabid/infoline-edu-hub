@@ -1,12 +1,12 @@
 
-import React from "react";
+import React, { memo, useCallback } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/contexts/TranslationContext";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useAuthStore } from "@/hooks/auth/useAuthStore";
+import { useAuthStore } from "@/hooks/auth/authStore";
 import { useUnifiedNavigation } from "@/hooks/layout/useUnifiedNavigation";
 
 interface UnifiedNavigationProps {
@@ -16,32 +16,47 @@ interface UnifiedNavigationProps {
   variant?: 'desktop' | 'mobile' | 'overlay';
 }
 
-const UnifiedNavigation: React.FC<UnifiedNavigationProps> = ({
+const UnifiedNavigation = memo(function UnifiedNavigation({
   isOpen,
   onToggle,
   userName = "İstifadəçi",
   variant = 'desktop'
-}) => {
+}: UnifiedNavigationProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { logout } = useAuthStore.getState();
+  
+  // Zustand'dan state'ı alırıq - yalnız stabil signOut funksiyasını seçirik
+  // Bu yanaşma - useStore(selector) - yalnız seçilən dəyər dəyişdikdə yenidən render səbəb olacaq
+  // Beləliklə, logində hər dəfə yeni state dəyişiklikləri sonsuz loop yaratmayacaq
+  const signOut = useAuthStore(state => state.signOut);
+  
+  // Logout funksiyasını memoize edirik - yalnız navigate dəyişdikdə yenilənəcək
+  const handleLogout = useCallback(() => {
+    if (signOut) {
+      signOut();
+      navigate('/');
+    }
+  }, [navigate, signOut]);
+  
+  // useUnifiedNavigation hook-unu əldə edirik
   const { 
     navigationConfig, 
     openSections, 
-    toggleSection,
+    toggleSection, 
     isActive 
   } = useUnifiedNavigation();
 
-  const handleItemClick = (action?: () => void) => {
+  // NavLink və ya digər navigasiyaları emal etmək üçün 
+  const handleItemClick = useCallback((action?: () => void) => {
     if (action) {
       action();
     }
+    
     if (variant === 'mobile' && onToggle) {
       onToggle();
     }
-  };
+  }, [variant, onToggle]);
 
-  // Responsive classes for different sidebar widths
   const getItemClasses = (active: boolean) => cn(
     "group relative flex items-center gap-2 sm:gap-3 rounded-xl px-2 sm:px-3 py-2 sm:py-3 text-sm transition-all duration-200",
     "hover:bg-accent/50 hover:shadow-md hover:scale-[1.02] hover:-translate-y-0.5",
@@ -127,8 +142,7 @@ const UnifiedNavigation: React.FC<UnifiedNavigationProps> = ({
             {/* Group Header with Collapsible */}
             <div className="px-1 sm:px-2 mb-2">
               <Button
-                variant="ghost"
-                className="w-full justify-between h-6 sm:h-8 px-1 sm:px-2 text-xs font-medium text-muted-foreground hover:text-foreground"
+                className="w-full justify-between h-6 sm:h-8 px-1 sm:px-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent/50"
                 onClick={() => toggleSection(group.id)}
               >
                 <span className="uppercase tracking-wider truncate flex-1 text-left">
@@ -201,9 +215,8 @@ const UnifiedNavigation: React.FC<UnifiedNavigationProps> = ({
           <div className="space-y-1 sm:space-y-2">
             {/* User Profile Button */}
             <Button
-              variant="ghost"
-              className="w-full justify-start h-8 sm:h-10 px-2 sm:px-3 text-xs sm:text-sm hover:bg-accent/50 hover:shadow-md transition-all duration-200 min-h-[36px] sm:min-h-[44px] touch-manipulation"
-              onClick={() => handleItemClick(() => navigate('/profile'))}
+              className="w-full justify-start h-8 sm:h-10 px-2 sm:px-3 text-xs sm:text-sm bg-secondary text-secondary-foreground hover:bg-secondary/80"
+              onClick={() => navigate('/profile')}
             >
               <div className="flex items-center gap-2 sm:gap-3 w-full min-w-0">
                 <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -217,9 +230,8 @@ const UnifiedNavigation: React.FC<UnifiedNavigationProps> = ({
             
             {/* Settings Button */}
             <Button
-              variant="ghost"
-              className="w-full justify-start h-8 sm:h-10 px-2 sm:px-3 text-xs sm:text-sm hover:bg-accent/50 hover:shadow-md transition-all duration-200 min-h-[36px] sm:min-h-[44px] touch-manipulation"
-              onClick={() => handleItemClick(() => navigate('/settings'))}
+              className="w-full justify-start h-8 sm:h-10 px-2 sm:px-3 text-xs sm:text-sm bg-secondary text-secondary-foreground hover:bg-secondary/80"
+              onClick={() => navigate('/settings')}
             >
               <div className="flex items-center gap-2 sm:gap-3 w-full min-w-0">
                 <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gray-500/10 flex items-center justify-center flex-shrink-0">
@@ -231,12 +243,8 @@ const UnifiedNavigation: React.FC<UnifiedNavigationProps> = ({
             
             {/* Logout Button */}
             <Button
-              variant="ghost"
-              className="w-full justify-start h-8 sm:h-10 px-2 sm:px-3 text-xs sm:text-sm hover:bg-accent/50 hover:shadow-md hover:text-destructive transition-all duration-200 min-h-[36px] sm:min-h-[44px] touch-manipulation"
-              onClick={() => handleItemClick(() => {
-                logout();
-                navigate('/');
-              })}
+              className="w-full justify-start h-8 sm:h-10 px-2 sm:px-3 text-xs sm:text-sm hover:bg-accent/50 hover:shadow-md hover:text-destructive transition-all duration-200 min-h-[36px] sm:min-h-[44px] touch-manipulation bg-secondary text-secondary-foreground" 
+              onClick={handleLogout}
             >
               <div className="flex items-center gap-2 sm:gap-3 w-full min-w-0">
                 <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-red-500/10 flex items-center justify-center flex-shrink-0">
@@ -250,6 +258,6 @@ const UnifiedNavigation: React.FC<UnifiedNavigationProps> = ({
       </div>
     </div>
   );
-};
+});
 
 export default UnifiedNavigation;

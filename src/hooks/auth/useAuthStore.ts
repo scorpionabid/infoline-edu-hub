@@ -5,7 +5,7 @@
 // Bütün real auth implementasiyası artıq './authStore.ts' və digər modular fayllardadır
 
 // Tip idxalları - tipli bir interface təmin etmək üçün
-import { AuthState, UserRole, FullUserData } from './authTypes';
+import type { AuthState, UserRole, FullUserData } from '@/types/auth'; // Updated to unified types
 
 // Yeni modular auth store və selektorları idxal edirik
 import { useAuthStore } from './authStore';

@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useRef, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -64,17 +64,31 @@ export const useUnifiedNavigation = () => {
   // Hesabatlar səhifəsinə giriş icazələri
   const canViewReports = isSuperAdmin || isRegionAdmin || isSectorAdmin; // schoolAdmin üçün false
 
-  // Open sections state
-  const [openSections, setOpenSections] = useLocalStorage('nav-sections', ['organization', 'content']);
+  // Open sections state - stability üçün useRef istifadə edirik
+  const [storedOpenSections, setStoredOpenSections] = useLocalStorage('nav-sections', ['organization', 'content']);
+  const openSectionsRef = useRef(storedOpenSections);
+  const openSections = openSectionsRef.current;
+  
+  // UseEffect ilə dəyişiklikləri sync edirik, amma yalnız lokalda dəyişdikdə
+  useEffect(() => {
+    if (JSON.stringify(openSectionsRef.current) !== JSON.stringify(storedOpenSections)) {
+      openSectionsRef.current = storedOpenSections;
+    }
+  }, [storedOpenSections]);
 
-  // Toggle section open/close
+  // Toggle section open/close - daha stabildir, loop yaratmır
   const toggleSection = useCallback((sectionId: string) => {
-    setOpenSections(prev => 
-      prev.includes(sectionId) 
-        ? prev.filter(id => id !== sectionId)
-        : [...prev, sectionId]
-    );
-  }, [setOpenSections]);
+    const isOpen = openSectionsRef.current.includes(sectionId);
+    const newSections = isOpen
+      ? openSectionsRef.current.filter(id => id !== sectionId)
+      : [...openSectionsRef.current, sectionId];
+    
+    // Yalnız dəyişiklik varsa yeniləyirik
+    if (JSON.stringify(newSections) !== JSON.stringify(openSectionsRef.current)) {
+      openSectionsRef.current = newSections; // Lokal referansı dərhal yenilə
+      setStoredOpenSections(newSections); // LocalStorage-i yenilə
+    }
+  }, []);  // Boş asılılıq massivi - çünki ref istifadə edirik
 
   // Check if route is active
   const isActive = useCallback((href: string) => {
