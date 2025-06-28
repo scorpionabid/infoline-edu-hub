@@ -29,7 +29,7 @@ const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
   // Touch gestures for mobile sidebar
   const touchGestures = useTouchGestures({
     onSwipeLeft: () => {
-      if (variant === 'mobile' && onToggle) {
+      if ((variant === 'mobile' || variant === 'overlay') && onToggle) {
         onToggle();
       }
     }
@@ -38,16 +38,15 @@ const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
     preventDefaultEvents: false
   });
 
-  // Close sidebar when clicking outside on mobile
+  // Close sidebar when clicking outside on mobile/overlay variants
   useEffect(() => {
-    if (variant === 'mobile' && isOpen) {
+    if ((variant === 'mobile' || variant === 'overlay') && isOpen) {
       const handleClickOutside = (event: MouseEvent) => {
         if (sidebarRef.current && !sidebarRef.current.contains(event.target as Node)) {
           onToggle?.();
         }
       };
 
-      // Add listener with a slight delay to avoid immediate closing
       const timer = setTimeout(() => {
         document.addEventListener('mousedown', handleClickOutside);
       }, 100);
@@ -59,9 +58,9 @@ const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
     }
   }, [variant, isOpen, onToggle]);
 
-  // Prevent body scroll when mobile sidebar is open
+  // Prevent body scroll when mobile/overlay sidebar is open
   useEffect(() => {
-    if (variant === 'mobile' && isOpen) {
+    if ((variant === 'mobile' || variant === 'overlay') && isOpen) {
       document.body.style.overflow = 'hidden';
       return () => {
         document.body.style.overflow = '';
@@ -69,68 +68,74 @@ const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
     }
   }, [variant, isOpen]);
 
-  console.log("[UnifiedSidebar] Rendering with variant:", variant, "isOpen:", isOpen, "width:", width);
+  console.log("[UnifiedSidebar] Enhanced rendering:", { variant, isOpen, width });
 
-  // Calculate responsive width based on variant
+  // Enhanced responsive width calculation
   const getResponsiveWidth = () => {
     switch (variant) {
       case 'mobile':
-        return 'min(280px, 85vw)'; // Max 280px but responsive to screen size
+        return 'min(280px, 85vw)';
       case 'overlay':
-        return 'min(260px, 80vw)';
+        return 'min(300px, 80vw)';
       case 'desktop':
       default:
-        return `${Math.max(240, Math.min(320, width))}px`; // Ensure reasonable bounds
+        return `${Math.max(260, Math.min(340, width))}px`;
+    }
+  };
+
+  // Enhanced responsive classes
+  const getSidebarClasses = () => {
+    const baseClasses = [
+      "flex flex-col h-full bg-background border-r border-border",
+      "transition-all duration-300 ease-in-out overflow-hidden"
+    ];
+
+    switch (variant) {
+      case 'mobile':
+        return cn(
+          baseClasses,
+          "fixed top-0 left-0 z-50 md:hidden",
+          "transform transition-transform duration-300 ease-in-out",
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        );
+      
+      case 'overlay':
+        return cn(
+          baseClasses,
+          "fixed top-0 left-0 z-40 lg:hidden",
+          "transform transition-transform duration-300 ease-in-out",
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        );
+      
+      case 'desktop':
+      default:
+        return cn(
+          baseClasses,
+          "relative flex-shrink-0",
+          !isOpen && "w-0 min-w-0 border-r-0"
+        );
     }
   };
 
   return (
     <>
-      {/* Mobile backdrop */}
-      {variant === 'mobile' && isOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden"
-          onClick={onToggle}
-          aria-hidden="true"
-        />
-      )}
-
-      {/* Sidebar container */}
+      {/* Mobile/Overlay backdrop - handled by parent component */}
+      
+      {/* Enhanced Sidebar container */}
       <div
         ref={sidebarRef}
-        {...(variant === 'mobile' ? touchGestures : {})}
-        className={cn(
-          "flex flex-col h-full bg-background border-r border-border",
-          "transition-all duration-300 ease-in-out overflow-hidden",
-          
-          // Variant-specific positioning
-          variant === 'mobile' && [
-            "fixed top-0 left-0 z-50 md:hidden",
-            "transform transition-transform duration-300 ease-in-out",
-            isOpen ? "translate-x-0" : "-translate-x-full"
-          ],
-          
-          variant === 'overlay' && [
-            "fixed top-0 left-0 z-40 lg:hidden",
-            "transform transition-transform duration-300 ease-in-out",
-            isOpen ? "translate-x-0" : "-translate-x-full"
-          ],
-          
-          variant === 'desktop' && [
-            "relative flex-shrink-0"
-          ]
-        )}
+        {...((variant === 'mobile' || variant === 'overlay') ? touchGestures : {})}
+        className={getSidebarClasses()}
         style={{
-          width: getResponsiveWidth(),
-          minWidth: variant === 'desktop' ? '240px' : '260px',
-          maxWidth: variant === 'mobile' ? 'min(320px, 90vw)' : '320px'
+          width: isOpen ? getResponsiveWidth() : variant === 'desktop' ? '0px' : getResponsiveWidth(),
+          minWidth: variant === 'desktop' && !isOpen ? '0px' : variant === 'mobile' ? '260px' : '280px',
+          maxWidth: variant === 'mobile' ? 'min(320px, 90vw)' : '340px'
         }}
       >
         {/* Header with logo and close button */}
         <div className={cn(
           "flex items-center justify-between border-b border-border",
           "h-14 sm:h-16 px-3 sm:px-4 py-2 flex-shrink-0",
-          // Ensure proper spacing for different screen sizes
           "min-h-[56px]"
         )}>
           <div className="flex-1 min-w-0">
@@ -152,7 +157,7 @@ const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
           )}
         </div>
         
-        {/* Navigation content with scroll */}
+        {/* Navigation content with scroll - Enhanced */}
         <div className="flex-1 overflow-hidden">
           <ScrollArea className="h-full">
             <UnifiedNavigation 
@@ -164,14 +169,14 @@ const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
           </ScrollArea>
         </div>
         
-        {/* Footer */}
+        {/* Enhanced Footer */}
         <div className="mt-auto p-3 sm:p-4 border-t border-border flex-shrink-0">
           <p className="text-xs text-muted-foreground text-center truncate">
             InfoLine v2.0.0
           </p>
           
           {/* Mobile-specific swipe hint */}
-          {variant === 'mobile' && (
+          {(variant === 'mobile' || variant === 'overlay') && (
             <div className="flex items-center justify-center mt-2">
               <div className="w-8 h-1 bg-muted-foreground/30 rounded-full" />
             </div>

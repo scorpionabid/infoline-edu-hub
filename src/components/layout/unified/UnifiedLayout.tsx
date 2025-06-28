@@ -28,12 +28,12 @@ const UnifiedLayout: React.FC<UnifiedLayoutProps> = memo(({
   const isLoading = useAuthStore(selectIsLoading);
   const user = useAuthStore(selectUser);
   
-  // Performance monitoring
   usePerformanceMonitor('UnifiedLayout');
   
   const {
     isMobile,
     isTablet,
+    isLaptop,
     isDesktop,
     sidebarOpen,
     setSidebarOpen,
@@ -44,14 +44,16 @@ const UnifiedLayout: React.FC<UnifiedLayoutProps> = memo(({
     sidebarVariant
   } = useResponsiveLayout();
   
-  console.log('[UnifiedLayout] Render state:', { 
+  console.log('[UnifiedLayout] Enhanced responsive state:', { 
     user: !!user, 
     isLoading, 
     sidebarOpen,
     sidebarVariant,
     isMobile,
     isTablet,
-    // isDesktop
+    isLaptop,
+    isDesktop,
+    sidebarWidth
   });
 
   if (isLoading) {
@@ -66,39 +68,39 @@ const UnifiedLayout: React.FC<UnifiedLayoutProps> = memo(({
     );
   }
 
+  // Determine sidebar behavior based on screen size
+  const shouldShowDesktopSidebar = isLaptop || isDesktop;
+  const shouldShowOverlaySidebar = isMobile || isTablet;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30 w-full">
       <div className="flex h-screen w-full relative">
-        {/* Unified Sidebar - Responsive variants */}
+        {/* Enhanced Sidebar - Responsive variants */}
         {showSidebar && (
           <>
-            {/* Desktop sidebar - Always visible */}
-            {isDesktop && (
+            {/* Desktop/Laptop sidebar - Always visible when screen is large enough */}
+            {shouldShowDesktopSidebar && (
               <UnifiedSidebar 
-                isOpen={true} // Always open on desktop
+                isOpen={sidebarOpen}
                 onToggle={toggleSidebar}
                 userName={user?.full_name || user?.email}
-                variant="desktop"
+                variant={isLaptop ? "overlay" : "desktop"}
                 width={sidebarWidth}
               />
             )}
 
             {/* Mobile/Tablet overlay sidebar */}
-            {(isMobile || isTablet) && (
-              <div
-                className={`
-                  fixed inset-0 z-50 bg-black/50 transition-opacity duration-300
-                  ${sidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}
-                `}
-                onClick={() => setSidebarOpen(false)}
-              >
-                <div
-                  className={`
-                    fixed left-0 top-0 h-full w-64 bg-card transform transition-transform duration-300
-                    ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-                  `}
-                  onClick={(e) => e.stopPropagation()}
-                >
+            {shouldShowOverlaySidebar && sidebarOpen && (
+              <div className="fixed inset-0 z-50 lg:hidden">
+                {/* Backdrop */}
+                <div 
+                  className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300"
+                  onClick={() => setSidebarOpen(false)}
+                  aria-hidden="true"
+                />
+                
+                {/* Sidebar */}
+                <div className="relative">
                   <UnifiedSidebar 
                     isOpen={sidebarOpen}
                     onToggle={toggleSidebar}
@@ -112,11 +114,12 @@ const UnifiedLayout: React.FC<UnifiedLayoutProps> = memo(({
           </>
         )}
 
-        {/* Main content area */}
+        {/* Main content area - Enhanced responsive layout */}
         <div 
           className="flex flex-col flex-1 w-full min-w-0 relative transition-all duration-300 ease-in-out"
           style={{
-            marginLeft: isDesktop && sidebarOpen && showSidebar ? 0 : 0 // Sidebar handles its own width
+            marginLeft: shouldShowDesktopSidebar && sidebarOpen ? 0 : 0,
+            minWidth: 0
           }}
         >
           {/* Unified Header */}
@@ -131,12 +134,13 @@ const UnifiedLayout: React.FC<UnifiedLayoutProps> = memo(({
             />
           )}
           
-          {/* Page content with responsive padding */}
+          {/* Page content with enhanced responsive padding */}
           <main 
             className="flex-1 overflow-auto w-full relative"
             style={{ 
               padding: contentPadding,
-              paddingBottom: isMobile ? '80px' : contentPadding // Space for mobile bottom nav
+              paddingBottom: isMobile ? '80px' : contentPadding,
+              minWidth: 0
             }}
           >
             <div className={`w-full mx-auto animate-fade-in-up ${fullWidth ? 'max-w-none' : 'max-w-full'}`}>
@@ -152,15 +156,14 @@ const UnifiedLayout: React.FC<UnifiedLayoutProps> = memo(({
         </div>
       </div>
 
-      {/* Mobile Bottom Navigation */}
+      {/* Mobile Bottom Navigation - only for mobile */}
       {isMobile && <MobileBottomNav />}
 
-      {/* Quick Actions FAB - shown on all devices */}
+      {/* Quick Actions FAB - responsive positioning */}
       <QuickActions />
     </div>
   );
 }, (prevProps, nextProps) => {
-  // Custom comparison for better performance
   return (
     prevProps.showSidebar === nextProps.showSidebar &&
     prevProps.showHeader === nextProps.showHeader &&

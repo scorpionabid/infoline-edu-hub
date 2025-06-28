@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useMediaQuery } from '@/hooks/common/useMediaQuery';
 import { useLocalStorage } from '@/hooks/common/useLocalStorageHook';
@@ -6,14 +7,16 @@ interface ResponsiveLayoutConfig {
   sidebar: {
     isOpen: boolean;
     width: {
-      desktop: number;
-      tablet: number;
       mobile: number;
+      tablet: number;
+      laptop: number;
+      desktop: number;
     };
     variant: 'desktop' | 'overlay' | 'push' | 'over';
     breakpoints: {
       mobile: number;
       tablet: number;
+      laptop: number;
       desktop: number;
     };
   };
@@ -29,6 +32,7 @@ interface ResponsiveLayoutConfig {
     padding: {
       mobile: string;
       tablet: string;
+      laptop: string;
       desktop: string;
     };
   };
@@ -38,14 +42,16 @@ const DEFAULT_CONFIG: ResponsiveLayoutConfig = {
   sidebar: {
     isOpen: false,
     width: {
-      desktop: 280,
+      mobile: 280,
       tablet: 260,
-      mobile: 280
+      laptop: 280,
+      desktop: 320
     },
     variant: 'desktop',
     breakpoints: {
-      mobile: 768,
-      tablet: 1024,
+      mobile: 640,
+      tablet: 768,
+      laptop: 1024,
       desktop: 1280
     }
   },
@@ -61,15 +67,17 @@ const DEFAULT_CONFIG: ResponsiveLayoutConfig = {
     padding: {
       mobile: '1rem',
       tablet: '1.5rem',
+      laptop: '1.5rem',
       desktop: '2rem'
     }
   }
 };
 
 interface UseResponsiveLayoutReturn {
-  // Device detection
+  // Device detection - enhanced with laptop
   isMobile: boolean;
   isTablet: boolean;
+  isLaptop: boolean;
   isDesktop: boolean;
   
   // Sidebar state
@@ -93,26 +101,35 @@ interface UseResponsiveLayoutReturn {
 }
 
 export const useResponsiveLayout = (): UseResponsiveLayoutReturn => {
-  // Media queries for responsive breakpoints
-  const isMobile = useMediaQuery('(max-width: 767px)');
-  const isTablet = useMediaQuery('(min-width: 768px) and (max-width: 1023px)');
+  // Enhanced media queries for better breakpoint detection
+  const isMobile = useMediaQuery('(max-width: 639px)');
+  const isTablet = useMediaQuery('(min-width: 640px) and (max-width: 767px)');
+  const isLaptop = useMediaQuery('(min-width: 768px) and (max-width: 1023px)');
   const isDesktop = useMediaQuery('(min-width: 1024px)');
 
   // Persistent configuration
   const [config, setConfig] = useLocalStorage<ResponsiveLayoutConfig>('layout-config', DEFAULT_CONFIG);
   
-  // Sidebar state - different behavior for different screen sizes
+  // Enhanced sidebar state management
   const [sidebarOpen, setSidebarOpenState] = useState(() => {
-    // Desktop: open by default, remember state; others: closed by default
     if (typeof window !== 'undefined') {
-      const isDesktopQuery = window.matchMedia('(min-width: 1024px)').matches;
+      const isLargeScreen = window.matchMedia('(min-width: 1024px)').matches;
       const savedState = localStorage.getItem('sidebar-open');
-      return isDesktopQuery ? (savedState !== null ? savedState === 'true' : true) : false;
+      return isLargeScreen ? (savedState !== null ? savedState === 'true' : true) : false;
     }
-    return true; // Default to open for SSR
+    return true;
   });
 
-  // Ensure sidebar stays open on desktop after first load
+  // Auto-close sidebar on small screens when route changes
+  useEffect(() => {
+    if ((isMobile || isTablet) && sidebarOpen) {
+      const handlePopstate = () => setSidebarOpenState(false);
+      window.addEventListener('popstate', handlePopstate);
+      return () => window.removeEventListener('popstate', handlePopstate);
+    }
+  }, [isMobile, isTablet, sidebarOpen]);
+
+  // Maintain desktop sidebar state
   useEffect(() => {
     if (isDesktop && !sidebarOpen) {
       const savedState = localStorage.getItem('sidebar-open');
@@ -122,33 +139,21 @@ export const useResponsiveLayout = (): UseResponsiveLayoutReturn => {
     }
   }, [isDesktop]);
 
-  // Update sidebar open state in localStorage for desktop
+  // Update sidebar state in localStorage for large screens
   useEffect(() => {
-    if (isDesktop) {
+    if (isLaptop || isDesktop) {
       localStorage.setItem('sidebar-open', sidebarOpen.toString());
     }
-  }, [sidebarOpen, isDesktop]);
+  }, [sidebarOpen, isLaptop, isDesktop]);
 
-  // Auto-close sidebar on mobile when route changes
-  useEffect(() => {
-    if (isMobile && sidebarOpen) {
-      const handlePopstate = () => setSidebarOpenState(false);
-      window.addEventListener('popstate', handlePopstate);
-      return () => window.removeEventListener('popstate', handlePopstate);
-    }
-  }, [isMobile, sidebarOpen]);
-
-  // Controlled sidebar state setter
   const setSidebarOpen = useCallback((open: boolean) => {
     setSidebarOpenState(open);
   }, []);
 
-  // Toggle sidebar
   const toggleSidebar = useCallback(() => {
     setSidebarOpenState(prev => !prev);
   }, []);
 
-  // Update configuration
   const updateConfig = useCallback((updates: Partial<ResponsiveLayoutConfig>) => {
     setConfig(prev => ({
       ...prev,
@@ -156,38 +161,40 @@ export const useResponsiveLayout = (): UseResponsiveLayoutReturn => {
     }));
   }, [setConfig]);
 
-  // Calculate current sidebar width based on device with better responsive handling
+  // Enhanced sidebar width calculation
   const sidebarWidth = useMemo(() => {
-    if (isMobile) return Math.min(280, window.innerWidth * 0.85); // Max 85% of screen width
+    if (isMobile) return Math.min(280, window.innerWidth * 0.85);
     if (isTablet) return config.sidebar.width.tablet;
+    if (isLaptop) return config.sidebar.width.laptop;
     return config.sidebar.width.desktop;
-  }, [isMobile, isTablet, config.sidebar.width]);
+  }, [isMobile, isTablet, isLaptop, config.sidebar.width]);
 
-  // Calculate current header height
   const headerHeight = useMemo(() => {
     return isMobile ? config.header.height.mobile : config.header.height.desktop;
   }, [isMobile, config.header.height]);
 
-  // Calculate content padding
+  // Enhanced content padding
   const contentPadding = useMemo(() => {
     if (isMobile) return config.layout.padding.mobile;
     if (isTablet) return config.layout.padding.tablet;
+    if (isLaptop) return config.layout.padding.laptop;
     return config.layout.padding.desktop;
-  }, [isMobile, isTablet, config.layout.padding]);
+  }, [isMobile, isTablet, isLaptop, config.layout.padding]);
 
-  // Determine sidebar variant based on screen size
+  // Enhanced sidebar variant logic
   const sidebarVariant = useMemo((): ResponsiveLayoutConfig['sidebar']['variant'] => {
-    if (isMobile) return 'overlay';
-    if (isTablet) return 'over';
+    if (isMobile || isTablet) return 'overlay';
+    if (isLaptop) return 'push';
     return 'desktop';
-  }, [isMobile, isTablet]);
+  }, [isMobile, isTablet, isLaptop]);
 
-  // Utility function to get breakpoint classes
   const getBreakpointClass = useCallback((breakpoint: keyof ResponsiveLayoutConfig['sidebar']['breakpoints']) => {
     switch (breakpoint) {
       case 'mobile': 
-        return 'md:hidden';
+        return 'sm:hidden';
       case 'tablet': 
+        return 'hidden sm:block md:hidden';
+      case 'laptop': 
         return 'hidden md:block lg:hidden';
       case 'desktop': 
         return 'hidden lg:block';
@@ -196,24 +203,26 @@ export const useResponsiveLayout = (): UseResponsiveLayoutReturn => {
     }
   }, []);
 
-  // Check if current screen matches breakpoint
   const isBreakpoint = useCallback((breakpoint: keyof ResponsiveLayoutConfig['sidebar']['breakpoints']) => {
     switch (breakpoint) {
       case 'mobile': 
         return isMobile;
       case 'tablet': 
         return isTablet;
+      case 'laptop': 
+        return isLaptop;
       case 'desktop': 
         return isDesktop;
       default: 
         return false;
     }
-  }, [isMobile, isTablet, isDesktop]);
+  }, [isMobile, isTablet, isLaptop, isDesktop]);
 
   return {
-    // Device detection
+    // Enhanced device detection
     isMobile,
     isTablet,
+    isLaptop,
     isDesktop,
     
     // Sidebar state
