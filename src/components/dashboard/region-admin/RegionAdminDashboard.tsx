@@ -47,21 +47,21 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({
   // Display statistics for region admin dashboard
   const statsGridData = [
     {
-      title: t("dashboard.totalSchools") || "Ümumi məktəblər",
+      title: t("dashboard.stats.total_schools") || "Ümumi məktəblər",
       value: dashboardData.totalSchools || 0,
       icon: "school",
       color: "text-blue-600",
       description: t("schools") || "Məktəb",
     },
     {
-      title: t("dashboard.totalSectors") || "Ümumi sektorlar",
+      title: t("dashboard.stats.total_regions") || "Ümumi sektorlar",
       value: dashboardData.totalSectors || 0,
       icon: "layers", 
       color: "text-indigo-600",
       description: t("sectors") || "Sektor",
     },
     {
-      title: t("dashboard.pendingApprovals") || "Təsdiq gözləyənlər",
+      title: t("dashboard.stats.pending_approvals") || "Təsdiq gözləyənlər",
       value: dashboardData.pendingApprovals || 0,
       icon: "clock",
       color: "text-yellow-600",
