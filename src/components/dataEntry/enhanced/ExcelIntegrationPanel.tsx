@@ -37,7 +37,8 @@ const ExcelIntegrationPanel: React.FC<ExcelIntegrationPanelProps> = ({
     setIsOpen(!isOpen);
   };
   const { t } = useTranslation();
-  const { downloadTemplate, exportData, importFile, isProcessing } =
+  const [isImporting, setIsImporting] = useState(false);
+  const { downloadTemplate, exportData, importFile } =
     useExcelIntegration({
       category,
       data,
@@ -49,10 +50,13 @@ const ExcelIntegrationPanel: React.FC<ExcelIntegrationPanelProps> = ({
       if (!file) return;
 
       try {
+        setIsImporting(true);
         const importedData = await importFile(file);
         onImportComplete?.(importedData);
       } catch (error) {
         console.error("Import failed:", error);
+      } finally {
+        setIsImporting(false);
       }
 
       // Reset file input

@@ -54,22 +54,85 @@ export interface EnhancedDashboardData {
   formStats?: DashboardFormStats;
 }
 
-// Category progress tracking
+// Enhanced category progress with more details
 export interface CategoryProgress {
   id: string;
   name: string;
   progress: number;
-  status: string;
+  status: 'completed' | 'partial' | 'empty' | 'pending';
   completionRate: number;
+  deadline?: string;
+  columnCount?: number;
+  filledColumnCount?: number;
+  lastUpdated?: string;
 }
 
-// Column status tracking
+// Enhanced column status with more information
 export interface ColumnStatus {
   id: string;
   name: string;
-  status: string;
+  status: 'completed' | 'pending' | 'rejected' | 'empty';
   categoryId: string;
   categoryName: string;
+  type?: string;
+  isRequired?: boolean;
+  value?: string;
+  lastUpdated?: string;
+  error?: string;
+}
+
+// School specific dashboard data interface
+export interface SchoolDashboardData {
+  categories: CategoryProgress[];
+  columnStatuses: ColumnStatus[];
+  totalCategories: number;
+  completedCategories: number;
+  totalColumns: number;
+  filledColumns: number;
+  overallProgress: number;
+  pendingForms: number;
+  approvedForms: number;
+  rejectedForms: number;
+  recentActivity: RecentActivity[];
+  deadlines?: CategoryDeadline[];
+}
+
+// Recent activity tracking
+export interface RecentActivity {
+  id: string;
+  type: 'data_entry' | 'approval' | 'rejection' | 'update';
+  categoryName: string;
+  columnName?: string;
+  timestamp: string;
+  status: string;
+  description: string;
+}
+
+// Category deadline information
+export interface CategoryDeadline {
+  categoryId: string;
+  categoryName: string;
+  deadline: string;
+  daysRemaining: number;
+  isOverdue: boolean;
+  progress: number;
+}
+
+// Statistics card configuration for enhanced display
+export interface DashboardStatsConfig {
+  id: string;
+  title: string;
+  value: number | string;
+  description: string;
+  icon: any; // Lucide icon component
+  variant: 'default' | 'success' | 'warning' | 'danger' | 'primary';
+  trend?: {
+    value: number;
+    isPositive: boolean;
+    label?: string;
+  };
+  clickable?: boolean;
+  onClick?: () => void;
 }
 
 // SchoolStat interface - əlavə edildi

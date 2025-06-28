@@ -1,15 +1,7 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-
-interface ColumnStatus {
-  id: string;
-  name: string;
-  status: 'completed' | 'pending' | 'empty';
-  categoryId: string;
-  categoryName: string;
-}
+import { ColumnStatus } from '@/types/dashboard';
 
 interface ColumnStatusGridProps {
   columns: ColumnStatus[];
@@ -63,9 +55,10 @@ const ColumnStatusGrid: React.FC<ColumnStatusGridProps> = ({
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      completed: { variant: 'default' as const, label: 'Tamamlandı', className: 'bg-green-500' },
-      pending: { variant: 'secondary' as const, label: 'Gözləyir', className: 'bg-yellow-500' },
-      empty: { variant: 'outline' as const, label: 'Boş', className: '' }
+      completed: { variant: 'default' as const, label: 'Tamamlandı', className: 'bg-green-500 text-white' },
+      pending: { variant: 'secondary' as const, label: 'Gözləyir', className: 'bg-yellow-500 text-white' },
+      rejected: { variant: 'destructive' as const, label: 'Rədd edildi', className: 'bg-red-500 text-white' },
+      empty: { variant: 'outline' as const, label: 'Boş', className: 'border-gray-300' }
     };
     
     const config = statusConfig[status] || statusConfig.empty;
@@ -89,19 +82,24 @@ const ColumnStatusGrid: React.FC<ColumnStatusGridProps> = ({
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {Object.entries(groupedColumns).map(([categoryName, categoryColumns]) => (
-          <Card key={categoryName}>
+          <Card key={categoryName} className="hover:shadow-md transition-shadow">
             <CardHeader className="pb-3">
               <CardTitle className="text-base">{categoryName}</CardTitle>
+              <div className="text-sm text-muted-foreground">
+                {categoryColumns.length} sahə
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
                 {categoryColumns.map((column) => (
                   <div
                     key={column.id}
-                    className="flex items-center justify-between p-2 rounded hover:bg-gray-50 cursor-pointer"
+                    className="flex items-center justify-between p-2 rounded hover:bg-gray-50 cursor-pointer transition-colors"
                     onClick={() => onColumnClick?.(column.categoryId, column.id)}
                   >
-                    <span className="text-sm truncate flex-1">{column.name}</span>
+                    <span className="text-sm truncate flex-1 mr-2" title={column.name}>
+                      {column.name}
+                    </span>
                     {getStatusBadge(column.status)}
                   </div>
                 ))}
