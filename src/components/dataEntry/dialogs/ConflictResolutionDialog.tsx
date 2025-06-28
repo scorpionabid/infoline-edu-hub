@@ -54,9 +54,7 @@ interface ConflictResolutionDialogProps {
 
 type ResolutionStrategy = "local" | "server" | "merge" | "field-by-field";
 
-export const ConflictResolutionDialog: React.FC<
-  // ConflictResolutionDialogProps
-> = ({
+export const ConflictResolutionDialog: React.FC<ConflictResolutionDialogProps> = ({
   open,
   onOpenChange,
   conflicts,
@@ -116,13 +114,13 @@ export const ConflictResolutionDialog: React.FC<
 
   const getResolutionColor = (strategy: ResolutionStrategy): string => {
     switch (strategy) {
-      case "local": {
+      case "local":
         return "bg-blue-50 border-blue-200";
-      case "server": {
+      case "server":
         return "bg-green-50 border-green-200";
-      case "merge": {
+      case "merge":
         return "bg-purple-50 border-purple-200";
-      case "field-by-field": {
+      case "field-by-field":
         return "bg-orange-50 border-orange-200";
       default:
         return "bg-gray-50 border-gray-200";

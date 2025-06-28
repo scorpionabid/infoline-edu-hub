@@ -22,7 +22,7 @@ import {
   Loader2,
   AlertCircle,
   Building2,
-  // Users
+  Users
 } from 'lucide-react';
 import { Category, Column, SchoolDataEntry, DataStats, DataManagementPermissions } from '@/hooks/dataManagement/useDataManagement';
 

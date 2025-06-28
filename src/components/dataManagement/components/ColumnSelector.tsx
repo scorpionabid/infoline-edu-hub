@@ -40,7 +40,7 @@ export const ColumnSelector: React.FC<ColumnSelectorProps> = memo(({
   columns,
   loading,
   onColumnSelect,
-  // onBack
+  onBack
 }) => {
   if (loading) {
     return (

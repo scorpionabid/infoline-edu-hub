@@ -68,7 +68,7 @@ const EnhancedFormField: React.FC<EnhancedFormFieldProps> = ({
   warning,
   isValidating = false,
   showValidationIcons = true,
-  // className
+  className
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -116,13 +116,13 @@ const EnhancedFormField: React.FC<EnhancedFormFieldProps> = ({
     const iconClass = "h-4 w-4";
     
     switch (status) {
-      case 'validating': {
+      case 'validating':
         return <Clock className={cn(iconClass, "animate-spin text-blue-500")} />;
-      case 'error': {
+      case 'error':
         return <AlertCircle className={cn(iconClass, "text-red-500")} />;
-      case 'warning': {
+      case 'warning':
         return <AlertCircle className={cn(iconClass, "text-yellow-500")} />;
-      case 'success': {
+      case 'success':
         return <CheckCircle2 className={cn(iconClass, "text-green-500")} />;
       default:
         return null;
@@ -136,18 +136,18 @@ const EnhancedFormField: React.FC<EnhancedFormFieldProps> = ({
     
     let statusClass = "";
     switch (status) {
-      case 'error': {
+      case 'error':
         statusClass = "border-red-500 focus:border-red-500 focus:ring-red-500";
-        break; }
-      case 'warning': {
+        break;
+      case 'warning':
         statusClass = "border-yellow-500 focus:border-yellow-500 focus:ring-yellow-500";
-        break; }
-      case 'success': {
+        break;
+      case 'success':
         statusClass = "border-green-500 focus:border-green-500 focus:ring-green-500";
-        break; }
-      case 'validating': {
+        break;
+      case 'validating':
         statusClass = "border-blue-500 focus:border-blue-500 focus:ring-blue-500";
-        break; }
+        break;
       default:
         statusClass = "border-input focus:border-primary focus:ring-primary";
     }
@@ -162,10 +162,10 @@ const EnhancedFormField: React.FC<EnhancedFormFieldProps> = ({
   // Render field based on type
   const renderField = () => {
     switch (fieldType) {
-      case 'text': {
-      case 'email': {
-      case 'url': {
-      case 'phone': {
+      case 'text':
+      case 'email':
+      case 'url':
+      case 'phone':
         return (
           <div className="relative">
             <Input
@@ -192,7 +192,7 @@ const EnhancedFormField: React.FC<EnhancedFormFieldProps> = ({
           </div>
         );
         
-      case 'password': {
+      case 'password':
         return (
           <div className="relative">
             <Input
@@ -225,7 +225,7 @@ const EnhancedFormField: React.FC<EnhancedFormFieldProps> = ({
           </div>
         );
 
-      case 'number': {
+      case 'number':
         return (
           <div className="relative">
             <Input
@@ -255,7 +255,7 @@ const EnhancedFormField: React.FC<EnhancedFormFieldProps> = ({
           </div>
         );
 
-      case 'textarea': {
+      case 'textarea':
         return (
           <div className="relative">
             <Textarea
@@ -282,7 +282,7 @@ const EnhancedFormField: React.FC<EnhancedFormFieldProps> = ({
           </div>
         );
 
-      case 'select': {
+      case 'select':
         const selectOptions = fieldOptions;
         const validOptions = selectOptions
           .filter((option: any) => {
@@ -344,7 +344,7 @@ const EnhancedFormField: React.FC<EnhancedFormFieldProps> = ({
           </div>
         );
 
-      case 'checkbox': {
+      case 'checkbox':
         return (
           <div className="flex items-center space-x-3">
             <Checkbox
@@ -376,7 +376,7 @@ const EnhancedFormField: React.FC<EnhancedFormFieldProps> = ({
           </div>
         );
 
-      case 'radio': {
+      case 'radio':
         const radioOptions = fieldOptions || [];
         return (
           <RadioGroup
@@ -406,7 +406,7 @@ const EnhancedFormField: React.FC<EnhancedFormFieldProps> = ({
           </RadioGroup>
         );
 
-      case 'date': {
+      case 'date':
         return (
           <div className="relative">
             <Input
@@ -432,7 +432,7 @@ const EnhancedFormField: React.FC<EnhancedFormFieldProps> = ({
           </div>
         );
 
-      case 'time': {
+      case 'time':
         return (
           <div className="relative">
             <Input

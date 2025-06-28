@@ -27,7 +27,7 @@ export async function fetchUserProfile(userId: string): Promise<{
       console.log('💬 [Auth] Sending profile fetch request...');
       
       // First try - fetch profile
-      let profileResult = await supabase
+      const profileResult = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
