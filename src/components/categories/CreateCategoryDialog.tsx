@@ -1,92 +1,111 @@
 
 import React, { useState } from 'react';
-import { useTranslation } from '@/contexts/TranslationContext';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { useCreateCategory } from '@/hooks/categories/useCreateCategory';
+import { useTranslation } from '@/contexts/TranslationContext';
+import { toast } from 'sonner';
 
 interface CreateCategoryDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSubmit: (data: { name: string; description?: string }) => Promise<void>;
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess?: () => void;
 }
 
 export const CreateCategoryDialog: React.FC<CreateCategoryDialogProps> = ({
-  open,
-  onOpenChange,
-  // onSubmit
+  isOpen,
+  onClose,
+  onSuccess,
 }) => {
   const { t } = useTranslation();
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { createCategory, isLoading } = useCreateCategory();
+  
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    
+    if (!formData.name.trim()) {
+      toast.error(t('categoryNameRequired'));
+      return;
+    }
 
-    setIsSubmitting(true);
     try {
-      await onSubmit({ name: name.trim(), description: description.trim() || undefined });
-      setName('');
-      setDescription('');
-      onOpenChange(false);
+      await createCategory({
+        name: formData.name.trim(),
+        description: formData.description.trim() || null,
+      });
+      
+      toast.success(t('categoryCreatedSuccessfully'));
+      handleClose();
+      onSuccess?.();
     } catch (error) {
-      console.error('Error creating category:', error);
-    } finally {
-      setIsSubmitting(false);
+      console.error('Create category error:', error);
+      toast.error(t('categoryCreateError'));
     }
   };
 
+  const handleClose = () => {
+    setFormData({ name: '', description: '' });
+    onClose();
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{t('categories.create_category')}</DialogTitle>
-          <DialogDescription>
-            {t('categories.create_category_description')}
-          </DialogDescription>
+          <DialogTitle>{t('createCategory')}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
-                {t('general.name')}
-              </Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="col-span-3"
-                // required
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="description" className="text-right">
-                {t('general.description')}
-              </Label>
-              <Input
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="col-span-3"
-              />
-            </div>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="categoryName">{t('categoryName')}</Label>
+            <Input
+              id="categoryName"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              placeholder={t('enterCategoryName')}
+              required
+            />
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              {t('ui.cancel')}
+          
+          <div className="space-y-2">
+            <Label htmlFor="categoryDescription">{t('description')}</Label>
+            <Textarea
+              id="categoryDescription"
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              placeholder={t('enterCategoryDescription')}
+              rows={3}
+            />
+          </div>
+          
+          <DialogFooter className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleClose}
+            >
+              {t('cancel')}
             </Button>
-            <Button type="submit" disabled={isSubmitting || !name.trim()}>
-              {isSubmitting ? t('ui.creating') : t('ui.create')}
+            
+            <Button 
+              type="submit" 
+              disabled={isLoading || !formData.name.trim()}
+            >
+              {isLoading ? t('creating') : t('create')}
             </Button>
           </DialogFooter>
         </form>
