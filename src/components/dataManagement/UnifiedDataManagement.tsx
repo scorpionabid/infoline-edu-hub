@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -9,7 +9,6 @@ import { Badge } from '@/components/ui/badge';
 import { 
   ArrowLeft, 
   Database,
-  Grid3X3,
   RefreshCw,
   AlertCircle,
   CheckCircle,
@@ -88,7 +87,7 @@ const UnifiedDataManagement: React.FC<UnifiedDataManagementProps> = ({
     
     // Utilities
     refreshData,
-    // clearError
+    clearError
   } = useDataManagement();
 
   // Filter school data for preselected school

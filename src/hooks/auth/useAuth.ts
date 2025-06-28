@@ -4,7 +4,7 @@
 // Bu fayl komponentlər üçün əlverişli auth hook təmin edir
 
 import { useEffect, useState, useCallback } from 'react';
-import { useAuthStore } from './authStore';
+import { useAuthStore } from './useAuthStore';
 
 /**
  * Komponentlərdə auth statusunu izləmək üçün istifadə edilən hook
@@ -12,6 +12,7 @@ import { useAuthStore } from './authStore';
  */
 export const useAuth = () => {
   const user = useAuthStore(state => state.user);
+  const userRole = user?.role ? { role: user.role, region_id: user.region_id, sector_id: user.sector_id, school_id: user.school_id } : null;
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
   const isLoading = useAuthStore(state => state.isLoading);
   const error = useAuthStore(state => state.error);
@@ -76,6 +77,7 @@ export const useAuth = () => {
   
   return {
     user,
+    userRole,
     isAuthenticated,
     isLoading: isLoading || formStatus.isSubmitting,
     error: error || formStatus.formError,

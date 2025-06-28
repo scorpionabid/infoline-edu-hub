@@ -10,7 +10,7 @@ import {
   Database,
   Building2,
   AlertCircle,
-  // FileText
+  FileText
 } from 'lucide-react';
 import { Category, Column } from '@/hooks/dataManagement/useDataManagement';
 
@@ -106,7 +106,7 @@ export const ColumnSelector: React.FC<ColumnSelectorProps> = memo(({
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="sm" onClick={onBack}>
           <ArrowLeft className="h-4 w-4 mr-2" />
-          // Geri
+          Geri
         </Button>
         <div>
           <h3 className="text-2xl font-bold">Sütun Seçimi</h3>
@@ -213,18 +213,18 @@ export const ColumnSelector: React.FC<ColumnSelectorProps> = memo(({
                   </div>
                 )}
                 
-                {column.options && column.options.length > 0 && (
+                {column.options && Array.isArray(column.options) && column.options.length > 0 && (
                   <div className="mt-3">
                     <div className="text-xs text-muted-foreground mb-2">Seçimlər:</div>
                     <div className="flex flex-wrap gap-1">
-                      {column.options.slice(0, 5).map((option: any, index: number) => (
+                      {(column.options || []).slice(0, 5).map((option: any, index: number) => (
                         <Badge key={index} variant="outline" className="text-xs">
                           {option.label || option.value || option}
                         </Badge>
                       ))}
-                      {column.options.length > 5 && (
+                      {(column.options || []).length > 5 && (
                         <Badge variant="outline" className="text-xs">
-                          +{column.options.length - 5} daha
+                          +{(column.options || []).length - 5} daha
                         </Badge>
                       )}
                     </div>

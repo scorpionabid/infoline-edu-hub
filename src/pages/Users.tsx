@@ -1,7 +1,8 @@
 
 import React, { useState, useCallback, useEffect } from "react";
-import UserList from "@/components/users/UserList";
+import UserListTable from "@/components/users/UserListTable";
 import UserHeader from "@/components/users/UserHeader";
+import { Loader2 } from "lucide-react";
 import { useAuthStore, selectUser } from "@/hooks/auth/useAuthStore";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "@/contexts/TranslationContext";
@@ -117,22 +118,46 @@ const Users = () => {
           }}
         />
 
-        <UserList
-          users={users}
-          isLoading={loading}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={handlePageChange}
-          onEditUser={(user: FullUserData) => {
-            console.log("Edit user:", user);
-          }}
-          onDeleteUser={(user: FullUserData) => {
-            console.log("Delete user:", user);
-          }}
-          onSearch={(query: string) => {
-            handleFilterChange({ search: query });
-          }}
-        />
+        {loading ? (
+          <div className="flex justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          <div className="bg-white rounded-md">
+            <UserListTable
+              users={users}
+              currentUserRole={user?.role || 'schooladmin'}
+              onEdit={(user: FullUserData) => {
+                console.log("Edit user:", user);
+              }}
+              onDelete={(user: FullUserData) => {
+                console.log("Delete user:", user);
+              }}
+              onViewDetails={(user: FullUserData) => {
+                console.log("View user details:", user);
+              }}
+            />
+            {totalPages > 1 && (
+              <div className="flex justify-center py-4">
+                {/* Burada səhifələmə komponentini əlavə edə bilərsiniz */}
+                <div className="flex space-x-2">
+                  {Array.from({ length: totalPages }).map((_, i) => (
+                    <button
+                      key={i}
+                      className={`px-3 py-1 rounded-md ${currentPage === i + 1
+                        ? "bg-primary text-white"
+                        : "bg-muted hover:bg-muted/80"
+                        }`}
+                      onClick={() => handlePageChange(i + 1)}
+                    >
+                      {i + 1}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </>
   );

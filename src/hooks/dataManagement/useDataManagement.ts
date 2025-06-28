@@ -1,5 +1,8 @@
 
 import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/auth/useAuth';
 
 export interface Category {
   id: string;
@@ -65,7 +68,32 @@ export interface DataManagementPermissions {
 export type DataManagementStep = 'category' | 'column' | 'data';
 
 export const useDataManagement = () => {
-  const [categories, setCategories] = useState<Category[]>([]);
+  const { user, userRole } = useAuth();
+  
+  // React Query for categories
+  const {
+    data: categories = [],
+    isLoading: categoriesLoading,
+    error: categoriesError
+  } = useQuery({
+    queryKey: ['categories'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('status', 'active')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Categories query error:', error);
+        throw error;
+      }
+      return data as Category[];
+    },
+    retry: 1,
+    refetchOnWindowFocus: false
+  });
+  
   const [columns, setColumns] = useState<Column[]>([]);
   const [schoolData, setSchoolData] = useState<SchoolDataEntry[]>([]);
   const [stats, setStats] = useState<DataStats>({
@@ -84,79 +112,44 @@ export const useDataManagement = () => {
   const [currentStep, setCurrentStep] = useState<DataManagementStep>('category');
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [selectedColumn, setSelectedColumn] = useState<Column | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(categoriesError?.message || null);
 
   // Loading states
   const [loading, setLoading] = useState({
-    categories: true,
+    categories: categoriesLoading,
     columns: false,
     schoolData: false,
     saving: false
   });
 
-  // Mock permissions - should come from auth context
+  // Real permissions from auth context
   const permissions: DataManagementPermissions = {
-    canApprove: true,
+    canApprove: userRole?.role === 'superadmin' || userRole?.role === 'regionadmin' || userRole?.role === 'sectoradmin',
     canEdit: true,
-    canViewAll: true,
-    role: 'sectoradmin',
-    sectorId: 'sector-1',
-    regionId: 'region-1'
+    canViewAll: userRole?.role === 'superadmin' || userRole?.role === 'regionadmin',
+    role: userRole?.role || 'schooladmin',
+    sectorId: userRole?.sector_id,
+    regionId: userRole?.region_id
   };
 
-  const loadCategories = async () => {
-    try {
-      setLoading(prev => ({ ...prev, categories: true }));
-      // Mock data
-      const mockCategories: Category[] = [
-        {
-          id: '1',
-          name: 'Ümumi Məlumatlar',
-          description: 'Məktəbin ümumi məlumatları',
-          assignment: 'all',
-          completion_rate: 85,
-          status: 'active',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        },
-        {
-          id: '2',
-          name: 'Sektor Məlumatları',
-          description: 'Sektor səviyyəsində məlumatlar',
-          assignment: 'sectors',
-          completion_rate: 60,
-          status: 'active',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-      ];
-      setCategories(mockCategories);
-    } catch (error) {
-      console.error('Error loading categories:', error);
-      setError('Kateqoriyaları yükləyərkən xəta baş verdi');
-    } finally {
-      setLoading(prev => ({ ...prev, categories: false }));
-    }
-  };
+
 
   const loadColumns = async (categoryId: string) => {
     try {
       setLoading(prev => ({ ...prev, columns: true }));
-      // Mock data
-      const mockColumns: Column[] = [
-        {
-          id: '1',
-          category_id: categoryId,
-          name: 'Məktəb Adı',
-          type: 'text',
-          is_required: true,
-          order_index: 1,
-          status: 'active',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-      ];
-      setColumns(mockColumns);
+      
+      const { data, error } = await supabase
+        .from('columns')
+        .select('*')
+        .eq('category_id', categoryId)
+        .eq('status', 'active')
+        .order('order_index', { ascending: true });
+      
+      if (error) {
+        throw error;
+      }
+      
+      setColumns(data || []);
     } catch (error) {
       console.error('Error loading columns:', error);
       setError('Sütunları yükləyərkən xəta baş verdi');
@@ -165,35 +158,98 @@ export const useDataManagement = () => {
     }
   };
 
-  const loadSchoolData = async (categoryId: string) => {
+  const loadSchoolData = async (categoryId: string, columnId?: string) => {
     try {
       setLoading(prev => ({ ...prev, schoolData: true }));
-      // Mock data
-      const mockData: SchoolDataEntry[] = [
-        {
-          id: '1',
-          school_id: 'school-1',
-          school_name: 'Test Məktəbi',
-          category_id: categoryId,
-          column_id: '1',
-          value: 'Test Məktəbi',
-          status: 'approved',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-      ];
-      setSchoolData(mockData);
       
-      // Update stats
+      // Get schools based on user role
+      let schoolsQuery = supabase
+        .from('schools')
+        .select(`
+          id,
+          name,
+          region_id,
+          sector_id
+        `);
+      
+      // Apply role-based filtering
+      if (permissions.role === 'sectoradmin' && permissions.sectorId) {
+        schoolsQuery = schoolsQuery.eq('sector_id', permissions.sectorId);
+      } else if (permissions.role === 'regionadmin' && permissions.regionId) {
+        schoolsQuery = schoolsQuery.eq('region_id', permissions.regionId);
+      } else if (permissions.role === 'schooladmin' && user?.id) {
+        // Get school_id from user_roles
+        const { data: userRole } = await supabase
+          .from('user_roles')
+          .select('school_id')
+          .eq('user_id', user.id)
+          .eq('role', 'schooladmin')
+          .single();
+        
+        if (userRole?.school_id) {
+          schoolsQuery = schoolsQuery.eq('id', userRole.school_id);
+        }
+      }
+      
+      const { data: schools, error: schoolsError } = await schoolsQuery;
+      
+      if (schoolsError) {
+        throw schoolsError;
+      }
+      
+      // Get data entries if column is selected
+      let dataEntries: any[] = [];
+      if (columnId && schools) {
+        const { data, error } = await supabase
+          .from('data_entries')
+          .select('*')
+          .eq('category_id', categoryId)
+          .eq('column_id', columnId)
+          .in('school_id', schools.map(s => s.id));
+        
+        if (error) {
+          console.error('Error loading data entries:', error);
+        } else {
+          dataEntries = data || [];
+        }
+      }
+      
+      // Combine schools with their data
+      const schoolDataEntries: SchoolDataEntry[] = (schools || []).map(school => {
+        const entry = dataEntries.find(e => e.school_id === school.id);
+        return {
+          id: entry?.id || `temp-${school.id}`,
+          school_id: school.id,
+          school_name: school.name,
+          category_id: categoryId,
+          column_id: columnId || '',
+          value: entry?.value || '',
+          status: entry?.status || 'empty',
+          created_at: entry?.created_at || new Date().toISOString(),
+          updated_at: entry?.updated_at || new Date().toISOString()
+        };
+      });
+      
+      setSchoolData(schoolDataEntries);
+      
+      // Calculate stats
+      const totalSchools = schoolDataEntries.length;
+      const pendingCount = schoolDataEntries.filter(s => s.status === 'pending').length;
+      const approvedCount = schoolDataEntries.filter(s => s.status === 'approved').length;
+      const rejectedCount = schoolDataEntries.filter(s => s.status === 'rejected').length;
+      const emptyCount = schoolDataEntries.filter(s => s.status === 'empty').length;
+      const completionRate = totalSchools > 0 ? Math.round(((approvedCount + pendingCount) / totalSchools) * 100) : 0;
+      
       setStats(prev => ({
         ...prev,
-        totalSchools: 1,
-        approvedCount: 1,
-        pendingCount: 0,
-        rejectedCount: 0,
-        emptyCount: 0,
-        completionRate: 100
+        totalSchools,
+        pendingCount,
+        approvedCount,
+        rejectedCount,
+        emptyCount,
+        completionRate
       }));
+      
     } catch (error) {
       console.error('Error loading school data:', error);
       setError('Məktəb məlumatlarını yükləyərkən xəta baş verdi');
@@ -226,17 +282,60 @@ export const useDataManagement = () => {
   const handleColumnSelect = async (column: Column) => {
     setSelectedColumn(column);
     setCurrentStep('data');
-    await loadSchoolData(column.category_id);
+    await loadSchoolData(column.category_id, column.id);
   };
 
   // Data management handlers - Updated signatures to match SchoolDataGrid expectations
   const handleDataSave = async (schoolId: string, value: string): Promise<boolean> => {
     setLoading(prev => ({ ...prev, saving: true }));
     try {
-      // Mock save
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log('Data saved:', schoolId, value);
+      if (!selectedColumn || !selectedCategory) {
+        throw new Error('Kateqoriya və ya sütun seçilməyib');
+      }
+      
+      // Check if entry exists
+      const { data: existingEntry } = await supabase
+        .from('data_entries')
+        .select('id')
+        .eq('school_id', schoolId)
+        .eq('category_id', selectedCategory.id)
+        .eq('column_id', selectedColumn.id)
+        .single();
+      
+      if (existingEntry) {
+        // Update existing entry
+        const { error } = await supabase
+          .from('data_entries')
+          .update({
+            value,
+            status: 'pending',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingEntry.id);
+        
+        if (error) throw error;
+      } else {
+        // Create new entry
+        const { error } = await supabase
+          .from('data_entries')
+          .insert({
+            school_id: schoolId,
+            category_id: selectedCategory.id,
+            column_id: selectedColumn.id,
+            value,
+            status: 'pending',
+            created_by: user?.id,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+        
+        if (error) throw error;
+      }
+      
+      // Refresh data
+      await loadSchoolData(selectedCategory.id, selectedColumn.id);
       return true;
+      
     } catch (error) {
       console.error('Error saving data:', error);
       return false;
@@ -247,7 +346,26 @@ export const useDataManagement = () => {
 
   const handleDataApprove = async (schoolId: string, comment?: string): Promise<boolean> => {
     try {
-      console.log('Approving entry:', schoolId, comment);
+      if (!selectedColumn || !selectedCategory) {
+        throw new Error('Kateqoriya və ya sütun seçilməyib');
+      }
+      
+      const { error } = await supabase
+        .from('data_entries')
+        .update({
+          status: 'approved',
+          approved_by: user?.id,
+          approved_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('school_id', schoolId)
+        .eq('category_id', selectedCategory.id)
+        .eq('column_id', selectedColumn.id);
+      
+      if (error) throw error;
+      
+      // Refresh data
+      await loadSchoolData(selectedCategory.id, selectedColumn.id);
       return true;
     } catch (error) {
       console.error('Error approving data:', error);
@@ -257,7 +375,26 @@ export const useDataManagement = () => {
 
   const handleDataReject = async (schoolId: string, reason: string, comment?: string): Promise<boolean> => {
     try {
-      console.log('Rejecting entry:', schoolId, reason, comment);
+      if (!selectedColumn || !selectedCategory) {
+        throw new Error('Kateqoriya və ya sütun seçilməyib');
+      }
+      
+      const { error } = await supabase
+        .from('data_entries')
+        .update({
+          status: 'rejected',
+          rejected_by: user?.id,
+          rejection_reason: reason,
+          updated_at: new Date().toISOString()
+        })
+        .eq('school_id', schoolId)
+        .eq('category_id', selectedCategory.id)
+        .eq('column_id', selectedColumn.id);
+      
+      if (error) throw error;
+      
+      // Refresh data
+      await loadSchoolData(selectedCategory.id, selectedColumn.id);
       return true;
     } catch (error) {
       console.error('Error rejecting data:', error);
@@ -290,20 +427,33 @@ export const useDataManagement = () => {
     if (selectedCategory) {
       await loadColumns(selectedCategory.id);
       if (selectedColumn) {
-        await loadSchoolData(selectedCategory.id);
+        await loadSchoolData(selectedCategory.id, selectedColumn.id);
       }
-    } else {
-      await loadCategories();
     }
+    // Categories are handled by React Query automatically
   };
 
   const clearError = () => {
     setError(null);
   };
 
+  // Categories are loaded via React Query automatically
+  
+  // Update loading state when categories loading changes
   useEffect(() => {
-    loadCategories();
-  }, []);
+    setLoading(prev => ({ ...prev, categories: categoriesLoading }));
+  }, [categoriesLoading]);
+  
+  // Update error when categories error changes
+  useEffect(() => {
+    if (categoriesError) {
+      console.error('Categories error details:', categoriesError);
+      const errorMessage = categoriesError.message || 'Kateqoriyaları yükləyərkən xəta baş verdi';
+      setError(errorMessage);
+    } else {
+      setError(null);
+    }
+  }, [categoriesError]);
 
   return {
     // State
@@ -340,7 +490,6 @@ export const useDataManagement = () => {
     clearError,
     loadColumns,
     loadSchoolData,
-    saveData: handleDataSave,
-    refreshCategories: loadCategories
+    saveData: handleDataSave
   };
 };

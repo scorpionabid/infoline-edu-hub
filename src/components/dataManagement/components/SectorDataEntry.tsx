@@ -12,7 +12,7 @@ import {
   Database, 
   Loader2, 
   AlertCircle,
-  // CheckCircle
+  CheckCircle
 } from 'lucide-react';
 import { Category, Column } from '@/hooks/dataManagement/useDataManagement';
 import { toast } from 'sonner';
@@ -50,7 +50,7 @@ export const SectorDataEntry: React.FC<SectorDataEntryProps> = ({
   onDataSave,
   onBack,
   loading = false,
-  // permissions
+  permissions
 }) => {
   const [sectorValue, setSectorValue] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -163,7 +163,7 @@ export const SectorDataEntry: React.FC<SectorDataEntryProps> = ({
           {...commonProps}
         />
       );
-    } else if (column.type === 'select' && column.options && column.options.length > 0) {
+    } else if (column.type === 'select' && column.options && Array.isArray(column.options) && column.options.length > 0) {
       return (
         <Select 
           value={sectorValue} 
@@ -174,7 +174,7 @@ export const SectorDataEntry: React.FC<SectorDataEntryProps> = ({
             <SelectValue placeholder="Seçim edin..." />
           </SelectTrigger>
           <SelectContent>
-            {column.options.map((option: any, index: number) => {
+            {(column.options || []).map((option: any, index: number) => {
               const value = option.value || option;
               const label = option.label || option.value || option;
               return (
@@ -238,7 +238,7 @@ export const SectorDataEntry: React.FC<SectorDataEntryProps> = ({
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" onClick={onBack}>
             <ArrowLeft className="h-4 w-4 mr-2" />
-            // Geri
+            Geri
           </Button>
           <div>
             <h3 className="text-2xl font-bold">Sektor Məlumatı</h3>
@@ -263,7 +263,7 @@ export const SectorDataEntry: React.FC<SectorDataEntryProps> = ({
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="sm" onClick={onBack}>
           <ArrowLeft className="h-4 w-4 mr-2" />
-          // Geri
+          Geri
         </Button>
         <div>
           <h3 className="text-2xl font-bold flex items-center gap-2">
@@ -376,7 +376,7 @@ export const SectorDataEntry: React.FC<SectorDataEntryProps> = ({
               ) : (
                 <>
                   <Save className="h-4 w-4 mr-2" />
-                  // Saxla
+                  Saxla
                 </>
               )}
             </Button>
