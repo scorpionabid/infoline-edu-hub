@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -9,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Filter } from 'lucide-react';
+import { Search, Filter, RotateCcw } from 'lucide-react';
 import { FilterState } from '@/hooks/reports/useSchoolColumnFilters';
 
 interface SchoolColumnFiltersProps {
@@ -41,34 +42,41 @@ const SchoolColumnFilters: React.FC<SchoolColumnFiltersProps> = ({
   permissions
 }) => {
   return (
-    <div className="space-y-4">
-      {/* Top row: Basic filters */}
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
-        {/* Search Input */}
-        <div className="col-span-1 md:col-span-2">
-          <Label htmlFor="search">Məktəb Axtar:</Label>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              id="search"
-              type="search"
-              placeholder="Məktəb adı ilə axtar..."
-              value={filters.searchQuery}
-              onChange={(e) => onFilterChange('searchQuery', e.target.value)}
-              className="pl-9"
-            />
-          </div>
+    <div className="space-y-6">
+      {/* Search Section */}
+      <div className="space-y-2">
+        <Label htmlFor="search" className="text-sm font-medium">
+          Məktəb Axtar:
+        </Label>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
+          <Input
+            id="search"
+            type="search"
+            placeholder="Məktəb adı ilə axtar..."
+            value={filters.searchQuery}
+            onChange={(e) => onFilterChange('searchQuery', e.target.value)}
+            className="pl-10 w-full"
+          />
         </div>
+      </div>
 
+      {/* Filters Grid - Responsive */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {/* Region Filter */}
         {!permissions?.restrictions.region_id && (
-          <div>
-            <Label htmlFor="region">Region:</Label>
-            <Select value={filters.selectedRegion} onValueChange={(value) => onFilterChange('selectedRegion', value)}>
-              <SelectTrigger id="region">
+          <div className="space-y-2">
+            <Label htmlFor="region" className="text-sm font-medium">
+              Region:
+            </Label>
+            <Select 
+              value={filters.selectedRegion} 
+              onValueChange={(value) => onFilterChange('selectedRegion', value)}
+            >
+              <SelectTrigger id="region" className="w-full">
                 <SelectValue placeholder="Bütün Regionlar" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-50">
                 <SelectItem value="all">Bütün Regionlar</SelectItem>
                 {regions.map((region: any) => (
                   <SelectItem key={region.id} value={region.id}>
@@ -82,13 +90,18 @@ const SchoolColumnFilters: React.FC<SchoolColumnFiltersProps> = ({
 
         {/* Sector Filter */}
         {!permissions?.restrictions.sector_id && (
-          <div>
-            <Label htmlFor="sector">Sektor:</Label>
-            <Select value={filters.selectedSector} onValueChange={(value) => onFilterChange('selectedSector', value)}>
-              <SelectTrigger id="sector">
+          <div className="space-y-2">
+            <Label htmlFor="sector" className="text-sm font-medium">
+              Sektor:
+            </Label>
+            <Select 
+              value={filters.selectedSector} 
+              onValueChange={(value) => onFilterChange('selectedSector', value)}
+            >
+              <SelectTrigger id="sector" className="w-full">
                 <SelectValue placeholder="Bütün Sektorlar" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-50">
                 <SelectItem value="all">Bütün Sektorlar</SelectItem>
                 {sectors
                   .filter((sector: any) => 
@@ -106,17 +119,20 @@ const SchoolColumnFilters: React.FC<SchoolColumnFiltersProps> = ({
             </Select>
           </div>
         )}
-      </div>
 
-      {/* Second row: Category selection, Page Size and Reset button */}
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-4">
-        <div>
-          <Label htmlFor="category">Kateqoriya:</Label>
-          <Select value={filters.selectedCategory} onValueChange={(value) => onFilterChange('selectedCategory', value)}>
-            <SelectTrigger id="category">
-              <SelectValue placeholder="Kateqoriya seçin" />
+        {/* Category Filter */}
+        <div className="space-y-2">
+          <Label htmlFor="category" className="text-sm font-medium">
+            Kateqoriya:
+          </Label>
+          <Select 
+            value={filters.selectedCategory} 
+            onValueChange={(value) => onFilterChange('selectedCategory', value)}
+          >
+            <SelectTrigger id="category" className="w-full">
+              <SelectValue placeholder="Kateqoriya Seçin" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="z-50">
               <SelectItem value="all">Bütün Kateqoriyalar</SelectItem>
               {categories.map((category: any) => (
                 <SelectItem key={category.id} value={category.id}>
@@ -126,33 +142,39 @@ const SchoolColumnFilters: React.FC<SchoolColumnFiltersProps> = ({
             </SelectContent>
           </Select>
         </div>
-        
-        {/* Page Size Selector */}
-        <div>
-          <Label htmlFor="pageSize">Səhifə ölçüsü:</Label>
-          <Select value={pageSize.toString()} onValueChange={(value) => onPageSizeChange(Number(value))}>
-            <SelectTrigger id="pageSize">
+
+        {/* Page Size */}
+        <div className="space-y-2">
+          <Label htmlFor="pageSize" className="text-sm font-medium">
+            Səhifə Ölçüsü:
+          </Label>
+          <Select 
+            value={pageSize.toString()} 
+            onValueChange={(value) => onPageSizeChange(parseInt(value))}
+          >
+            <SelectTrigger id="pageSize" className="w-full">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="10">10 məktəb</SelectItem>
-              <SelectItem value="25">25 məktəb</SelectItem>
-              <SelectItem value="50">50 məktəb</SelectItem>
-              <SelectItem value="100">100 məktəb</SelectItem>
+            <SelectContent className="z-50">
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="25">25</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+              <SelectItem value="100">100</SelectItem>
             </SelectContent>
           </Select>
         </div>
-        
-        {/* Reset Button */}
-        <div className="flex items-end">
-          <Button 
-            variant="outline" 
-            onClick={onResetFilters}
-            className="w-full"
-          >
-            Filtrləri Sıfırla
-          </Button>
-        </div>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t">
+        <Button 
+          onClick={onResetFilters} 
+          variant="outline" 
+          className="w-full sm:w-auto"
+        >
+          <RotateCcw className="h-4 w-4 mr-2" />
+          Filtrleri Sıfırla
+        </Button>
       </div>
     </div>
   );

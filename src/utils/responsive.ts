@@ -1,43 +1,89 @@
 
-// Responsive utilities
+// Enhanced responsive utilities
 export const getResponsiveValue = <T>(values: {
   mobile?: T;
   tablet?: T;
+  laptop?: T;
   desktop?: T;
   default: T;
-}, currentBreakpoint: 'mobile' | 'tablet' | 'desktop'): T => {
+}, currentBreakpoint: 'mobile' | 'tablet' | 'laptop' | 'desktop'): T => {
   return values[currentBreakpoint] ?? values.default;
 };
 
-// Touch target utilities
+// Touch target utilities - Apple/Google standards
 export const ensureTouchTarget = (className: string = '') => {
   return `min-h-[44px] min-w-[44px] touch-manipulation ${className}`;
 };
 
-// Responsive padding utilities
-export const getResponsivePadding = (size: 'sm' | 'md' | 'lg' | 'xl' = 'md') => {
+// Enhanced responsive padding utilities
+export const getResponsivePadding = (size: 'xs' | 'sm' | 'md' | 'lg' | 'xl' = 'md') => {
   const sizes = {
-    sm: 'p-2 sm:p-3',
-    md: 'p-3 sm:p-4 md:p-6',
-    lg: 'p-4 sm:p-6 md:p-8',
-    xl: 'p-6 sm:p-8 md:p-10'
+    xs: 'p-1 sm:p-2',
+    sm: 'p-2 sm:p-3 lg:p-4',
+    md: 'p-4 sm:p-6 lg:p-8',
+    lg: 'p-6 sm:p-8 lg:p-12',
+    xl: 'p-8 sm:p-12 lg:p-16'
   };
   return sizes[size];
 };
 
-// Responsive text utilities
-export const getResponsiveText = (size: 'sm' | 'md' | 'lg' | 'xl' = 'md') => {
+// Enhanced responsive text utilities - prevents iOS zoom
+export const getResponsiveText = (size: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' = 'md') => {
   const sizes = {
-    sm: 'text-xs sm:text-sm',
-    md: 'text-sm sm:text-base',
-    lg: 'text-base sm:text-lg md:text-xl',
-    xl: 'text-lg sm:text-xl md:text-2xl'
+    xs: 'text-xs sm:text-xs',
+    sm: 'text-base sm:text-sm', // base on mobile prevents zoom
+    md: 'text-base sm:text-base',
+    lg: 'text-lg sm:text-lg lg:text-xl',
+    xl: 'text-xl sm:text-xl lg:text-2xl',
+    '2xl': 'text-2xl sm:text-2xl lg:text-3xl'
   };
   return sizes[size];
 };
 
-// Grid responsive utilities
-export const getResponsiveGrid = (columns: { mobile?: number; tablet?: number; desktop?: number }) => {
-  const { mobile = 1, tablet = 2, desktop = 3 } = columns;
-  return `grid-cols-${mobile} sm:grid-cols-${tablet} lg:grid-cols-${desktop}`;
+// Enhanced grid responsive utilities with laptop support
+export const getResponsiveGrid = (columns: { 
+  mobile?: number; 
+  tablet?: number; 
+  laptop?: number;
+  desktop?: number;
+}) => {
+  const { mobile = 1, tablet = 2, laptop = 3, desktop = 4 } = columns;
+  return `grid-cols-${mobile} sm:grid-cols-${tablet} md:grid-cols-${laptop} lg:grid-cols-${desktop}`;
+};
+
+// Form input utilities - prevents zoom on iOS
+export const getResponsiveInputClasses = () => {
+  return 'text-base sm:text-sm h-12 sm:h-10 min-h-[44px] touch-manipulation';
+};
+
+// Button utilities with proper touch targets
+export const getResponsiveButtonClasses = (size: 'sm' | 'md' | 'lg' = 'md') => {
+  const sizes = {
+    sm: 'h-10 px-3 sm:h-9 sm:px-2 min-h-[40px] text-base sm:text-sm',
+    md: 'h-12 px-4 sm:h-10 sm:px-3 min-h-[44px] text-base sm:text-sm',
+    lg: 'h-14 px-6 sm:h-12 sm:px-4 min-h-[48px] text-lg sm:text-base'
+  };
+  return `${sizes[size]} touch-manipulation`;
+};
+
+// Spacing utilities
+export const getResponsiveSpacing = (type: 'section' | 'card' | 'element' = 'section') => {
+  const spacing = {
+    section: 'py-8 sm:py-12 lg:py-16',
+    card: 'p-4 sm:p-6 lg:p-8',
+    element: 'py-2 sm:py-3 lg:py-4'
+  };
+  return spacing[type];
+};
+
+// Container utilities
+export const getResponsiveContainer = (size: 'sm' | 'md' | 'lg' | 'xl' | 'full' = 'lg') => {
+  const containers = {
+    sm: 'max-w-sm mx-auto px-4',
+    md: 'max-w-md mx-auto px-4 sm:px-6',
+    lg: 'max-w-4xl mx-auto px-4 sm:px-6 lg:px-8',
+    xl: 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8',
+    full: 'w-full px-4 sm:px-6 lg:px-8'
+  };
+  return containers[size];
 };
