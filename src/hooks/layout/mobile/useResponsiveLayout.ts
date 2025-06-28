@@ -39,8 +39,8 @@ const DEFAULT_CONFIG: ResponsiveLayoutConfig = {
     isOpen: false,
     width: {
       desktop: 280,
-      tablet: 240,
-      mobile: 320
+      tablet: 260,
+      mobile: 280
     },
     variant: 'desktop',
     breakpoints: {
@@ -156,9 +156,9 @@ export const useResponsiveLayout = (): UseResponsiveLayoutReturn => {
     }));
   }, [setConfig]);
 
-  // Calculate current sidebar width based on device
+  // Calculate current sidebar width based on device with better responsive handling
   const sidebarWidth = useMemo(() => {
-    if (isMobile) return config.sidebar.width.mobile;
+    if (isMobile) return Math.min(280, window.innerWidth * 0.85); // Max 85% of screen width
     if (isTablet) return config.sidebar.width.tablet;
     return config.sidebar.width.desktop;
   }, [isMobile, isTablet, config.sidebar.width]);
@@ -233,6 +233,6 @@ export const useResponsiveLayout = (): UseResponsiveLayoutReturn => {
     
     // Utility functions
     getBreakpointClass,
-    // isBreakpoint
+    isBreakpoint
   };
 };

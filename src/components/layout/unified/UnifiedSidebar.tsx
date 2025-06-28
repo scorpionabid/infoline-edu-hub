@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef } from 'react';
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -20,7 +21,7 @@ const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
   onToggle,
   userName,
   variant = 'desktop',
-  width = 200
+  width = 280
 }) => {
   const sidebarRef = useRef<HTMLDivElement>(null);
   const mobileClasses = useMobileClasses();
@@ -70,6 +71,19 @@ const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
 
   console.log("[UnifiedSidebar] Rendering with variant:", variant, "isOpen:", isOpen, "width:", width);
 
+  // Calculate responsive width based on variant
+  const getResponsiveWidth = () => {
+    switch (variant) {
+      case 'mobile':
+        return 'min(280px, 85vw)'; // Max 280px but responsive to screen size
+      case 'overlay':
+        return 'min(260px, 80vw)';
+      case 'desktop':
+      default:
+        return `${Math.max(240, Math.min(320, width))}px`; // Ensure reasonable bounds
+    }
+  };
+
   return (
     <>
       {/* Mobile backdrop */}
@@ -87,7 +101,7 @@ const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
         {...(variant === 'mobile' ? touchGestures : {})}
         className={cn(
           "flex flex-col h-full bg-background border-r border-border",
-          "transition-all duration-300 ease-in-out",
+          "transition-all duration-300 ease-in-out overflow-hidden",
           
           // Variant-specific positioning
           variant === 'mobile' && [
@@ -103,27 +117,31 @@ const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
           ],
           
           variant === 'desktop' && [
-            "flex relative flex-shrink-0"
-            // Desktop sidebar always visible - removed the hidden condition
+            "relative flex-shrink-0"
           ]
         )}
         style={{
-          width: variant === 'mobile' ? '85vw' : `${width}px`,
-          maxWidth: variant === 'mobile' ? '320px' : undefined
+          width: getResponsiveWidth(),
+          minWidth: variant === 'desktop' ? '240px' : '260px',
+          maxWidth: variant === 'mobile' ? 'min(320px, 90vw)' : '320px'
         }}
       >
         {/* Header with logo and close button */}
         <div className={cn(
-          "flex items-center justify-between px-3 sm:px-4 py-2 border-b border-border",
-          "h-14 sm:h-16" // Consistent with header height
+          "flex items-center justify-between border-b border-border",
+          "h-14 sm:h-16 px-3 sm:px-4 py-2 flex-shrink-0",
+          // Ensure proper spacing for different screen sizes
+          "min-h-[56px]"
         )}>
-          <Logo />
+          <div className="flex-1 min-w-0">
+            <Logo />
+          </div>
           {(variant === 'mobile' || variant === 'overlay') && (
             <Button
               variant="ghost"
               size="icon"
               className={cn(
-                "h-8 w-8 sm:h-10 sm:w-10",
+                "h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0 ml-2",
                 mobileClasses.touchTarget
               )}
               onClick={onToggle}
@@ -135,18 +153,20 @@ const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
         </div>
         
         {/* Navigation content with scroll */}
-        <ScrollArea className="flex-1">
-          <UnifiedNavigation 
-            isOpen={isOpen} 
-            onToggle={onToggle}
-            userName={userName}
-            variant={variant}
-          />
-        </ScrollArea>
+        <div className="flex-1 overflow-hidden">
+          <ScrollArea className="h-full">
+            <UnifiedNavigation 
+              isOpen={isOpen} 
+              onToggle={onToggle}
+              userName={userName}
+              variant={variant}
+            />
+          </ScrollArea>
+        </div>
         
         {/* Footer */}
-        <div className="mt-auto p-3 sm:p-4 border-t border-border">
-          <p className="text-xs text-muted-foreground text-center">
+        <div className="mt-auto p-3 sm:p-4 border-t border-border flex-shrink-0">
+          <p className="text-xs text-muted-foreground text-center truncate">
             InfoLine v2.0.0
           </p>
           
