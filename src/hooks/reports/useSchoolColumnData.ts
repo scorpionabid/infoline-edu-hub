@@ -8,7 +8,7 @@ import {
   transformSchoolsData, 
   transformColumnsData,
   sortSchoolColumnData,
-  // ColumnSort
+  ColumnSort
 } from '@/utils/reports/schoolColumnDataUtils';
 import { FilterState } from './useSchoolColumnFilters';
 
@@ -245,7 +245,7 @@ export const useSchoolColumnData = (
             value,
             status,
             created_at,
-            // updated_at
+            updated_at
           `)
           .in('school_id', schoolIds)
           .in('column_id', selectedColumnIds);

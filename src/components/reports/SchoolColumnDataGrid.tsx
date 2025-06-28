@@ -28,7 +28,7 @@ const SchoolColumnDataGrid: React.FC<SchoolColumnDataGridProps> = ({
   onColumnSort,
   isLoading,
   currentPage,
-  // pageSize
+  pageSize
 }) => {
   const getSortIcon = (columnId: string) => {
     if (columnSort.columnId !== columnId) {

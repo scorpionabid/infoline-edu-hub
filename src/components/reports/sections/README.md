@@ -10,8 +10,11 @@
 
 1. **sections/ReportFilters.tsx** - Bütün filter logic-i
 2. **sections/ColumnSelector.tsx** - Sütun seçimi logic-i  
-3. **sections/SchoolDataGrid.tsx** - Məlumat göstərimi logic-i
-4. **sections/ExportControls.tsx** - Export əməliyyatları
+3. **sections/ExportControls.tsx** - Export əməliyyatları
+
+### 🗑️ Silinmiş komponentlər:
+
+1. **sections/SchoolDataGrid.tsx** - SchoolColumnDataGrid ilə təkrarçılıq idi, silindi
 
 ### 🔧 Düzəldilmiş konfliktlər:
 
@@ -22,17 +25,19 @@
 
 ```
 components/reports/
-├── SchoolColumnDataTable.tsx (refactored)
+├── SchoolColumnDataTable.tsx (əsas komponent)
+├── SchoolColumnDataGrid.tsx (məlumat cədvəli)
+├── SchoolSelectionPanel.tsx (məktəb seçimi)
+├── ColumnSelectionPanel.tsx (sütun seçimi)
+├── SchoolColumnFilters.tsx (filtrlər)
+├── SchoolColumnPagination.tsx (səhifələmə)
 ├── sections/
-│   ├── ReportFilters.tsx (NEW)
-│   ├── ColumnSelector.tsx (NEW) 
-│   ├── SchoolDataGrid.tsx (NEW)
-│   ├── ExportControls.tsx (NEW)
-│   └── index.ts (NEW)
-├── ExportButtons.tsx (advanced version)
-├── SchoolColumnDataTable.backup.tsx (backup)  
-└── backup/
-    └── EnhancedSchoolColumnTable.old.tsx (moved)
+│   ├── ReportFilters.tsx (əlavə filtrlər)
+│   ├── ColumnSelector.tsx (əlavə sütun seçici)
+│   ├── ExportControls.tsx (ixrac nəzarəti)
+│   ├── SchoolDataGrid.tsx.removed (silinmiş)
+│   └── index.ts
+└── ExportButtons.tsx (ixrac düymələri)
 ```
 
 ## Yeniliklər və Təkmilləşdirmələr:
