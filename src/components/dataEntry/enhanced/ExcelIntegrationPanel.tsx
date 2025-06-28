@@ -1,9 +1,9 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Download, Upload, FileSpreadsheet } from "lucide-react";
+import { Download, Upload, FileSpreadsheet, MoreHorizontal } from "lucide-react";
 import { useTranslation } from "@/contexts/TranslationContext";
 import { useExcelIntegration } from "@/hooks/exports/useExcelIntegration";
+import { cn } from "@/lib/utils";
 
 interface ExcelIntegrationPanelProps {
   category?: any;
@@ -16,6 +16,26 @@ const ExcelIntegrationPanel: React.FC<ExcelIntegrationPanelProps> = ({
   data,
   onImportComplete,
 }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+  
+  const toggleMenu = () => {
+    setIsOpen(!isOpen);
+  };
   const { t } = useTranslation();
   const { downloadTemplate, exportData, importFile, isProcessing } =
     useExcelIntegration({
@@ -42,20 +62,32 @@ const ExcelIntegrationPanel: React.FC<ExcelIntegrationPanelProps> = ({
   );
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <FileSpreadsheet className="h-5 w-5" />
-          {t("excelIntegration")}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="relative inline-block" ref={menuRef}>
+      <Button
+        variant="outline"
+        size="sm"
+        className="flex items-center gap-1.5 h-8 px-2"
+        onClick={toggleMenu}
+      >
+        <FileSpreadsheet className="h-4 w-4" />
+        <span className="hidden sm:inline">{t("excelIntegration")}</span>
+        <MoreHorizontal className="h-4 w-4" />
+      </Button>
+
+      {isOpen && (
+        <div className="absolute right-0 mt-1 z-50 min-w-[200px] bg-white rounded-md shadow-lg border py-1 dark:bg-gray-800">
+          <div className="p-2 text-sm font-medium border-b">{t("excelIntegration")}</div>
+          <div className="p-2 space-y-2">
+        <div className="flex flex-col space-y-2">
           <Button
-            variant="outline"
-            onClick={downloadTemplate}
-            disabled={isProcessing || !category}
-            className="flex items-center gap-2"
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.preventDefault();
+              downloadTemplate();
+            }}
+            disabled={!category}
+            className="flex items-center justify-start gap-2 w-full text-left"
           >
             <Download className="h-4 w-4" />
             {t("downloadTemplate")}
@@ -67,12 +99,11 @@ const ExcelIntegrationPanel: React.FC<ExcelIntegrationPanelProps> = ({
               accept=".xlsx,.xls"
               onChange={handleFileUpload}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              disabled={isProcessing}
             />
             <Button
-              variant="outline"
-              disabled={isProcessing}
-              className="w-full flex items-center gap-2"
+              variant="ghost"
+              size="sm"
+              className="w-full flex items-center justify-start gap-2 text-left"
             >
               <Upload className="h-4 w-4" />
               {t("importData")}
@@ -80,23 +111,24 @@ const ExcelIntegrationPanel: React.FC<ExcelIntegrationPanelProps> = ({
           </div>
 
           <Button
-            variant="outline"
-            onClick={exportData}
-            disabled={isProcessing || !data || data.length === 0}
-            className="flex items-center gap-2"
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.preventDefault();
+              exportData();
+            }}
+            disabled={!data || data.length === 0}
+            className="flex items-center justify-start gap-2 w-full text-left"
           >
             <Download className="h-4 w-4" />
             {t("exportData")}
           </Button>
         </div>
 
-        {isProcessing && (
-          <div className="text-center text-sm text-muted-foreground">
-            {t("processingFile")}...
-          </div>
-        )}
-      </CardContent>
-    </Card>
+        </div>
+        </div>
+      )}
+    </div>
   );
 };
 
