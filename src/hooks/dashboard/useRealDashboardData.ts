@@ -194,34 +194,112 @@ export const useRealDashboardData = () => {
         throw new Error('Sector ID not found for sector admin');
       }
 
-      // Fetch schools in this sector
-      const { data: schoolsData } = await supabase
+      console.log('Fetching sector admin data for sector:', user.sector_id);
+
+      // 1. Fetch schools in this sector WITH completion stats
+      const { data: schoolsData, error: schoolsError } = await supabase
         .from('schools')
         .select(`
           id,
           name,
-          // completion_rate
+          completion_rate,
+          status
         `)
         .eq('sector_id', user.sector_id);
 
-      // Fetch form statistics for this sector
-      const { data: formStatsData } = await supabase
-        .from('data_entries')
-        .select(`
-          status,
-          schools!inner(sector_id)
-        `)
-        .eq('schools.sector_id', user.sector_id);
+      if (schoolsError) {
+        console.error('Schools data error:', schoolsError);
+        throw schoolsError;
+      }
 
+      // 2. Fetch ALL categories and columns for context
+      const { data: categoriesData, error: categoriesError } = await supabase
+        .from('categories')
+        .select(`
+          id,
+          name,
+          status,
+          columns(id, is_required, status)
+        `)
+        .eq('status', 'active');
+
+      if (categoriesError) {
+        console.error('Categories data error:', categoriesError);
+        throw categoriesError;
+      }
+
+      // 3. Calculate total required columns across all active categories
+      const totalRequiredColumns = categoriesData?.reduce((total, category) => {
+        const requiredColumns = category.columns?.filter(col => 
+          col.is_required && col.status === 'active'
+        ).length || 0;
+        return total + requiredColumns;
+      }, 0) || 0;
+
+      console.log('Total required columns in sector:', totalRequiredColumns);
+
+      // 4. Fetch form statistics for ALL schools in this sector
+      const schoolIds = schoolsData?.map(s => s.id) || [];
+      
+      if (schoolIds.length === 0) {
+        console.warn('No schools found for sector:', user.sector_id);
+      }
+
+      const { data: formStatsData, error: formStatsError } = await supabase
+        .from('data_entries')
+        .select('school_id, status, column_id, created_at, updated_at')
+        .in('school_id', schoolIds);
+
+      if (formStatsError) {
+        console.error('Form stats error:', formStatsError);
+        throw formStatsError;
+      }
+
+      console.log('Form entries found:', formStatsData?.length || 0);
+
+      // 5. Calculate comprehensive statistics
       const totalEntries = formStatsData?.length || 0;
       const approvedEntries = formStatsData?.filter(f => f.status === 'approved').length || 0;
       const pendingEntries = formStatsData?.filter(f => f.status === 'pending').length || 0;
       const rejectedEntries = formStatsData?.filter(f => f.status === 'rejected').length || 0;
 
-      const completionRate = totalEntries > 0 
-        ? Math.round((approvedEntries / totalEntries) * 100)
+      // 6. Calculate sector-wide completion rate
+      // This is based on: (approved entries) / (total required entries for all schools)
+      const totalPossibleEntries = schoolIds.length * totalRequiredColumns;
+      const sectorCompletionRate = totalPossibleEntries > 0 
+        ? Math.round((approvedEntries / totalPossibleEntries) * 100)
         : 0;
 
+      console.log('Sector completion calculation:', {
+        schoolsCount: schoolIds.length,
+        totalRequiredColumns,
+        totalPossibleEntries,
+        approvedEntries,
+        sectorCompletionRate
+      });
+
+      // 7. Calculate school-specific completion rates
+      const schoolsWithStats = schoolsData?.map(school => {
+        const schoolEntries = formStatsData?.filter(entry => entry.school_id === school.id) || [];
+        const schoolApproved = schoolEntries.filter(entry => entry.status === 'approved').length;
+        const schoolPending = schoolEntries.filter(entry => entry.status === 'pending').length;
+        const schoolRejected = schoolEntries.filter(entry => entry.status === 'rejected').length;
+        
+        const schoolCompletionRate = totalRequiredColumns > 0 
+          ? Math.round((schoolApproved / totalRequiredColumns) * 100)
+          : 0;
+
+        return {
+          ...school,
+          completion_rate: schoolCompletionRate,
+          approvedEntries: schoolApproved,
+          pendingEntries: schoolPending,
+          rejectedEntries: schoolRejected,
+          totalEntries: schoolEntries.length
+        };
+      }) || [];
+
+      // 8. Prepare dashboard statistics
       const stats: DashboardStats = {
         totalEntries,
         completedEntries: approvedEntries,
@@ -240,24 +318,47 @@ export const useRealDashboardData = () => {
         pending: pendingEntries,
         approved: approvedEntries,
         rejected: rejectedEntries,
-        draft: 0,
-        dueSoon: 0,
-        overdue: 0,
-        percentage: completionRate,
-        completion_rate: completionRate,
-        completionRate: completionRate,
+        draft: 0, // Will implement drafts later
+        dueSoon: 0, // Will implement deadlines later
+        overdue: 0, // Will implement deadlines later
+        percentage: sectorCompletionRate,
+        completion_rate: sectorCompletionRate,
+        completionRate: sectorCompletionRate,
         completedForms: approvedEntries,
         pendingForms: pendingEntries,
-        approvalRate: completionRate,
+        approvalRate: sectorCompletionRate,
         completed: approvedEntries
       };
+
+      // 9. Summary statistics for logging
+      console.log('Final sector admin stats:', {
+        totalSchools: schoolsData?.length || 0,
+        sectorCompletionRate,
+        pendingApprovals: pendingEntries,
+        totalEntries,
+        approvedEntries
+      });
 
       return {
         totalSchools: schoolsData?.length || 0,
         pendingApprovals: pendingEntries,
-        completionRate,
+        completionRate: sectorCompletionRate,
         stats,
-        // forms
+        summary: {
+          total: totalEntries,
+          completed: approvedEntries,
+          pending: pendingEntries,
+          rejected: rejectedEntries,
+          approved: approvedEntries,
+          completionRate: sectorCompletionRate,
+          approvalRate: sectorCompletionRate,
+          draft: 0,
+          dueSoon: 0,
+          overdue: 0
+        },
+        schoolsWithStats, // Enhanced schools data with individual completion rates
+        totalRequiredColumns,
+        totalPossibleEntries
       };
     } catch (error) {
       console.error('Error fetching sector admin data:', error);

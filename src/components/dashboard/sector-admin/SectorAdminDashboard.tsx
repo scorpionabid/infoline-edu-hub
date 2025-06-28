@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useTranslation } from "@/contexts/TranslationContext";
 import { DashboardFormStats } from "@/types/dashboard";
+import { Card, CardContent } from "@/components/ui/card";
 import StatsGrid from "../StatsGrid";
 import DashboardChart from "../DashboardChart";
 import SchoolsTable from "./SchoolsTable";
@@ -20,6 +21,17 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({
 }) => {
   const { t } = useTranslation();
   const user = useAuthStore(selectUser);
+  
+  // Development test - sector data-nı test etmək üçün
+  React.useEffect(() => {
+    if (user?.sector_id && process.env.NODE_ENV === 'development') {
+      console.log('🧪 Testing sector admin data in development mode...');
+      import('@/utils/testSectorData')
+        .then(({ testSectorAdminData }) => testSectorAdminData(user.sector_id!))
+        .then(result => console.log('✅ Test result:', result))
+        .catch(error => console.error('❌ Test failed:', error));
+    }
+  }, [user?.sector_id]);
   
   // Modal state
   const [selectedSchool, setSelectedSchool] = useState<School | null>(null);
@@ -52,92 +64,130 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({
   // Diaqnostika loqu - məlumatların strukturunu araşdırmaq üçün
   console.log("[SectorAdminDashboard] Dashboard data full details:", JSON.stringify(dashboardData, null, 2));
   
-  // Real backend məlumatlarını UI-yə uyğunlaşdırırıq
-  // stats.summary verilənlərə üstünlük veririk, əgər varsa
-  const formStats: DashboardFormStats = {
-    // Əsas xassələr
-    total: dashboardData?.stats?.summary?.total || 0,
-    completed: dashboardData?.stats?.summary?.completed || 0,
-    pending: dashboardData?.stats?.summary?.pending || 0,
-    rejected: dashboardData?.stats?.summary?.rejected || 0,
-    approved: dashboardData?.stats?.summary?.approved || 0,
-    
-    // Genişləndirilmiş xassələr
-    totalForms: dashboardData?.stats?.summary?.total || 0,
-    completedForms: dashboardData?.stats?.summary?.completed || 0,
-    pendingForms: dashboardData?.stats?.summary?.pending || 0,
-    rejectedForms: dashboardData?.stats?.summary?.rejected || 0,
-    pendingApprovals: dashboardData?.pendingApprovals || 0,
-    approvalRate: dashboardData?.stats?.summary?.approvalRate || 0,
-    draft: dashboardData?.stats?.summary?.draft || 0,
-    dueSoon: dashboardData?.stats?.summary?.dueSoon || 0,
-    overdue: dashboardData?.stats?.summary?.overdue || 0,
-    
-    // Tamamlanma dərəcəsi
-    percentage: dashboardData?.completionRate || 0,
-    completion_rate: dashboardData?.completionRate || 0,
-    completionRate: dashboardData?.completionRate || 0,
+  // Use the enhanced summary data from the improved fetch function
+  const summary = dashboardData?.summary || {
+    total: 0,
+    completed: 0,
+    pending: 0,
+    rejected: 0,
+    approved: 0,
+    completionRate: 0
   };
-  
-  // Əgər stats.summary yoxdursa, formStats-ı simulyasiya edək
-  if (!dashboardData?.stats?.summary) {
-    formStats.approved = 0;
-    formStats.pending = 18; // Konsol loqlarından görünən dəyər
-    formStats.rejected = 0;
-    formStats.completionRate = dashboardData?.completionRate || 44; // Konsol loqlarından görünən dəyər
-  }
 
-  // Xüsusi diaqnostika loqu
-  console.log("[SectorAdminDashboard] Formatlı məlumatlar:", {
-    completionRate: formStats.completionRate,
-    pendingApprovals: formStats.pendingApprovals,
-    totalSchools: dashboardData?.totalSchools || 0,
-    schoolsCount: dashboardData?.stats?.schools?.length || 0
-  });
-
-  // Diaqnostika loqu - formatlı məlumatların təfərrüatı
-  console.log("[SectorAdminDashboard] Formatlı məlumatlar (tam):", JSON.stringify(formStats, null, 2));
+  console.log("[SectorAdminDashboard] Enhanced summary data:", summary);
 
   const statsGridData = [
     {
       title: t("dashboard.totalApproved") || "Təsdiqlənmiş",
-      value: formStats.approved, // 0 əlavə etmədən bax
+      value: summary.approved,
       icon: "check-circle",
       color: "text-green-600",
       description: t("approved") || "Təsdiqləndi",
     },
     {
       title: t("dashboard.totalPending") || "Gözləyən",
-      value: formStats.pending || formStats.pendingApprovals || 0, // pendingApprovals ilə fallback
+      value: summary.pending,
       icon: "clock",
       color: "text-yellow-600",
       description: t("pending") || "Gözləyir",
     },
     {
       title: t("dashboard.totalRejected") || "Rədd edilmiş",
-      value: formStats.rejected, // 0 əlavə etmədən bax
+      value: summary.rejected,
       icon: "x-circle",
       color: "text-red-600",
       description: t("rejected") || "Rədd edildi",
     },
     {
       title: t("dashboard.completion") || "Tamamlanma",
-      value: `${Math.round(formStats.completionRate)}%`,
+      value: `${Math.round(summary.completionRate)}%`,
       icon: "pie-chart",
       color: "text-blue-600",
       description: t("completionRate") || "Tamamlanma dərəcəsi",
     },
   ];
 
-  // No need to pass schools data since SchoolsTable fetches its own data
-  // const schools = dashboardData.schools || [];
+  // Additional sector-specific stats
+  const sectorStats = [
+    {
+      title: t("dashboard.totalSchools") || "Ümumi Məktəblər",
+      value: dashboardData.totalSchools || 0,
+      icon: "building",
+      color: "text-purple-600",
+      description: t("schoolsInSector") || "Sektordakı məktəblər",
+    },
+    {
+      title: t("dashboard.totalRequiredFields") || "Tələb Olunan Sahələr",
+      value: dashboardData.totalRequiredColumns || 0,
+      icon: "list-checks",
+      color: "text-indigo-600",
+      description: t("requiredFields") || "Məcburi sahələr",
+    },
+    {
+      title: t("dashboard.totalPossibleEntries") || "Mümkün Girişlər",
+      value: dashboardData.totalPossibleEntries || 0,
+      icon: "target",
+      color: "text-orange-600",
+      description: t("allPossibleEntries") || "Bütün mümkün girişlər",
+    },
+    {
+      title: t("dashboard.pendingApprovals") || "Təsdiq Gözləyən",
+      value: dashboardData.pendingApprovals || 0,
+      icon: "hourglass",
+      color: "text-amber-600",
+      description: t("awaitingApproval") || "Təsdiq gözləyir",
+    },
+  ];
+
+  // Create enhanced form stats for chart
+  const enhancedFormStats: DashboardFormStats = {
+    ...summary,
+    totalForms: summary.total,
+    completedForms: summary.completed,
+    pendingForms: summary.pending,
+    rejectedForms: summary.rejected,
+    pendingApprovals: summary.pending,
+    approvalRate: summary.completionRate,
+    draft: 0,
+    dueSoon: 0,
+    overdue: 0,
+    percentage: summary.completionRate,
+    completion_rate: summary.completionRate
+  };
+
+  console.log("[SectorAdminDashboard] Enhanced form stats for chart:", enhancedFormStats);
 
   return (
     <div className="space-y-6">
+      {/* Main Statistics Grid */}
       <StatsGrid stats={statsGridData} />
 
+      {/* Additional Sector Statistics */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {sectorStats.map((stat, index) => (
+          <Card key={index} className="hover:shadow-md transition-shadow">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    {stat.title}
+                  </p>
+                  <p className={`text-2xl font-bold ${stat.color}`}>
+                    {stat.value}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {stat.description}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Chart and Schools Table */}
       <div className="space-y-6">
-        <DashboardChart stats={formStats} />
+        <DashboardChart stats={enhancedFormStats} />
         <SchoolsTable onView={handleSchoolView} />
       </div>
       

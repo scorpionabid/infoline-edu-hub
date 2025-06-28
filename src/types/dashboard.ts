@@ -2,10 +2,69 @@
 // Dashboard types - enhanced with missing exports
 
 export interface DashboardStats {
+  totalEntries: number;
+  completedEntries: number;
+  pendingEntries: number;
+  approvedEntries: number;
+  rejectedEntries: number;
+  completed: number;
+  pending: number;
+}
+
+// Sector Admin specific dashboard data
+export interface SectorAdminDashboardData {
   totalSchools: number;
-  completedForms: number;
   pendingApprovals: number;
-  overdueForms: number;
+  completionRate: number;
+  stats: DashboardStats;
+  summary?: {
+    total: number;
+    completed: number;
+    pending: number;
+    rejected: number;
+    approved: number;
+    completionRate: number;
+    approvalRate: number;
+    draft: number;
+    dueSoon: number;
+    overdue: number;
+  };
+  schoolsWithStats?: any[];
+  totalRequiredColumns?: number;
+  totalPossibleEntries?: number;
+}
+
+// SuperAdmin dashboard data
+export interface SuperAdminDashboardData {
+  totalUsers: number;
+  totalSchools: number;
+  totalCategories: number;
+  pendingApprovals: number;
+  completionRate: number;
+  stats: DashboardStats;
+  forms: DashboardFormStats;
+  userCount: number;
+  totalRegions: number;
+  formsByStatus: any;
+  approvalRate: number;
+  regions: any[];
+}
+
+// RegionAdmin dashboard data
+export interface RegionAdminDashboardData {
+  totalSectors: number;
+  totalSchools: number;
+  pendingApprovals: number;
+  completionRate: number;
+  stats: DashboardStats;
+}
+
+// SchoolAdmin dashboard data
+export interface SchoolAdminDashboardData {
+  totalForms: number;
+  completedForms: number;
+  pendingForms: number;
+  stats: DashboardStats;
 }
 
 // Dashboard form statistics interface
@@ -52,6 +111,21 @@ export interface EnhancedDashboardData {
   completionRate?: number;
   stats?: any;
   formStats?: DashboardFormStats;
+  summary?: {
+    total: number;
+    completed: number;
+    pending: number;
+    rejected: number;
+    approved: number;
+    completionRate: number;
+    approvalRate: number;
+    draft: number;
+    dueSoon: number;
+    overdue: number;
+  };
+  schoolsWithStats?: any[];
+  totalRequiredColumns?: number;
+  totalPossibleEntries?: number;
 }
 
 // Enhanced category progress with more details
