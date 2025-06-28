@@ -20,7 +20,7 @@ const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
   onToggle,
   userName,
   variant = 'desktop',
-  width = 256
+  width = 200
 }) => {
   const sidebarRef = useRef<HTMLDivElement>(null);
   const mobileClasses = useMobileClasses();
@@ -108,7 +108,7 @@ const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
           ]
         )}
         style={{
-          width: variant === 'mobile' ? '85vw' : `${width}, px`,
+          width: variant === 'mobile' ? '85vw' : `${width}px`,
           maxWidth: variant === 'mobile' ? '320px' : undefined
         }}
       >
