@@ -7,7 +7,7 @@ import { CategoryWithColumns } from '@/types/category';
 import { ImportResult, ImportError } from '@/types/excel';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ExcelService } from '@/services/excelService';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 
 interface ExcelImportDialogProps {
   isOpen: boolean;
@@ -24,7 +24,7 @@ const ExcelImportDialog: React.FC<ExcelImportDialogProps> = ({
   category,
   schoolId,
   userId,
-  // onImportComplete
+  onImportComplete
 }) => {
   const [dragActive, setDragActive] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -93,7 +93,7 @@ const ExcelImportDialog: React.FC<ExcelImportDialogProps> = ({
         selectedFile,
         category.id,
         schoolId,
-        // userId
+        userId
       );
 
       setImportStatus('success');

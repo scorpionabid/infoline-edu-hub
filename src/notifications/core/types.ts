@@ -39,6 +39,16 @@ export type NotificationType =
   | 'region_update'
   | 'sector_update';
 
+// Bulk notification request interface for batch operations
+export interface BulkNotificationRequest {
+  user_ids?: string[];
+  type?: NotificationType;
+  title?: string;
+  message?: string;
+  priority?: NotificationPriority;
+  channels?: NotificationChannel[];
+}
+
 // Notification priority levels
 export type NotificationPriority = 
   | 'low' 

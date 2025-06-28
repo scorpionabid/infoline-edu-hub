@@ -4,7 +4,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
-import { useSectorsStore, EnhancedSector } from '@/hooks/useSectorsStore';
+import { useSectors } from '@/hooks/sectors/useSectors';
+import { EnhancedSector } from '@/types/sector';
 
 interface SectorTableProps {
   onEdit: (sector: EnhancedSector) => void;
@@ -15,9 +16,20 @@ interface SectorTableProps {
 export const SectorTable: React.FC<SectorTableProps> = ({
   onEdit,
   onDelete,
-  // onAssignAdmin
+  onAssignAdmin
 }) => {
-  const { sectors, loading } = useSectorsStore();
+  const [sectors, setSectors] = React.useState<EnhancedSector[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  
+  // useSectors hook-unun qaytardığı real məlumatları istifadə et
+  const { sectors: sectorData, loading: isLoading } = useSectors();
+  
+  React.useEffect(() => {
+    if (sectorData) {
+      setSectors(sectorData as EnhancedSector[]);
+      setLoading(isLoading);
+    }
+  }, [sectorData, isLoading]);
 
   if (loading) {
     return <div className="text-center py-4">Yüklənir...</div>;

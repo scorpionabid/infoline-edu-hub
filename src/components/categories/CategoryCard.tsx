@@ -116,7 +116,7 @@ const CategoryCard: React.FC<CategoryCardProps> = ({
                 className="text-muted-foreground hover:text-primary"
                 onClick={(e) => {
                   e.stopPropagation();
-                  onEdit && onEdit(category);
+                  if (onEdit) onEdit(category);
                 }}
               >
                 <PenIcon className="h-4 w-4 mr-1" />

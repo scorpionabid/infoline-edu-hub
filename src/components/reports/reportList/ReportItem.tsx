@@ -51,14 +51,19 @@ const ReportItem: React.FC<ReportItemProps> = ({
     switch (report.type) {
       case REPORT_TYPE_VALUES.BAR: {
         return <BarChart className="h-5 w-5" />;
+      }
       case REPORT_TYPE_VALUES.LINE: {
         return <LineChart className="h-5 w-5" />;
+      }
       case REPORT_TYPE_VALUES.PIE: {
         return <PieChart className="h-5 w-5" />;
+      }
       case REPORT_TYPE_VALUES.TABLE: {
         return <Table className="h-5 w-5" />;
+      }
       case REPORT_TYPE_VALUES.METRICS: {
         return <LayoutGrid className="h-5 w-5" />;
+      }
       default:
         return <BarChart className="h-5 w-5" />;
     }
@@ -72,18 +77,21 @@ const ReportItem: React.FC<ReportItemProps> = ({
             {t("draft")}
           </Badge>
         );
+      }
       case ReportStatus.PUBLISHED: {
         return (
           <Badge variant="outline" className="bg-green-100 text-green-800">
             {t("published")}
           </Badge>
         );
+      }
       case ReportStatus.ARCHIVED: {
         return (
           <Badge variant="outline" className="bg-amber-100 text-amber-800">
             {t("archived")}
           </Badge>
         );
+      }
       default:
         return null;
     }

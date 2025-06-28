@@ -86,6 +86,7 @@ const ReportChartView: React.FC<ReportChartViewProps> = ({
           </BarChart>
         </ResponsiveContainer>
       );
+    }
 
     case REPORT_TYPE_VALUES.LINE: {
       return (
@@ -112,6 +113,7 @@ const ReportChartView: React.FC<ReportChartViewProps> = ({
           </LineChart>
         </ResponsiveContainer>
       );
+    }
 
     case REPORT_TYPE_VALUES.PIE: {
       return (
@@ -142,6 +144,7 @@ const ReportChartView: React.FC<ReportChartViewProps> = ({
           </PieChart>
         </ResponsiveContainer>
       );
+    }
 
     case REPORT_TYPE_VALUES.TABLE: {
       return (
@@ -167,6 +170,7 @@ const ReportChartView: React.FC<ReportChartViewProps> = ({
           </Table>
         </div>
       );
+    }
 
     case REPORT_TYPE_VALUES.METRICS: {
       return (
@@ -193,6 +197,7 @@ const ReportChartView: React.FC<ReportChartViewProps> = ({
           ))}
         </div>
       );
+    }
 
     default:
       return (

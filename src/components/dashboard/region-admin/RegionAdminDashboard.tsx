@@ -30,6 +30,18 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({
     rejected: dashboardData.formStats?.rejected || 0,
     approved: dashboardData.formStats?.approved || 0,
     completionRate: dashboardData.formStats?.completionRate || dashboardData.completionRate || 0,
+    // Əlavə tələb olunan xassələr
+    totalForms: dashboardData.formStats?.total || 0,
+    completedForms: dashboardData.formStats?.completed || 0,
+    pendingForms: dashboardData.formStats?.pending || 0,
+    pendingApprovals: dashboardData.formStats?.pending || 0,
+    rejectedForms: dashboardData.formStats?.rejected || 0,
+    approvalRate: dashboardData.formStats?.approved ? (dashboardData.formStats.approved / dashboardData.formStats.total) * 100 : 0,
+    draft: dashboardData.formStats?.draft || 0,
+    dueSoon: dashboardData.formStats?.dueSoon || 0,
+    overdue: dashboardData.formStats?.overdue || 0,
+    percentage: dashboardData.formStats?.completionRate || dashboardData.completionRate || 0,
+    completion_rate: dashboardData.formStats?.completionRate || dashboardData.completionRate || 0, // Eyni dəyəri snake_case formatında da saxlayırıq,
   };
 
   // Display statistics for region admin dashboard

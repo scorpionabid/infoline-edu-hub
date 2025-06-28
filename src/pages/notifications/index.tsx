@@ -28,6 +28,7 @@ import {
   Search,
   Filter,
   Trash2,
+  Settings,
   Eye,
   // Settings
 } from 'lucide-react';
@@ -49,22 +50,22 @@ const NotificationsPage = () => {
     markAsRead,
     markAllAsRead,
     deleteNotification,
-    // clearAll
+    clearAll
   } = useNotifications(user?.id);
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'deadline': {
-      case 'warning': {
+      case 'deadline':
+      case 'warning':
         return <Clock className="w-4 h-4 text-orange-500" />;
-      case 'success': {
-      case 'approval': {
+      case 'success':
+      case 'approval':
         return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case 'error': {
-      case 'rejection': {
+      case 'error':
+      case 'rejection':
         return <AlertTriangle className="w-4 h-4 text-red-500" />;
-      case 'info': {
-      case 'system': {
+      case 'info':
+      case 'system':
         return <Bell className="w-4 h-4 text-blue-500" />;
       default:
         return <Bell className="w-4 h-4 text-gray-500" />;
@@ -73,11 +74,11 @@ const NotificationsPage = () => {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'critical': {
+      case 'critical':
         return 'bg-red-100 text-red-800 border-red-200';
-      case 'high': {
+      case 'high':
         return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'normal': {
+      case 'normal':
         return 'bg-blue-100 text-blue-800 border-blue-200';
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200';
@@ -152,7 +153,7 @@ const NotificationsPage = () => {
           <Link to="/profile?tab=notifications">
             <Button variant="outline" size="sm" className="flex items-center gap-2">
               <Settings className="w-4 h-4" />
-              // Ayarlar
+              Ayarlar
             </Button>
           </Link>
           

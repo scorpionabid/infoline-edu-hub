@@ -63,9 +63,9 @@ const SchoolsTable: React.FC<SchoolsTableProps> = ({
       name: school.name,
       completed: stats?.approvedEntries || 0, // Required by SchoolStat interface
       total: stats?.totalColumns || 0, // Required by SchoolStat interface
-      percentage: stats?.completionRate || school.completion_rate || 0, // Fallback to school's own completion_rate
+      percentage: stats?.completionRate || 0, // Use completion rate from stats
       status: school.status, // Required by SchoolStat interface
-      completionRate: stats?.completionRate || school.completion_rate || 0,
+      completionRate: stats?.completionRate || 0,
       pendingForms: stats?.pendingEntries || 0,
       totalForms: stats?.totalColumns || 0,
       lastUpdated: stats?.lastUpdated?.toISOString() || school.updated_at || school.created_at

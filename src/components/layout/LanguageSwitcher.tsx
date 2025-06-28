@@ -53,8 +53,11 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({
   variant = 'default',
   showLabels = false
 }) => {
+  // Hook-ları həmişə komponentin ən üst səviyyəsində çağırırıq
+  const translationContext = useTranslation();
+  const { language, setLanguage, t } = translationContext || {};
+  
   try {
-    const { language, setLanguage, t } = useTranslation();
     const currentLanguage = (Object.keys(LANGUAGES) as LanguageCode[]).includes(language as LanguageCode) 
       ? language as LanguageCode 
       : DEFAULT_LANGUAGE;

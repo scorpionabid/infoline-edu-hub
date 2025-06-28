@@ -148,7 +148,7 @@ export const normalizeDate = (dateStr: string): string => {
       return dateStr; // keçərsiz tarix formatı, olduğu kimi qaytar
     }
     return formatDate(date);
-  } catch (e) {
+  } catch (_e) {
     return dateStr; // xəta baş verdiyində, olduğu kimi qaytar
   }
 };
@@ -176,7 +176,7 @@ export const formatDateSafe = (date: string | Date | undefined): string => {
     if (isNaN(dateObj.getTime())) return ''; // Invalid date
     
     return formatDate(dateObj);
-  } catch (e) {
+  } catch (_e) {
     return '';
   }
 };

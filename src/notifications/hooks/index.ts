@@ -12,7 +12,7 @@ import type {
   NotificationPriority,
   NotificationChannel,
   NotificationEvent,
-  // BulkNotificationRequest
+  BulkNotificationRequest
 } from '../core/types';
 
 /**
@@ -31,7 +31,7 @@ export function useNotifications(userId?: string) {
     data: notifications = [],
     isLoading,
     error,
-    // refetch
+    refetch
   } = useQuery({
     queryKey: ['notifications', currentUserId],
     queryFn: () => currentUserId ? notificationManager.getNotifications(currentUserId) : Promise.resolve([]),
@@ -443,7 +443,7 @@ export function useNotificationPreferences(userId?: string) {
     data: preferences,
     isLoading,
     error,
-    // refetch
+    refetch
   } = useQuery({
     queryKey: ['notification-preferences', userId],
     queryFn: async () => {

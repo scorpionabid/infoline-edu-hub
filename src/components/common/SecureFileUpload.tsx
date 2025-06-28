@@ -53,8 +53,10 @@ const SecureFileUpload: React.FC<SecureFileUploadProps> = ({
     }
 
     // File name security check
-    const suspiciousPattern = /[<>:"/\\|?*\x00-\x1f]/;
-    if (suspiciousPattern.test(file.name)) {
+    const suspiciousPattern = /[<>:"/\\|?*]/;
+    // Control characters check separately
+    const hasControlChars = /[\x00-\x1F]/.test(file.name);
+    if (suspiciousPattern.test(file.name) || hasControlChars) {
       const context = getClientContext();
       securityLogger.logSuspiciousActivity('malicious_filename', {
         fileName: file.name,

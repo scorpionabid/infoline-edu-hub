@@ -175,10 +175,13 @@ export class NotificationService {
     switch (action) {
       case 'submitted': {
         return 'Yeni məlumat təsdiqi gözləyir';
+      }
       case 'approved': {
         return 'Məlumatlarınız təsdiqləndi';
+      }
       case 'rejected': {
         return 'Məlumatlarınız rədd edildi';
+      }
       default:
         return 'Bildiriş';
     }
@@ -189,10 +192,13 @@ export class NotificationService {
     switch (action) {
       case 'submitted': {
         return `${count} məlumat sahəsi təsdiq üçün göndərildi`;
+      }
       case 'approved': {
         return `${count} məlumat sahəsi təsdiqləndi`;
+      }
       case 'rejected': {
         return `${count} məlumat sahəsi rədd edildi`;
+      }
       default:
         return `${count} məlumat sahəsi yeniləndi`;
     }

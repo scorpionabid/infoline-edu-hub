@@ -57,12 +57,16 @@ export const ReportList: React.FC = () => {
     switch (advType) {
       case "performance": {
         return "metrics";
+      }
       case "completion": {
         return "bar";
+      }
       case "comparison": {
         return "pie";
+      }
       case "trend": {
         return "line";
+      }
       default:
         return "table";
     }

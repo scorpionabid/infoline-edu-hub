@@ -30,10 +30,13 @@ const ReportDashboard: React.FC = () => {
     switch (type) {
       case "performance": {
         return <BarChart3 className="h-4 w-4" />;
+      }
       case "comparison": {
         return <TrendingUp className="h-4 w-4" />;
+      }
       case "trend": {
         return <TrendingUp className="h-4 w-4" />;
+      }
       default:
         return <FileText className="h-4 w-4" />;
     }
@@ -43,10 +46,13 @@ const ReportDashboard: React.FC = () => {
     switch (type) {
       case "performance": {
         return "bg-blue-100 text-blue-800";
+      }
       case "comparison": {
         return "bg-green-100 text-green-800";
+      }
       case "trend": {
         return "bg-purple-100 text-purple-800";
+      }
       default:
         return "bg-gray-100 text-gray-800";
     }

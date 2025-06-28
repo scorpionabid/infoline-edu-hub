@@ -137,7 +137,7 @@ export class PDFExportService {
       doc.setFont(undefined, 'normal');
       
       // Məlumatları yazırıq
-      data.forEach((row, rowIndex) => {
+      data.forEach((row, _rowIndex) => {
         if (yPosition > 180) { // Yeni səhifə
           doc.addPage();
           yPosition = 20;

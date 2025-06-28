@@ -12,6 +12,12 @@ export interface CategoryCompletionStat {
   completionPercentage: number;
   fieldsCompleted: number;
   totalFields: number;
+  
+  // Əskik xassələr
+  filledColumns: number;
+  totalColumns: number;
+  filledRequiredColumns: number;
+  requiredColumns: number;
 }
 
 /**

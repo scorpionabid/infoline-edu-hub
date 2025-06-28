@@ -4,7 +4,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { DotsHorizontalIcon } from '@radix-ui/react-icons';
-import { regionsStore, EnhancedRegion } from '@/hooks/regions/useRegionsStore';
+import { regionsStore } from '@/hooks/regions/useRegionsStore';
+import { EnhancedRegion } from '@/types/region';
 
 interface RegionTableProps {
   onEdit: (region: EnhancedRegion) => void;
@@ -15,7 +16,7 @@ interface RegionTableProps {
 export const RegionTable: React.FC<RegionTableProps> = ({
   onEdit,
   onDelete,
-  // onAssignAdmin
+  onAssignAdmin
 }) => {
   const regions = regionsStore(state => state.regions);
   const loading = regionsStore(state => state.loading);

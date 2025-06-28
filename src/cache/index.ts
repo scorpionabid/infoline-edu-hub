@@ -138,16 +138,19 @@ export const CacheUtils = {
 // Migration helpers for React Query integration
 export const QueryCacheUtils = {
   /**
-   * Convert old useCachedQuery to new implementation
+   * Function that returns a hook to convert old useCachedQuery to new implementation
+   * MUST be used as a hook (in React components or other hooks)
    */
-  convertOldUseCachedQuery: (queryKey: string[], queryFn: () => Promise<any>, options?: any) => {
-    return useCachedQuery(queryKey.join('_'), queryFn, {
-      cacheOptions: {
-        storage: 'memory',
-        ttl: options?.staleTime || CACHE_TTL.MEDIUM
-      },
-      queryOptions: options
-    });
+  useConvertOldQuery: () => {
+    return (queryKey: string[], queryFn: () => Promise<any>, options?: any) => {
+      return useCachedQuery(queryKey.join('_'), queryFn, {
+        cacheOptions: {
+          storage: 'memory',
+          ttl: options?.staleTime || CACHE_TTL.MEDIUM
+        },
+        queryOptions: options
+      });
+    };
   }
 };
 
@@ -201,7 +204,7 @@ export const CacheDebug = {
     const originalGet = cacheManager.get;
     const originalDelete = cacheManager.delete;
 
-    cacheManager.set = function<T>(key: string, value: T, options?: CacheOptions) {
+    cacheManager.set = function<_T>(key: string, value: _T, options?: CacheOptions) {
       console.log(`[CacheDebug] SET ${key}`, { value, options });
       return originalSet.call(this, key, value, options);
     };

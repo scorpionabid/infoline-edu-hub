@@ -40,12 +40,16 @@ export const SectorAdminUserSelector: React.FC<
     switch (role) {
       case "superadmin": {
         return t("superAdmin") || "Super Admin";
+      }
       case "regionadmin": {
         return t("regionAdmin") || "Region Admin";
+      }
       case "sectoradmin": {
         return t("sectorAdmin") || "Sektor Admin";
+      }
       case "schooladmin": {
         return t("schoolAdmin") || "Məktəb Admin";
+      }
       default:
         return t("user") || "İstifadəçi";
     }

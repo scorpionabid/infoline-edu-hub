@@ -92,6 +92,7 @@ const ChartView: React.FC<ChartViewProps> = ({
             }
           </BarChart>
         );
+      }
       
       case 'line': {
         return (
@@ -116,6 +117,7 @@ const ChartView: React.FC<ChartViewProps> = ({
             }
           </LineChart>
         );
+      }
       
       case 'pie': {
         return (
@@ -128,7 +130,7 @@ const ChartView: React.FC<ChartViewProps> = ({
               outerRadius={config.outerRadius || "80%"}
               labelLine={config.showLabels !== false}
               label={config.showLabels !== false ? ({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%` : undefined}
-              dataKey={valueKey}
+              dataKey={yAxisKey}
               nameKey={labelKey}
             >
               {data.map((entry, index) => (
@@ -139,6 +141,7 @@ const ChartView: React.FC<ChartViewProps> = ({
             <Tooltip />
           </PieChart>
         );
+      }
       
       default:
         return <div className="text-center p-10">Dəstəklənməyən qrafik növü</div>;

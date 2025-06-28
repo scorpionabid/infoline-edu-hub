@@ -125,6 +125,7 @@ export function usePaginatedReports<T = any>({
         // Cache the result
         reportCache.set('paginated_reports', cacheKey, result, 5 * 60 * 1000);
         return result;
+      }
         
       case 'school_column_data': {
         const { data: columnData, error: colError } = await supabase.rpc('get_school_column_export_data' as any, {
@@ -145,6 +146,7 @@ export function usePaginatedReports<T = any>({
         
         reportCache.set('paginated_reports', cacheKey, columnResult, 5 * 60 * 1000);
         return columnResult;
+      }
         
       default:
         throw new Error(`Unsupported report type: ${reportType}`);

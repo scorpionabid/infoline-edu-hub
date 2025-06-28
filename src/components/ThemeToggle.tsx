@@ -33,11 +33,17 @@ const ThemeToggle: React.FC = () => {
     light: 'Light',
     dark: 'Dark'
   };
-
+  
+  // Always call hooks at the top level
+  const translationContext = useTranslation();
+  const themeContext = useThemeSafe();
+  
+  // Safely get translation function and theme
+  const t = translationContext?.t;
+  const theme = themeContext?.theme || 'light';
+  const setTheme = themeContext?.setTheme;
+  
   try {
-    // Safely get translation function with optional chaining
-    const { t } = useTranslation?.() || {};
-    const { theme = 'light', setTheme } = useThemeSafe?.() || {};
 
     // Don't render if theme context is not available
     if (!setTheme) {

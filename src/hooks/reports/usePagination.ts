@@ -46,6 +46,6 @@ export const usePagination = (
     goToFirstPage,
     goToLastPage,
     goToNextPage,
-    // goToPreviousPage
+    goToPreviousPage
   };
 };

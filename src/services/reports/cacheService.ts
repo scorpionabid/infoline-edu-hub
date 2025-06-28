@@ -127,7 +127,7 @@ export class ReportCache {
       data,
       timestamp: Date.now(),
       ttl: customTtl || this.options.ttl,
-      // key
+      key: key
     };
 
     this.cache.set(key, entry);
@@ -293,11 +293,11 @@ export const CacheHelpers = {
         reportCache.invalidate('school_column_data');
         break; }
 
-      case 'category': {
-      case 'column': {
+      case 'category':
+      case 'column':
         reportCache.invalidate('category_completion');
         reportCache.invalidate('school_column_data');
-        break; }
+        break;
 
       default:
         // Unknown entity, clear all cache
