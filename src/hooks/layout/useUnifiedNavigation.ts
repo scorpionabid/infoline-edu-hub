@@ -61,8 +61,8 @@ export const useUnifiedNavigation = () => {
     canApproveData,
   } = usePermissions();
 
-  // Temp fix - always allow viewing reports
-  const canViewReports = true;
+  // Hesabatlar səhifəsinə giriş icazələri
+  const canViewReports = isSuperAdmin || isRegionAdmin || isSectorAdmin; // schoolAdmin üçün false
 
   // Open sections state
   const [openSections, setOpenSections] = useLocalStorage('nav-sections', ['organization', 'content']);
