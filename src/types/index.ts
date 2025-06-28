@@ -83,9 +83,24 @@ export type {
   // Region
 } from './region';
 
-// Database and Supabase Types
-export * from './supabase';
-export * from './database.d';
+// Database and Supabase Types - Using authoritative Supabase types
+export type {
+  Database,
+  Tables,
+  TablesInsert,
+  TablesUpdate,
+  Enums,
+  CompositeTypes,
+  Json
+} from '../integrations/supabase/types';
+
+// Database type aliases for convenience (from auth.ts)
+export type {
+  DatabaseEnums,
+  AppRole,
+  ColumnType,
+  DataStatus
+} from './auth';
 
 // Form and UI Types
 export * from './form';

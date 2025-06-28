@@ -54,7 +54,7 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({
       description: t("schools") || "Məktəb",
     },
     {
-      title: t("dashboard.stats.total_regions") || "Ümumi sektorlar",
+      title: t("dashboard.stats.total_sectors") || "Ümumi sektorlar",
       value: dashboardData.totalSectors || 0,
       icon: "layers", 
       color: "text-indigo-600",

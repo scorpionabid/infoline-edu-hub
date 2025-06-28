@@ -68,7 +68,12 @@ const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
     }
   }, [variant, isOpen]);
 
-  console.log("[UnifiedSidebar] Enhanced rendering:", { variant, isOpen, width });
+  // Yalnız development rejimdə və önəmli parametrlər dəyişdikdə loq göstəririk
+  React.useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log("[UnifiedSidebar] Props changed:", { variant, isOpen, width });
+    }
+  }, [variant, isOpen, width]);
 
   // Enhanced responsive width calculation
   const getResponsiveWidth = () => {

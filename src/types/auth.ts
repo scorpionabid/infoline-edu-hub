@@ -2,9 +2,22 @@
 // İnfoLine Auth Types - Unified Type System
 // ============================================================================
 // Bu fayl bütün auth-related type definitions-ları birləşdirir
-// Əvvəlki duplikat fayllar: hooks/auth/types.ts, hooks/auth/permissionTypes.ts
+// Authoritative source: Supabase database enums
+// Əvvəlki duplikat fayllar: hooks/auth/authTypes.ts, hooks/auth/permissionTypes.ts
 
-export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'teacher' | 'user';
+import type { Database } from '../integrations/supabase/types';
+
+// UserRole - Database enum-undan extend edilir
+export type UserRole = Database['public']['Enums']['app_role'] | 'teacher' | 'user';
+
+// Legacy compatibility
+export type UserRoleLegacy = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
+
+// Database type aliases for convenience
+export type DatabaseEnums = Database['public']['Enums'];
+export type AppRole = DatabaseEnums['app_role'];
+export type ColumnType = DatabaseEnums['column_type'];
+export type DataStatus = DatabaseEnums['data_status'];
 
 export type UserStatus = 'active' | 'inactive' | 'pending' | 'suspended';
 

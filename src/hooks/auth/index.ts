@@ -8,8 +8,9 @@
 // Import supabase (needed for legacy compatibility functions)
 import { supabase } from '@/integrations/supabase/client';
 
-// Auth types export
-export * from './authTypes';
+// ⚠️ Auth types export - Transitioning to unified types
+// Prefer importing directly from @/types instead of authTypes
+export * from './authTypes'; // DEPRECATED - use @/types/auth
 
 // ========== Auth Store ==========
 import {

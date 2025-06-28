@@ -1,12 +1,15 @@
 // ============================================================================
 // İnfoLine Auth System - Types File
 // ============================================================================
+// ⚠️ DEPRECATED: Use @/types/auth instead
+// Bu fayl tədricən silinəcək. Yeni import-lar üçün @/types/auth istifadə edin.
 // Bu fayl auth sisteminin bütün tiplərini və interfeyslərini saxlayır
 
 import { Session } from '@supabase/supabase-js';
+import type { UserRole } from '@/types/auth';
 
-// User role types
-export type UserRole = 'superadmin' | 'regionadmin' | 'sectoradmin' | 'schooladmin' | 'user';
+// User role types - Re-exported from unified auth types
+export type { UserRole };
 
 // User data interface - normalized
 export interface FullUserData {
