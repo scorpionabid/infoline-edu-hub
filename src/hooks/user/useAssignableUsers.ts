@@ -66,10 +66,12 @@ export const useAssignableUsers = (regionId?: string) => {
             // 1. Have the same region_id
             // 2. Have no region_id (can be assigned anywhere)
             // 3. Have no role (can be assigned)
+            // 4. Have 'Standard' role (unassigned users)
             const matches = (
               user.region_id === regionId ||
               !user.region_id ||
-              !user.role
+              !user.role ||
+              user.role === 'Standard'
             );
 
             if (matches) {
@@ -79,6 +81,15 @@ export const useAssignableUsers = (regionId?: string) => {
                 role: user.role,
                 region_id: user.region_id,
                 target_region: regionId
+              });
+            } else {
+              console.log('❌ useAssignableUsers - User filtered out:', {
+                name: user.full_name,
+                email: user.email,
+                role: user.role,
+                region_id: user.region_id,
+                target_region: regionId,
+                reason: 'Region mismatch'
               });
             }
 

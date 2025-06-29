@@ -5,28 +5,88 @@ import { FullUserData, UserStatus } from '@/types/user';
 export const userFetchService = {
   async getAllUsers(): Promise<FullUserData[]> {
     try {
-      console.log('🔍 userFetchService.getAllUsers - Starting fetch');
+      console.log('🔍 userFetchService.getAllUsers - Starting fetch with JOIN');
       
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // Use the new safe RPC function instead of get_all_users_with_roles
+      const { data, error } = await supabase.rpc('get_assignable_users_safe');
 
       if (error) {
-        console.error('❌ userFetchService.getAllUsers - Error:', error);
+        console.error('❌ userFetchService.getAllUsers - RPC Error:', error);
+        console.error('Error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
         throw error;
       }
 
       if (!data) {
-        console.log('⚠️ userFetchService.getAllUsers - No data returned');
+        console.log('⚠️ userFetchService.getAllUsers - No data returned from RPC');
         return [];
       }
 
-      console.log('✅ userFetchService.getAllUsers - Success:', data.length, 'users');
+      console.log('✅ userFetchService.getAllUsers - RPC Success:', {
+        count: data.length,
+        sampleUsers: data.slice(0, 3).map((u: any) => ({
+          id: u.id,
+          name: u.full_name,
+          email: u.email,
+          role: u.role,
+          region_id: u.region_id,
+          sector_id: u.sector_id,
+          school_id: u.school_id
+        }))
+      });
+      
       return data as FullUserData[];
     } catch (error) {
       console.error('❌ userFetchService.getAllUsers - Exception:', error);
-      return [];
+      
+      // Fallback to basic profiles query if RPC fails
+      console.log('🔄 userFetchService.getAllUsers - Falling back to profiles table');
+      try {
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select(`
+            *,
+            user_roles(
+              role,
+              region_id,
+              sector_id,
+              school_id
+            )
+          `)
+          .order('created_at', { ascending: false });
+
+        if (profilesError) {
+          console.error('❌ userFetchService.getAllUsers - Profiles fallback error:', profilesError);
+          return [];
+        }
+
+        if (!profilesData) {
+          console.log('⚠️ userFetchService.getAllUsers - No profiles data');
+          return [];
+        }
+
+        // Transform the data to include role information at the top level
+        const transformedData = profilesData.map(profile => {
+          const userRole = profile.user_roles?.[0]; // Get first role
+          return {
+            ...profile,
+            role: userRole?.role || 'Standard',
+            region_id: userRole?.region_id || null,
+            sector_id: userRole?.sector_id || null,
+            school_id: userRole?.school_id || null
+          };
+        });
+
+        console.log('✅ userFetchService.getAllUsers - Fallback success:', transformedData.length, 'users');
+        return transformedData as FullUserData[];
+      } catch (fallbackError) {
+        console.error('❌ userFetchService.getAllUsers - Fallback failed:', fallbackError);
+        return [];
+      }
     }
   },
 

@@ -170,6 +170,13 @@ const ExistingUserSchoolAdminDialog = ({
 
   // Filter users based on search term
   const filteredUsers = useMemo(() => {
+    console.log('🎯 filteredUsers - Starting filter process:', {
+      usersExists: !!users,
+      usersLength: users?.length || 0,
+      searchTerm,
+      searchTermLength: searchTerm?.length || 0
+    });
+    
     if (!users || users.length === 0) {
       console.log('🔍 SchoolAdminDialog - No users to filter');
       return [];
@@ -180,18 +187,44 @@ const ExistingUserSchoolAdminDialog = ({
     // Apply search filter if search term exists
     if (searchTerm && searchTerm.trim() !== "") {
       const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(user => {
+      console.log('🔍 filteredUsers - Applying search filter:', { term });
+      
+      filtered = filtered.filter((user, index) => {
         const matchesName = user.full_name?.toLowerCase().includes(term) || false;
         const matchesEmail = user.email?.toLowerCase().includes(term) || false;
-        return matchesName || matchesEmail;
+        const matches = matchesName || matchesEmail;
+        
+        // Log first 3 users for debugging
+        if (index < 3) {
+          console.log(`🎯 User ${index + 1} filter check:`, {
+            name: user.full_name,
+            email: user.email,
+            term,
+            matchesName,
+            matchesEmail,
+            finalMatch: matches
+          });
+        }
+        
+        return matches;
+      });
+      
+      console.log('🎯 filteredUsers - After search filtering:', {
+        originalCount: users.length,
+        filteredCount: filtered.length,
+        searchTerm: term
       });
     }
     
-    console.log('🎯 SchoolAdminDialog - Filtered users:', {
+    console.log('🎯 SchoolAdminDialog - Final filtered users:', {
       original: users.length,
       afterSearch: filtered.length,
       searchTerm,
-      regionId: targetRegionId
+      regionId: targetRegionId,
+      sampleFilteredUsers: filtered.slice(0, 3).map(u => ({
+        name: u.full_name,
+        email: u.email
+      }))
     });
     
     return filtered;
@@ -327,6 +360,8 @@ const ExistingUserSchoolAdminDialog = ({
                 <li>Cəmi istifadəçi: {users?.length || 0}</li>
                 <li>Filtrdən sonra: {filteredUsers?.length || 0}</li>
                 <li>Axtarış: {searchTerm || 'Yoxdur'}</li>
+                <li>Sample users: {users?.slice(0, 2).map(u => u.full_name || u.email).join(', ') || 'Yoxdur'}</li>
+                <li>Sample roles: {users?.slice(0, 2).map(u => u.role || 'Role yoxdur').join(', ') || 'Yoxdur'}</li>
               </ul>
             </div>
           )}
