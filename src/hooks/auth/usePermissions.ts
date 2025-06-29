@@ -67,10 +67,10 @@ export const usePermissions = (): UsePermissionsResult => {
     return {
       canManageCategories: isSuperAdmin || isRegionAdmin,
       canManageColumns: isSuperAdmin || isRegionAdmin || isSectorAdmin,
-      canManageSchools: isSuperAdmin || isRegionAdmin,
+      canManageSchools: isSuperAdmin || isRegionAdmin || isSectorAdmin,
       canManageSectors: isSuperAdmin || isRegionAdmin,
       canManageRegions: isSuperAdmin,
-      canManageUsers: isSuperAdmin || isRegionAdmin,
+      canManageUsers: isSuperAdmin || isRegionAdmin || isSectorAdmin,
       canApproveData: isSuperAdmin || isRegionAdmin || isSectorAdmin,
       canEditData: isSuperAdmin || isRegionAdmin || isSectorAdmin || isSchoolAdmin,
       canViewReports: isSuperAdmin || isRegionAdmin || isSectorAdmin,
