@@ -19,9 +19,14 @@ export const useSchoolCompletionStats = (schoolIds: string[]) => {
   const [stats, setStats] = useState<Map<string, SchoolCompletionStats>>(new Map());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
+  
+  // Daha etibarlı memorization - null və undefined dəyərləri idarə edir
+  const validSchoolIds = useMemo(() => {
+    return (schoolIds || []).filter(id => id && typeof id === 'string');
+  }, [schoolIds]);
+  
   // Memoize schoolIds to prevent unnecessary re-renders
-  const memoizedSchoolIds = useMemo(() => schoolIds, [schoolIds.join(',')]);
+  const memoizedSchoolIds = useMemo(() => validSchoolIds, [validSchoolIds.join(',')]);
 
   const fetchCompletionStats = useCallback(async () => {
     if (!memoizedSchoolIds || memoizedSchoolIds.length === 0) {
@@ -35,11 +40,24 @@ export const useSchoolCompletionStats = (schoolIds: string[]) => {
     try {
       console.log('Fetching completion stats for schools:', memoizedSchoolIds.length);
       
+      // Əvvəlcə verilmiş məktəb ID-lərinin mövcud olduğunu yoxlayırıq
+      // Bu həm də xətaların qarşısını alacaq
+      const validSchoolIds = [...memoizedSchoolIds].filter(id => id && typeof id === 'string');
+      
+      if (validSchoolIds.length === 0) {
+        console.warn('No valid school IDs provided');
+        setStats(new Map());
+        setLoading(false);
+        return;
+      }
+      
       // Simplified approach - just get basic data entries count for now
+      // .single() əvəzinə .maybeSingle() istifadə edəcəyik və ya birbaşa sorğu edəcəyik.
+      // sector_id ilə birbaşa data_entries-ni filtərləməkdən qaçınırıq
       const { data: dataEntries, error: entriesError } = await supabase
         .from('data_entries')
         .select('school_id, status, updated_at')
-        .in('school_id', memoizedSchoolIds);
+        .in('school_id', validSchoolIds);
         
       if (entriesError) {
         console.error('Data entries error:', entriesError);
@@ -127,32 +145,18 @@ export const useSchoolCompletionStats = (schoolIds: string[]) => {
     fetchCompletionStats();
   }, [fetchCompletionStats]);
   
+  // Göndərilən id üçün statistika qaytarır
   const getStatsForSchool = useCallback((schoolId: string): SchoolCompletionStats | null => {
-    return stats.get(schoolId) || {
-      schoolId,
-      totalCategories: 0,
-      totalColumns: 0,
-      filledColumns: 0,
-      requiredColumns: 0,
-      filledRequiredColumns: 0,
-      completionRate: 0,
-      pendingEntries: 0,
-      approvedEntries: 0,
-      rejectedEntries: 0
-    };
+    return stats.get(schoolId) || null;
   }, [stats]);
   
-  const refreshStats = useCallback(() => {
-    fetchCompletionStats();
-  }, [fetchCompletionStats]);
-  
-  return {
+  // Return the hook result with memoized results to prevent unnecessary re-renders
+  return useMemo(() => ({
     stats,
     loading,
     error,
-    getStatsForSchool,
-    // refreshStats
-  };
+    getStatsForSchool
+  }), [stats, loading, error, getStatsForSchool]);
 };
 
 export default useSchoolCompletionStats;

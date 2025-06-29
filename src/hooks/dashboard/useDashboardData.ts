@@ -40,7 +40,7 @@ export const useDashboardData = (options: UseDashboardDataOptions = {}) => {
           .from('region_stats')
           .select('*')
           .eq('region_id', user?.region_id || '')
-          .single();
+          .maybeSingle();
           
         if (regionError) throw regionError;
         
@@ -76,7 +76,7 @@ export const useDashboardData = (options: UseDashboardDataOptions = {}) => {
             .from('sectors')
             .select('*')
             .eq('id', user?.sector_id || '')
-            .single();
+            .maybeSingle();
             
           if (sectorFetchError) throw sectorFetchError;
           console.log('📊 [useDashboardData] Sektor məlumatları:', sector);
@@ -91,12 +91,24 @@ export const useDashboardData = (options: UseDashboardDataOptions = {}) => {
           console.log(`📊 [useDashboardData] Sektorda ${schools?.length || 0} məktəb tapıldı`);
           
           // 3. Form statuslarını əldə edirik
-          const { data: formEntries, error: formError } = await supabase
-            .from('data_entries')
-            .select('school_id, status')
-            .eq('sector_id', user?.sector_id || '');
+          // data_entries cədvəlində sector_id yoxdur, ona görə JOIN istifadə edirik
+          let formEntries: any[] = [];
+          
+          if (schools && schools.length > 0) {
+            // Əvvəlcə sektorun məktəblərini tapırıq, sonra həmin məktəblərin entries-lərini
+            const schoolIds = schools.map(school => school.id);
             
-          if (formError) throw formError;
+            const { data: entries, error: formError } = await supabase
+              .from('data_entries')
+              .select('school_id, status')
+              .in('school_id', schoolIds);
+              
+            if (formError) throw formError;
+            formEntries = entries || [];
+            console.log(`📊 [useDashboardData] ${formEntries.length} data entries tapıldı`);  
+          } else {
+            console.log('⚠️ [useDashboardData] Sektor üçün məktəb tapılmadı');
+          }
           
           // Status saylarını hesablayırıq
           const counts = {
@@ -159,7 +171,7 @@ export const useDashboardData = (options: UseDashboardDataOptions = {}) => {
             .from('schools')
             .select('*')
             .eq('id', user?.school_id || '')
-            .single();
+            .maybeSingle();
             
           if (schoolFetchError) throw schoolFetchError;
           console.log('📊 [useDashboardData] Məktəb məlumatları:', school);
