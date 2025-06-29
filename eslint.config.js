@@ -71,6 +71,19 @@ export default tseslint.config(
       "prefer-const": "warn",
       "no-var": "warn",
       "no-console": "off", // Development üçün console.log-a icazə ver
+      
+      // Restricted imports for refactored types
+      "no-restricted-imports": [
+        "error",
+        {
+          "patterns": [
+            {
+              "group": ["**/authTypes", "**/database.d"],
+              "message": "Use unified types from @/types instead. authTypes.ts is deprecated, use @/types/auth or @/types."
+            }
+          ]
+        }
+      ],
     },
   },
   // Config faylları üçün ayrı konfiqurasiya

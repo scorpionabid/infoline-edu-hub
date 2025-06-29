@@ -9,7 +9,7 @@ import { StoreApi } from 'zustand';
 type SetState<T> = StoreApi<T>['setState'];
 type GetState<T> = StoreApi<T>['getState'];
 import type { AuthState, FullUserData } from '@/types/auth'; // Updated to unified types
-import { AUTH_TIMEOUT_CONFIG } from './authTypes'; // Temporary for AUTH_TIMEOUT_CONFIG
+import { AUTH_TIMEOUT_CONFIG } from '@/types/auth'; // Updated to unified types
 import { updateUserProfile } from './profileManager';
 import { clearSessionTimeout } from './sessionManager';
 
