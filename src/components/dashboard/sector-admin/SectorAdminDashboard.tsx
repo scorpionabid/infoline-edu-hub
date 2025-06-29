@@ -22,16 +22,8 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({
   const { t } = useTranslation();
   const user = useAuthStore(selectUser);
   
-  // Development test - sector data-nı test etmək üçün
-  React.useEffect(() => {
-    if (user?.sector_id && process.env.NODE_ENV === 'development') {
-      console.log('🧪 Testing sector admin data in development mode...');
-      import('@/utils/testSectorData')
-        .then(({ testSectorAdminData }) => testSectorAdminData(user.sector_id!))
-        .then(result => console.log('✅ Test result:', result))
-        .catch(error => console.error('❌ Test failed:', error));
-    }
-  }, [user?.sector_id]);
+  // Test kodu silinib - testSectorData faylı artıq mövcud deyil
+  // Sınaqlar üçün test data lazım olarsa, yenisi yaradıla bilər
   
   // Modal state
   const [selectedSchool, setSelectedSchool] = useState<School | null>(null);
