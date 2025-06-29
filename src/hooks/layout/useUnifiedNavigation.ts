@@ -1,4 +1,4 @@
-import { useMemo, useCallback, useRef, useEffect } from 'react';
+import { useMemo, useCallback, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { usePermissions } from '@/hooks/auth/usePermissions';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -46,6 +46,9 @@ interface NavigationConfig {
 export const useUnifiedNavigation = () => {
   const { t } = useTranslation();
   const location = useLocation();
+  
+  // Get permissions once and memoize them
+  const permissions = usePermissions();
   const {
     userRole,
     isSuperAdmin,
@@ -59,38 +62,28 @@ export const useUnifiedNavigation = () => {
     canManageColumns,
     canManageUsers,
     canApproveData,
-  } = usePermissions();
+  } = permissions;
 
   // Hesabatlar səhifəsinə giriş icazələri
-  const canViewReports = isSuperAdmin || isRegionAdmin || isSectorAdmin; // schoolAdmin üçün false
+  const canViewReports = useMemo(() => 
+    isSuperAdmin || isRegionAdmin || isSectorAdmin,
+    [isSuperAdmin, isRegionAdmin, isSectorAdmin]
+  );
 
-  // Open sections state - stability üçün useRef istifadə edirik
-  const [storedOpenSections, setStoredOpenSections] = useLocalStorage('nav-sections', ['organization', 'content']);
-  const openSectionsRef = useRef(storedOpenSections);
-  const openSections = openSectionsRef.current;
-  
-  // UseEffect ilə dəyişiklikləri sync edirik, amma yalnız lokalda dəyişdikdə
-  useEffect(() => {
-    if (JSON.stringify(openSectionsRef.current) !== JSON.stringify(storedOpenSections)) {
-      openSectionsRef.current = storedOpenSections;
-    }
-  }, [storedOpenSections]);
+  // Open sections state - using localStorage hook
+  const [openSections, setOpenSections] = useLocalStorage('nav-sections', ['organization', 'content']);
 
-  // Toggle section open/close - daha stabildir, loop yaratmır
+  // Toggle section function - stable reference
   const toggleSection = useCallback((sectionId: string) => {
-    const isOpen = openSectionsRef.current.includes(sectionId);
-    const newSections = isOpen
-      ? openSectionsRef.current.filter(id => id !== sectionId)
-      : [...openSectionsRef.current, sectionId];
-    
-    // Yalnız dəyişiklik varsa yeniləyirik
-    if (JSON.stringify(newSections) !== JSON.stringify(openSectionsRef.current)) {
-      openSectionsRef.current = newSections; // Lokal referansı dərhal yenilə
-      setStoredOpenSections(newSections); // LocalStorage-i yenilə
-    }
-  }, []);  // Boş asılılıq massivi - çünki ref istifadə edirik
+    setOpenSections((prev: string[]) => {
+      const isOpen = prev.includes(sectionId);
+      return isOpen
+        ? prev.filter(id => id !== sectionId)
+        : [...prev, sectionId];
+    });
+  }, [setOpenSections]);
 
-  // Check if route is active
+  // Check if route is active - stable reference
   const isActive = useCallback((href: string) => {
     if (href === '/dashboard') {
       return location.pathname === '/' || location.pathname === '/dashboard';
@@ -98,7 +91,7 @@ export const useUnifiedNavigation = () => {
     return location.pathname.startsWith(href);
   }, [location.pathname]);
 
-  // Navigation configuration
+  // Navigation configuration - memoized with stable dependencies
   const navigationConfig: NavigationConfig = useMemo(() => {
     // Primary navigation (always visible, high priority)
     const primaryNavigation: NavigationItem[] = [
@@ -260,7 +253,8 @@ export const useUnifiedNavigation = () => {
       management: managementGroups
     };
   }, [
-    t, 
+    // Stable dependencies only
+    t,
     userRole,
     isSuperAdmin,
     isRegionAdmin, 
@@ -272,11 +266,10 @@ export const useUnifiedNavigation = () => {
     canManageCategories,
     canManageColumns,
     canManageUsers,
-    canApproveData,
     canViewReports
   ]);
 
-  // Get breadcrumbs for current route
+  // Get breadcrumbs for current route - memoized
   const breadcrumbs = useMemo(() => {
     const pathSegments = location.pathname.split('/').filter(Boolean);
     const crumbs: Array<{ label: string; href: string }> = [
@@ -300,7 +293,6 @@ export const useUnifiedNavigation = () => {
 
     return crumbs;
   }, [location.pathname, t, navigationConfig]);
-  // navigationConfig əlavə edildi çünki yuxarıdakı kodda istifadə olunur
 
   return {
     navigationConfig,

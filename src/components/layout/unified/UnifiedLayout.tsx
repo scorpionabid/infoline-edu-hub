@@ -1,5 +1,4 @@
-
-import React, { memo, Suspense } from 'react';
+import React, { memo, Suspense, useMemo } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useAuthStore, selectIsLoading, selectUser } from '@/hooks/auth/useAuthStore';
@@ -44,6 +43,26 @@ const UnifiedLayout: React.FC<UnifiedLayoutProps> = memo(({
     sidebarVariant
   } = useResponsiveLayout();
   
+  // Memoize heavy calculations
+  const layoutCalculations = useMemo(() => {
+    const shouldShowDesktopSidebar = isLaptop || isDesktop;
+    const shouldShowOverlaySidebar = isMobile || isTablet;
+    
+    return {
+      shouldShowDesktopSidebar,
+      shouldShowOverlaySidebar,
+      mainContentStyle: {
+        marginLeft: shouldShowDesktopSidebar && sidebarOpen ? 0 : 0,
+        minWidth: 0
+      },
+      mainPadding: {
+        padding: contentPadding,
+        paddingBottom: isMobile ? '80px' : contentPadding,
+        minWidth: 0
+      }
+    };
+  }, [isLaptop, isDesktop, isMobile, isTablet, sidebarOpen, contentPadding]);
+  
   console.log('[UnifiedLayout] Enhanced responsive state:', { 
     user: !!user, 
     isLoading, 
@@ -56,21 +75,24 @@ const UnifiedLayout: React.FC<UnifiedLayoutProps> = memo(({
     sidebarWidth
   });
 
+  // Early return for loading state
   if (isLoading) {
     return <LoadingIndicator size="lg" />;
   }
 
+  // Early return for unauthenticated state
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p>İstifadəçi məlumatları yüklənir...</p>
+        <div className="text-center space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+          <p className="text-muted-foreground">İstifadəçi məlumatları yüklənir...</p>
+        </div>
       </div>
     );
   }
 
-  // Determine sidebar behavior based on screen size
-  const shouldShowDesktopSidebar = isLaptop || isDesktop;
-  const shouldShowOverlaySidebar = isMobile || isTablet;
+  const { shouldShowDesktopSidebar, shouldShowOverlaySidebar, mainContentStyle, mainPadding } = layoutCalculations;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30 w-full">
@@ -117,10 +139,7 @@ const UnifiedLayout: React.FC<UnifiedLayoutProps> = memo(({
         {/* Main content area - Enhanced responsive layout */}
         <div 
           className="flex flex-col flex-1 w-full min-w-0 relative transition-all duration-300 ease-in-out"
-          style={{
-            marginLeft: shouldShowDesktopSidebar && sidebarOpen ? 0 : 0,
-            minWidth: 0
-          }}
+          style={mainContentStyle}
         >
           {/* Unified Header */}
           {showHeader && (
@@ -137,18 +156,18 @@ const UnifiedLayout: React.FC<UnifiedLayoutProps> = memo(({
           {/* Page content with enhanced responsive padding */}
           <main 
             className="flex-1 overflow-auto w-full relative"
-            style={{ 
-              padding: contentPadding,
-              paddingBottom: isMobile ? '80px' : contentPadding,
-              minWidth: 0
-            }}
+            style={mainPadding}
           >
             <div className={`w-full mx-auto animate-fade-in-up ${fullWidth ? 'max-w-none' : 'max-w-full'}`}>
               {/* Breadcrumb Navigation */}
               <BreadcrumbNav />
               
               {/* Page Content with Suspense */}
-              <Suspense fallback={<LoadingIndicator />}>
+              <Suspense fallback={
+                <div className="flex items-center justify-center py-12">
+                  <LoadingIndicator />
+                </div>
+              }>
                 {children || <Outlet />}
               </Suspense>
             </div>
@@ -164,6 +183,7 @@ const UnifiedLayout: React.FC<UnifiedLayoutProps> = memo(({
     </div>
   );
 }, (prevProps, nextProps) => {
+  // Enhanced comparison function for memo
   return (
     prevProps.showSidebar === nextProps.showSidebar &&
     prevProps.showHeader === nextProps.showHeader &&

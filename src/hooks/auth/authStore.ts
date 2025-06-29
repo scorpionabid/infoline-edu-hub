@@ -1,6 +1,6 @@
 
 // ============================================================================
-// İnfoLine Auth System - Auth Store (Simplified & Stabilized)
+// İnfoLine Auth System - Auth Store (Loop Fixed Version)
 // ============================================================================
 // Bu fayl auth sisteminin əsas zustand store komponentini təmin edir
 
@@ -104,46 +104,38 @@ export const isProtectedRoute = (pathname: string) => {
          !pathname.includes('/forgot-password');
 };
 
-// ========== Simplified Auth State Change Listener ==========
+// ========== Auth State Change Listener - Loop Fixed Version ==========
 import { supabase } from '@/integrations/supabase/client';
 
-// Enhanced auth state change listener with simplified logic
+// Loop prevention variables
 let isProcessingEvent = false;
 let lastEventTimestamp = 0;
+let eventQueue: Array<{ event: string; session: any; timestamp: number }> = [];
+let isInitialized = false;
 
-supabase.auth.onAuthStateChange(async (event, session) => {
-  const eventTimestamp = Date.now();
-  
-  // Prevent rapid duplicate events
-  if (eventTimestamp - lastEventTimestamp < 100) {
-    console.log('⚠️ [AuthStateChange] Skipping duplicate event within 100ms');
-    return;
-  }
-  
-  lastEventTimestamp = eventTimestamp;
-  
-  console.log('🔄 [AuthStateChange]', { 
-    event, 
-    hasSession: !!session, 
-    userId: session?.user?.id,
-    isProcessing: isProcessingEvent 
-  });
-  
-  // Prevent concurrent processing
-  if (isProcessingEvent) {
-    console.log('⚠️ [AuthStateChange] Already processing event, skipping');
-    return;
-  }
+// Process events in queue - prevents multiple simultaneous processing
+const processEventQueue = async () => {
+  if (isProcessingEvent || eventQueue.length === 0) return;
   
   isProcessingEvent = true;
+  const currentEvent = eventQueue.shift();
+  
+  if (!currentEvent) {
+    isProcessingEvent = false;
+    return;
+  }
+  
+  const { event, session } = currentEvent;
   
   try {
+    console.log('🔄 [AuthStateChange] Processing queued event:', event);
+    
     switch (event) {
       case 'INITIAL_SESSION':
-        console.log('🔄 [AuthStateChange] Processing INITIAL_SESSION');
-        
-        if (session?.user) {
-          // FAST PATH: Set basic session immediately
+        if (session?.user && !isInitialized) {
+          isInitialized = true;
+          
+          // Set session immediately
           useAuthStore.setState({
             session,
             isLoading: true,
@@ -155,35 +147,42 @@ supabase.auth.onAuthStateChange(async (event, session) => {
           clearSessionTimeout();
           setupSessionTimeout(session);
           
-          // Initialize in background with timeout
-          const initTimeout = setTimeout(() => {
-            console.warn('⚠️ [AuthStateChange] Initialization timeout, using fallback');
-            useAuthStore.setState({
-              user: {
-                id: session.user.id,
-                email: session.user.email || '',
-                full_name: session.user.user_metadata?.full_name || '',
-                name: session.user.user_metadata?.full_name || '',
-                role: 'schooladmin' as any
-              },
-              isAuthenticated: true,
-              isLoading: false,
-              initialized: true,
-              loadingStartTime: null
-            });
-          }, 3000); // 3 second timeout
+          // Initialize with timeout protection
+          const initPromise = useAuthStore.getState().performInitialization(false);
+          const timeoutPromise = new Promise((resolve) => {
+            setTimeout(() => {
+              console.warn('⚠️ [AuthStateChange] Initialization timeout');
+              resolve('timeout');
+            }, 5000);
+          });
           
           try {
-            await useAuthStore.getState().performInitialization(false);
-            clearTimeout(initTimeout);
+            const result = await Promise.race([initPromise, timeoutPromise]);
+            if (result === 'timeout') {
+              // Fallback state
+              useAuthStore.setState({
+                user: {
+                  id: session.user.id,
+                  email: session.user.email || '',
+                  full_name: session.user.user_metadata?.full_name || '',
+                  name: session.user.user_metadata?.full_name || '',
+                  role: 'schooladmin' as any
+                },
+                isAuthenticated: true,
+                isLoading: false,
+                initialized: true,
+                loadingStartTime: null
+              });
+            }
           } catch (error) {
             console.error('❌ [AuthStateChange] Initialization failed:', error);
-            clearTimeout(initTimeout);
-            // Fallback will handle the state
+            useAuthStore.setState({
+              isLoading: false,
+              error: 'Initialization failed',
+              loadingStartTime: null
+            });
           }
-        } else {
-          // No session - clear loading state
-          console.log('🔓 [AuthStateChange] No initial session');
+        } else if (!session?.user) {
           useAuthStore.setState({
             user: null,
             session: null,
@@ -199,20 +198,17 @@ supabase.auth.onAuthStateChange(async (event, session) => {
         
       case 'SIGNED_IN':
         if (session?.user) {
-          console.log('🔄 [AuthStateChange] Processing SIGNED_IN');
-          
-          // Check if this is a duplicate of INITIAL_SESSION
           const currentState = useAuthStore.getState();
+          
+          // Skip if user is already authenticated with same ID
           if (currentState.user?.id === session.user.id && currentState.isAuthenticated) {
             console.log('ℹ️ [AuthStateChange] SIGNED_IN skipped - user already authenticated');
             break;
           }
           
-          // Clear existing timeout
           clearSessionTimeout();
           setupSessionTimeout(session);
           
-          // Initialize for fresh sign-in
           await useAuthStore.getState().performInitialization(true);
         }
         break;
@@ -220,6 +216,7 @@ supabase.auth.onAuthStateChange(async (event, session) => {
       case 'SIGNED_OUT':
         console.log('🔄 [AuthStateChange] Processing SIGNED_OUT');
         clearSessionTimeout();
+        isInitialized = false;
         
         useAuthStore.setState({
           user: null,
@@ -262,5 +259,41 @@ supabase.auth.onAuthStateChange(async (event, session) => {
     });
   } finally {
     isProcessingEvent = false;
+    
+    // Process next event in queue if any
+    if (eventQueue.length > 0) {
+      setTimeout(processEventQueue, 50); // Small delay to prevent stack overflow
+    }
   }
+};
+
+// Enhanced auth state change listener with queue system
+supabase.auth.onAuthStateChange(async (event, session) => {
+  const eventTimestamp = Date.now();
+  
+  // Prevent rapid duplicate events
+  if (eventTimestamp - lastEventTimestamp < 150) {
+    console.log('⚠️ [AuthStateChange] Skipping duplicate event within 150ms');
+    return;
+  }
+  
+  lastEventTimestamp = eventTimestamp;
+  
+  console.log('🔄 [AuthStateChange] Queuing event:', { 
+    event, 
+    hasSession: !!session, 
+    userId: session?.user?.id,
+    queueLength: eventQueue.length
+  });
+  
+  // Add to queue instead of processing immediately
+  eventQueue.push({ event, session, timestamp: eventTimestamp });
+  
+  // Limit queue size to prevent memory issues
+  if (eventQueue.length > 5) {
+    eventQueue = eventQueue.slice(-3); // Keep only last 3 events
+  }
+  
+  // Process queue
+  processEventQueue();
 });
