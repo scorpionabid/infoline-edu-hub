@@ -1220,7 +1220,14 @@ export type Database = {
         Returns: Json
       }
       assign_school_admin: {
-        Args: { user_id_param: string; school_id_param: string }
+        Args:
+          | {
+              user_id: string
+              school_id: string
+              region_id: string
+              sector_id: string
+            }
+          | { user_id_param: string; school_id_param: string }
         Returns: Json
       }
       assign_school_admin_role: {
@@ -1368,6 +1375,22 @@ export type Database = {
       get_accessible_sectors: {
         Args: { user_id_param: string }
         Returns: string[]
+      }
+      get_assignable_users_for_region: {
+        Args: { p_region_id: string }
+        Returns: {
+          id: string
+          full_name: string
+          email: string
+          phone: string
+          status: string
+          role: string
+          region_id: string
+          sector_id: string
+          school_id: string
+          created_at: string
+          updated_at: string
+        }[]
       }
       get_auth_user_info_simple: {
         Args: Record<PropertyKey, never>

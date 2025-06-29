@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { School } from '@/types/school';
 import { Region } from '@/types/region';
@@ -22,7 +23,7 @@ interface SchoolsContainerProps {
   onCreate: (school: Omit<School, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
   onEdit: (school: School) => Promise<void>;
   onDelete: (school: School) => Promise<void>;
-  onAssignAdmin: () => Promise<void>; // Simplified interface
+  onAssignAdmin: (schoolId: string, adminData: any) => Promise<void>; // Düzəldilmiş interface
   regionNames: Record<string, string>;
   sectorNames: Record<string, string>;
   // Pagination props
@@ -140,17 +141,11 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
     }
   };
 
-  const handleAdminAssign = async (adminData: any) => {
-    if (!selectedSchool) return;
-    setIsSubmitting(true);
-    try {
-      console.log('🔄 SchoolsContainer - handleAdminAssign called with:', { selectedSchool: selectedSchool.id, adminData });
-      await onAssignAdmin(selectedSchool.id, adminData);
-      setAdminDialogOpen(false);
-      setSelectedSchool(null);
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleAdminAssignSuccess = async () => {
+    console.log('🔄 SchoolsContainer - Admin assignment successful, refreshing data...');
+    setAdminDialogOpen(false);
+    setSelectedSchool(null);
+    await onRefresh(); // Data-nı yenilə
   };
 
   return (
@@ -245,11 +240,7 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
             }}
             schoolId={selectedSchool?.id || ''}
             schoolName={selectedSchool?.name || ''}
-            onSuccess={() => {
-              onAssignAdmin(); // Refresh callback
-              setAdminDialogOpen(false);
-              setSelectedSchool(null);
-            }}
+            onSuccess={handleAdminAssignSuccess}
           />
 
           <SchoolFilesDialog

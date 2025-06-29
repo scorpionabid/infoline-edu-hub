@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { Helmet } from 'react-helmet';
 import { supabase } from '@/integrations/supabase/client';
@@ -290,6 +289,26 @@ const Schools = () => {
     }
   }, []);
 
+  const handleAssignAdmin = useCallback(async (schoolId: string, adminData: any) => {
+    try {
+      console.log('🎯 Schools.tsx - handleAssignAdmin called with:', { schoolId, adminData });
+      
+      // assignExistingUserAsSchoolAdmin funksiyasını çağır
+      const result = await assignExistingUserAsSchoolAdmin(adminData.userId, schoolId);
+      
+      if (result.success) {
+        await fetchSchools(); // Data-nı yenilə
+        toast.success(t('adminAssigned') || 'Admin uğurla təyin edildi');
+      } else {
+        throw new Error(result.error || 'Admin təyin edilərkən xəta baş verdi');
+      }
+    } catch (err: any) {
+      console.error('Error assigning admin:', err);
+      toast.error(err.message || t('adminAssignmentFailed') || 'Admin təyin etmə uğursuz oldu');
+      throw err; // Xətanı yenidən at ki, UI-da handle edilsin
+    }
+  }, [fetchSchools, t]);
+
   React.useEffect(() => {
     // Only fetch schools when filters change
     fetchSchools();
@@ -316,17 +335,6 @@ const Schools = () => {
       return acc;
     }, {});
   }, [sectors]);
-
-  const handleAssignAdmin = useCallback(async () => {
-    try {
-      console.log('🎯 Schools.tsx - handleAssignAdmin refresh called');
-      await fetchSchools(); // Simple refresh
-      toast.success(t('adminAssigned') || 'Admin uğurla təyin edildi');
-    } catch (err: any) {
-      console.error('Error refreshing after admin assignment:', err);
-      toast.error(err.message || t('adminAssignmentFailed') || 'Admin refresh uğursuz oldu');
-    }
-  }, [fetchSchools, t]);
 
   return (
     <>

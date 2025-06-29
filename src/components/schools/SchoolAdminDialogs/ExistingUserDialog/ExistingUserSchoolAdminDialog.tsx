@@ -105,33 +105,31 @@ const ExistingUserSchoolAdminDialog = ({
     setError("");
 
     try {
+      console.log('🚀 Dialog - Admin assignment started:', { userId, schoolId, schoolName });
+      
       const result = await assignExistingUserAsSchoolAdmin(userId, schoolId);
 
       if (result.success) {
+        console.log('✅ Dialog - Admin assignment successful');
         toast.success(
           t("adminAssignedSuccessfully") || "Admin uğurla təyin edildi"
         );
         onSuccess();
-        onClose();
       } else {
-        setError(
-          result.error ||
-            t("errorAssigningAdmin") ||
-            "Admin təyin edilərkən xəta baş verdi"
-        );
-        toast.error(
-          result.error ||
-            t("errorAssigningAdmin") ||
-            "Admin təyin edilərkən xəta baş verdi"
-        );
+        console.error('❌ Dialog - Admin assignment failed:', result.error);
+        const errorMsg = result.error || t("errorAssigningAdmin") || "Admin təyin edilərkən xəta baş verdi";
+        setError(errorMsg);
+        toast.error(errorMsg);
       }
     } catch (e: any) {
-      setError(e.message || t("unknownError") || "Bilinməyən xəta");
-      toast.error(e.message || t("unknownError") || "Bilinməyən xəta");
+      console.error('❌ Dialog - Exception during assignment:', e);
+      const errorMsg = e.message || t("unknownError") || "Bilinməyən xəta";
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
-  }, [userId, schoolId, t, onSuccess, onClose]);
+  }, [userId, schoolId, schoolName, t, onSuccess]);
 
   // Filter users based on search term
   const filteredUsers = useMemo(() => {
@@ -229,23 +227,6 @@ const ExistingUserSchoolAdminDialog = ({
                   : t("noUsersFound") || "Təyin edilə bilən istifadəçi tapılmadı"}
               </AlertDescription>
             </Alert>
-          )}
-
-          {/* Debugging info for development */}
-          {!usersLoading && !regionLoading && users && users.length > 0 && (
-            <div className="p-3 rounded-md bg-blue-50 text-blue-800 text-xs">
-              <p className="font-medium">Debug məlumatı:</p>
-              <ul className="list-disc pl-4 space-y-1 mt-1">
-                <li>Region ID: {regionId || 'Yoxdur'}</li>
-                <li>Məktəb: {schoolName}</li>
-                <li>Cəmi istifadəçi sayı: {users.length}</li>
-                <li>Filtrdən sonra qalan: {filteredUsers.length}</li>
-                <li>Axtarış termi: {searchTerm || 'Yoxdur'}</li>
-              </ul>
-              <p className="mt-2 text-xs opacity-75">
-                Bu məlumat yalnız development zamanı görünür.
-              </p>
-            </div>
           )}
         </div>
 

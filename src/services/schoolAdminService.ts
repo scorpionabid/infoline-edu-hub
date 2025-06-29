@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { School, SchoolAdmin } from '@/types/school';
@@ -6,98 +7,118 @@ import { FormNotification } from '@/types/adapters';
 // Existing user-i school admin təyin etmə funksiyası (Sector model əsasında)
 export const assignExistingUserAsSchoolAdmin = async (userId: string, schoolId: string) => {
   try {
-    console.log('🏫 assignExistingUserAsSchoolAdmin çağırıldı:', { userId, schoolId });
+    console.log('🏫 assignExistingUserAsSchoolAdmin started:', { userId, schoolId });
     
-    // Get school data to get region_id and sector_id
-    const { data: schoolData, error: schoolError } = await supabase
-      .from('schools')
-      .select('region_id, sector_id, name')
-      .eq('id', schoolId)
-      .single();
-      
-    if (schoolError) {
-      console.error('Məktəb məlumatları əldə edilərkən xəta:', schoolError);
-      return { success: false, error: schoolError.message };
+    // 1. Parametrləri yoxla
+    if (!userId || !schoolId) {
+      const error = `Zəruri parametrlər çatışmır: ${!userId ? 'userId' : 'schoolId'}`;
+      console.error('❌', error);
+      return { success: false, error };
     }
-    
-    console.log('🏫 School data retrieved:', {
-      schoolId,
-      schoolName: schoolData.name,
-      region_id: schoolData.region_id,
-      sector_id: schoolData.sector_id
+
+    // 2. İstifadəçi və məktəb məlumatlarını yoxla
+    const [userCheck, schoolCheck] = await Promise.all([
+      supabase.from('profiles').select('id, full_name, email').eq('id', userId).single(),
+      supabase.from('schools').select('id, name, region_id, sector_id').eq('id', schoolId).single()
+    ]);
+
+    if (userCheck.error) {
+      console.error('❌ İstifadəçi tapılmadı:', userCheck.error);
+      return { success: false, error: 'İstifadəçi tapılmadı' };
+    }
+
+    if (schoolCheck.error) {
+      console.error('❌ Məktəb tapılmadı:', schoolCheck.error);
+      return { success: false, error: 'Məktəb tapılmadı' };
+    }
+
+    console.log('✅ Məlumatlar yoxlanıldı:', {
+      user: userCheck.data.full_name,
+      school: schoolCheck.data.name,
+      region_id: schoolCheck.data.region_id,
+      sector_id: schoolCheck.data.sector_id
     });
 
-    // Check if user already has a role
-    const { data: existingRole, error: checkError } = await supabase
-      .from('user_roles')
-      .select('*')
-      .eq('user_id', userId)
-      .maybeSingle();
-    
-    if (checkError) {
-      console.error('Rol yoxlanılırkən xəta:', checkError);
-      return { success: false, error: checkError.message };
-    }
-    
-    if (!existingRole) {
-      // Insert new role
+    // 3. Edge function istifadə et (əgər mövcuddursa)
+    try {
+      const { data, error } = await supabase.functions.invoke('assign-existing-user-as-school-admin', {
+        body: { userId, schoolId }
+      });
+
+      if (error) {
+        console.warn('⚠️ Edge function xətası, local method istifadə edilir:', error);
+        throw error; // Local method-a keçir
+      }
+
+      if (data?.success) {
+        console.log('✅ Edge function uğurla icra edildi:', data);
+        return { success: true };
+      } else {
+        console.warn('⚠️ Edge function uğursuz, local method istifadə edilir:', data);
+        throw new Error(data?.error || 'Edge function uğursuz oldu');
+      }
+    } catch (edgeError: any) {
+      console.warn('⚠️ Edge function istifadə edilə bilmir, local method istifadə edilir:', edgeError.message);
+      
+      // 4. Local method - user_roles cədvəlində əməliyyat
+      const { data: existingRole } = await supabase
+        .from('user_roles')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
       const roleData = {
         user_id: userId,
-        role: 'schooladmin',
+        role: 'schooladmin' as const,
         school_id: schoolId,
-        sector_id: schoolData.sector_id,
-        region_id: schoolData.region_id,
-        created_at: new Date().toISOString(),
+        sector_id: schoolCheck.data.sector_id,
+        region_id: schoolCheck.data.region_id,
         updated_at: new Date().toISOString()
       };
-      
-      console.log('📝 Inserting new role:', roleData);
-      
-      const { error: insertError } = await supabase
-        .from('user_roles')
-        .insert(roleData);
-        
-      if (insertError) {
-        console.error('Rol əlavə edilərkən xəta:', insertError);
-        return { success: false, error: insertError.message };
+
+      if (existingRole) {
+        // Mövcud rolu yenilə
+        const { error: updateError } = await supabase
+          .from('user_roles')
+          .update(roleData)
+          .eq('user_id', userId);
+
+        if (updateError) {
+          console.error('❌ Rol yeniləmə xətası:', updateError);
+          return { success: false, error: updateError.message };
+        }
+      } else {
+        // Yeni rol əlavə et
+        const { error: insertError } = await supabase
+          .from('user_roles')
+          .insert({ ...roleData, created_at: new Date().toISOString() });
+
+        if (insertError) {
+          console.error('❌ Rol əlavə etmə xətası:', insertError);
+          return { success: false, error: insertError.message };
+        }
       }
-    } else {
-      // Update existing role
-      const { error: updateError } = await supabase
-        .from('user_roles')
-        .update({
-          role: 'schooladmin', 
-          school_id: schoolId,
-          sector_id: schoolData.sector_id,
-          region_id: schoolData.region_id,
+
+      // 5. Məktəb admin_id-ni yenilə
+      const { error: schoolUpdateError } = await supabase
+        .from('schools')
+        .update({ 
+          admin_id: userId,
+          admin_email: userCheck.data.email,
           updated_at: new Date().toISOString()
         })
-        .eq('user_id', userId);
-        
-      if (updateError) {
-        console.error('Rol yenilənərkən xəta:', updateError);
-        return { success: false, error: updateError.message };
+        .eq('id', schoolId);
+
+      if (schoolUpdateError) {
+        console.error('❌ Məktəb yenilənmə xətası:', schoolUpdateError);
+        return { success: false, error: schoolUpdateError.message };
       }
-    }
 
-    // Update school admin_id
-    const { error: schoolUpdateError } = await supabase
-      .from('schools')
-      .update({ 
-        admin_id: userId,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', schoolId);
-      
-    if (schoolUpdateError) {
-      console.error('Məktəb admin_id yenilənərkən xəta:', schoolUpdateError);
-      return { success: false, error: schoolUpdateError.message };
+      console.log('✅ Local method ilə admin təyin edildi');
+      return { success: true };
     }
-
-    console.log('✅ Məktəb admini uğurla təyin edildi');
-    return { success: true };
   } catch (error: any) {
-    console.error('Xəta:', error);
+    console.error('❌ Ümumi xəta:', error);
     return { success: false, error: error.message || 'Bilinməyən xəta' };
   }
 };
