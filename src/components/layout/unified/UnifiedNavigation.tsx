@@ -147,8 +147,7 @@ const UnifiedNavigation = memo(function UnifiedNavigation({
             {/* Group Header with Collapsible */}
             <div className="px-1 sm:px-2 mb-2">
               <Button
-                variant="ghost"
-                className="w-full justify-between h-6 sm:h-8 px-1 sm:px-2 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                className="w-full justify-between h-6 sm:h-8 px-1 sm:px-2 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                 onClick={() => toggleSection(group.id)}
               >
                 <span className="uppercase tracking-wider truncate flex-1 text-left">
@@ -181,8 +180,7 @@ const UnifiedNavigation = memo(function UnifiedNavigation({
           <div className="space-y-1 sm:space-y-2">
             {/* User Profile Button */}
             <Button
-              variant="secondary"
-              className="w-full justify-start h-8 sm:h-10 px-2 sm:px-3 text-xs sm:text-sm"
+              className="w-full justify-start h-8 sm:h-10 px-2 sm:px-3 text-xs sm:text-sm bg-secondary text-secondary-foreground hover:bg-secondary/80"
               onClick={() => navigate('/profile')}
             >
               <div className="flex items-center gap-2 sm:gap-3 w-full min-w-0">
@@ -197,8 +195,7 @@ const UnifiedNavigation = memo(function UnifiedNavigation({
             
             {/* Settings Button */}
             <Button
-              variant="secondary"
-              className="w-full justify-start h-8 sm:h-10 px-2 sm:px-3 text-xs sm:text-sm"
+              className="w-full justify-start h-8 sm:h-10 px-2 sm:px-3 text-xs sm:text-sm bg-secondary text-secondary-foreground hover:bg-secondary/80"
               onClick={() => navigate('/settings')}
             >
               <div className="flex items-center gap-2 sm:gap-3 w-full min-w-0">
@@ -211,8 +208,7 @@ const UnifiedNavigation = memo(function UnifiedNavigation({
             
             {/* Logout Button */}
             <Button
-              variant="secondary"
-              className="w-full justify-start h-8 sm:h-10 px-2 sm:px-3 text-xs sm:text-sm hover:bg-accent/50 hover:shadow-md hover:text-destructive transition-all duration-200 min-h-[36px] sm:min-h-[44px] touch-manipulation" 
+              className="w-full justify-start h-8 sm:h-10 px-2 sm:px-3 text-xs sm:text-sm hover:bg-accent/50 hover:shadow-md hover:text-destructive transition-all duration-200 min-h-[36px] sm:min-h-[44px] touch-manipulation bg-secondary text-secondary-foreground"
               onClick={handleLogout}
             >
               <div className="flex items-center gap-2 sm:gap-3 w-full min-w-0">

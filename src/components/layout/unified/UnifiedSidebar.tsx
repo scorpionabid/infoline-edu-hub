@@ -148,10 +148,8 @@ const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
           </div>
           {(variant === 'mobile' || variant === 'overlay') && (
             <Button
-              variant="ghost"
-              size="icon"
               className={cn(
-                "h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0 ml-2",
+                "h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0 ml-2 hover:bg-accent hover:text-accent-foreground",
                 mobileClasses.touchTarget
               )}
               onClick={onToggle}
