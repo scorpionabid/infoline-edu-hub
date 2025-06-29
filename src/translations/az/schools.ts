@@ -120,6 +120,19 @@ export const schools = {
     confirmChange: 'Admini dəyişdirmək istədiyinizə əminsiniz?'
   },
   
+  // School admin assignment - New additions
+  assign_school_admin: 'Məktəb admin təyin et',
+  select_user_for_school: 'Zəhmət olmasa bu məktəb üçün istifadəçi seçin:',
+  selectUser: 'İstifadəçi seçin',
+  search_users: 'İstifadəçiləri axtar...',
+  loading: 'Yüklənir...',
+  assigning: 'Təyin edilir...',
+  adminAssignedSuccessfully: 'Admin uğurla təyin edildi',
+  errorFetchingUsers: 'İstifadəçiləri əldə edərkən xəta baş verdi',
+  unknownError: 'Bilinməyən xəta',
+  noUsersFound: 'Təyin edilə bilən istifadəçi tapılmadı',
+  noUsersFoundForSearch: 'Axtarışınıza uyğun istifadəçi tapılmadı',
+  
   // Import/Export
   importExport: {
     import: 'Məktəbləri idxal et',

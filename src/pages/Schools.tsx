@@ -317,21 +317,14 @@ const Schools = () => {
     }, {});
   }, [sectors]);
 
-  const handleAssignAdmin = useCallback(async (schoolId: string, userId: string) => {
+  const handleAssignAdmin = useCallback(async () => {
     try {
-      const { error } = await supabase
-        .from('schools')
-        .update({ admin_id: userId })
-        .eq('id', schoolId);
-
-      if (error) throw error;
-      
-      await fetchSchools();
-      toast.success(t('adminAssigned'));
-    } catch (err) {
-      console.error('Error assigning admin:', err);
-      toast.error(t('adminAssignmentFailed'));
-      throw err;
+      console.log('🎯 Schools.tsx - handleAssignAdmin refresh called');
+      await fetchSchools(); // Simple refresh
+      toast.success(t('adminAssigned') || 'Admin uğurla təyin edildi');
+    } catch (err: any) {
+      console.error('Error refreshing after admin assignment:', err);
+      toast.error(err.message || t('adminAssignmentFailed') || 'Admin refresh uğursuz oldu');
     }
   }, [fetchSchools, t]);
 

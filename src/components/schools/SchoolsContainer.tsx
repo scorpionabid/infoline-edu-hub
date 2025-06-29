@@ -9,9 +9,9 @@ import SchoolPagination from './SchoolPagination';
 import AddSchoolDialog from './AddSchoolDialog';
 import { EditSchoolDialog } from './EditSchoolDialog';
 import { DeleteSchoolDialog } from './DeleteSchoolDialog';
-import { AssignAdminDialog } from './AssignAdminDialog';
 import { SchoolFilesDialog } from './SchoolFilesDialog';
 import { SchoolLinksDialog } from './SchoolLinksDialog';
+import { ExistingUserSchoolAdminDialog } from './SchoolAdminDialogs';
 
 interface SchoolsContainerProps {
   schools: School[];
@@ -22,7 +22,7 @@ interface SchoolsContainerProps {
   onCreate: (school: Omit<School, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
   onEdit: (school: School) => Promise<void>;
   onDelete: (school: School) => Promise<void>;
-  onAssignAdmin: (schoolId: string, userId: string) => Promise<void>;
+  onAssignAdmin: () => Promise<void>; // Simplified interface
   regionNames: Record<string, string>;
   sectorNames: Record<string, string>;
   // Pagination props
@@ -140,11 +140,12 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
     }
   };
 
-  const handleAdminAssign = async (userId: string) => {
+  const handleAdminAssign = async (adminData: any) => {
     if (!selectedSchool) return;
     setIsSubmitting(true);
     try {
-      await onAssignAdmin(selectedSchool.id, userId);
+      console.log('🔄 SchoolsContainer - handleAdminAssign called with:', { selectedSchool: selectedSchool.id, adminData });
+      await onAssignAdmin(selectedSchool.id, adminData);
       setAdminDialogOpen(false);
       setSelectedSchool(null);
     } finally {
@@ -236,15 +237,19 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
             school={selectedSchool!}
           />
 
-          <AssignAdminDialog
+          <ExistingUserSchoolAdminDialog
             isOpen={adminDialogOpen}
             onClose={() => {
               setAdminDialogOpen(false);
               setSelectedSchool(null);
             }}
-            onAssign={handleAdminAssign}
-            entityType="school"
-            entityName={selectedSchool?.name || ''}
+            schoolId={selectedSchool?.id || ''}
+            schoolName={selectedSchool?.name || ''}
+            onSuccess={() => {
+              onAssignAdmin(); // Refresh callback
+              setAdminDialogOpen(false);
+              setSelectedSchool(null);
+            }}
           />
 
           <SchoolFilesDialog

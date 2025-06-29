@@ -1,0 +1,279 @@
+
+import React, { useState, useEffect, useMemo } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { toast } from 'sonner';
+import { Loader2, UserPlus, Search } from 'lucide-react';
+import { useAssignableUsers } from '@/hooks/user/useAssignableUsers';
+import { useUserRegion } from '@/hooks/auth/useUserRegion';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
+
+interface AssignAdminDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onAssign: (adminData: any) => void;
+  entityType: 'school' | 'sector' | 'region';
+  entityName: string;
+}
+
+export const AssignAdminDialog: React.FC<AssignAdminDialogProps> = ({
+  isOpen,
+  onClose,
+  onAssign,
+  entityType,
+  entityName
+}) => {
+  const [selectedUserId, setSelectedUserId] = useState<string>('');
+  const [submitting, setSubmitting] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // Current user region info for region-aware filtering
+  const { regionId, isLoading: regionLoading } = useUserRegion();
+  
+  // Enhanced user fetching with region-aware filtering
+  const { users, isLoading: usersLoading, error: usersError } = useAssignableUsers(regionId || undefined);
+
+  // Log for debugging
+  useEffect(() => {
+    if (isOpen && users) {
+      console.log('🏛️ AssignAdminDialog - Enhanced users loaded:', {
+        regionId,
+        totalUsers: users.length,
+        entityType,
+        entityName,
+        users: users.map(u => ({
+          id: u.id,
+          name: u.full_name,
+          email: u.email,
+          role: u.role,
+          region_id: u.region_id,
+          sector_id: u.sector_id,
+          school_id: u.school_id
+        }))
+      });
+    }
+  }, [isOpen, users, regionId, entityType, entityName]);
+
+  // Reset state when dialog opens
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedUserId('');
+      setSearchTerm('');
+    }
+    
+    if (usersError) {
+      toast.error(
+        'İstifadəçiləri əldə edərkən xəta baş verdi: ' + usersError.message
+      );
+    }
+  }, [isOpen, usersError]);
+
+  // Filter users based on search term
+  const filteredUsers = useMemo(() => {
+    if (!users || users.length === 0) {
+      return [];
+    }
+    
+    let filtered = users;
+    
+    // Apply search filter if search term exists
+    if (searchTerm && searchTerm.trim() !== '') {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(user => {
+        const matchesName = user.full_name?.toLowerCase().includes(term) || false;
+        const matchesEmail = user.email?.toLowerCase().includes(term) || false;
+        return matchesName || matchesEmail;
+      });
+    }
+    
+    console.log('🎯 AssignAdminDialog - Final filtered users:', {
+      original: users.length,
+      afterSearch: filtered.length,
+      searchTerm,
+      regionId,
+      entityType,
+      entityName
+    });
+    
+    return filtered;
+  }, [users, searchTerm, regionId, entityType, entityName]);
+
+  const handleAssign = async () => {
+    if (!selectedUserId) {
+      toast.error('Zəhmət olmasa istifadəçi seçin');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      // İstifadəçi məlumatlarını toplamaq
+      const selectedUser = users.find(u => u.id === selectedUserId);
+      
+      if (!selectedUser) {
+        toast.error('Seçilmiş istifadəçi tapılmadı');
+        return;
+      }
+
+      const adminData = {
+        userId: selectedUser.id,
+        email: selectedUser.email,
+        name: selectedUser.full_name
+      };
+      
+      console.log('\ud83d\ude80 AssignAdminDialog - handleAssign called with:', { adminData, entityType, entityName });
+      
+      await onAssign(adminData);
+      handleClose();
+      toast.success('Admin uğurla təyin edildi');
+    } catch (error: any) {
+      console.error('Error assigning admin:', error);
+      toast.error('Admin təyin etmə xətası: ' + error.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleClose = () => {
+    if (!submitting) {
+      setSelectedUserId('');
+      setSearchTerm('');
+      onClose();
+    }
+  };
+
+  const getEntityTypeName = () => {
+    switch (entityType) {
+      case 'school': 
+        return 'məktəb';
+      case 'sector': 
+        return 'sektor';
+      case 'region': 
+        return 'region';
+      default: 
+        return 'entity';
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <UserPlus className="h-5 w-5" />
+            Admin təyin et
+          </DialogTitle>
+          <DialogDescription>
+            <strong>"{entityName}"</strong> {getEntityTypeName()}una admin təyin edin
+          </DialogDescription>
+        </DialogHeader>
+
+        {/* Search Field */}
+        <div className="relative">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="İstifadəçiləri axtar..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-8"
+          />
+        </div>
+
+        <div className="grid gap-4 py-4">
+          {(usersLoading || regionLoading) ? (
+            <div className="flex items-center justify-center p-4">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              <span className="ml-2">Yüklənir...</span>
+            </div>
+          ) : filteredUsers.length > 0 ? (
+            <div>
+              <Label htmlFor="userId">
+                İstifadəçi seçin
+              </Label>
+              <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="İstifadəçi seçin..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {filteredUsers.map((user) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      <div className="flex flex-col">
+                        <span className="font-medium">
+                          {user.full_name || 'Ad məlum deyil'}
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          {user.email} {user.role ? `• ${user.role}` : '• Təyin edilməyib'}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                {searchTerm 
+                  ? 'Axtarışınıza uyğun istifadəçi tapılmadı' 
+                  : 'Təyin edilə bilən istifadəçi tapılmadı'}
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Debug info for development */}
+          {!usersLoading && !regionLoading && users && users.length > 0 && (
+            <div className="p-3 rounded-md bg-blue-50 text-blue-800 text-xs">
+              <p className="font-medium">Debug məlumatı:</p>
+              <ul className="list-disc pl-4 space-y-1 mt-1">
+                <li>Region ID: {regionId || 'Yoxdur'}</li>
+                <li>Entity: {entityName} ({entityType})</li>
+                <li>Cəmi istifadəçi sayı: {users.length}</li>
+                <li>Filtrdən sonra qalan: {filteredUsers.length}</li>
+                <li>Axtarış termi: {searchTerm || 'Yoxdur'}</li>
+              </ul>
+              <p className="mt-2 text-xs opacity-75">
+                Bu məlumat yalnız development zamanı görünür.
+              </p>
+            </div>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={handleClose} disabled={submitting}>
+            Ləğv et
+          </Button>
+          <Button onClick={handleAssign} disabled={!selectedUserId || submitting}>
+            {submitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Təyin edilir...
+              </>
+            ) : (
+              <>
+                <UserPlus className="mr-2 h-4 w-4" />
+                Təyin et
+              </>
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
