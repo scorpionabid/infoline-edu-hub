@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -10,13 +11,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Loader2, Search } from "lucide-react";
+import { AlertCircle, Loader2, Search, RefreshCw } from "lucide-react";
 import { useTranslation } from "@/contexts/TranslationContext";
 import { toast } from "sonner";
 import { assignExistingUserAsSchoolAdmin } from "@/services/schoolAdminService";
 import { useAssignableUsers } from "@/hooks/user/useAssignableUsers";
 import { useUserRegion } from "@/hooks/auth/useUserRegion";
-import { FullUserData } from "@/types/user";
+import { usePermissions } from "@/hooks/auth/usePermissions";
 import {
   Dialog,
   DialogContent,
@@ -47,54 +48,69 @@ const ExistingUserSchoolAdminDialog = ({
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   
-  // Current user region info
-  const { regionId, isLoading: regionLoading } = useUserRegion();
+  // Get user permissions and region info
+  const { isSuperAdmin } = usePermissions();
+  const { regionId, isLoading: regionLoading, error: regionError } = useUserRegion();
   
-  // İstifadəçiləri yüklə - region-aware filtering ilə
-  const { users, isLoading: usersLoading, error: usersError } = useAssignableUsers(regionId || undefined);
+  // Use region-aware user fetching with fallback
+  const { users, isLoading: usersLoading, error: usersError, refetch } = useAssignableUsers(
+    isSuperAdmin ? undefined : regionId || undefined
+  );
   
-  // Log users for debugging
+  // Debug logging
   useEffect(() => {
-    if (isOpen && users) {
-      console.log('🏫 SchoolAdmin - Assignable users loaded:', {
-        regionId,
-        totalUsers: users.length,
+    if (isOpen) {
+      console.log('🏫 SchoolAdminDialog - Dialog opened:', {
         schoolId,
         schoolName,
-        users: users.map(u => ({
+        regionId,
+        isSuperAdmin,
+        regionLoading,
+        regionError
+      });
+    }
+  }, [isOpen, schoolId, schoolName, regionId, isSuperAdmin, regionLoading, regionError]);
+
+  useEffect(() => {
+    if (isOpen && users) {
+      console.log('👥 SchoolAdminDialog - Users loaded:', {
+        totalUsers: users.length,
+        regionId,
+        isSuperAdmin,
+        sampleUsers: users.slice(0, 3).map(u => ({
           id: u.id,
           name: u.full_name,
           email: u.email,
           role: u.role,
-          region_id: u.region_id,
-          sector_id: u.sector_id,
-          school_id: u.school_id
+          region_id: u.region_id
         }))
       });
     }
-  }, [isOpen, users, regionId, schoolId, schoolName]);
+  }, [isOpen, users, regionId, isSuperAdmin]);
 
-  // Dialog açıldıqda state-i sıfırla
+  // Reset state when dialog opens
   useEffect(() => {
     if (isOpen) {
       setUserId("");
       setSearchTerm("");
       setError("");
     }
-    
-    if (usersError) {
-      setError(
-        t("errorFetchingUsers") ||
-          "İstifadəçiləri əldə edərkən xəta baş verdi"
-      );
-      toast.error(
-        t("errorFetchingUsers") ||
-          "İstifadəçiləri əldə edərkən xəta baş verdi"
-      );
-    }
-  }, [isOpen, t, usersError]);
+  }, [isOpen]);
 
-  // useCallback ilə təyin etmə əməliyyatı
+  // Handle errors from hooks
+  useEffect(() => {
+    if (regionError) {
+      console.error('❌ SchoolAdminDialog - Region error:', regionError);
+      setError(t("errorFetchingRegion") || "Region məlumatları alınarkən xəta baş verdi");
+    } else if (usersError) {
+      console.error('❌ SchoolAdminDialog - Users error:', usersError);
+      setError(t("errorFetchingUsers") || "İstifadəçi məlumatları alınarkən xəta baş verdi");
+    } else {
+      setError("");
+    }
+  }, [regionError, usersError, t]);
+
+  // Handle assignment submission
   const handleSubmit = useCallback(async () => {
     if (!userId || userId === "no-users-found") {
       setError(t("selectUser") || "Zəhmət olmasa istifadəçi seçin");
@@ -105,24 +121,26 @@ const ExistingUserSchoolAdminDialog = ({
     setError("");
 
     try {
-      console.log('🚀 Dialog - Admin assignment started:', { userId, schoolId, schoolName });
+      console.log('🚀 SchoolAdminDialog - Starting assignment:', { 
+        userId, 
+        schoolId, 
+        schoolName 
+      });
       
       const result = await assignExistingUserAsSchoolAdmin(userId, schoolId);
 
       if (result.success) {
-        console.log('✅ Dialog - Admin assignment successful');
-        toast.success(
-          t("adminAssignedSuccessfully") || "Admin uğurla təyin edildi"
-        );
+        console.log('✅ SchoolAdminDialog - Assignment successful');
+        toast.success(t("adminAssignedSuccessfully") || "Admin uğurla təyin edildi");
         onSuccess();
       } else {
-        console.error('❌ Dialog - Admin assignment failed:', result.error);
+        console.error('❌ SchoolAdminDialog - Assignment failed:', result.error);
         const errorMsg = result.error || t("errorAssigningAdmin") || "Admin təyin edilərkən xəta baş verdi";
         setError(errorMsg);
         toast.error(errorMsg);
       }
     } catch (e: any) {
-      console.error('❌ Dialog - Exception during assignment:', e);
+      console.error('❌ SchoolAdminDialog - Assignment exception:', e);
       const errorMsg = e.message || t("unknownError") || "Bilinməyən xəta";
       setError(errorMsg);
       toast.error(errorMsg);
@@ -149,21 +167,30 @@ const ExistingUserSchoolAdminDialog = ({
       });
     }
     
-    console.log('🎯 SchoolAdmin - Final filtered users:', {
+    console.log('🎯 SchoolAdminDialog - Filtered users:', {
       original: users.length,
       afterSearch: filtered.length,
       searchTerm,
-      regionId,
-      schoolName
+      regionId
     });
     
     return filtered;
-  }, [users, searchTerm, regionId, schoolName]);
+  }, [users, searchTerm, regionId]);
 
-  // Dialoq yalnız açıq olduqda render edilir
+  // Handle manual refresh
+  const handleRefresh = useCallback(async () => {
+    console.log('🔄 SchoolAdminDialog - Manual refresh triggered');
+    await refetch();
+  }, [refetch]);
+
+  // Don't render if dialog is not open
   if (!isOpen) {
     return null;
   }
+
+  const isInitialLoading = regionLoading || usersLoading;
+  const hasUsers = filteredUsers.length > 0;
+  const showNoUsersMessage = !isInitialLoading && !hasUsers;
   
   return (
     <Dialog open={isOpen} onOpenChange={() => {
@@ -178,24 +205,45 @@ const ExistingUserSchoolAdminDialog = ({
           </DialogDescription>
         </DialogHeader>
 
-        {/* Axtarış sahəsi */}
-        <div className="relative">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder={t("search_users") || "İstifadəçiləri axtar..."}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-8"
-          />
-        </div>
-
         <div className="grid gap-4 py-4">
-          {(usersLoading || regionLoading) ? (
-            <div className="flex items-center justify-center p-4">
+          {/* Search field */}
+          <div className="relative">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder={t("search_users") || "İstifadəçiləri axtar..."}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-8"
+              disabled={isInitialLoading}
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="absolute right-1 top-1 h-7 w-7 p-0"
+              onClick={handleRefresh}
+              disabled={isInitialLoading}
+              title={t("refresh") || "Yenilə"}
+            >
+              <RefreshCw className={`h-3 w-3 ${isInitialLoading ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
+
+          {/* Loading state */}
+          {isInitialLoading && (
+            <div className="flex items-center justify-center p-6">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
-              <span className="ml-2">{t("loading") || "Yüklənir..."}</span>
+              <span className="ml-2">
+                {regionLoading 
+                  ? (t("loading_region") || "Region məlumatları yüklənir...")
+                  : (t("loading_users") || "İstifadəçilər yüklənir...")
+                }
+              </span>
             </div>
-          ) : filteredUsers.length > 0 ? (
+          )}
+
+          {/* User selection */}
+          {!isInitialLoading && hasUsers && (
             <div>
               <Label htmlFor="userId">
                 {t("selectUser") || "İstifadəçi seçin"}
@@ -210,7 +258,7 @@ const ExistingUserSchoolAdminDialog = ({
                       <div className="flex flex-col">
                         <span>{user.full_name || user.email}</span>
                         <span className="text-xs text-muted-foreground">
-                          {user.email} {user.role ? `• ${user.role}` : '• Təyin edilməyib'}
+                          {user.email} {user.role ? `• ${user.role}` : '• Rol təyin edilməyib'}
                         </span>
                       </div>
                     </SelectItem>
@@ -218,18 +266,37 @@ const ExistingUserSchoolAdminDialog = ({
                 </SelectContent>
               </Select>
             </div>
-          ) : (
+          )}
+
+          {/* No users message */}
+          {showNoUsersMessage && (
             <Alert>
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                {searchTerm 
-                  ? t("noUsersFoundForSearch") || "Axtarışınıza uyğun istifadəçi tapılmadı" 
-                  : t("noUsersFound") || "Təyin edilə bilən istifadəçi tapılmadı"}
+                <div className="space-y-2">
+                  <p>
+                    {searchTerm 
+                      ? (t("noUsersFoundForSearch") || "Axtarışınıza uyğun istifadəçi tapılmadı") 
+                      : (t("noUsersFound") || "Təyin edilə bilən istifadəçi tapılmadı")
+                    }
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRefresh}
+                    className="h-8"
+                  >
+                    <RefreshCw className="h-3 w-3 mr-1" />
+                    {t("retry") || "Yenidən cəhd et"}
+                  </Button>
+                </div>
               </AlertDescription>
             </Alert>
           )}
         </div>
 
+        {/* Error display */}
         {error && (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
@@ -247,7 +314,7 @@ const ExistingUserSchoolAdminDialog = ({
           </Button>
           <Button 
             onClick={handleSubmit} 
-            disabled={loading || !userId || userId === "no-users-found"}
+            disabled={loading || !userId || userId === "no-users-found" || isInitialLoading}
           >
             {loading ? (
               <>

@@ -1,3 +1,4 @@
+
 // Auto-generated file - do not edit manually
 
 export const schools = {
@@ -16,14 +17,20 @@ export const schools = {
   'selectUser': 'Select User',
   'search_users': 'Search users...',
   'loading': 'Loading...',
+  'loading_region': 'Loading region data...',
+  'loading_users': 'Loading users...',
   'assigning': 'Assigning...',
   'adminAssignedSuccessfully': 'Admin assigned successfully',
   'errorFetchingUsers': 'Error fetching users',
+  'errorFetchingRegion': 'Error fetching region data',
+  'errorAssigningAdmin': 'Error assigning admin',
   'unknownError': 'Unknown error',
   'noUsersFound': 'No assignable users found',
   'noUsersFoundForSearch': 'No users found for your search',
   'cancel': 'Cancel',
-  'assign': 'Assign'
+  'assign': 'Assign',
+  'refresh': 'Refresh',
+  'retry': 'Retry'
 } as const;
 
 export type Schools = typeof schools;

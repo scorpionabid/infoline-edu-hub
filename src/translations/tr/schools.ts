@@ -1,3 +1,4 @@
+
 // Auto-generated file - do not edit manually
 
 export const schools = {
@@ -16,14 +17,20 @@ export const schools = {
   'selectUser': 'Kullanıcı Seç',
   'search_users': 'Kullanıcıları ara...',
   'loading': 'Yükleniyor...',
+  'loading_region': 'Bölge verileri yükleniyor...',
+  'loading_users': 'Kullanıcılar yükleniyor...',
   'assigning': 'Atanıyor...',
   'adminAssignedSuccessfully': 'Yönetici başarıyla atandı',
   'errorFetchingUsers': 'Kullanıcıları getirirken hata oluştu',
+  'errorFetchingRegion': 'Bölge verilerini alırken hata oluştu',
+  'errorAssigningAdmin': 'Yönetici atarken hata oluştu',
   'unknownError': 'Bilinmeyen hata',
   'noUsersFound': 'Atanabilir kullanıcı bulunamadı',
   'noUsersFoundForSearch': 'Arama kriterlerinize uygun kullanıcı bulunamadı',
   'cancel': 'İptal',
-  'assign': 'Ata'
+  'assign': 'Ata',
+  'refresh': 'Yenile',
+  'retry': 'Tekrar Dene'
 } as const;
 
 export type Schools = typeof schools;

@@ -5,125 +5,158 @@ import { FullUserData, UserStatus } from '@/types/user';
 export const userFetchService = {
   async getAllUsers(): Promise<FullUserData[]> {
     try {
+      console.log('🔍 userFetchService.getAllUsers - Starting fetch');
+      
       const { data, error } = await supabase
         .from('profiles')
-        .select('*');
+        .select('*')
+        .order('created_at', { ascending: false });
 
       if (error) {
+        console.error('❌ userFetchService.getAllUsers - Error:', error);
         throw error;
       }
 
+      if (!data) {
+        console.log('⚠️ userFetchService.getAllUsers - No data returned');
+        return [];
+      }
+
+      console.log('✅ userFetchService.getAllUsers - Success:', data.length, 'users');
       return data as FullUserData[];
     } catch (error) {
-      console.error('Error fetching users:', error);
+      console.error('❌ userFetchService.getAllUsers - Exception:', error);
       return [];
     }
   },
 
   async getUserById(userId: string): Promise<FullUserData | null> {
     try {
+      console.log('🔍 userFetchService.getUserById - Fetching user:', userId);
+      
       const { data } = await supabase.rpc('get_full_user_data', {
         user_id_param: userId
       });
 
-      if (!data) return null;
+      if (!data) {
+        console.log('⚠️ userFetchService.getUserById - No user found');
+        return null;
+      }
 
       // Ensure status is properly typed
-      const _status: UserStatus = data.status === 'blocked' ? 'inactive' : 
+      const status: UserStatus = data.status === 'blocked' ? 'inactive' : 
                                  data.status === 'active' ? 'active' : 'inactive';
 
-      return {
-        ...data,
-        // status
-      };
+      console.log('✅ userFetchService.getUserById - Success:', data.full_name);
+      return { ...data, status };
     } catch (error) {
-      console.error('Error fetching user:', error);
+      console.error('❌ userFetchService.getUserById - Error:', error);
       return null;
     }
   },
 
   async getUsersByRole(role: string): Promise<FullUserData[]> {
     try {
+      console.log('🔍 userFetchService.getUsersByRole - Fetching users with role:', role);
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('role', role);
+        .eq('role', role)
+        .order('created_at', { ascending: false });
 
       if (error) {
+        console.error('❌ userFetchService.getUsersByRole - Error:', error);
         throw error;
       }
 
-      return data as FullUserData[];
+      console.log('✅ userFetchService.getUsersByRole - Success:', data?.length || 0, 'users');
+      return data as FullUserData[] || [];
     } catch (error) {
-      console.error(`Error fetching users with role ${role}:`, error);
+      console.error('❌ userFetchService.getUsersByRole - Exception:', error);
       return [];
     }
   },
 
   async getUsersByRegion(regionId: string): Promise<FullUserData[]> {
     try {
+      console.log('🔍 userFetchService.getUsersByRegion - Fetching users in region:', regionId);
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('region_id', regionId);
+        .eq('region_id', regionId)
+        .order('created_at', { ascending: false });
 
       if (error) {
+        console.error('❌ userFetchService.getUsersByRegion - Error:', error);
         throw error;
       }
 
-      return data as FullUserData[];
+      console.log('✅ userFetchService.getUsersByRegion - Success:', data?.length || 0, 'users');
+      return data as FullUserData[] || [];
     } catch (error) {
-      console.error(`Error fetching users in region ${regionId}:`, error);
+      console.error('❌ userFetchService.getUsersByRegion - Exception:', error);
       return [];
     }
   },
 
   async getUsersBySector(sectorId: string): Promise<FullUserData[]> {
     try {
+      console.log('🔍 userFetchService.getUsersBySector - Fetching users in sector:', sectorId);
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('sector_id', sectorId);
+        .eq('sector_id', sectorId)
+        .order('created_at', { ascending: false });
 
       if (error) {
+        console.error('❌ userFetchService.getUsersBySector - Error:', error);
         throw error;
       }
 
-      return data as FullUserData[];
+      console.log('✅ userFetchService.getUsersBySector - Success:', data?.length || 0, 'users');
+      return data as FullUserData[] || [];
     } catch (error) {
-      console.error(`Error fetching users in sector ${sectorId}:`, error);
+      console.error('❌ userFetchService.getUsersBySector - Exception:', error);
       return [];
     }
   },
 
   async getUsersBySchool(schoolId: string): Promise<FullUserData[]> {
     try {
+      console.log('🔍 userFetchService.getUsersBySchool - Fetching users in school:', schoolId);
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('school_id', schoolId);
+        .eq('school_id', schoolId)
+        .order('created_at', { ascending: false });
 
       if (error) {
+        console.error('❌ userFetchService.getUsersBySchool - Error:', error);
         throw error;
       }
 
-      return data as FullUserData[];
+      console.log('✅ userFetchService.getUsersBySchool - Success:', data?.length || 0, 'users');
+      return data as FullUserData[] || [];
     } catch (error) {
-      console.error(`Error fetching users in school ${schoolId}:`, error);
+      console.error('❌ userFetchService.getUsersBySchool - Exception:', error);
       return [];
     }
   },
 
   async getAssignableUsersForRegion(regionId: string): Promise<FullUserData[]> {
     try {
-      console.log('🔍 Calling getAssignableUsersForRegion with regionId:', regionId);
+      console.log('🔍 userFetchService.getAssignableUsersForRegion - Calling RPC with regionId:', regionId);
       
       const { data, error } = await supabase.rpc('get_assignable_users_for_region', {
         p_region_id: regionId
       });
 
       if (error) {
-        console.error('❌ Supabase RPC Error:', error);
+        console.error('❌ userFetchService.getAssignableUsersForRegion - RPC Error:', error);
         console.error('Error details:', {
           message: error.message,
           details: error.details,
@@ -133,14 +166,25 @@ export const userFetchService = {
         throw error;
       }
 
-      console.log('✅ Successfully fetched assignable users:', {
-        count: data?.length || 0,
-        users: data?.slice(0, 3) // Show first 3 users for debugging
+      if (!data) {
+        console.log('⚠️ userFetchService.getAssignableUsersForRegion - No data returned');
+        return [];
+      }
+
+      console.log('✅ userFetchService.getAssignableUsersForRegion - RPC Success:', {
+        count: data.length,
+        regionId,
+        sampleUsers: data.slice(0, 3).map((u: any) => ({
+          id: u.id,
+          name: u.full_name,
+          email: u.email,
+          role: u.role
+        }))
       });
 
       return data as FullUserData[];
     } catch (error) {
-      console.error('❌ Error in getAssignableUsersForRegion:', error);
+      console.error('❌ userFetchService.getAssignableUsersForRegion - Exception:', error);
       throw error;
     }
   },
