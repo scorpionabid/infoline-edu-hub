@@ -75,13 +75,39 @@ export async function createAdminUser(name: string, email: string, password: str
       };
     }
 
-    // İstifadəçi rolunu əlavə edək
+    // Sektorun region_id-sini əldə edək
+    const { data: sectorData, error: sectorFetchError } = await supabaseAdmin
+      .from("sectors")
+      .select("region_id")
+      .eq("id", sectorId)
+      .single();
+
+    if (sectorFetchError || !sectorData) {
+      console.error("Sektor məlumatları əldə edilə bilmədi:", sectorFetchError);
+      return { 
+        success: false, 
+        error: "Sektor məlumatları əldə edilə bilmədi" 
+      };
+    }
+
+    const regionId = sectorData.region_id;
+    
+    if (!regionId) {
+      console.error("Sektorun region_id-si tapılmadı");
+      return { 
+        success: false, 
+        error: "Sektorun region_id-si təyin edilməyib" 
+      };
+    }
+
+    // İstifadəçi rolunu əlavə edək (region_id ilə birlikdə)
     const { error: roleError } = await supabaseAdmin
       .from("user_roles")
       .insert({
         user_id: userId,
         role: "sectoradmin",
         sector_id: sectorId,
+        region_id: regionId,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       });
