@@ -23,75 +23,80 @@ export const useAssignableUsers = (regionId?: string) => {
       });
 
       try {
-        // For SuperAdmin without regionId, get all users
-        if (isSuperAdmin && !regionId) {
-          console.log('🔍 useAssignableUsers - SuperAdmin mode: fetching all users');
-          const allUsers = await userFetchService.getAllUsers();
-          console.log('✅ useAssignableUsers - SuperAdmin got users:', allUsers.length);
-          return allUsers;
-        }
-
-        // For SuperAdmin with regionId or other roles, try region-specific fetch
-        if (regionId) {
-          console.log('🔍 useAssignableUsers - Trying region-specific fetch for region:', regionId);
-          
-          try {
-            const regionUsers = await userFetchService.getAssignableUsersForRegion(regionId);
-            console.log('✅ useAssignableUsers - Region-specific fetch successful:', regionUsers.length);
-            return regionUsers;
-          } catch (rpcError) {
-            console.warn('⚠️ useAssignableUsers - RPC failed, falling back to client-side filtering:', rpcError);
-          }
-        }
-
-        // Fallback: Get all users and filter client-side
-        console.log('🔍 useAssignableUsers - Using fallback: getAllUsers with client-side filtering');
+        // Always get all users first to have maximum flexibility
+        console.log('🔍 useAssignableUsers - Fetching all users first');
         const allUsers = await userFetchService.getAllUsers();
-        console.log('📋 useAssignableUsers - Got all users for filtering:', allUsers.length);
+        console.log('✅ useAssignableUsers - Got all users:', allUsers.length);
 
-        if (!regionId) {
-          console.log('✅ useAssignableUsers - No regionId provided, returning all users');
-          return allUsers;
+        if (!allUsers || allUsers.length === 0) {
+          console.warn('⚠️ useAssignableUsers - No users found in database');
+          return [];
         }
 
-        // Client-side filtering by region
-        const filteredUsers = allUsers.filter(user => {
-          // SuperAdmin users should be excluded from assignment
-          const userRole = user.role?.toLowerCase();
-          if (userRole === 'superadmin') {
+        // Apply basic filtering - exclude superadmins and invalid users
+        const validUsers = allUsers.filter(user => {
+          // Basic validation
+          if (!user || !user.id || !user.email) {
+            console.log('❌ useAssignableUsers - Invalid user:', user);
             return false;
           }
 
-          // Include users that:
-          // 1. Have the same region_id
-          // 2. Have no region_id (can be assigned anywhere)
-          // 3. Have no role (can be assigned)
-          const matches = (
-            user.region_id === regionId ||
-            !user.region_id ||
-            !user.role
-          );
-
-          if (matches) {
-            console.log('✅ useAssignableUsers - User matches filter:', {
-              name: user.full_name,
-              email: user.email,
-              role: user.role,
-              region_id: user.region_id,
-              target_region: regionId
-            });
+          // Exclude superadmins from assignment
+          const userRoleLower = user.role?.toLowerCase();
+          if (userRoleLower === 'superadmin') {
+            console.log('❌ useAssignableUsers - Excluding superadmin:', user.email);
+            return false;
           }
 
-          return matches;
+          return true;
         });
 
-        console.log('✅ useAssignableUsers - Client-side filtering complete:', {
-          total: allUsers.length,
-          filtered: filteredUsers.length,
-          regionId
-        });
+        console.log('✅ useAssignableUsers - Valid users after basic filtering:', validUsers.length);
 
-        return filteredUsers;
+        // For SuperAdmin without regionId, return all valid users
+        if (isSuperAdmin && !regionId) {
+          console.log('✅ useAssignableUsers - SuperAdmin mode: returning all valid users');
+          return validUsers;
+        }
+
+        // Apply region-based filtering only if regionId is provided
+        if (regionId) {
+          const regionFilteredUsers = validUsers.filter(user => {
+            // Include users that:
+            // 1. Have the same region_id
+            // 2. Have no region_id (can be assigned anywhere)
+            // 3. Have no role (can be assigned)
+            const matches = (
+              user.region_id === regionId ||
+              !user.region_id ||
+              !user.role
+            );
+
+            if (matches) {
+              console.log('✅ useAssignableUsers - User matches region filter:', {
+                name: user.full_name,
+                email: user.email,
+                role: user.role,
+                region_id: user.region_id,
+                target_region: regionId
+              });
+            }
+
+            return matches;
+          });
+
+          console.log('✅ useAssignableUsers - After region filtering:', {
+            total: validUsers.length,
+            filtered: regionFilteredUsers.length,
+            regionId
+          });
+
+          return regionFilteredUsers;
+        }
+
+        // If no regionId provided, return all valid users
+        console.log('✅ useAssignableUsers - No regionId provided, returning all valid users');
+        return validUsers;
         
       } catch (error) {
         console.error('❌ useAssignableUsers - Error in queryFn:', error);
@@ -122,7 +127,13 @@ export const useAssignableUsers = (regionId?: string) => {
     safeCount: safeUsers.length,
     isLoading,
     hasError: !!error,
-    regionId
+    regionId,
+    sampleUsers: safeUsers.slice(0, 3).map(u => ({
+      id: u.id,
+      name: u.full_name,
+      email: u.email,
+      role: u.role
+    }))
   });
 
   return {

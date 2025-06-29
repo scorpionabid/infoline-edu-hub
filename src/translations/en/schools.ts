@@ -27,6 +27,7 @@ export const schools = {
   'unknownError': 'Unknown error',
   'noUsersFound': 'No assignable users found',
   'noUsersFoundForSearch': 'No users found for your search',
+  'userNotFound': 'Selected user not found',
   'cancel': 'Cancel',
   'assign': 'Assign',
   'refresh': 'Refresh',

@@ -52,32 +52,34 @@ const ExistingUserSchoolAdminDialog = ({
   const { isSuperAdmin } = usePermissions();
   const { regionId, isLoading: regionLoading, error: regionError } = useUserRegion();
   
-  // Use region-aware user fetching with fallback
-  const { users, isLoading: usersLoading, error: usersError, refetch } = useAssignableUsers(
-    isSuperAdmin ? undefined : regionId || undefined
-  );
+  // Use assignable users hook - for SuperAdmin pass undefined to get all users
+  const targetRegionId = isSuperAdmin ? undefined : regionId || undefined;
+  const { users, isLoading: usersLoading, error: usersError, refetch } = useAssignableUsers(targetRegionId);
   
-  // Debug logging
+  // Debug logging when dialog opens
   useEffect(() => {
     if (isOpen) {
       console.log('🏫 SchoolAdminDialog - Dialog opened:', {
         schoolId,
         schoolName,
         regionId,
+        targetRegionId,
         isSuperAdmin,
         regionLoading,
         regionError
       });
     }
-  }, [isOpen, schoolId, schoolName, regionId, isSuperAdmin, regionLoading, regionError]);
+  }, [isOpen, schoolId, schoolName, regionId, targetRegionId, isSuperAdmin, regionLoading, regionError]);
 
+  // Log users when they are loaded
   useEffect(() => {
     if (isOpen && users) {
       console.log('👥 SchoolAdminDialog - Users loaded:', {
         totalUsers: users.length,
         regionId,
+        targetRegionId,
         isSuperAdmin,
-        sampleUsers: users.slice(0, 3).map(u => ({
+        sampleUsers: users.slice(0, 5).map(u => ({
           id: u.id,
           name: u.full_name,
           email: u.email,
@@ -86,7 +88,7 @@ const ExistingUserSchoolAdminDialog = ({
         }))
       });
     }
-  }, [isOpen, users, regionId, isSuperAdmin]);
+  }, [isOpen, users, regionId, targetRegionId, isSuperAdmin]);
 
   // Reset state when dialog opens
   useEffect(() => {
@@ -113,7 +115,18 @@ const ExistingUserSchoolAdminDialog = ({
   // Handle assignment submission
   const handleSubmit = useCallback(async () => {
     if (!userId || userId === "no-users-found") {
-      setError(t("selectUser") || "Zəhmət olmasa istifadəçi seçin");
+      const errorMsg = t("selectUser") || "Zəhmət olmasa istifadəçi seçin";
+      setError(errorMsg);
+      console.error('❌ SchoolAdminDialog - No user selected');
+      return;
+    }
+
+    // Validate that the user exists in our list
+    const selectedUser = users.find(user => user.id === userId);
+    if (!selectedUser) {
+      const errorMsg = t("userNotFound") || "Seçilmiş istifadəçi tapılmadı";
+      setError(errorMsg);
+      console.error('❌ SchoolAdminDialog - Selected user not found in list:', userId);
       return;
     }
 
@@ -124,7 +137,12 @@ const ExistingUserSchoolAdminDialog = ({
       console.log('🚀 SchoolAdminDialog - Starting assignment:', { 
         userId, 
         schoolId, 
-        schoolName 
+        schoolName,
+        selectedUser: {
+          name: selectedUser.full_name,
+          email: selectedUser.email,
+          role: selectedUser.role
+        }
       });
       
       const result = await assignExistingUserAsSchoolAdmin(userId, schoolId);
@@ -133,6 +151,7 @@ const ExistingUserSchoolAdminDialog = ({
         console.log('✅ SchoolAdminDialog - Assignment successful');
         toast.success(t("adminAssignedSuccessfully") || "Admin uğurla təyin edildi");
         onSuccess();
+        onClose();
       } else {
         console.error('❌ SchoolAdminDialog - Assignment failed:', result.error);
         const errorMsg = result.error || t("errorAssigningAdmin") || "Admin təyin edilərkən xəta baş verdi";
@@ -147,11 +166,12 @@ const ExistingUserSchoolAdminDialog = ({
     } finally {
       setLoading(false);
     }
-  }, [userId, schoolId, schoolName, t, onSuccess]);
+  }, [userId, schoolId, schoolName, users, t, onSuccess, onClose]);
 
   // Filter users based on search term
   const filteredUsers = useMemo(() => {
     if (!users || users.length === 0) {
+      console.log('🔍 SchoolAdminDialog - No users to filter');
       return [];
     }
     
@@ -171,15 +191,16 @@ const ExistingUserSchoolAdminDialog = ({
       original: users.length,
       afterSearch: filtered.length,
       searchTerm,
-      regionId
+      regionId: targetRegionId
     });
     
     return filtered;
-  }, [users, searchTerm, regionId]);
+  }, [users, searchTerm, targetRegionId]);
 
   // Handle manual refresh
   const handleRefresh = useCallback(async () => {
     console.log('🔄 SchoolAdminDialog - Manual refresh triggered');
+    setError("");
     await refetch();
   }, [refetch]);
 
@@ -190,7 +211,7 @@ const ExistingUserSchoolAdminDialog = ({
 
   const isInitialLoading = regionLoading || usersLoading;
   const hasUsers = filteredUsers.length > 0;
-  const showNoUsersMessage = !isInitialLoading && !hasUsers;
+  const showNoUsersMessage = !isInitialLoading && !hasUsers && !error;
   
   return (
     <Dialog open={isOpen} onOpenChange={() => {
@@ -293,6 +314,21 @@ const ExistingUserSchoolAdminDialog = ({
                 </div>
               </AlertDescription>
             </Alert>
+          )}
+
+          {/* Debug information */}
+          {!isInitialLoading && (
+            <div className="p-3 rounded-md bg-blue-50 text-blue-800 text-xs">
+              <p className="font-medium">Debug məlumatı:</p>
+              <ul className="list-disc pl-4 space-y-1 mt-1">
+                <li>İstifadəçi rolu: {isSuperAdmin ? 'SuperAdmin' : 'Standard'}</li>
+                <li>Region ID: {regionId || 'Yoxdur'}</li>
+                <li>Target Region: {targetRegionId || 'Bütün regionlar'}</li>
+                <li>Cəmi istifadəçi: {users?.length || 0}</li>
+                <li>Filtrdən sonra: {filteredUsers?.length || 0}</li>
+                <li>Axtarış: {searchTerm || 'Yoxdur'}</li>
+              </ul>
+            </div>
           )}
         </div>
 
