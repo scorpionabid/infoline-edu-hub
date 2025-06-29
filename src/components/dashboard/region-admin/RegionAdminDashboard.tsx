@@ -51,28 +51,29 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({
       value: dashboardData.totalSchools || 0,
       icon: "school",
       color: "text-blue-600",
-      description: t("schools") || "Məktəb",
+      description: t("schools.title") || "Məktəb",
     },
     {
-      title: t("dashboard.stats.total_sectors") || "Ümumi sektorlar",
+      // Əlavə etdim "sectors.title" açarını "sectors" faylından götürür
+      title: "Ümumi sektorlar", // t("dashboard.stats.total_sectors")-ü əvəz etdim, çünki bu açar yoxdur
       value: dashboardData.totalSectors || 0,
       icon: "layers", 
       color: "text-indigo-600",
-      description: t("sectors") || "Sektor",
+      description: t("sectors.title") || "Sektor",
     },
     {
       title: t("dashboard.stats.pending_approvals") || "Təsdiq gözləyənlər",
       value: dashboardData.pendingApprovals || 0,
       icon: "clock",
       color: "text-yellow-600",
-      description: t("pending") || "Gözləyir",
+      description: t("status.pending") || "Gözləyir", // status.pending düzgün açar yoludur
     },
     {
       title: t("dashboard.completion") || "Tamamlanma",
       value: `${Math.round(dashboardData.completionRate || 0)}%`,
       icon: "pie-chart",
       color: "text-green-600",
-      description: t("completionRate") || "Tamamlanma dərəcəsi",
+      description: t("dashboard.stats.completion_rate") || "Tamamlanma dərəcəsi",
     },
   ];
 
