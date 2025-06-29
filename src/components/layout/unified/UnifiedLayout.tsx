@@ -43,75 +43,25 @@ const UnifiedLayout: React.FC<UnifiedLayoutProps> = memo(({
     sidebarVariant
   } = useResponsiveLayout();
   
-  // Listen to window resize events and adjust sidebar visibility
-  React.useEffect(() => {
-    // This function handles sidebar visibility based on screen size
-    const handleResize = () => {
-      const width = window.innerWidth;
-      // Large desktops and tablets - show sidebar
-      if (width >= 1024) { // lg breakpoint
-        setSidebarOpen(true);
-      } 
-      // Medium screens - conditionally show sidebar
-      else if (width >= 768) { // md breakpoint
-        // Optional: you can choose to leave the current state or enforce a state
-        // setSidebarOpen(true);
-      } 
-      // Mobile screens - hide sidebar
-      else {
-        setSidebarOpen(false);
-      }
-      
-      // Force re-render for correct layout
-      setTimeout(() => {
-        window.dispatchEvent(new Event('resize'));
-      }, 50);
-    };
-
-    // Initial setup
-    handleResize();
-
-    // Add resize listener with debounce to avoid excessive calls
-    let resizeTimer: number;
-    const debouncedResize = () => {
-      clearTimeout(resizeTimer);
-      resizeTimer = window.setTimeout(handleResize, 100);
-    };
-    
-    window.addEventListener('resize', debouncedResize);
-    
-    // Clean up
-    return () => {
-      window.removeEventListener('resize', debouncedResize);
-      clearTimeout(resizeTimer);
-    };
-  }, [setSidebarOpen]);
-  
   // Memoize heavy calculations
   const layoutCalculations = useMemo(() => {
     const shouldShowDesktopSidebar = isLaptop || isDesktop;
     const shouldShowOverlaySidebar = isMobile || isTablet;
     
-    // Desktop və ya geniş ekranlarda sidebar həmişə görünməlidir
-    const isWideScreen = window.innerWidth >= 1024; // lg breakpoint
-    
     return {
       shouldShowDesktopSidebar,
       shouldShowOverlaySidebar,
       mainContentStyle: {
-        // Desktop ekranlarda margin tətbiq et, kiçik ekranlarda isə yox
-        marginLeft: isWideScreen ? `${sidebarWidth}px` : '0px',
-        transition: 'margin-left 0.3s ease-in-out',
+        marginLeft: shouldShowDesktopSidebar && sidebarOpen ? 0 : 0,
         minWidth: 0
       },
       mainPadding: {
         padding: contentPadding,
         paddingBottom: isMobile ? '80px' : contentPadding,
         minWidth: 0
-      },
-      isWideScreen
+      }
     };
-  }, [isLaptop, isDesktop, isMobile, isTablet, sidebarOpen, contentPadding, sidebarWidth]);
+  }, [isLaptop, isDesktop, isMobile, isTablet, sidebarOpen, contentPadding]);
   
   console.log('[UnifiedLayout] Enhanced responsive state:', { 
     user: !!user, 
@@ -142,7 +92,7 @@ const UnifiedLayout: React.FC<UnifiedLayoutProps> = memo(({
     );
   }
 
-  const { shouldShowDesktopSidebar, shouldShowOverlaySidebar, mainContentStyle, mainPadding, isWideScreen } = layoutCalculations;
+  const { shouldShowDesktopSidebar, shouldShowOverlaySidebar, mainContentStyle, mainPadding } = layoutCalculations;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30 w-full">
@@ -152,22 +102,13 @@ const UnifiedLayout: React.FC<UnifiedLayoutProps> = memo(({
           <>
             {/* Desktop/Laptop sidebar - Always visible when screen is large enough */}
             {shouldShowDesktopSidebar && (
-              <div 
-                className="fixed lg:relative transition-all duration-300 ease-in-out overflow-hidden h-full z-30"
-                style={{ 
-                  width: sidebarWidth,
-                  transform: sidebarOpen || layoutCalculations.isWideScreen ? 'translateX(0)' : 'translateX(-100%)',
-                  opacity: sidebarOpen || layoutCalculations.isWideScreen ? 1 : 0,
-                  boxShadow: sidebarOpen ? '0 10px 15px -3px rgba(0, 0, 0, 0.1)' : 'none'
-                }}>
-                <UnifiedSidebar 
-                  isOpen={sidebarOpen}
-                  onToggle={toggleSidebar}
-                  userName={user?.full_name || user?.email}
-                  variant={isLaptop ? "overlay" : "desktop"}
-                  width={sidebarWidth}
-                />
-              </div>
+              <UnifiedSidebar 
+                isOpen={sidebarOpen}
+                onToggle={toggleSidebar}
+                userName={user?.full_name || user?.email}
+                variant={isLaptop ? "overlay" : "desktop"}
+                width={sidebarWidth}
+              />
             )}
 
             {/* Mobile/Tablet overlay sidebar */}
