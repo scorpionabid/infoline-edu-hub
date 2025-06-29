@@ -2,13 +2,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Pencil, Trash2, Plus, RefreshCw } from 'lucide-react';
+import { Pencil, Trash2, Plus, RefreshCw, User } from 'lucide-react';
 import { EnhancedSector } from '@/types/sector';
 import { useToast } from '@/components/ui/use-toast';
 import { useTranslation } from '@/contexts/TranslationContext';
+import useCreateSector from '@/hooks/sectors/useCreateSector';
 import AddSectorDialog from './AddSectorDialog';
 import EditSectorDialog from './EditSectorDialog';
 import DeleteSectorDialog from './DeleteSectorDialog';
+import ExistingUserSectorAdminDialog from './SectorAdminDialogs/ExistingUserDialog/ExistingUserSectorAdminDialog';
 import { Region } from '@/types/supabase';
 
 interface RefreshResult {
@@ -34,6 +36,7 @@ const SectorsContainer: React.FC<SectorsContainerProps> = React.memo(function Se
 }) {
   const { t } = useTranslation();
   const { toast } = useToast();
+  const { createSector, loading: createLoading } = useCreateSector();
   
   const [sectors, setSectors] = useState<EnhancedSector[]>(initialSectors);
   const [regions, setRegions] = useState<Region[]>([]);
@@ -42,6 +45,7 @@ const SectorsContainer: React.FC<SectorsContainerProps> = React.memo(function Se
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingSector, setEditingSector] = useState<EnhancedSector | null>(null);
   const [deletingSector, setDeletingSector] = useState<EnhancedSector | null>(null);
+  const [assigningSector, setAssigningSector] = useState<EnhancedSector | null>(null);
 
   // Load initial data when component mounts
   useEffect(() => {
@@ -49,8 +53,11 @@ const SectorsContainer: React.FC<SectorsContainerProps> = React.memo(function Se
       try {
         const { sectors: freshSectors, regions: freshRegions } = await onRefresh();
         setSectors(freshSectors);
-        if (freshRegions) {
+        if (freshRegions && freshRegions.length > 0) {
           setRegions(freshRegions);
+          console.log('Regions loaded successfully:', freshRegions.length);
+        } else {
+          console.warn('No regions data received');
         }
       } catch (error) {
         console.error('Error loading initial data:', error);
@@ -71,8 +78,11 @@ const SectorsContainer: React.FC<SectorsContainerProps> = React.memo(function Se
       setIsRefreshing(true);
       const { sectors: freshSectors, regions: freshRegions } = await onRefresh();
       setSectors(freshSectors);
-      if (freshRegions) {
+      if (freshRegions && freshRegions.length > 0) {
         setRegions(freshRegions);
+        console.log('Regions refreshed successfully:', freshRegions.length);
+      } else {
+        console.warn('No regions data received during refresh');
       }
     } catch (error) {
       console.error('Error refreshing sectors:', error);
@@ -95,18 +105,27 @@ const SectorsContainer: React.FC<SectorsContainerProps> = React.memo(function Se
 
   const handleAddSector = async (sectorData: Partial<EnhancedSector>) => {
     try {
-      // Faylın mövcud olmadığından bu funksiyaları istifadə edə bilmirik
-      // Sadəcə log yazırıq və müvəffəqiyyət bildirişi göstəririk
-      console.log('Sektor əlavə etmə əməliyyatı əvəzləndi', sectorData);
+      console.log('Sektor əlavə etmə əməliyyatı başladı', sectorData);
       
-      toast({
-        title: t('success'),
-        description: t('sectors.createSuccess'),
+      const result = await createSector({
+        name: sectorData.name || '',
+        description: sectorData.description || '',
+        region_id: sectorData.region_id || '',
+        status: sectorData.status || 'active'
       });
       
-      // Yeni sektorun əlavə edilməsindən sonra yeniləmə
-      await handleRefresh();
-      return true;
+      if (result) {
+        toast({
+          title: t('success'),
+          description: t('sectors.createSuccess'),
+        });
+        
+        // Yeni sektorun əlavə edilməsindən sonra yeniləmə
+        await handleRefresh();
+        return true;
+      } else {
+        return false;
+      }
     } catch (error) {
       console.error('Error adding sector:', error);
       toast({
@@ -184,7 +203,7 @@ const SectorsContainer: React.FC<SectorsContainerProps> = React.memo(function Se
         onClose={() => setIsAddDialogOpen(false)}
         regions={regions}
         onSubmit={handleAddSector}
-        isSubmitting={isSubmitting}
+        isSubmitting={isSubmitting || createLoading}
       />
 
       {/* Edit Sector Dialog */}
@@ -207,6 +226,17 @@ const SectorsContainer: React.FC<SectorsContainerProps> = React.memo(function Se
           sector={deletingSector}
           onConfirm={handleDeleteSector}
           isSubmitting={isSubmitting}
+        />
+      )}
+
+      {/* Assign Admin Dialog */}
+      {assigningSector && (
+        <ExistingUserSectorAdminDialog
+          isOpen={!!assigningSector}
+          onClose={() => setAssigningSector(null)}
+          sectorId={assigningSector.id}
+          sectorName={assigningSector.name}
+          onSuccess={handleRefresh}
         />
       )}
       <div className="flex items-center justify-between">
@@ -260,6 +290,16 @@ const SectorsContainer: React.FC<SectorsContainerProps> = React.memo(function Se
                 <div className="flex justify-between items-start">
                   <CardTitle className="text-lg">{sector.name}</CardTitle>
                   <div className="flex space-x-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setAssigningSector(sector)}
+                      className="h-8 w-8"
+                      title={t('sectors.assign_admin')}
+                    >
+                      <User className="h-4 w-4" />
+                      <span className="sr-only">{t('sectors.assign_admin')}</span>
+                    </Button>
                     <Button
                       variant="ghost"
                       size="icon"

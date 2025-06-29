@@ -1,21 +1,69 @@
-
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 export const assignExistingUserAsSectorAdmin = async (userId: string, sectorId: string) => {
   try {
-    // Sector admin təyin etmək funksiyası
-    const { data, error } = await supabase.rpc('assign_sector_admin', {
-      p_user_id: userId,
-      p_sector_id: sectorId
-    });
-
-    if (error) {
-      console.error('Sector admin təyin edilərkən xəta:', error);
-      return { success: false, error: error.message };
+    // Get sector data to get region_id
+    const { data: sectorData, error: sectorError } = await supabase
+      .from('sectors')
+      .select('region_id')
+      .eq('id', sectorId)
+      .single();
+      
+    if (sectorError) {
+      console.error('Sektor məlumatları əldə edilərkən xəta:', sectorError);
+      return { success: false, error: sectorError.message };
     }
 
-    return { success: true, data };
+    // Check if user already has a role
+    const { data: existingRole, error: checkError } = await supabase
+      .from('user_roles')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+    
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('Rol yoxlanılırkən xəta:', checkError);
+      return { success: false, error: checkError.message };
+    }
+    
+    if (!existingRole) {
+      // Insert new role
+      const { error: insertError } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: userId,
+          role: 'sectoradmin',
+          sector_id: sectorId,
+          region_id: sectorData.region_id,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+        
+      if (insertError) {
+        console.error('Rol əlavə edilərkən xəta:', insertError);
+        return { success: false, error: insertError.message };
+      }
+    } else {
+      // Update existing role
+      const { error: updateError } = await supabase
+        .from('user_roles')
+        .update({
+          role: 'sectoradmin', 
+          sector_id: sectorId,
+          region_id: sectorData.region_id,
+          school_id: null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', userId);
+        
+      if (updateError) {
+        console.error('Rol yenilənərkən xəta:', updateError);
+        return { success: false, error: updateError.message };
+      }
+    }
+
+    return { success: true };
   } catch (error: any) {
     console.error('Xəta:', error);
     return { success: false, error: error.message || 'Bilinməyən xəta' };

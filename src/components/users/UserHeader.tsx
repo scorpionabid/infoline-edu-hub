@@ -90,7 +90,7 @@ const UserHeader: React.FC<UserHeaderProps> = ({
         </div>
         <Button onClick={handleAddUser}>
           <Plus className="h-4 w-4 mr-2" />
-          {t("users.addUser")}
+          {t("userManagement.add_user") || "İstifadəçi əlavə et"}
         </Button>
       </div>
 
@@ -130,7 +130,9 @@ const UserHeader: React.FC<UserHeaderProps> = ({
                   : currentFilter?.role || ""
               }
               onValueChange={(value) => {
-                handleFilterChange("role", value || undefined);
+                // "all_roles" seçildikdə rol filteri təmizlə
+                const filterValue = value === 'all_roles' ? undefined : value;
+                handleFilterChange("role", filterValue);
               }}
             >
               <SelectTrigger>
@@ -154,7 +156,9 @@ const UserHeader: React.FC<UserHeaderProps> = ({
             <Select
               value={getFirstFromFilter(currentFilter.status)}
               onValueChange={(value) => {
-                handleFilterChange("status", value || undefined);
+                // "all_statuses" seçildikdə status filteri təmizlə
+                const filterValue = value === 'all_statuses' ? undefined : value;
+                handleFilterChange("status", filterValue);
               }}
             >
               <SelectTrigger>

@@ -38,6 +38,10 @@ const SectorForm: React.FC<SectorFormProps> = ({
     ...initialData,
   });
 
+  // Debug: regions data-sını yoxlayırq
+  console.log('SectorForm regions data:', regions);
+  console.log('Regions length:', regions.length);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name?.trim() || !formData.region_id) {
@@ -95,11 +99,17 @@ const SectorForm: React.FC<SectorFormProps> = ({
             <SelectValue placeholder={t("sectors.selectRegion")} />
           </SelectTrigger>
           <SelectContent>
-            {regions.map((region) => (
-              <SelectItem key={region.id} value={region.id}>
-                {region.name}
+            {regions.length > 0 ? (
+              regions.map((region) => (
+                <SelectItem key={region.id} value={region.id}>
+                  {region.name}
+                </SelectItem>
+              ))
+            ) : (
+              <SelectItem key="no-regions" value="" disabled>
+                {t('common.loading')}...
               </SelectItem>
-            ))}
+            )}
           </SelectContent>
         </Select>
       </div>

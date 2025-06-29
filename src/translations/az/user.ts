@@ -27,6 +27,7 @@ export const user = {
   regionadmin: 'Region Admin',
   sectoradmin: 'Sektor Admin',
   schooladmin: 'Məktəb Admin',
+  teacher: 'Müəllim',
   
   // Status
   active: 'Aktiv',

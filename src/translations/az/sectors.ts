@@ -21,7 +21,37 @@ export const sectors = {
   // Messages
   sectorCreated: 'Sektor yaradıldı',
   sectorUpdated: 'Sektor yeniləndi',
-  sectorDeleted: 'Sektor silindi'
+  sectorDeleted: 'Sektor silindi',
+  createSuccess: 'Sektor uğurla yaradıldı',
+  createError: 'Sektor yaradılarkən xəta baş verdi',
+  updateSuccess: 'Sektor uğurla yeniləndi',
+  updateError: 'Sektor yenilənərkən xəta baş verdi',
+  deleteSuccess: 'Sektor uğurla silindi',
+  deleteError: 'Sektor silinərkən xəta baş verdi',
+  loadError: 'Sektorlar yüklənərkən xəta baş verdi',
+  refreshError: 'Sektorlar yenilənərkən xəta baş verdi',
+  noSectorsFound: 'Heç bir sektor tapılmadı',
+  noSectorsDescription: 'Yeni sektor əlavə etmək üçün "Sektor əlavə et" düyməsinə basın',
+  selectRegion: 'Region seçin',
+  enterSectorName: 'Sektor adını daxil edin',
+  enterSectorDescription: 'Sektor təsvirini daxil edin',
+  saving: 'Saxlanır...',
+  
+  // Admin management
+  assign_admin: 'Admin təyin et',
+  assignAdmin: 'Admin təyin et',
+  sectorAdmin: 'Sektor Admini',
+  adminAssigned: 'Admin təyin edildi',
+  adminEmail: 'Admin e-poçtu',
+  noAdminAssigned: 'Admin təyin edilməyib',
+  adminAssignedSuccessfully: 'Admin uğurla təyin edildi',
+  errorAssigningAdmin: 'Admin təyin edilərkən xəta baş verdi',
+  sectorAdminAssignSuccess: 'Sektor admini uğurla təyin edildi',
+  selectUser: 'İstifadəçi seçin',
+  noUsersFound: 'İstifadəçi tapılmadı',
+  errorFetchingUsers: 'İstifadəçiləri əldə edərkən xəta baş verdi',
+  assigning: 'Təyin edilir...',
+  assign: 'Təyin et'
 } as const;
 
 export type Sectors = typeof sectors;

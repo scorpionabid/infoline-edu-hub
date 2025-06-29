@@ -2,7 +2,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useLanguage } from '@/context/LanguageContext';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 export interface UseAssignExistingUserProps {
   onSuccess?: () => void;
@@ -12,7 +12,7 @@ export const useAssignExistingUserAsAdmin = (props?: UseAssignExistingUserProps)
   const { onSuccess } = props || {};
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { t } = useLanguage();
+  const { t } = useTranslation();
 
   const assignRegionAdmin = useCallback(async (userId: string, regionId: string) => {
     try {

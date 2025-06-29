@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useLanguage } from '@/context/LanguageContext';
+import { useTranslation } from '@/contexts/TranslationContext';
 import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 
 interface SectorData {
@@ -13,7 +13,7 @@ interface SectorData {
 
 export const useCreateSector = () => {
   const [loading, setLoading] = useState(false);
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const user = useAuthStore(selectUser);
 
   const createSector = useCallback(async (data: SectorData) => {
@@ -48,11 +48,11 @@ export const useCreateSector = () => {
         throw new Error('Sektor yaradılarkən naməlum xəta baş verdi');
       }
       
-      toast.success(t('sectorCreatedSuccessfully'));
+      toast.success(t('sectors.createSuccess'));
       return newSector;
     } catch (error: any) {
       console.error('Sektor yaratma xətası:', error);
-      toast.error(error.message || t('errorCreatingSector'));
+      toast.error(error.message || t('sectors.createError'));
       return null;
     } finally {
       setLoading(false);
@@ -61,7 +61,7 @@ export const useCreateSector = () => {
 
   return {
     loading,
-    // createSector
+    createSector
   };
 };
 

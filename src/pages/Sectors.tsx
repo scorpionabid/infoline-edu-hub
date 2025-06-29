@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { Helmet } from "react-helmet";
 import { useTranslation } from "@/contexts/TranslationContext";
 import useSectorsQuery from "@/hooks/sectors/useSectorsQuery";
+import useRegionsQuery from "@/hooks/regions/useRegionsQuery";
 import { Sector } from "@/hooks/sectors/useSectors";
 import SectorsContainer from "@/components/sectors/SectorsContainer";
 
@@ -18,15 +19,22 @@ type EnhancedSector = Sector & {
   status: "active" | "inactive";
 };
 
+interface RefreshData {
+  sectors: EnhancedSector[];
+  regions: any[];
+}
+
 const Sectors = () => {
   const { t } = useTranslation();
   const { sectors, loading, error, refetch } = useSectorsQuery();
+  const { regions, isLoading: regionsLoading, refetch: refetchRegions } = useRegionsQuery();
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-  const refreshData = useCallback(async (): Promise<RefreshResult> => {
+  const refreshData = useCallback(async (): Promise<RefreshData> => {
     try {
       console.log("Məlumatlar yenilənir...");
-      refetch();
+      await refetch();
+      await refetchRegions();
 
       const enhancedSectors = sectors.map((sector) => ({
         ...sector,
@@ -37,18 +45,19 @@ const Sectors = () => {
       }));
 
       console.log("Məlumatlar uğurla yeniləndi", {
-        sectorsCount: enhancedSectors.length
+        sectorsCount: enhancedSectors.length,
+        regionsCount: regions.length
       });
 
       return {
         sectors: enhancedSectors,
-        regions: [], // useSectorsQuery regions qaytarmadığından boş array veririk
+        regions: regions || [],
       };
     } catch (error) {
       console.error("Xəta baş verdi:", error);
       throw error;
     }
-  }, [refetch, sectors]);
+  }, [refetch, refetchRegions, sectors, regions]);
 
   useEffect(() => {
     if (isInitialLoad) {
@@ -56,6 +65,7 @@ const Sectors = () => {
       const loadData = async () => {
         try {
           await refetch();
+          await refetchRegions();
         } catch (error) {
           const errorMessage =
             error instanceof Error ? error.message : "Naməlum xəta";
@@ -66,7 +76,7 @@ const Sectors = () => {
       };
       loadData();
     }
-  }, [isInitialLoad, refetch]);
+  }, [isInitialLoad, refetch, refetchRegions]);
 
   useEffect(() => {
     if (error && !isInitialLoad) {
@@ -75,7 +85,7 @@ const Sectors = () => {
     }
   }, [error, isInitialLoad]);
 
-  if (isInitialLoad) {
+  if (isInitialLoad || loading || regionsLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

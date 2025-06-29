@@ -12,36 +12,63 @@ export const useUsers = (filters?: { role?: string; status?: string; searchTerm?
   });
 
   const filteredUsers = useMemo(() => {
-    if (!filters) return users;
+    console.log('\n=== FILTERING USERS ===' );
+    console.log('Filters applied:', filters);
+    console.log('Total users before filtering:', users.length);
+    
+    if (!filters) {
+      console.log('No filters applied, returning all users');
+      return users;
+    }
 
-    return users.filter((user: FullUserData) => {
-      const roles = Array.isArray(filters.role) ? filters.role : filters.role ? [filters.role] : [];
-      
-      if (roles.length > 0 && user.role && !roles.includes(user.role)) {
-        return false;
+    const filtered = users.filter((user: FullUserData) => {
+      // Role filter
+      if (filters.role && filters.role !== 'all_roles') {
+        if (user.role !== filters.role) {
+          console.log(`❌ User ${user.full_name} filtered out by role: ${user.role} !== ${filters.role}`);
+          return false;
+        }
+        console.log(`✅ User ${user.full_name} matches role filter: ${user.role}`);
       }
       
-      if (filters.status && user.status !== filters.status) {
-        return false;
+      // Status filter 
+      if (filters.status && filters.status !== 'all_statuses') {
+        if (user.status !== filters.status) {
+          console.log(`❌ User ${user.full_name} filtered out by status: ${user.status} !== ${filters.status}`);
+          return false;
+        }
+        console.log(`✅ User ${user.full_name} matches status filter: ${user.status}`);
       }
       
+      // Search term filter
       if (filters.searchTerm) {
         const searchLower = filters.searchTerm.toLowerCase();
-        return (
+        const matchesSearch = (
           user.full_name?.toLowerCase().includes(searchLower) ||
           user.email?.toLowerCase().includes(searchLower) ||
           user.phone?.toLowerCase().includes(searchLower)
         );
+        if (!matchesSearch) {
+          console.log(`❌ User ${user.full_name} filtered out by search: ${filters.searchTerm}`);
+          return false;
+        }
+        console.log(`✅ User ${user.full_name} matches search filter: ${filters.searchTerm}`);
       }
       
+      console.log(`✅ User ${user.full_name} passed all filters`);
       return true;
     });
+    
+    console.log(`📊 FILTER RESULT: ${filtered.length} users out of ${users.length}`);
+    console.log('=== END FILTERING ===\n');
+    
+    return filtered;
   }, [users, filters]);
 
   return {
     users: filteredUsers,
     isLoading,
     error,
-    // refetch
+    refetch
   };
 };

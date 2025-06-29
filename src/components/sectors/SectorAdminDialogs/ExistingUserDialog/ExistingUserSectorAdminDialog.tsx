@@ -13,6 +13,7 @@ import { AlertCircle } from "lucide-react";
 import { useTranslation } from "@/contexts/TranslationContext";
 import { toast } from "sonner";
 import { assignExistingUserAsSectorAdmin } from "@/services/sectorService";
+import { useUsers } from "@/hooks/user/useUsers";
 
 const ExistingUserSectorAdminDialog = ({
   isOpen,
@@ -23,37 +24,29 @@ const ExistingUserSectorAdminDialog = ({
 }) => {
   const { t } = useTranslation();
   const [userId, setUserId] = useState("");
-  const [users, setUsers] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  
+  // Use the useUsers hook to fetch all users
+  const { users, isLoading: usersLoading, error: usersError } = useUsers();
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const response = await fetch("/api/getUsers");
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        setUsers(data);
-      } catch (e) {
-        setError(
-          t("errorFetchingUsers") ||
-            "İstifadəçiləri əldə edərkən xəta baş verdi",
-        );
-        toast.error(
-          t("errorFetchingUsers") ||
-            "İstifadəçiləri əldə edərkən xəta baş verdi",
-        );
-      }
-    };
-
     if (isOpen) {
-      fetchUsers();
       setUserId("");
       setError("");
     }
-  }, [isOpen, t]);
+    
+    if (usersError) {
+      setError(
+        t("errorFetchingUsers") ||
+          "İstifadəçiləri əldə edərkən xəta baş verdi",
+      );
+      toast.error(
+        t("errorFetchingUsers") ||
+          "İstifadəçiləri əldə edərkən xəta baş verdi",
+      );
+    }
+  }, [isOpen, t, usersError]);
 
   const handleSubmit = async () => {
     if (!userId || userId === "no-users-found") {

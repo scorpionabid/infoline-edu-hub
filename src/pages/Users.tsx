@@ -2,6 +2,7 @@
 import React, { useState, useCallback, useEffect } from "react";
 import UserListTable from "@/components/users/UserListTable";
 import UserHeader from "@/components/users/UserHeader";
+import AddUserDialog from "@/components/users/AddUserDialog";
 import { Loader2 } from "lucide-react";
 import { useAuthStore, selectUser } from "@/hooks/auth/useAuthStore";
 import { useNavigate } from "react-router-dom";
@@ -29,6 +30,7 @@ const Users = () => {
   // All hooks must be called before any early returns
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
   const pageSize = 10;
 
   const [filters, setFilters] = useState({
@@ -45,6 +47,9 @@ const Users = () => {
     role: filters.role ? [filters.role as UserRole] : [],
     status: filters.status ? [filters.status as UserStatus] : [],
   };
+
+  console.log('Users.tsx - Current filters:', filters);
+  console.log('Users.tsx - List filters:', listFilters);
 
   const {
     users = [],
@@ -70,10 +75,15 @@ const Users = () => {
 
   const handleFilterChange = useCallback(
     (newFilters: Partial<typeof filters>) => {
-      setFilters((prev) => ({
-        ...prev,
-        ...newFilters,
-      }));
+      console.log('Users.tsx handleFilterChange called with:', newFilters);
+      setFilters((prev) => {
+        const updatedFilters = {
+          ...prev,
+          ...newFilters,
+        };
+        console.log('Updated filters:', updatedFilters);
+        return updatedFilters;
+      });
       setCurrentPage(1);
     },
     [],
@@ -115,6 +125,7 @@ const Users = () => {
           onUserAddedOrEdited={handleUserAddedOrEdited}
           onAddUser={() => {
             console.log("Add user clicked");
+            setIsAddUserDialogOpen(true);
           }}
         />
 
@@ -158,6 +169,13 @@ const Users = () => {
             )}
           </div>
         )}
+        
+        {/* Add User Dialog */}
+        <AddUserDialog
+          isOpen={isAddUserDialogOpen}
+          onClose={() => setIsAddUserDialogOpen(false)}
+          onSuccess={handleUserAddedOrEdited}
+        />
       </div>
     </>
   );
