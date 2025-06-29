@@ -20,7 +20,9 @@ const profileFormSchema = z.object({
   position: z.string().optional(),
 });
 
-interface ProfileFormValues extends z.infer<typeof profileFormSchema> {}
+// Boş interface əvəzinə birbaşa z.infer tipindən istifadə edirik
+// Bu daha yaxşı TypeScript praktikasıdır
+type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 const ProfileForm = () => {
   const user = useAuthStore((state) => state.user);

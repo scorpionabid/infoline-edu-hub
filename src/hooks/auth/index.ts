@@ -62,14 +62,10 @@ export const useSupabaseAuth = () => {
   
   // resetPassword funksiyası - ForgotPassword səhifəsi üçün - Legacy Support
   const resetPassword = async (email: string) => {
-    // Prioritize new implementation via store
-    const authState = useAuthStore.getState();
-    if (authState?.resetPassword) {
-      return authState.resetPassword(email);
-    }
-    
-    // Fallback to direct implementation
+    // İndi birbaşa authActions-dan resetPassword funksiyasını istifadə edirik
     try {
+      // authActions-dakı resetPassword funksiyasını çağırırıq
+      // set və get əvəzinə undefined göndəririk
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`,
       });
