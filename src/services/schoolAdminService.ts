@@ -265,7 +265,7 @@ export const assignSchoolAdmin = async (
       console.error('assign_school_admin RPC xətası:', assignRoleError);
       return { 
         success: false, 
-        error: `RPC xətası: ${assignRoleError.message}` || 'Admin rolu təyin edilərkən xəta baş verdi' 
+        error: assignRoleError.message ? `RPC xətası: ${assignRoleError.message}` : 'Admin rolu təyin edilərkən xəta baş verdi' 
       };
     }
     

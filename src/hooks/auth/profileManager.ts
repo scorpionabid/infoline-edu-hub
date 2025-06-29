@@ -16,7 +16,7 @@ export async function fetchUserProfile(userId: string): Promise<{
   profile: any | null;
   error: Error | null;
 }> {
-  return new Promise(async (resolve) => {
+  return new Promise((resolve) => {
     try {
       // Add timeout protection for profile fetch
       const fetchTimeout = setTimeout(() => {
@@ -27,37 +27,45 @@ export async function fetchUserProfile(userId: string): Promise<{
       console.log('💬 [Auth] Sending profile fetch request...');
       
       // First try - fetch profile
-      const profileResult = await supabase
+      supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single();
-        
-      // If we got the profile, fetch roles separately
-      if (profileResult.data) {
-        console.log('💬 [Auth] Profile fetch successful, fetching roles...');
-        const rolesResult = await supabase
-          .from('user_roles')
-          .select('*')
-          .eq('user_id', userId)
-          .maybeSingle();
-          
-        clearTimeout(fetchTimeout);
-        
-        // Combine the data
-        const combinedProfile = {
-          ...profileResult.data,
-          user_roles: rolesResult.data
-        };
-        
-        resolve({ 
-          profile: combinedProfile, 
-          error: profileResult.error || rolesResult.error || null 
+        .single()
+        .then(profileResult => {
+          // If we got the profile, fetch roles separately
+          if (profileResult.data) {
+            console.log('💬 [Auth] Profile fetch successful, fetching roles...');
+            
+            return supabase
+              .from('user_roles')
+              .select('*')
+              .eq('user_id', userId)
+              .maybeSingle()
+              .then(rolesResult => {
+                clearTimeout(fetchTimeout);
+                
+                // Combine the data
+                const combinedProfile = {
+                  ...profileResult.data,
+                  user_roles: rolesResult.data
+                };
+                
+                resolve({ 
+                  profile: combinedProfile, 
+                  error: profileResult.error || rolesResult.error || null 
+                });
+              });
+          } else {
+            clearTimeout(fetchTimeout);
+            resolve({ profile: null, error: profileResult.error });
+          }
+        })
+        .catch(error => {
+          clearTimeout(fetchTimeout);
+          console.error('❌ [Auth] Profile fetch error:', error);
+          resolve({ profile: null, error: error as Error });
         });
-      } else {
-        clearTimeout(fetchTimeout);
-        resolve({ profile: null, error: profileResult.error });
-      }
     } catch (error) {
       console.error('❌ [Auth] Profile fetch error:', error);
       resolve({ profile: null, error: error as Error });
