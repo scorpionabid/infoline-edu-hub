@@ -28,9 +28,9 @@ interface Profile {
 export const userFetchService = {
   async fetchAllUsers(): Promise<FullUserData[]> {
     try {
-      console.log('Fetching all users with separate queries for profiles and user_roles');
+      console.log('🔄 Fetching all users with enhanced strategy');
       
-      // Step 1: Fetch all profiles
+      // Step 1: Fetch all profiles (RLS will filter automatically)
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select(`
@@ -54,18 +54,23 @@ export const userFetchService = {
       }
 
       if (!profiles || profiles.length === 0) {
+        console.warn('⚠️ No profiles returned - this might be an RLS issue');
         return [];
       }
       
-      // Step 2: Fetch all user roles
+      console.log(`📈 Fetched ${profiles.length} profiles from RLS-filtered query`);
+      
+      // Step 2: Fetch all user roles that we can see
       const { data: userRoles, error: rolesError } = await supabase
         .from('user_roles')
         .select('*');
         
       if (rolesError) {
         console.error('Error fetching user roles:', rolesError);
-        throw rolesError;
+        // Continue without roles rather than failing completely
       }
+      
+      console.log(`📈 Fetched ${userRoles?.length || 0} user roles`);
       
       // Step 3: Create a map of user roles by user_id for faster lookup
       const userRolesMap = new Map();
@@ -73,12 +78,12 @@ export const userFetchService = {
         userRolesMap.set(role.user_id, role);
       });
       
-      // Step 4: Combine the data
-      return profiles.map(profile => {
+      // Step 4: Combine the data with enhanced logging
+      const combinedUsers = profiles.map(profile => {
         // Find matching user role by user id
         const userRole = userRolesMap.get(profile.id) || {};
         
-        return {
+        const combinedUser = {
           id: profile.id,
           email: profile.email,
           full_name: profile.full_name,
@@ -91,14 +96,39 @@ export const userFetchService = {
           position: profile.position,
           language: profile.language,
           avatar: profile.avatar,
-          status: profile.status,
+          status: profile.status || 'active', // Default to active if not set
           last_login: profile.last_login,
           created_at: profile.created_at,
           updated_at: profile.updated_at
         };
+        
+        // Debug log for specific roles
+        if (userRole.role === 'sectoradmin') {
+          console.log('🎯 Found sectoradmin user:', {
+            name: profile.full_name,
+            email: profile.email,
+            role: userRole.role,
+            sector_id: userRole.sector_id,
+            region_id: userRole.region_id
+          });
+        }
+        
+        return combinedUser;
       });
+      
+      // Debug: Count users by role
+      const roleCounts = combinedUsers.reduce((counts, user) => {
+        const role = user.role || 'no_role';
+        counts[role] = (counts[role] || 0) + 1;
+        return counts;
+      }, {} as Record<string, number>);
+      
+      console.log('📊 User role distribution:', roleCounts);
+      console.log(`✅ Successfully fetched and combined ${combinedUsers.length} users`);
+      
+      return combinedUsers;
     } catch (error) {
-      console.error('Error in fetchAllUsers:', error);
+      console.error('❌ Error in fetchAllUsers:', error);
       throw error;
     }
   },

@@ -44,10 +44,15 @@ const UserHeader: React.FC<UserHeaderProps> = ({
     key: string,
     value: string | string[] | undefined,
   ) => {
-    onFilterChange({
+    console.log(`🔧 UserHeader: Filter change - ${key}:`, value);
+    
+    const newFilter = {
       ...currentFilter,
       [key]: value || undefined,
-    });
+    };
+    
+    console.log('🔧 UserHeader: New filter object:', newFilter);
+    onFilterChange(newFilter);
   };
 
   const clearFilters = () => {

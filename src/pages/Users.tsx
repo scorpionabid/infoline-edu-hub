@@ -75,13 +75,13 @@ const Users = () => {
 
   const handleFilterChange = useCallback(
     (newFilters: Partial<typeof filters>) => {
-      console.log('Users.tsx handleFilterChange called with:', newFilters);
+      console.log('🚀 Users.tsx handleFilterChange called with:', newFilters);
       setFilters((prev) => {
         const updatedFilters = {
           ...prev,
           ...newFilters,
         };
-        console.log('Updated filters:', updatedFilters);
+        console.log('🚀 Users.tsx Updated filters:', updatedFilters);
         return updatedFilters;
       });
       setCurrentPage(1);

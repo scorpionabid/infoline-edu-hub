@@ -39,6 +39,7 @@ export const sectors = {
   
   // Admin management
   assign_admin: 'Admin təyin et',
+  assign_sector_admin: 'Sektor admin təyin et',
   assignAdmin: 'Admin təyin et',
   sectorAdmin: 'Sektor Admini',
   adminAssigned: 'Admin təyin edildi',
@@ -48,10 +49,20 @@ export const sectors = {
   errorAssigningAdmin: 'Admin təyin edilərkən xəta baş verdi',
   sectorAdminAssignSuccess: 'Sektor admini uğurla təyin edildi',
   selectUser: 'İstifadəçi seçin',
+  select_user_for_sector: 'Bu sektor üçün istifadəçi seçin',
   noUsersFound: 'İstifadəçi tapılmadı',
+  noUsersFoundForSearch: 'Axtarışınıza uyğun istifadəçi tapılmadı',
   errorFetchingUsers: 'İstifadəçiləri əldə edərkən xəta baş verdi',
   assigning: 'Təyin edilir...',
-  assign: 'Təyin et'
+  assign: 'Təyin et',
+  search_users: 'İstifadəçiləri axtar...',
+  unassignedUsers: 'Təyin edilməmiş istifadəçilər',
+  regionalUsers: 'Regional istifadəçilər',
+  userCategory: 'İstifadəçi kateqoriyası',
+  noAssignableUsers: 'Təyin edilə bilən istifadəçi yoxdur',
+  loading: 'Yüklənir...',
+  cancel: 'Ləğv et',
+  unknownError: 'Bilinməyən xəta'
 } as const;
 
 export type Sectors = typeof sectors;

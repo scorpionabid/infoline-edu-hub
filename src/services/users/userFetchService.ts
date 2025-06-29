@@ -114,6 +114,37 @@ export const userFetchService = {
     }
   },
 
+  async getAssignableUsersForRegion(regionId: string): Promise<FullUserData[]> {
+    try {
+      console.log('🔍 Calling getAssignableUsersForRegion with regionId:', regionId);
+      
+      const { data, error } = await supabase.rpc('get_assignable_users_for_region', {
+        p_region_id: regionId
+      });
+
+      if (error) {
+        console.error('❌ Supabase RPC Error:', error);
+        console.error('Error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
+        throw error;
+      }
+
+      console.log('✅ Successfully fetched assignable users:', {
+        count: data?.length || 0,
+        users: data?.slice(0, 3) // Show first 3 users for debugging
+      });
+
+      return data as FullUserData[];
+    } catch (error) {
+      console.error('❌ Error in getAssignableUsersForRegion:', error);
+      throw error;
+    }
+  },
+
   // Backward compatibility aliases
   fetchAllUsers: function() { return this.getAllUsers(); },
   fetchUserById: function(userId: string) { return this.getUserById(userId); }
@@ -122,6 +153,7 @@ export const userFetchService = {
 // Export individual functions for backward compatibility
 export const getUsers = userFetchService.getAllUsers;
 export const getUser = userFetchService.getUserById;
+export const getAssignableUsersForRegion = userFetchService.getAssignableUsersForRegion;
 
 // Add the missing fetchUserData function that useOptimizedUserList expects
 export const fetchUserData = async (
