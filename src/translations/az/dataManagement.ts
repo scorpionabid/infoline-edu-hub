@@ -1,3 +1,4 @@
+
 // Data Management translation module
 export const dataManagement = {
   // Page titles
@@ -97,12 +98,12 @@ export const dataManagement = {
   no_approval_permission: 'Təsdiq etmək üçün icazəniz yoxdur',
   no_edit_permission: 'Redaktə etmək üçün icazəniz yoxdur',
   
-  // Help text - Enhanced
+  // Help text - Enhanced with SectorAdmin functionality restored
   help_sector_data: 'Bu məlumat birbaşa sektor üçün qeyd ediləcək',
   help_school_data: 'Bu məlumat məktəblər üçün daxil ediləcək',
   help_superadmin: 'SuperAdmin bütün kateqoriyaları idarə edə bilər',
   help_regionadmin: 'Region adminləri bütün kateqoriyaları idarə edə bilər',
-  help_sectoradmin: 'Sektor adminləri bütün kateqoriyaları idarə edə bilər',
+  help_sectoradmin: 'Sektor adminləri məktəblər adından məlumat daxil edə və təsdiq edə bilər',
   help_schooladmin: 'Məktəb adminləri yalnız məktəb kateqoriyalarını görə bilər',
   help_column_level: 'Hər sütun üçün ayrı-ayrı təsdiq tələb olunur',
   help_independent_approval: 'Sütunlar müstəqil olaraq təsdiqlənir',
@@ -135,15 +136,13 @@ export const dataManagement = {
   column_optional: 'İxtiyari',
   column_level_approval: 'Sütun-səviyyəli təsdiq',
   
-  // Enhanced messages for sector admin restrictions
-  sector_admin_restriction: 'Sektoradmin məhdudiyyəti',
-  sector_admin_cannot_edit: 'Sektoradmin məktəblər adından məlumat daxil edə bilməz',
-  sector_admin_can_only_approve: 'Siz yalnız məktəblər tərəfindən daxil edilmiş məlumatları təsdiq və ya rədd edə bilərsiniz',
-  school_must_fill: 'Məktəb tərəfindən doldurulmalıdır',
+  // Restored SectorAdmin functionality
+  sector_admin_can_edit: 'Sektoradmin məktəblər adından məlumat daxil edə bilər',
+  sector_admin_can_approve: 'Sektoradmin məlumatları təsdiq və rədd edə bilər',
   click_to_enter_data: 'Məlumat daxil etmək üçün klikləyin',
-  sector_admin_cannot_enter_tooltip: 'Sektoradmin məlumat daxil edə bilməz',
+  sector_admin_proxy_entry: 'Məktəb adından məlumat daxil edilir',
   
-  // Column-level approval enhanced messages
+  // Column-level approval enhanced messages  
   column_level_approval_active: 'Sütun-səviyyəli təsdiq aktiv',
   only_selected_column_approved: 'Yalnız seçilmiş sütun təsdiqlənəcək',
   other_columns_not_affected: 'Digər sütunlar təsirlənməyəcək',

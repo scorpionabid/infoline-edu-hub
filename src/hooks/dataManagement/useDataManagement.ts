@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@/hooks/auth/useUser';
 import { useToast } from '@/components/ui/use-toast';
@@ -22,10 +23,10 @@ export const useDataManagement = () => {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // Determine user permissions
+  // Determine user permissions - RESTORED: SectorAdmin can edit
   const permissions: DataManagementPermissions = {
-    canEdit: userRole !== 'sectoradmin',
-    canApprove: ['regionadmin', 'superadmin'].includes(userRole),
+    canEdit: true, // All users can edit (including sectoradmin)
+    canApprove: ['regionadmin', 'superadmin', 'sectoradmin'].includes(userRole),
   };
 
   // Load school data for specific category and column
@@ -82,17 +83,11 @@ export const useDataManagement = () => {
     }
   };
 
-  // Save data - SECTOR ADMIN RESTRICTIONS ADDED
+  // Save data - RESTORED: SectorAdmin can save data on behalf of schools
   const handleDataSave = async (schoolId: string, value: string): Promise<boolean> => {
     // Check if user can edit data
     if (!permissions.canEdit) {
       toast.error('Məlumat redaktə etmək üçün icazəniz yoxdur');
-      return false;
-    }
-
-    // SECTOR ADMIN RESTRICTION: Cannot save data on behalf of schools
-    if (userRole === 'sectoradmin') {
-      toast.error('Sektoradmin məktəblər adından məlumat daxil edə bilməz');
       return false;
     }
 
@@ -159,7 +154,7 @@ export const useDataManagement = () => {
     }
   };
 
-  // Approve data - COLUMN-LEVEL APPROVAL ONLY
+  // Approve data - FIXED: Column-level approval only
   const handleDataApprove = async (schoolId: string, comment?: string): Promise<boolean> => {
     if (!permissions.canApprove) {
       toast.error('Təsdiq etmək üçün icazəniz yoxdur');
@@ -208,7 +203,7 @@ export const useDataManagement = () => {
     }
   };
 
-  // Reject data - COLUMN-LEVEL REJECTION ONLY
+  // Reject data - FIXED: Column-level rejection only
   const handleDataReject = async (schoolId: string, reason: string, comment?: string): Promise<boolean> => {
     if (!permissions.canApprove) {
       toast.error('Rədd etmək üçün icazəniz yoxdur');
@@ -258,7 +253,7 @@ export const useDataManagement = () => {
     }
   };
 
-  // Bulk approve - COLUMN-LEVEL BULK OPERATIONS
+  // Bulk approve - FIXED: Column-level bulk operations
   const handleBulkApprove = async (schoolIds: string[]): Promise<boolean> => {
     if (!permissions.canApprove) {
       toast.error('Toplu təsdiq üçün icazəniz yoxdur');
@@ -306,7 +301,7 @@ export const useDataManagement = () => {
     }
   };
 
-  // Bulk reject - COLUMN-LEVEL BULK OPERATIONS
+  // Bulk reject - FIXED: Column-level bulk operations
   const handleBulkReject = async (schoolIds: string[], reason: string): Promise<boolean> => {
     if (!permissions.canApprove) {
       toast.error('Toplu rədd üçün icazəniz yoxdur');
