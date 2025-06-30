@@ -5,7 +5,7 @@ import { useTranslation } from "@/contexts/TranslationContext";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useAuthStore } from "@/hooks/auth/authStore";
+import { useAuthStore } from "@/hooks/auth/useAuthStore";
 import { useUnifiedNavigation } from "@/hooks/layout/useUnifiedNavigation";
 
 interface UnifiedNavigationProps {
@@ -53,10 +53,11 @@ const UnifiedNavigation = memo(function UnifiedNavigation({
       action();
     }
     
-    if (variant === 'mobile' && onToggle) {
+    // Bütün variant-larda route seçildikdə sidebar-ı bağla
+    if (onToggle) {
       onToggle();
     }
-  }, [variant, onToggle]);
+  }, [onToggle]);
 
   // Stable style functions
   const getItemClasses = useCallback((active: boolean) => cn(
@@ -181,7 +182,7 @@ const UnifiedNavigation = memo(function UnifiedNavigation({
             {/* User Profile Button */}
             <Button
               className="w-full justify-start h-8 sm:h-10 px-2 sm:px-3 text-xs sm:text-sm bg-secondary text-secondary-foreground hover:bg-secondary/80"
-              onClick={() => navigate('/profile')}
+              onClick={() => handleItemClick(() => navigate('/profile'))}
             >
               <div className="flex items-center gap-2 sm:gap-3 w-full min-w-0">
                 <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -196,7 +197,7 @@ const UnifiedNavigation = memo(function UnifiedNavigation({
             {/* Settings Button */}
             <Button
               className="w-full justify-start h-8 sm:h-10 px-2 sm:px-3 text-xs sm:text-sm bg-secondary text-secondary-foreground hover:bg-secondary/80"
-              onClick={() => navigate('/settings')}
+              onClick={() => handleItemClick(() => navigate('/settings'))}
             >
               <div className="flex items-center gap-2 sm:gap-3 w-full min-w-0">
                 <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gray-500/10 flex items-center justify-center flex-shrink-0">

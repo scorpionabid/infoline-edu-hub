@@ -110,14 +110,14 @@ export const useResponsiveLayout = (): UseResponsiveLayoutReturn => {
   // Persistent configuration
   const [config, setConfig] = useLocalStorage<ResponsiveLayoutConfig>('layout-config', DEFAULT_CONFIG);
   
-  // Enhanced sidebar state management
+  // Enhanced sidebar state management - Default gizli
   const [sidebarOpen, setSidebarOpenState] = useState(() => {
     if (typeof window !== 'undefined') {
-      const isLargeScreen = window.matchMedia('(min-width: 1024px)').matches;
+      // Artıq desktop-da da default olaraq bağlı olsun
       const savedState = localStorage.getItem('sidebar-open');
-      return isLargeScreen ? (savedState !== null ? savedState === 'true' : true) : false;
+      return savedState === 'true' ? true : false;
     }
-    return true;
+    return false; // Default olaraq bağlı
   });
 
   // Auto-close sidebar on small screens when route changes
@@ -129,22 +129,20 @@ export const useResponsiveLayout = (): UseResponsiveLayoutReturn => {
     }
   }, [isMobile, isTablet, sidebarOpen]);
 
-  // Maintain desktop sidebar state
-  useEffect(() => {
-    if (isDesktop && !sidebarOpen) {
-      const savedState = localStorage.getItem('sidebar-open');
-      if (savedState === null || savedState === 'true') {
-        setSidebarOpenState(true);
-      }
-    }
-  }, [isDesktop]);
+  // Desktop üçün də artıq avtomatik açmayaq
+  // useEffect(() => {
+  //   if (isDesktop && !sidebarOpen) {
+  //     const savedState = localStorage.getItem('sidebar-open');
+  //     if (savedState === null || savedState === 'true') {
+  //       setSidebarOpenState(true);
+  //     }
+  //   }
+  // }, [isDesktop]);
 
-  // Update sidebar state in localStorage for large screens
+  // Update sidebar state in localStorage for all screens
   useEffect(() => {
-    if (isLaptop || isDesktop) {
-      localStorage.setItem('sidebar-open', sidebarOpen.toString());
-    }
-  }, [sidebarOpen, isLaptop, isDesktop]);
+    localStorage.setItem('sidebar-open', sidebarOpen.toString());
+  }, [sidebarOpen]);
 
   const setSidebarOpen = useCallback((open: boolean) => {
     setSidebarOpenState(open);
@@ -181,12 +179,11 @@ export const useResponsiveLayout = (): UseResponsiveLayoutReturn => {
     return config.layout.padding.desktop;
   }, [isMobile, isTablet, isLaptop, config.layout.padding]);
 
-  // Enhanced sidebar variant logic
+  // Enhanced sidebar variant logic - Bütün ekranlarda overlay istifadə et
   const sidebarVariant = useMemo((): ResponsiveLayoutConfig['sidebar']['variant'] => {
-    if (isMobile || isTablet) return 'overlay';
-    if (isLaptop) return 'push';
-    return 'desktop';
-  }, [isMobile, isTablet, isLaptop]);
+    // Bütün ekranlarda overlay variantını istifadə edirik
+    return 'overlay';
+  }, []);
 
   const getBreakpointClass = useCallback((breakpoint: keyof ResponsiveLayoutConfig['sidebar']['breakpoints']) => {
     switch (breakpoint) {

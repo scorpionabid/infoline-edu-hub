@@ -4,10 +4,20 @@ export const settings = {
   title: 'Tənzimləmələr',
   description: 'Tətbiq tənzimləmələri və konfiqurasiyaları',
   
+  // Tab labels
+  profile: 'Profil',
+  notifications: 'Bildirişlər', 
+  security: 'Təhlükəsizlik',
+  appearance: 'Görünüş',
+  language: 'Dil',
+  team: 'Komanda',
+  
+  // Language settings
+  languageDescription: 'İnterfeys dilini seçin',
+  selectLanguage: 'Dil seçin',
+  
   // System settings
   systemSettings: 'Sistem Tənzimləmələri',
-  
-  // Data management
   dataManagement: 'Məlumatların idarə edilməsi',
   exportData: 'Məlumatları ixrac et',
   exportDataDesc: 'Bütün məlumatlarınızı yedəkləmə üçün ixrac edin',
@@ -52,13 +62,7 @@ export const settings = {
   databaseStatus: 'Verilənlər bazası statusu',
   storageUsage: 'Saxlama istifadəsi',
   
-  // User interface
-  language: 'Dil',
-  theme: 'Mövzu',
-  notifications: 'Bildirişlər',
-  
-  // Security
-  security: 'Təhlükəsizlik',
+  // Security settings
   changePassword: 'Şifrəni dəyiş',
   twoFactorAuth: 'İki faktorlu autentifikasiya',
   sessionTimeout: 'Sessiya müddəti',

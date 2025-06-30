@@ -43,16 +43,17 @@ const UnifiedLayout: React.FC<UnifiedLayoutProps> = memo(({
     sidebarVariant
   } = useResponsiveLayout();
   
-  // Memoize heavy calculations
+  // Memoize heavy calculations - Bütün ekranlarda overlay sidebar
   const layoutCalculations = useMemo(() => {
-    const shouldShowDesktopSidebar = isLaptop || isDesktop;
-    const shouldShowOverlaySidebar = isMobile || isTablet;
+    // Artıq bütün ekranlarda overlay sidebar istifadə edirik
+    const shouldShowOverlaySidebar = true; // Bütün ekranlar üçün
+    const shouldShowDesktopSidebar = false; // Artıq desktop sidebar yoxdur
     
     return {
       shouldShowDesktopSidebar,
       shouldShowOverlaySidebar,
       mainContentStyle: {
-        marginLeft: shouldShowDesktopSidebar && sidebarOpen ? 0 : 0,
+        marginLeft: 0, // Heç vaxt margin olmayacaq
         minWidth: 0
       },
       mainPadding: {
@@ -61,7 +62,7 @@ const UnifiedLayout: React.FC<UnifiedLayoutProps> = memo(({
         minWidth: 0
       }
     };
-  }, [isLaptop, isDesktop, isMobile, isTablet, sidebarOpen, contentPadding]);
+  }, [isMobile, contentPadding]);
   
   console.log('[UnifiedLayout] Enhanced responsive state:', { 
     user: !!user, 
@@ -97,43 +98,27 @@ const UnifiedLayout: React.FC<UnifiedLayoutProps> = memo(({
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30 w-full">
       <div className="flex h-screen w-full relative">
-        {/* Enhanced Sidebar - Responsive variants */}
-        {showSidebar && (
-          <>
-            {/* Desktop/Laptop sidebar - Always visible when screen is large enough */}
-            {shouldShowDesktopSidebar && (
+        {/* Enhanced Sidebar - Bütün ekranlarda overlay */}
+        {showSidebar && sidebarOpen && (
+          <div className="fixed inset-0 z-50">
+            {/* Backdrop */}
+            <div 
+              className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300"
+              onClick={() => setSidebarOpen(false)}
+              aria-hidden="true"
+            />
+            
+            {/* Sidebar */}
+            <div className="relative">
               <UnifiedSidebar 
                 isOpen={sidebarOpen}
                 onToggle={toggleSidebar}
                 userName={user?.full_name || user?.email}
-                variant={isLaptop ? "overlay" : "desktop"}
+                variant="overlay"
                 width={sidebarWidth}
               />
-            )}
-
-            {/* Mobile/Tablet overlay sidebar */}
-            {shouldShowOverlaySidebar && sidebarOpen && (
-              <div className="fixed inset-0 z-50 lg:hidden">
-                {/* Backdrop */}
-                <div 
-                  className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300"
-                  onClick={() => setSidebarOpen(false)}
-                  aria-hidden="true"
-                />
-                
-                {/* Sidebar */}
-                <div className="relative">
-                  <UnifiedSidebar 
-                    isOpen={sidebarOpen}
-                    onToggle={toggleSidebar}
-                    userName={user?.full_name || user?.email}
-                    variant="mobile"
-                    width={sidebarWidth}
-                  />
-                </div>
-              </div>
-            )}
-          </>
+            </div>
+          </div>
         )}
 
         {/* Main content area - Enhanced responsive layout */}

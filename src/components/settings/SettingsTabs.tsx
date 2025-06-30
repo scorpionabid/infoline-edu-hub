@@ -41,27 +41,27 @@ const SettingsTabs: React.FC = () => {
       <TabsList className="grid w-full grid-cols-6">
         <TabsTrigger value="profile" className="flex items-center gap-2">
           <User className="h-4 w-4" />
-          {t("settings.profile")}
+          {t("settings.profile") || "Profil"}
         </TabsTrigger>
         <TabsTrigger value="notifications" className="flex items-center gap-2">
           <Bell className="h-4 w-4" />
-          {t("settings.notifications")}
+          {t("settings.notifications") || "Bildirişlər"}
         </TabsTrigger>
         <TabsTrigger value="security" className="flex items-center gap-2">
           <Lock className="h-4 w-4" />
-          {t("settings.security")}
+          {t("settings.security") || "Təhlükəsizlik"}
         </TabsTrigger>
         <TabsTrigger value="appearance" className="flex items-center gap-2">
           <Palette className="h-4 w-4" />
-          {t("settings.appearance")}
+          {t("settings.appearance") || "Görünüş"}
         </TabsTrigger>
         <TabsTrigger value="language" className="flex items-center gap-2">
           <Globe className="h-4 w-4" />
-          {t("settings.language")}
+          {t("settings.language") || "Dil"}
         </TabsTrigger>
         <TabsTrigger value="team" className="flex items-center gap-2">
           <Users className="h-4 w-4" />
-          {t("settings.team")}
+          {t("settings.team") || "Komanda"}
         </TabsTrigger>
       </TabsList>
 
@@ -84,15 +84,15 @@ const SettingsTabs: React.FC = () => {
       <TabsContent value="language">
         <Card>
           <CardHeader>
-            <CardTitle>{t("settings.language")}</CardTitle>
+            <CardTitle>{t("settings.language") || "Dil"}</CardTitle>
             <CardDescription>
-              {t("settings.languageDescription")}
+              {t("settings.languageDescription") || "İnterfeys dilini seçin"}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">
-                {t("common.selectLanguage")}
+                {t("settings.selectLanguage") || "Dil seçin"}
               </label>
               <Select 
                 value={language} 

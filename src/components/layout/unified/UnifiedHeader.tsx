@@ -67,12 +67,11 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
       <div className="w-full flex items-center justify-between px-3 md:px-4 lg:px-6 max-w-full h-full">
         {/* Left side - Menu button and branding */}
         <div className="flex items-center gap-2 min-w-0">
-          {/* Mobile menu button */}
+          {/* Menu button - bütün ekranlarda */}
           <Button
             variant="ghost"
             size="icon"
             className={cn(
-              "lg:hidden",
               mobileClasses.touchTarget,
               "hover:bg-accent/50 active:scale-95",
               "transition-all duration-200"
@@ -117,7 +116,7 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <input
                 type="search"
-                placeholder={t("search") || "Axtar..."}
+                placeholder={t("common.search") || "Axtar..."}
                 className="w-full bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring h-9 rounded-md border border-input px-4 py-2 text-sm pl-8 shadow-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-offset-0"
               />
             </form>

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChevronLeft } from "lucide-react";
 import { useTouchGestures, useMobileClasses } from '@/hooks/layout/mobile';
+import { useResponsiveLayout } from '@/hooks/layout/mobile/useResponsiveLayout';
 import UnifiedNavigation from './UnifiedNavigation';
 import Logo from '../Logo';
 
@@ -25,11 +26,12 @@ const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
 }) => {
   const sidebarRef = useRef<HTMLDivElement>(null);
   const mobileClasses = useMobileClasses();
+  const { isMobile } = useResponsiveLayout(); // isMobile-ı burada əldə edirik
   
-  // Touch gestures for mobile sidebar
+  // Touch gestures for sidebar
   const touchGestures = useTouchGestures({
     onSwipeLeft: () => {
-      if ((variant === 'mobile' || variant === 'overlay') && onToggle) {
+      if (onToggle) {
         onToggle();
       }
     }
@@ -38,9 +40,9 @@ const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
     preventDefaultEvents: false
   });
 
-  // Close sidebar when clicking outside on mobile/overlay variants
+  // Close sidebar when clicking outside - bütün variant-lar üçün
   useEffect(() => {
-    if ((variant === 'mobile' || variant === 'overlay') && isOpen) {
+    if (isOpen) {
       const handleClickOutside = (event: MouseEvent) => {
         if (sidebarRef.current && !sidebarRef.current.contains(event.target as Node)) {
           onToggle?.();
@@ -56,17 +58,17 @@ const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
         document.removeEventListener('mousedown', handleClickOutside);
       };
     }
-  }, [variant, isOpen, onToggle]);
+  }, [isOpen, onToggle]);
 
-  // Prevent body scroll when mobile/overlay sidebar is open
+  // Prevent body scroll when sidebar is open - bütün variant-lar üçün
   useEffect(() => {
-    if ((variant === 'mobile' || variant === 'overlay') && isOpen) {
+    if (isOpen) {
       document.body.style.overflow = 'hidden';
       return () => {
         document.body.style.overflow = '';
       };
     }
-  }, [variant, isOpen]);
+  }, [isOpen]);
 
   // Yalnız development rejimdə və önəmli parametrlər dəyişdikdə loq göstəririk
   React.useEffect(() => {
@@ -88,38 +90,20 @@ const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
     }
   };
 
-  // Enhanced responsive classes
+  // Enhanced responsive classes - Bütün variant-lar üçün overlay
   const getSidebarClasses = () => {
     const baseClasses = [
-      "flex flex-col h-full bg-background border-r border-border",
+      "flex flex-col h-full bg-background border-r border-border shadow-2xl",
       "transition-all duration-300 ease-in-out overflow-hidden"
     ];
 
-    switch (variant) {
-      case 'mobile':
-        return cn(
-          baseClasses,
-          "fixed top-0 left-0 z-50 md:hidden",
-          "transform transition-transform duration-300 ease-in-out",
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        );
-      
-      case 'overlay':
-        return cn(
-          baseClasses,
-          "fixed top-0 left-0 z-40 lg:hidden",
-          "transform transition-transform duration-300 ease-in-out",
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        );
-      
-      case 'desktop':
-      default:
-        return cn(
-          baseClasses,
-          "relative flex-shrink-0",
-          !isOpen && "w-0 min-w-0 border-r-0"
-        );
-    }
+    // Bütün variant-lar üçün overlay davranışı
+    return cn(
+      baseClasses,
+      "fixed top-0 left-0 z-40",
+      "transform transition-transform duration-300 ease-in-out",
+      isOpen ? "translate-x-0" : "-translate-x-full"
+    );
   };
 
   return (
@@ -129,12 +113,12 @@ const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
       {/* Enhanced Sidebar container */}
       <div
         ref={sidebarRef}
-        {...((variant === 'mobile' || variant === 'overlay') ? touchGestures : {})}
+        {...touchGestures}
         className={getSidebarClasses()}
         style={{
-          width: isOpen ? getResponsiveWidth() : variant === 'desktop' ? '0px' : getResponsiveWidth(),
-          minWidth: variant === 'desktop' && !isOpen ? '0px' : variant === 'mobile' ? '260px' : '280px',
-          maxWidth: variant === 'mobile' ? 'min(320px, 90vw)' : '340px'
+          width: getResponsiveWidth(),
+          minWidth: isMobile ? '260px' : '280px',
+          maxWidth: isMobile ? 'min(320px, 90vw)' : '340px'
         }}
       >
         {/* Header with logo and close button */}
@@ -146,18 +130,17 @@ const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
           <div className="flex-1 min-w-0">
             <Logo />
           </div>
-          {(variant === 'mobile' || variant === 'overlay') && (
-            <Button
-              className={cn(
-                "h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0 ml-2 hover:bg-accent hover:text-accent-foreground",
-                mobileClasses.touchTarget
-              )}
-              onClick={onToggle}
-              aria-label="Close sidebar"
-            >
-              <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
-            </Button>
-          )}
+          {/* Bütün variant-larda close düyməsi */}
+          <Button
+            className={cn(
+              "h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0 ml-2 hover:bg-accent hover:text-accent-foreground",
+              mobileClasses.touchTarget
+            )}
+            onClick={onToggle}
+            aria-label="Close sidebar"
+          >
+            <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+          </Button>
         </div>
         
         {/* Navigation content with scroll - Enhanced */}
@@ -178,12 +161,10 @@ const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
             InfoLine v2.0.0
           </p>
           
-          {/* Mobile-specific swipe hint */}
-          {(variant === 'mobile' || variant === 'overlay') && (
-            <div className="flex items-center justify-center mt-2">
-              <div className="w-8 h-1 bg-muted-foreground/30 rounded-full" />
-            </div>
-          )}
+          {/* Swipe hint - bütün ekranlar üçün */}
+          <div className="flex items-center justify-center mt-2">
+            <div className="w-8 h-1 bg-muted-foreground/30 rounded-full" />
+          </div>
         </div>
       </div>
     </>

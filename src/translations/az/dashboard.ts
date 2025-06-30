@@ -189,6 +189,16 @@ export default {
     select_period: 'Dövr seçin'
   },
 
+  // Dashboard card labels
+  totalSchools: 'Ümumi Məktəblər',
+  schoolsInSector: 'Sektordakı məktəblər',
+  totalRequiredFields: 'Ümumi tələb olunan sahələr',
+  requiredFields: 'Tələb olunan sahələr',
+  totalPossibleEntries: 'Ümumi mümkün girişlər',
+  allPossibleEntries: 'Bütün mümkün girişlər',
+  pendingApprovals: 'Gözləyən təsdiqlər',
+  awaitingApproval: 'Təsdiq gözləyir',
+  
   // Form statistics
   formStatistics: 'Form Statistikaları',
   recentActivity: 'Son Fəaliyyət',

@@ -31,15 +31,15 @@ const Settings: React.FC = () => {
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      toast.success(t("dataReset"), {
-        description: t("dataResetSuccess"),
+      toast.success(t("settings.dataReset") || "Məlumatlar sıfırlandı", {
+        description: t("settings.dataResetSuccess") || "Bütün məlumatlar uğurla sıfırlandı",
       });
 
       setIsResetDialogOpen(false);
     } catch (error) {
       console.error("Error resetting data:", error);
-      toast.error(t("dataResetFailed"), {
-        description: t("dataResetFailedDesc"),
+      toast.error(t("settings.dataResetFailed") || "Məlumatlar sıfırlanərkən xəta baş verdi", {
+        description: t("settings.dataResetFailedDesc") || "Məlumatları sıfırlamaq mümkün olmadı, zəhmət olmasa yenidən cəhd edin",
       });
     } finally {
       setIsResettingData(false);
@@ -52,13 +52,13 @@ const Settings: React.FC = () => {
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      toast.success(t("dataExported"), {
-        description: t("dataExportSuccess"),
+      toast.success(t("settings.dataExported") || "Məlumatlar ixrac edildi", {
+        description: t("settings.dataExportSuccess") || "Bütün məlumatlar uğurla ixrac edildi",
       });
     } catch (error) {
       console.error("Error exporting data:", error);
-      toast.error(t("dataExportFailed"), {
-        description: t("dataExportFailedDesc"),
+      toast.error(t("settings.dataExportFailed") || "Məlumatların ixracı uğursuz oldu", {
+        description: t("settings.dataExportFailedDesc") || "Məlumatların ixracı zamanı xəta baş verdi. Zəhmət olmasa yenidən cəhd edin",
       });
     } finally {
       setIsExportingData(false);
@@ -71,13 +71,13 @@ const Settings: React.FC = () => {
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      toast.success(t("dataImported"), {
-        description: t("dataImportSuccess"),
+      toast.success(t("settings.dataImported") || "Məlumatlar idxal edildi", {
+        description: t("settings.dataImportSuccess") || "Məlumatlar uğurla idxal edildi",
       });
     } catch (error) {
       console.error("Error importing data:", error);
-      toast.error(t("dataImportFailed"), {
-        description: t("dataImportFailedDesc"),
+      toast.error(t("settings.dataImportFailed") || "Məlumat idxalı uğursuz oldu", {
+        description: t("settings.dataImportFailedDesc") || "Məlumatların idxalı zamanı xəta baş verdi. Zəhmət olmasa faylı yoxlayın və yenidən cəhd edin.",
       });
     } finally {
       setIsImportingData(false);
@@ -94,7 +94,7 @@ const Settings: React.FC = () => {
         <div className="mt-10">
           <h2 className="text-xl font-semibold mb-4 flex items-center">
             <Settings2 className="mr-2 h-5 w-5" />
-            {t("systemSettings")}
+            {t("settings.systemSettings") || "Sistem Tənzimləmələri"}
           </h2>
 
           <Card>
@@ -102,9 +102,9 @@ const Settings: React.FC = () => {
               <div className="space-y-6">
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                   <div>
-                    <h3 className="font-medium">{t("exportData")}</h3>
+                    <h3 className="font-medium">{t("settings.exportData") || "Məlumatları ixrac et"}</h3>
                     <p className="text-sm text-muted-foreground">
-                      {t("exportDataDesc")}
+                      {t("settings.exportDataDesc") || "Bütün məlumatlarınızı yedəkləmə üçün ixrac edin"}
                     </p>
                   </div>
                   <Button
@@ -116,12 +116,12 @@ const Settings: React.FC = () => {
                     {isExportingData ? (
                       <>
                         <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                        {t("exporting")}
+                        {t("settings.exporting") || "İxrac edilir..."}
                       </>
                     ) : (
                       <>
                         <DatabaseBackup className="mr-2 h-4 w-4" />
-                        {t("exportData")}
+                        {t("settings.exportData") || "Məlumatları ixrac et"}
                       </>
                     )}
                   </Button>
@@ -131,9 +131,9 @@ const Settings: React.FC = () => {
 
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                   <div>
-                    <h3 className="font-medium">{t("importData")}</h3>
+                    <h3 className="font-medium">{t("settings.importData") || "Məlumatları idxal et"}</h3>
                     <p className="text-sm text-muted-foreground">
-                      {t("importDataDesc")}
+                      {t("settings.importDataDesc") || "Əvvəlcədən ixrac edilmiş məlumatları idxal edin"}
                     </p>
                   </div>
                   <Button
@@ -145,12 +145,12 @@ const Settings: React.FC = () => {
                     {isImportingData ? (
                       <>
                         <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                        {t("importing")}
+                        {t("settings.importing") || "İdxal olunur..."}
                       </>
                     ) : (
                       <>
                         <DatabaseBackup className="mr-2 h-4 w-4" />
-                        {t("importData")}
+                        {t("settings.importData") || "Məlumatları idxal et"}
                       </>
                     )}
                   </Button>
@@ -161,10 +161,10 @@ const Settings: React.FC = () => {
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                   <div>
                     <h3 className="font-medium text-destructive">
-                      {t("resetData")}
+                      {t("settings.resetData") || "Məlumatları sıfırla"}
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      {t("resetDataDesc")}
+                      {t("settings.resetDataDesc") || "Bütün məlumatları orijinal vəziyyətinə qaytarın"}
                     </p>
                   </div>
                   <Button
@@ -173,7 +173,7 @@ const Settings: React.FC = () => {
                     onClick={() => setIsResetDialogOpen(true)}
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
-                    {t("resetData")}
+                    {t("settings.resetData") || "Məlumatları sıfırla"}
                   </Button>
                 </div>
               </div>
@@ -185,14 +185,14 @@ const Settings: React.FC = () => {
       <AlertDialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t("confirmReset")}</AlertDialogTitle>
+            <AlertDialogTitle>{t("settings.confirmReset") || "Məlumatları sıfırlamaq istədiyinizə əminsiniz?"}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t("confirmResetDesc")}
+              {t("settings.confirmResetDesc") || "Bu əməliyyat geri qaytarıla bilməz. Bütün məlumatlar silinəcək və sistem ilkin vəziyyətinə qaytarılacaq."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isResettingData}>
-              {t("cancel")}
+              {t("common.cancel") || "Ləğv et"}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={(e) => {
@@ -205,10 +205,10 @@ const Settings: React.FC = () => {
               {isResettingData ? (
                 <>
                   <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  {t("resetting")}
+                  {t("settings.resetting") || "Sıfırlanır..."}
                 </>
               ) : (
-                t("confirmReset")
+                t("settings.confirmReset") || "Təsdiq et"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
