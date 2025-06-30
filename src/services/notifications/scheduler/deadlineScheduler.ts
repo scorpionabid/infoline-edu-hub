@@ -1,229 +1,218 @@
 import { supabase } from '@/integrations/supabase/client';
 import { NotificationService } from '@/services/api/notificationService';
-import { toast } from 'sonner';
 import type { DeadlineNotificationData } from '@/types/notifications';
 
-interface UserData {
-  id: string;
-  full_name: string;
-  email: string;
-}
-
-interface DeadlineCategory {
-  id: string;
-  name: string;
-  deadline: string;
-  assignment: string;
-}
-
-type NotificationPriority = 'normal' | 'high' | 'critical';
-
+/**
+ * Deadline Scheduler for Automated Notifications
+ * Kategoriyaların son tarixlərinə görə avtomatik xəbərdarlıq sistemi
+ */
 export class DeadlineScheduler {
-  private static instance: DeadlineScheduler;
-  private intervals: Map<string, NodeJS.Timeout> = new Map();
-
-  static getInstance(): DeadlineScheduler {
-    if (!DeadlineScheduler.instance) {
-      DeadlineScheduler.instance = new DeadlineScheduler();
-    }
-    return DeadlineScheduler.instance;
-  }
-
-  async scheduleDeadlineNotifications(): Promise<void> {
+  
+  /**
+   * Check and send deadline reminders for all active categories
+   */
+  static async checkAndSendDeadlineReminders(): Promise<void> {
     try {
-      console.log('🕒 Starting deadline notification scheduling...');
+      console.log('[DeadlineScheduler] Checking deadline reminders...');
       
-      // Get categories with upcoming deadlines
+      // Get all active categories with deadlines
       const { data: categories, error: categoriesError } = await supabase
         .from('categories')
         .select('id, name, deadline, assignment')
-        .not('deadline', 'is', null)
         .eq('status', 'active')
-        .gte('deadline', new Date().toISOString());
+        .not('deadline', 'is', null)
+        .gte('deadline', new Date().toISOString()); // Only future deadlines
 
       if (categoriesError) {
-        console.error('Error fetching categories:', categoriesError);
+        console.error('Error fetching categories for deadline check:', categoriesError);
         return;
       }
 
       if (!categories || categories.length === 0) {
-        console.log('No upcoming deadlines found');
+        console.log('[DeadlineScheduler] No active categories with deadlines found');
         return;
       }
 
-      console.log(`Found ${categories.length} categories with upcoming deadlines`);
-
-      // Process each category
+      const now = new Date();
+      
       for (const category of categories) {
-        await this.processDeadlineNotifications(category as DeadlineCategory);
+        const deadline = new Date(category.deadline);
+        const timeDiff = deadline.getTime() - now.getTime();
+        const daysRemaining = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+        // Send reminders for 3 days and 1 day before deadline
+        if (daysRemaining === 3 || daysRemaining === 1) {
+          await this.sendCategoryDeadlineReminder(category, daysRemaining);
+        }
       }
 
     } catch (error) {
-      console.error('Error in deadline scheduling:', error);
-      toast.error('Deadline notification scheduling failed');
+      console.error('[DeadlineScheduler] Error in deadline check:', error);
     }
   }
 
-  private async processDeadlineNotifications(category: DeadlineCategory): Promise<void> {
+  /**
+   * Send deadline reminder for a specific category
+   */
+  private static async sendCategoryDeadlineReminder(
+    category: { id: string; name: string; deadline: string; assignment: string },
+    daysRemaining: number
+  ): Promise<void> {
     try {
-      const deadline = new Date(category.deadline);
-      const now = new Date();
-      const daysLeft = Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      console.log(`[DeadlineScheduler] Sending reminder for category ${category.name}, ${daysRemaining} days remaining`);
 
-      // Only notify for deadlines within 30 days
-      if (daysLeft > 30 || daysLeft < 0) {
+      let schoolIds: string[] = [];
+
+      if (category.assignment === 'all') {
+        // Get all schools
+        const { data: schools, error } = await supabase
+          .from('schools')
+          .select('id')
+          .eq('status', 'active');
+
+        if (error) throw error;
+        schoolIds = schools?.map(s => s.id) || [];
+      } else if (category.assignment === 'sectors') {
+        // Get schools that have sector admins (sectors only assignment)
+        const { data: schools, error } = await supabase
+          .from('schools')
+          .select('id')
+          .eq('status', 'active')
+          .not('sector_id', 'is', null);
+
+        if (error) throw error;
+        schoolIds = schools?.map(s => s.id) || [];
+      }
+
+      if (schoolIds.length === 0) {
+        console.log(`[DeadlineScheduler] No schools found for category ${category.name}`);
         return;
       }
 
-      console.log(`Processing deadline for category: ${category.name}, days left: ${daysLeft}`);
-
-      // Get target users based on assignment
-      const targetUsers = await this.getTargetUsers(category.assignment);
+      // Check which schools haven't completed this category yet
+      const incompleteSchools = await this.getIncompleteSchools(category.id, schoolIds);
       
-      if (!targetUsers || targetUsers.length === 0) {
-        console.log(`No target users found for category: ${category.name}`);
+      if (incompleteSchools.length === 0) {
+        console.log(`[DeadlineScheduler] All schools completed category ${category.name}`);
         return;
       }
 
-      // Create deadline notifications using real NotificationService
-      const deadlineData: DeadlineNotificationData = {
+      // Create deadline notification data
+      const notificationData: DeadlineNotificationData = {
         categoryName: category.name,
         categoryId: category.id,
-        deadline: deadline.toISOString(),
-        daysRemaining: daysLeft,
-        schoolIds: [] // Will be populated based on assignment
+        deadline: category.deadline,
+        daysRemaining,
+        schoolIds: incompleteSchools
       };
 
-      // Get school IDs if assignment is school-specific
-      if (category.assignment === 'school_admin') {
-        const schoolIds = await this.getSchoolIdsForUsers(targetUsers.map(u => u.id));
-        deadlineData.schoolIds = schoolIds;
-      }
-
-      // Use the unified NotificationService
-      await NotificationService.createDeadlineNotifications(deadlineData);
-
-      console.log(`Created ${targetUsers.length} deadline notifications for category: ${category.name}`);
+      // Send notifications
+      const notifications = await NotificationService.createDeadlineNotifications(notificationData);
+      
+      console.log(`[DeadlineScheduler] Sent ${notifications.length} deadline reminders for category ${category.name}`);
 
     } catch (error) {
-      console.error(`Error processing deadline for category ${category.name}:`, error);
+      console.error(`[DeadlineScheduler] Error sending reminder for category ${category.name}:`, error);
     }
   }
 
-  private async getTargetUsers(assignment: string): Promise<UserData[]> {
+  /**
+   * Get schools that haven't completed the category
+   */
+  private static async getIncompleteSchools(categoryId: string, schoolIds: string[]): Promise<string[]> {
     try {
-      let query = supabase
-        .from('profiles')
-        .select('id, full_name, email');
+      // Get required columns for this category
+      const { data: requiredColumns, error: columnsError } = await supabase
+        .from('columns')
+        .select('id')
+        .eq('category_id', categoryId)
+        .eq('is_required', true)
+        .eq('status', 'active');
 
-      // Filter based on assignment type
-      switch (assignment) {
-        case 'all': {
-          // Get all active users
-          query = query.eq('status', 'active');
-          break; }
-        case 'schools': {
-          // Get school admins
-          const { data: schoolAdminIds } = await supabase
-            .from('user_roles')
-            .select('user_id')
-            .eq('role', 'schooladmin');
-          
-          if (schoolAdminIds && schoolAdminIds.length > 0) {
-            const userIds = schoolAdminIds.map(r => r.user_id);
-            query = query
-              .eq('status', 'active')
-              .in('id', userIds);
-          } else {
-            return [];
-          }
-          break; }
-        case 'sectors': {
-          // Get sector admins
-          const { data: sectorAdminIds } = await supabase
-            .from('user_roles')
-            .select('user_id')
-            .eq('role', 'sectoradmin');
-          
-          if (sectorAdminIds && sectorAdminIds.length > 0) {
-            const userIds = sectorAdminIds.map(r => r.user_id);
-            query = query
-              .eq('status', 'active')
-              .in('id', userIds);
-          } else {
-            return [];
-          }
-          break; }
-        default:
-          console.warn(`Unknown assignment type: ${assignment}, defaulting to all active users`);
-          query = query.eq('status', 'active');
-      }
+      if (columnsError) throw columnsError;
 
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('Error fetching target users:', error);
+      if (!requiredColumns || requiredColumns.length === 0) {
+        // No required columns, all schools are considered complete
         return [];
       }
 
-      return data || [];
-    } catch (error) {
-      console.error('Error in getTargetUsers:', error);
-      return [];
-    }
-  }
+      const requiredColumnIds = requiredColumns.map(c => c.id);
+      const incompleteSchools: string[] = [];
 
-  private async getSchoolIdsForUsers(userIds: string[]): Promise<string[]> {
-    try {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('school_id')
-        .eq('role', 'schooladmin')
-        .in('user_id', userIds)
-        .not('school_id', 'is', null);
+      // Check each school's completion status
+      for (const schoolId of schoolIds) {
+        const { data: entries, error: entriesError } = await supabase
+          .from('data_entries')
+          .select('column_id')
+          .eq('school_id', schoolId)
+          .in('column_id', requiredColumnIds)
+          .eq('status', 'approved');
 
-      if (error) {
-        console.error('Error fetching school IDs:', error);
-        return [];
+        if (entriesError) {
+          console.error(`Error checking completion for school ${schoolId}:`, entriesError);
+          continue;
+        }
+
+        const completedColumnIds = entries?.map(e => e.column_id) || [];
+        const isComplete = requiredColumnIds.every(colId => completedColumnIds.includes(colId));
+
+        if (!isComplete) {
+          incompleteSchools.push(schoolId);
+        }
       }
 
-      return data?.map(item => item.school_id).filter(Boolean) || [];
+      return incompleteSchools;
+
     } catch (error) {
-      console.error('Error in getSchoolIdsForUsers:', error);
-      return [];
+      console.error('Error getting incomplete schools:', error);
+      return schoolIds; // Return all schools if error
     }
   }
 
-  startScheduler(): void {
-    // Clear existing interval
-    this.stopScheduler();
-
+  /**
+   * Schedule deadline reminders (can be called from cron job or interval)
+   */
+  static startDeadlineScheduler(intervalMinutes: number = 60): NodeJS.Timeout {
+    console.log(`[DeadlineScheduler] Starting deadline scheduler (every ${intervalMinutes} minutes)`);
+    
     // Run immediately
-    this.scheduleDeadlineNotifications();
-
-    // Schedule to run every 6 hours
-    const interval = setInterval(() => {
-      this.scheduleDeadlineNotifications();
-    }, 6 * 60 * 60 * 1000);
-
-    this.intervals.set('main', interval);
-
-    console.log('✅ Deadline scheduler started with real NotificationService');
+    this.checkAndSendDeadlineReminders();
+    
+    // Then run on interval
+    return setInterval(() => {
+      this.checkAndSendDeadlineReminders();
+    }, intervalMinutes * 60 * 1000);
   }
 
-  stopScheduler(): void {
-    this.intervals.forEach((interval) => {
-      clearInterval(interval);
-    });
-    this.intervals.clear();
-    console.log('🛑 Deadline scheduler stopped');
-  }
+  /**
+   * Send immediate deadline reminder for specific category
+   */
+  static async sendImmediateDeadlineReminder(categoryId: string): Promise<boolean> {
+    try {
+      const { data: category, error } = await supabase
+        .from('categories')
+        .select('id, name, deadline, assignment')
+        .eq('id', categoryId)
+        .eq('status', 'active')
+        .single();
 
-  // Manual trigger for testing
-  async triggerDeadlineCheck(): Promise<void> {
-    console.log('🔧 Manual deadline check triggered');
-    await this.scheduleDeadlineNotifications();
+      if (error || !category || !category.deadline) {
+        console.error('Category not found or no deadline:', error);
+        return false;
+      }
+
+      const deadline = new Date(category.deadline);
+      const now = new Date();
+      const daysRemaining = Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 3600 * 24));
+
+      await this.sendCategoryDeadlineReminder(category, daysRemaining);
+      return true;
+
+    } catch (error) {
+      console.error('Error sending immediate deadline reminder:', error);
+      return false;
+    }
   }
 }
 
-export const deadlineScheduler = DeadlineScheduler.getInstance();
+export default DeadlineScheduler;
