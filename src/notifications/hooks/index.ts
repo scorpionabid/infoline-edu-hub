@@ -1,27 +1,62 @@
 /**
  * İnfoLine Unified Notification System - React Hooks
  * React components üçün notification hooks
+ * 
+ * @deprecated 
+ * Bu modul köhnədir və yeni ilə əvəz edilib.
+ * Xahiş olunur yeni Notification sistemini istifadə edin:
+ * 
+ * import { useNotificationContext } from '@/components/notifications/NotificationProvider';
+ * və ya
+ * import { useNotificationContext } from '@/notifications';
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+// React imports
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { notificationManager } from '../core/NotificationManager';
-import type { 
-  UnifiedNotification,
+import { supabase } from '@/integrations/supabase/client';
+import NotificationService from '@/services/api/notificationService';
+import {
+  Notification,
   NotificationType,
   NotificationPriority,
-  NotificationChannel,
-  NotificationEvent,
-  BulkNotificationRequest
-} from '../core/types';
+  NotificationFilters,
+  UseNotificationsResult,
+  RelatedEntityType
+} from '@/types/notifications';
+
+// Geriyə uyğunluq üçün köhnə tip adlarını əhatə et
+type UnifiedNotification = Notification;
+type NotificationChannel = 'inApp' | 'email';
+type NotificationEvent = {
+  id: string;
+  user_id: string;
+};
+
+type BulkNotificationRequest = {
+  userIds: string[];
+  notification: Partial<Notification>;
+};
 
 /**
+ * @deprecated Use the new NotificationProvider and useNotificationContext hook instead
  * Main notifications hook - replaces all old notification hooks
+ * 
+ * This hook uses the new NotificationService internally
  */
+
 export function useNotifications(userId?: string) {
+  // We can't use useNotificationContext here as this is the old hook implementation
+  // It's mentioned in the deprecation notice that users should migrate
+  
   const queryClient = useQueryClient();
   const [realTimeEnabled, setRealTimeEnabled] = useState(true);
-  const eventListenersRef = useRef<(() => void)[]>([]);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+
+  // Show deprecation warning on first render
+  useEffect(() => {
+    console.warn('[DEPRECATED] useNotifications hook is deprecated. Please use useNotificationContext from NotificationProvider instead.');
+  }, []);
 
   // Get current user ID (you might need to adapt this to your auth system)
   const currentUserId = userId; // TODO: Get from auth context
@@ -34,7 +69,7 @@ export function useNotifications(userId?: string) {
     refetch
   } = useQuery({
     queryKey: ['notifications', currentUserId],
-    queryFn: () => currentUserId ? notificationManager.getNotifications(currentUserId) : Promise.resolve([]),
+    queryFn: () => currentUserId ? NotificationService.getUserNotifications(currentUserId, {}) : Promise.resolve([]),
     enabled: !!currentUserId,
     staleTime: 30 * 1000, // 30 seconds
     refetchInterval: realTimeEnabled ? false : 60 * 1000 // 1 minute if real-time disabled
@@ -46,7 +81,7 @@ export function useNotifications(userId?: string) {
     refetch: refetchUnreadCount
   } = useQuery({
     queryKey: ['notifications-unread-count', currentUserId],
-    queryFn: () => currentUserId ? notificationManager.getUnreadCount(currentUserId) : Promise.resolve(0),
+    queryFn: () => currentUserId ? NotificationService.getUnreadCount(currentUserId) : Promise.resolve(0),
     enabled: !!currentUserId,
     staleTime: 10 * 1000 // 10 seconds
   });
@@ -54,7 +89,7 @@ export function useNotifications(userId?: string) {
   // Mark as read mutation
   const markAsReadMutation = useMutation({
     mutationFn: (notificationId: string) => 
-      currentUserId ? notificationManager.markAsRead(notificationId, currentUserId) : Promise.resolve(false),
+      currentUserId ? NotificationService.markAsRead(notificationId, currentUserId) : Promise.resolve(false),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications', currentUserId] });
       queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', currentUserId] });
@@ -64,7 +99,7 @@ export function useNotifications(userId?: string) {
   // Mark all as read mutation
   const markAllAsReadMutation = useMutation({
     mutationFn: () => 
-      currentUserId ? notificationManager.markAllAsRead(currentUserId) : Promise.resolve(false),
+      currentUserId ? NotificationService.markAllAsRead(currentUserId) : Promise.resolve(false),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications', currentUserId] });
       queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', currentUserId] });
@@ -74,7 +109,7 @@ export function useNotifications(userId?: string) {
   // Delete notification mutation
   const deleteNotificationMutation = useMutation({
     mutationFn: (notificationId: string) => 
-      currentUserId ? notificationManager.deleteNotification(notificationId, currentUserId) : Promise.resolve(false),
+      currentUserId ? NotificationService.deleteNotification(notificationId, currentUserId) : Promise.resolve(false),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications', currentUserId] });
       queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', currentUserId] });
@@ -84,7 +119,7 @@ export function useNotifications(userId?: string) {
   // Clear all notifications mutation
   const clearAllMutation = useMutation({
     mutationFn: () => 
-      currentUserId ? notificationManager.clearAllNotifications(currentUserId) : Promise.resolve(false),
+      currentUserId ? NotificationService.clearAllNotifications(currentUserId) : Promise.resolve(false),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications', currentUserId] });
       queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', currentUserId] });
@@ -99,69 +134,72 @@ export function useNotifications(userId?: string) {
       message: string;
       type?: NotificationType;
       priority?: NotificationPriority;
-      channels?: NotificationChannel[];
       relatedEntityId?: string;
-      relatedEntityType?: string;
-    }) => notificationManager.createNotification(
-      params.userId,
-      params.title,
-      params.message,
-      params.type,
-      {
-        priority: params.priority,
-        channels: params.channels,
+      relatedEntityType?: RelatedEntityType;
+    }) => {
+      return NotificationService.createNotification({
+        userId: params.userId,
+        title: params.title,
+        message: params.message,
+        type: params.type || 'info',
+        priority: params.priority || 'normal',
         relatedEntityId: params.relatedEntityId,
         relatedEntityType: params.relatedEntityType
-      }
-    ),
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       queryClient.invalidateQueries({ queryKey: ['notifications-unread-count'] });
     }
   });
 
-  // Setup real-time listeners
+  // Setup real-time listeners using Supabase directly since NotificationService doesn't have subscription methods
   useEffect(() => {
     if (!currentUserId || !realTimeEnabled) return;
 
-    const unsubscribeFunctions: (() => void)[] = [];
-
-    // Listen for new notifications
-    const unsubscribeCreated = notificationManager.addEventListener('notification_created', (event) => {
-      if (event.user_id === currentUserId) {
-        queryClient.invalidateQueries({ queryKey: ['notifications', currentUserId] });
-        queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', currentUserId] });
-      }
-    });
-
-    // Listen for notification updates
-    const unsubscribeUpdated = notificationManager.addEventListener('notification_updated', (event) => {
-      if (event.user_id === currentUserId) {
-        queryClient.invalidateQueries({ queryKey: ['notifications', currentUserId] });
-        queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', currentUserId] });
-      }
-    });
-
-    // Listen for notification deletions
-    const unsubscribeDeleted = notificationManager.addEventListener('notification_deleted', (event) => {
-      if (event.user_id === currentUserId) {
-        queryClient.invalidateQueries({ queryKey: ['notifications', currentUserId] });
-        queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', currentUserId] });
-      }
-    });
-
-    unsubscribeFunctions.push(unsubscribeCreated, unsubscribeUpdated, unsubscribeDeleted);
-    eventListenersRef.current = unsubscribeFunctions;
+    try {
+      // Create a Supabase channel for real-time notifications
+      const channel = supabase
+        .channel(`notifications:${currentUserId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*', // Listen for all events (INSERT, UPDATE, DELETE)
+            schema: 'public',
+            table: 'notifications',
+            filter: `user_id=eq.${currentUserId}`
+          },
+          () => {
+            queryClient.invalidateQueries({ queryKey: ['notifications', currentUserId] });
+            queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', currentUserId] });
+          }
+        )
+        .subscribe();
+        
+      // Store channel reference for cleanup
+      channelRef.current = channel;
+      
+      console.log(`[Notifications] Subscribed to real-time updates for user ${currentUserId}`);
+    } catch (error) {
+      console.error('[Notifications] Failed to setup real-time listeners:', error);
+    }
 
     return () => {
-      unsubscribeFunctions.forEach(unsubscribe => unsubscribe());
+      if (channelRef.current) {
+        channelRef.current.unsubscribe();
+        channelRef.current = null;
+        console.log(`[Notifications] Unsubscribed from real-time updates for user ${currentUserId}`);
+      }
     };
-  }, [currentUserId, realTimeEnabled, queryClient]);
+  }, [currentUserId, queryClient, realTimeEnabled]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      eventListenersRef.current.forEach(unsubscribe => unsubscribe());
+      if (channelRef.current) {
+        channelRef.current.unsubscribe();
+        channelRef.current = null;
+      }
     };
   }, []);
 
@@ -182,22 +220,65 @@ export function useNotifications(userId?: string) {
     clearAllMutation.mutate();
   }, [clearAllMutation]);
 
-  const createNotification = useCallback((params: {
-    userId: string;
-    title: string;
-    message: string;
-    type?: NotificationType;
-    priority?: NotificationPriority;
-    channels?: NotificationChannel[];
-    relatedEntityId?: string;
-    relatedEntityType?: string;
-  }) => {
-    createNotificationMutation.mutate(params);
-  }, [createNotificationMutation]);
+  const createNotification = useCallback(
+    async (params: {
+      userId: string;
+      title: string;
+      message: string;
+      type?: NotificationType;
+      priority?: NotificationPriority;
+      relatedEntityId?: string;
+      relatedEntityType?: RelatedEntityType;
+    }) => {
+      try {
+        // Use the notification service to create the notification
+        const result = await createNotificationMutation.mutateAsync(params);
+        return result;
+      } catch (error) {
+        console.error('[Notifications] Failed to create notification:', error);
+        return null;
+      }
+    },
+    [createNotificationMutation]
+  );
 
-  const toggleRealTime = useCallback((enabled: boolean) => {
-    setRealTimeEnabled(enabled);
-  }, []);
+  const toggleRealTime = useCallback(
+    (enable: boolean) => {
+      setRealTimeEnabled(enable);
+
+      if (enable) {
+        // Resubscribe if needed
+        if (!channelRef.current && currentUserId) {
+          // Create a new channel subscription
+          const channel = supabase
+            .channel(`notifications:${currentUserId}`)
+            .on(
+              'postgres_changes',
+              {
+                event: '*',
+                schema: 'public',
+                table: 'notifications',
+                filter: `user_id=eq.${currentUserId}`
+              },
+              () => {
+                queryClient.invalidateQueries({ queryKey: ['notifications', currentUserId] });
+                queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', currentUserId] });
+              }
+            )
+            .subscribe();
+            
+          channelRef.current = channel;
+        }
+      } else {
+        // Unsubscribe from real-time updates
+        if (channelRef.current) {
+          channelRef.current.unsubscribe();
+          channelRef.current = null;
+        }
+      }
+    },
+    [currentUserId, queryClient]
+  );
 
   return {
     // Data
@@ -230,13 +311,28 @@ export function useNotifications(userId?: string) {
 
 /**
  * Hook for bulk notifications (admin functionality)
+ * @deprecated Use the new NotificationProvider and useNotificationContext hook instead
  */
 export function useBulkNotifications() {
   const queryClient = useQueryClient();
 
+  // Log deprecation warning on first render
+  useEffect(() => {
+    console.warn('[DEPRECATED] useBulkNotifications hook is deprecated. Please use useNotificationContext from NotificationProvider instead.');
+  }, []);
+
   const sendBulkNotificationsMutation = useMutation({
     mutationFn: (request: BulkNotificationRequest) => 
-      notificationManager.sendBulkNotifications(request),
+      // Use NotificationService to create bulk notifications
+      NotificationService.createBulkNotifications({
+        userIds: request.userIds,
+        title: request.notification.title || '',
+        message: request.notification.message || '',
+        type: request.notification.type || 'info',
+        priority: request.notification.priority || 'normal',
+        relatedEntityId: request.notification.related_entity_id,
+        relatedEntityType: (request.notification.related_entity_type as RelatedEntityType) || 'system'
+      }),
     onSuccess: () => {
       // Invalidate all notification queries
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
@@ -258,26 +354,40 @@ export function useBulkNotifications() {
 
 /**
  * Hook for notification analytics and monitoring
+ * @deprecated This hook is no longer supported in the new notification system
  */
 export function useNotificationAnalytics() {
-  const [metrics, setMetrics] = useState(notificationManager.getPerformanceMetrics());
-  const [health, setHealth] = useState(notificationManager.getHealth());
+  // Create placeholder data structures to maintain compatibility
+  const [metrics, setMetrics] = useState({
+    totalProcessed: 0,
+    avgProcessingTime: 0,
+    successRate: 100,
+    lastUpdated: new Date().toISOString()
+  });
+  
+  const [health, setHealth] = useState({
+    status: 'healthy',
+    availableChannels: ['inApp'],
+    issuesDetected: []
+  });
 
-  const refreshMetrics = useCallback(() => {
-    setMetrics(notificationManager.getPerformanceMetrics());
-    setHealth(notificationManager.getHealth());
+  // Log deprecation warning on first render
+  useEffect(() => {
+    console.warn('[DEPRECATED] useNotificationAnalytics hook is deprecated and no longer provides real metrics.');
   }, []);
 
-  // Auto-refresh metrics every 30 seconds
-  useEffect(() => {
-    const interval = setInterval(refreshMetrics, 30000);
-    return () => clearInterval(interval);
-  }, [refreshMetrics]);
+  const refreshMetrics = useCallback(() => {
+    // Update timestamp to simulate refresh
+    setMetrics(prev => ({
+      ...prev,
+      lastUpdated: new Date().toISOString()
+    }));
+  }, []);
 
   return {
     metrics,
     health,
-    // refreshMetrics
+    refreshMetrics
   };
 }
 
@@ -291,11 +401,14 @@ export function useDeadlineNotifications(userId?: string) {
     notification => notification.type === 'deadline'
   );
 
+  // New notification system doesn't support metadata field directly, warn about this limitation
+  useEffect(() => {
+    console.warn('[DEPRECATED] useDeadlineNotifications hook: metadata support is limited in the new notification system. Deadline urgency filtering may not work as expected.');
+  }, []);
+  
+  // Simply return all deadline notifications as urgent if their priority is high or critical
   const urgentDeadlines = deadlineNotifications.filter(
-    notification => {
-      const daysRemaining = notification.metadata?.days_remaining;
-      return daysRemaining !== undefined && daysRemaining <= 3;
-    }
+    notification => notification.priority === 'high' || notification.priority === 'critical'
   );
 
   const createDeadlineNotification = useCallback(async (
@@ -308,31 +421,22 @@ export function useDeadlineNotifications(userId?: string) {
     const title = `Son tarix xatırlatması: ${categoryName}`;
     const message = `"${categoryName}" kateqoriyası üçün son tarix ${daysRemaining} gün qalıb. Tarix: ${deadlineDate}`;
     
-    return notificationManager.createNotification(
+    return NotificationService.createNotification({
       userId,
       title,
       message,
-      'deadline',
-      {
-        priority: daysRemaining <= 1 ? 'critical' : daysRemaining <= 3 ? 'high' : 'normal',
-        channels: ['inApp', 'email'],
-        relatedEntityId: categoryId,
-        relatedEntityType: 'category',
-        metadata: {
-          deadline_date: deadlineDate,
-          days_remaining: daysRemaining,
-          category_id: categoryId,
-          category_name: categoryName
-        }
-      }
-    );
+      type: 'deadline',
+      priority: daysRemaining <= 1 ? 'critical' : daysRemaining <= 3 ? 'high' : 'normal',
+      relatedEntityId: categoryId,
+      relatedEntityType: 'category'
+    });
   }, []);
 
   return {
     ...rest,
     deadlineNotifications,
     urgentDeadlines,
-    // createDeadlineNotification
+    createDeadlineNotification
   };
 }
 
@@ -346,8 +450,14 @@ export function useApprovalNotifications(userId?: string) {
     notification => notification.type === 'approval' || notification.type === 'rejection'
   );
 
+  // New notification system doesn't support metadata field directly, warn about this limitation
+  useEffect(() => {
+    console.warn('[DEPRECATED] useApprovalNotifications hook: metadata support is limited in the new notification system. Pending approval filtering may not work as expected.');
+  }, []);
+  
+  // In the new system, all approval notifications without 'is_read' flag are considered pending
   const pendingApprovals = approvalNotifications.filter(
-    notification => notification.metadata?.approval_status === 'pending'
+    notification => !notification.is_read
   );
 
   const createApprovalNotification = useCallback(async (
@@ -367,41 +477,36 @@ export function useApprovalNotifications(userId?: string) {
       ? `"${categoryName}" kateqoriyası üçün təqdim etdiyiniz məlumatlar təsdiqləndi.`
       : `"${categoryName}" kateqoriyası üçün təqdim etdiyiniz məlumatlar rədd edildi. ${rejectionReason ? `Səbəb: ${rejectionReason}` : ''}`;
     
-    return notificationManager.createNotification(
+    return NotificationService.createNotification({
       userId,
       title,
       message,
-      isApproved ? 'approval' : 'rejection',
-      {
-        priority: 'high',
-        channels: ['inApp', 'email'],
-        relatedEntityId: categoryId,
-        relatedEntityType: 'category',
-        metadata: {
-          approval_status: isApproved ? 'approved' : 'rejected',
-          reviewer_id: reviewerId,
-          reviewer_name: reviewerName,
-          rejection_reason: rejectionReason,
-          category_id: categoryId,
-          category_name: categoryName
-        }
-      }
-    );
+      type: isApproved ? 'approval' : 'rejection',
+      priority: 'high',
+      relatedEntityId: categoryId,
+      relatedEntityType: 'category'
+    });
   }, []);
 
   return {
     ...rest,
     approvalNotifications,
     pendingApprovals,
-    // createApprovalNotification
+    createApprovalNotification
   };
 }
 
 /**
  * Hook for system notifications
+ * @deprecated Use the new NotificationProvider and useNotificationContext hook instead
  */
 export function useSystemNotifications() {
   const queryClient = useQueryClient();
+  
+  // Log deprecation warning on first render
+  useEffect(() => {
+    console.warn('[DEPRECATED] useSystemNotifications hook is deprecated. Please use useNotificationContext from NotificationProvider instead.');
+  }, []);
 
   const createSystemNotification = useCallback(async (
     title: string,
@@ -411,13 +516,13 @@ export function useSystemNotifications() {
   ) => {
     if (userIds && userIds.length > 0) {
       // Bulk notification for specific users
-      return notificationManager.sendBulkNotifications({
-        type: 'system',
+      return NotificationService.createBulkNotifications({
+        userIds: userIds,
         title,
         message,
+        type: 'system',
         priority,
-        channels: ['inApp'],
-        user_ids: userIds
+        relatedEntityType: 'system'
       });
     } else {
       // This would require getting all user IDs from the system
@@ -427,7 +532,7 @@ export function useSystemNotifications() {
   }, []);
 
   return {
-    // createSystemNotification
+    createSystemNotification
   };
 }
 
