@@ -8,7 +8,7 @@ import {
   SectorAdminDashboardData,
   SchoolAdminDashboardData,
   DashboardFormStats,
-  // DashboardStats
+  DashboardStats  // DashboardStats importunu aktiv etdik
 } from '@/types/dashboard';
 
 export const useRealDashboardData = () => {
@@ -196,7 +196,38 @@ export const useRealDashboardData = () => {
 
       console.log('Fetching sector admin data for sector:', user.sector_id);
 
-      // 1. Fetch schools in this sector WITH completion stats
+      // 1. Əvvəlcə sektor məlumatlarını əldə edirik
+      const { data: sectorData, error: sectorError } = await supabase
+        .from('sectors')
+        .select(`
+          id,
+          name,
+          region_id
+        `)
+        .eq('id', user.sector_id || '')
+        .maybeSingle(); // .single() əvəzinə .maybeSingle() istifadə edirik
+
+      if (sectorError) {
+        console.error('Sector data error:', sectorError);
+        throw sectorError;
+      }
+
+      // Sektor tapılmadığı halda boş məlumatlar qaytarırıq
+      if (!sectorData) {
+        console.warn('No sector found with ID:', user.sector_id);
+        // SectorAdminDashboardData tipinə uyğun boş məlumat qaytarırıq
+        return {
+          totalSchools: 0,
+          pendingApprovals: 0,
+          completionRate: 0,
+          stats: { totalEntries: 0, completedEntries: 0, pendingEntries: 0, approvedEntries: 0, rejectedEntries: 0, completed: 0, pending: 0 },
+          summary: { total: 0, completed: 0, pending: 0, rejected: 0, approved: 0, completionRate: 0, approvalRate: 0, draft: 0, dueSoon: 0, overdue: 0 },
+          totalRequiredColumns: 0,
+          totalPossibleEntries: 0
+        };
+      }
+      
+      // 2. Sektora aid məktəbləri əldə edirik
       const { data: schoolsData, error: schoolsError } = await supabase
         .from('schools')
         .select(`
@@ -205,14 +236,14 @@ export const useRealDashboardData = () => {
           completion_rate,
           status
         `)
-        .eq('sector_id', user.sector_id);
+        .eq('sector_id', user.sector_id || '');
 
       if (schoolsError) {
         console.error('Schools data error:', schoolsError);
         throw schoolsError;
       }
 
-      // 2. Fetch ALL categories and columns for context
+      // 2. Bütün aktiv kateqoriyaları və sütunları əldə edirik
       const { data: categoriesData, error: categoriesError } = await supabase
         .from('categories')
         .select(`
@@ -221,7 +252,7 @@ export const useRealDashboardData = () => {
           status,
           columns(id, is_required, status)
         `)
-        .eq('status', 'active');
+        .eq('status', 'active')
 
       if (categoriesError) {
         console.error('Categories data error:', categoriesError);
@@ -298,7 +329,7 @@ export const useRealDashboardData = () => {
           totalEntries: schoolEntries.length
         };
       }) || [];
-
+      
       // 8. Prepare dashboard statistics
       const stats: DashboardStats = {
         totalEntries,
@@ -309,27 +340,7 @@ export const useRealDashboardData = () => {
         completed: approvedEntries,
         pending: pendingEntries
       };
-
-      const forms: DashboardFormStats = {
-        totalForms: totalEntries,
-        pendingApprovals: pendingEntries,
-        rejectedForms: rejectedEntries,
-        total: totalEntries,
-        pending: pendingEntries,
-        approved: approvedEntries,
-        rejected: rejectedEntries,
-        draft: 0, // Will implement drafts later
-        dueSoon: 0, // Will implement deadlines later
-        overdue: 0, // Will implement deadlines later
-        percentage: sectorCompletionRate,
-        completion_rate: sectorCompletionRate,
-        completionRate: sectorCompletionRate,
-        completedForms: approvedEntries,
-        pendingForms: pendingEntries,
-        approvalRate: sectorCompletionRate,
-        completed: approvedEntries
-      };
-
+      
       // 9. Summary statistics for logging
       console.log('Final sector admin stats:', {
         totalSchools: schoolsData?.length || 0,
@@ -356,7 +367,6 @@ export const useRealDashboardData = () => {
           dueSoon: 0,
           overdue: 0
         },
-        schoolsWithStats, // Enhanced schools data with individual completion rates
         totalRequiredColumns,
         totalPossibleEntries
       };
@@ -375,6 +385,8 @@ export const useRealDashboardData = () => {
         });
         
         // Test məlumatları qaytaraq - xəta atmaq əvəzinə
+        // SchoolAdminDashboardData interfeysinə uyğun boş məlumat qaytarırıq
+        // forms sahəsi bu interfeysdə yoxdur, ona görə silindi
         return {
           totalForms: 0,
           completedForms: 0,
@@ -387,26 +399,8 @@ export const useRealDashboardData = () => {
             rejectedEntries: 0,
             completed: 0,
             pending: 0
-          },
-          forms: {
-            totalForms: 0,
-            pendingApprovals: 0,
-            rejectedForms: 0,
-            total: 0,
-            pending: 0,
-            approved: 0,
-            rejected: 0,
-            draft: 0,
-            dueSoon: 0,
-            overdue: 0,
-            completionRate: 0,
-            percentage: 0,
-            completion_rate: 0,
-            completedForms: 0,
-            pendingForms: 0,
-            approvalRate: 0,
-            completed: 0
           }
+          // forms sahəsi SchoolAdminDashboardData interfeysinə daxil deyil
         };
       }
 

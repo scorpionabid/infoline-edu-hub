@@ -61,7 +61,7 @@ export const saveSchoolDataEntry = async (input: SaveSchoolDataEntryInput): Prom
         ignoreDuplicates: false 
       })
       .select()
-      .single();
+      .maybeSingle();
     
     if (error) {
       console.error('[saveSchoolDataEntry] Database error:', error);
@@ -219,7 +219,7 @@ export const updateSchoolDataEntryStatus = async (
       .update(updateData)
       .eq('id', entryId)
       .select()
-      .single();
+      .maybeSingle();
     
     if (error) {
       console.error('[updateSchoolDataEntryStatus] Database error:', error);

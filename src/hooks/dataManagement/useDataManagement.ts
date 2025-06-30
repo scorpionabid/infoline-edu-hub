@@ -285,19 +285,65 @@ export const useDataManagement = () => {
     await loadSchoolData(column.category_id, column.id);
   };
 
-  // Data management handlers - Updated signatures to match SchoolDataGrid expectations
-  const handleDataSave = async (schoolId: string, value: string): Promise<boolean> => {
+  // Data management handlers - Updated signatures to handle both school and sector data
+  const handleDataSave = async (entityId: string, value: string): Promise<boolean> => {
     setLoading(prev => ({ ...prev, saving: true }));
     try {
       if (!selectedColumn || !selectedCategory) {
         throw new Error('Kateqoriya və ya sütun seçilməyib');
       }
       
+      // Handle sector data separately
+      if (selectedCategory.assignment === 'sectors') {
+        // For sector data, use sector_data_entries table
+        // Check if entry exists first
+        const { data: existingSectorEntry } = await supabase
+          .from('sector_data_entries')
+          .select('id')
+          .eq('sector_id', permissions.sectorId || entityId)
+          .eq('category_id', selectedCategory.id)
+          .eq('column_id', selectedColumn.id)
+          .single();
+          
+        if (existingSectorEntry) {
+          // Update existing entry
+          const { error } = await supabase
+            .from('sector_data_entries')
+            .update({
+              value,
+              status: 'approved',
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', existingSectorEntry.id);
+            
+          if (error) throw error;
+        } else {
+          // Create new entry
+          const { error } = await supabase
+            .from('sector_data_entries')
+            .insert({
+              sector_id: permissions.sectorId || entityId,
+              category_id: selectedCategory.id,
+              column_id: selectedColumn.id,
+              value,
+              status: 'approved', // Sector data is automatically approved
+              created_by: user?.id,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
+            
+          if (error) throw error;
+        }
+        
+        return true;
+      }
+      
+      // Handle school data (existing logic)
       // Check if entry exists
       const { data: existingEntry } = await supabase
         .from('data_entries')
         .select('id')
-        .eq('school_id', schoolId)
+        .eq('school_id', entityId) // entityId is schoolId for school data
         .eq('category_id', selectedCategory.id)
         .eq('column_id', selectedColumn.id)
         .single();
@@ -319,7 +365,7 @@ export const useDataManagement = () => {
         const { error } = await supabase
           .from('data_entries')
           .insert({
-            school_id: schoolId,
+            school_id: entityId,
             category_id: selectedCategory.id,
             column_id: selectedColumn.id,
             value,
@@ -332,7 +378,7 @@ export const useDataManagement = () => {
         if (error) throw error;
       }
       
-      // Refresh data
+      // Refresh data only for school data
       await loadSchoolData(selectedCategory.id, selectedColumn.id);
       return true;
       

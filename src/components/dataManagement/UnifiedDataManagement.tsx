@@ -20,6 +20,7 @@ import { useDataManagement } from '@/hooks/dataManagement/useDataManagement';
 import { CategorySelector } from './components/CategorySelector';
 import { ColumnSelector } from './components/ColumnSelector';
 import { SchoolDataGrid } from './components/SchoolDataGrid';
+import { SectorDataEntry } from './components/SectorDataEntry';
 import { toast } from 'sonner';
 
 /**
@@ -169,7 +170,8 @@ const UnifiedDataManagement: React.FC<UnifiedDataManagementProps> = ({
             <p className="text-muted-foreground mt-1 text-sm sm:text-base">
               {currentStep === 'category' && 'Məlumat növünü seçin'}
               {currentStep === 'column' && 'Məlumat sütununu seçin'}
-              {currentStep === 'data' && 'Məktəb məlumatlarını idarə edin'}
+              {currentStep === 'data' && selectedCategory?.assignment === 'sectors' && 'Sektor məlumatlarını idarə edin'}
+              {currentStep === 'data' && selectedCategory?.assignment !== 'sectors' && 'Məktəb məlumatlarını idarə edin'}
             </p>
           </div>
           
@@ -276,8 +278,8 @@ const UnifiedDataManagement: React.FC<UnifiedDataManagementProps> = ({
         </Card>
       )}
 
-      {/* Statistics Overview */}
-      {currentStep === 'data' && filteredStats && (
+      {/* Statistics Overview - School Data */}
+      {currentStep === 'data' && filteredStats && selectedCategory?.assignment !== 'sectors' && (
         <div className={`grid grid-cols-1 ${compactMode ? 'md:grid-cols-2' : 'md:grid-cols-4'} gap-4`}>
           <Card>
             <CardContent className="p-4 text-center">
@@ -317,6 +319,37 @@ const UnifiedDataManagement: React.FC<UnifiedDataManagementProps> = ({
           </Card>
         </div>
       )}
+      
+      {/* Statistics Overview - Sector Data */}
+      {currentStep === 'data' && selectedCategory?.assignment === 'sectors' && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-blue-600">1</div>
+              <div className="text-sm text-muted-foreground">Sektor Məlumatı</div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-green-600">✓</div>
+              <div className="text-sm text-muted-foreground flex items-center justify-center gap-1">
+                <Database className="h-3 w-3" />
+                Avtomatik Təsdiq
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-purple-600">{selectedColumn?.name}</div>
+              <div className="text-sm text-muted-foreground">
+                Seçilmiş Sütun
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Main Content Area */}
       <div className="min-h-[400px]">
@@ -340,22 +373,35 @@ const UnifiedDataManagement: React.FC<UnifiedDataManagementProps> = ({
         )}
 
         {currentStep === 'data' && selectedColumn && (
-          <SchoolDataGrid
-            category={selectedCategory!}
-            column={selectedColumn}
-            schoolData={filteredSchoolData}
-            stats={filteredStats}
-            loading={loading.schoolData}
-            saving={loading.saving}
-            permissions={permissions}
-            onDataSave={handleDataSave}
-            onDataApprove={handleDataApprove}
-            onDataReject={handleDataReject}
-            onBulkApprove={handleBulkApprove}
-            onBulkReject={handleBulkReject}
-            onBack={() => goToStep('column')}
-            compactMode={compactMode}
-          />
+          <>
+            {selectedCategory!.assignment === 'sectors' ? (
+              <SectorDataEntry
+                category={selectedCategory!}
+                column={selectedColumn}
+                onDataSave={handleDataSave}
+                onBack={() => goToStep('column')}
+                loading={loading.schoolData}
+                permissions={permissions}
+              />
+            ) : (
+              <SchoolDataGrid
+                category={selectedCategory!}
+                column={selectedColumn}
+                schoolData={filteredSchoolData}
+                stats={filteredStats}
+                loading={loading.schoolData}
+                saving={loading.saving}
+                permissions={permissions}
+                onDataSave={handleDataSave}
+                onDataApprove={handleDataApprove}
+                onDataReject={handleDataReject}
+                onBulkApprove={handleBulkApprove}
+                onBulkReject={handleBulkReject}
+                onBack={() => goToStep('column')}
+                compactMode={compactMode}
+              />
+            )}
+          </>
         )}
       </div>
     </div>
