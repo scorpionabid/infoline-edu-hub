@@ -1,3 +1,4 @@
+
 // Data Management translation module
 export const dataManagement = {
   // Page titles
@@ -74,29 +75,38 @@ export const dataManagement = {
   reject_reason_placeholder: 'Məlumatların rədd edilmə səbəbini qeyd edin...',
   reject_reason_required: 'Rədd səbəbi daxil edilməlidir',
   
-  // Messages
+  // Messages - Enhanced for column-level operations
   data_saved: 'Məlumat uğurla saxlanıldı',
-  data_approved: 'Məlumat təsdiqləndi',
-  data_rejected: 'Məlumat rədd edildi',
-  bulk_approved: 'məlumat təsdiqləndi',
-  bulk_rejected: 'məlumat rədd edildi',
+  data_approved: 'Sütun məlumatı təsdiqləndi',
+  data_rejected: 'Sütun məlumatı rədd edildi',
+  bulk_approved: 'sütun məlumatı təsdiqləndi',
+  bulk_rejected: 'sütun məlumatı rədd edildi',
   save_error: 'Məlumat saxlanarkən xəta baş verdi',
   approval_error: 'Təsdiq zamanı xəta baş verdi',
   rejection_error: 'Rədd zamanı xəta baş verdi',
   bulk_approval_error: 'Toplu təsdiq zamanı xəta baş verdi',
   bulk_rejection_error: 'Toplu rədd zamanı xəta baş verdi',
   
+  // Column-level approval messages
+  column_approval_success: 'sütunu üçün məlumat təsdiqləndi',
+  column_rejection_success: 'sütunu üçün məlumat rədd edildi',
+  column_approval_info: 'Yalnız seçilmiş sütun təsdiqlənəcək',
+  column_level_system: 'Sütun-səviyyəli təsdiq sistemi',
+  other_columns_not_affected: 'Digər sütunlar təsirlənməyəcək',
+  
   // Permissions
   no_approval_permission: 'Təsdiq etmək üçün icazəniz yoxdur',
   no_edit_permission: 'Redaktə etmək üçün icazəniz yoxdur',
   
-  // Help text
+  // Help text - Enhanced
   help_sector_data: 'Bu məlumat birbaşa sektor üçün qeyd ediləcək',
   help_school_data: 'Bu məlumat məktəblər üçün daxil ediləcək',
   help_superadmin: 'SuperAdmin bütün kateqoriyaları idarə edə bilər',
   help_regionadmin: 'Region adminləri bütün kateqoriyaları idarə edə bilər',
   help_sectoradmin: 'Sektor adminləri bütün kateqoriyaları idarə edə bilər',
   help_schooladmin: 'Məktəb adminləri yalnız məktəb kateqoriyalarını görə bilər',
+  help_column_level: 'Hər sütun üçün ayrı-ayrı təsdiq tələb olunur',
+  help_independent_approval: 'Sütunlar müstəqil olaraq təsdiqlənir',
   
   // Statistics
   total_schools: 'Ümumi Məktəb',
@@ -123,7 +133,8 @@ export const dataManagement = {
   column_type: 'Tip:',
   column_category: 'Kateqoriya:',
   column_required: 'Məcburi',
-  column_optional: 'İxtiyari'
+  column_optional: 'İxtiyari',
+  column_level_approval: 'Sütun-səviyyəli təsdiq'
 } as const;
 
 export type DataManagement = typeof dataManagement;

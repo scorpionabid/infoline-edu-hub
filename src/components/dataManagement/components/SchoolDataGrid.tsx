@@ -22,9 +22,13 @@ import {
   Loader2,
   AlertCircle,
   Building2,
-  Users
+  Users,
+  CheckCircle2,
+  XCircle
 } from 'lucide-react';
 import { Category, Column, SchoolDataEntry, DataStats, DataManagementPermissions } from '@/hooks/dataManagement/useDataManagement';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 interface SchoolDataGridProps {
   category: Category;
@@ -62,6 +66,7 @@ export const SchoolDataGrid: React.FC<SchoolDataGridProps> = memo(({
   const [editingSchool, setEditingSchool] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<string>('');
   const [selectedSchools, setSelectedSchools] = useState<string[]>([]);
+  const [processingSchool, setProcessingSchool] = useState<string | null>(null);
 
   const handleStartEdit = (schoolId: string, currentValue: string) => {
     setEditingSchool(schoolId);
@@ -72,11 +77,17 @@ export const SchoolDataGrid: React.FC<SchoolDataGridProps> = memo(({
     if (!editingSchool) return;
     
     try {
-      await onDataSave(editingSchool, editValue);
-      setEditingSchool(null);
-      setEditValue('');
+      const success = await onDataSave(editingSchool, editValue);
+      if (success) {
+        setEditingSchool(null);
+        setEditValue('');
+        toast.success('Məlumat saxlanıldı');
+      } else {
+        toast.error('Məlumat saxlanarkən xəta baş verdi');
+      }
     } catch (error) {
       console.error('Save failed:', error);
+      toast.error('Məlumat saxlanarkən xəta baş verdi');
     }
   };
 
@@ -86,33 +97,73 @@ export const SchoolDataGrid: React.FC<SchoolDataGridProps> = memo(({
   };
 
   const handleApprove = async (schoolId: string) => {
+    setProcessingSchool(schoolId);
     try {
-      await onDataApprove(schoolId);
+      const success = await onDataApprove(schoolId);
+      if (success) {
+        toast.success(`${column.name} sütunu üçün məlumat təsdiqləndi`);
+      } else {
+        toast.error('Təsdiq zamanı xəta baş verdi');
+      }
     } catch (error) {
       console.error('Approve failed:', error);
+      toast.error('Təsdiq zamanı xəta baş verdi');
+    } finally {
+      setProcessingSchool(null);
     }
   };
 
   const handleReject = async (schoolId: string, reason: string) => {
+    setProcessingSchool(schoolId);
     try {
-      await onDataReject(schoolId, reason);
+      const success = await onDataReject(schoolId, reason);
+      if (success) {
+        toast.success(`${column.name} sütunu üçün məlumat rədd edildi`);
+      } else {
+        toast.error('Rədd etmə zamanı xəta baş verdi');
+      }
     } catch (error) {
       console.error('Reject failed:', error);
+      toast.error('Rədd etmə zamanı xəta baş verdi');
+    } finally {
+      setProcessingSchool(null);
     }
   };
 
   const getStatusBadge = (status: string) => {
     const config = {
-      'approved': { variant: 'default' as const, label: 'Təsdiqlənmiş', className: 'bg-green-100 text-green-800' },
-      'pending': { variant: 'secondary' as const, label: 'Gözləmədə', className: 'bg-yellow-100 text-yellow-800' },
-      'rejected': { variant: 'destructive' as const, label: 'Rədd edilmiş', className: 'bg-red-100 text-red-800' },
-      'empty': { variant: 'outline' as const, label: 'Boş', className: 'bg-gray-100 text-gray-600' }
+      'approved': { 
+        variant: 'default' as const, 
+        label: 'Təsdiqlənmiş', 
+        className: 'bg-green-100 text-green-800 border-green-200',
+        icon: CheckCircle2
+      },
+      'pending': { 
+        variant: 'secondary' as const, 
+        label: 'Gözləmədə', 
+        className: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+        icon: AlertCircle
+      },
+      'rejected': { 
+        variant: 'destructive' as const, 
+        label: 'Rədd edilmiş', 
+        className: 'bg-red-100 text-red-800 border-red-200',
+        icon: XCircle
+      },
+      'empty': { 
+        variant: 'outline' as const, 
+        label: 'Boş', 
+        className: 'bg-gray-100 text-gray-600 border-gray-200',
+        icon: AlertCircle
+      }
     };
     
     const statusConfig = config[status] || config.pending;
+    const Icon = statusConfig.icon;
     
     return (
-      <Badge variant={statusConfig.variant} className={statusConfig.className}>
+      <Badge variant={statusConfig.variant} className={cn(statusConfig.className, "flex items-center gap-1")}>
+        <Icon className="h-3 w-3" />
         {statusConfig.label}
       </Badge>
     );
@@ -154,14 +205,14 @@ export const SchoolDataGrid: React.FC<SchoolDataGridProps> = memo(({
           Geri
         </Button>
         <div>
-          <h3 className="text-2xl font-bold">Məlumat İdarəetməsi</h3>
+          <h3 className="text-2xl font-bold">Sütun-səviyyəli Məlumat İdarəetməsi</h3>
           <p className="text-muted-foreground">
-            {category.name} • {column.name}
+            {category.name} • <span className="font-semibold text-blue-600">{column.name}</span>
           </p>
         </div>
       </div>
 
-      {/* Category and Column Info */}
+      {/* Enhanced Category and Column Info */}
       <Card className="border-blue-200 bg-blue-50">
         <CardContent className="p-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -177,9 +228,15 @@ export const SchoolDataGrid: React.FC<SchoolDataGridProps> = memo(({
             <div className="flex items-center gap-3">
               <Users className="h-5 w-5 text-green-600" />
               <div>
-                <div className="font-medium">{column.name}</div>
+                <div className="font-medium flex items-center gap-2">
+                  {column.name}
+                  <Badge variant="outline">{column.type}</Badge>
+                  {column.is_required && (
+                    <Badge variant="destructive" className="text-xs">Məcburi</Badge>
+                  )}
+                </div>
                 <div className="text-sm text-muted-foreground">
-                  {column.type} • {column.is_required ? 'Məcburi' : 'İxtiyari'}
+                  Sütun-səviyyəli təsdiq aktiv
                 </div>
               </div>
             </div>
@@ -230,7 +287,9 @@ export const SchoolDataGrid: React.FC<SchoolDataGridProps> = memo(({
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
-              <span>Məktəb Məlumatları</span>
+              <span>
+                Məktəb Məlumatları - <span className="text-blue-600">{column.name}</span> Sütunu
+              </span>
               {saving && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -244,14 +303,14 @@ export const SchoolDataGrid: React.FC<SchoolDataGridProps> = memo(({
               <TableHeader>
                 <TableRow>
                   <TableHead>Məktəb Adı</TableHead>
-                  <TableHead>Məlumat</TableHead>
+                  <TableHead>{column.name}</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Əməliyyatlar</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {schoolData.map((school) => (
-                  <TableRow key={school.id}>
+                  <TableRow key={school.id} className={processingSchool === school.school_id ? 'opacity-50' : ''}>
                     <TableCell className="font-medium">
                       {school.school_name}
                     </TableCell>
@@ -302,18 +361,28 @@ export const SchoolDataGrid: React.FC<SchoolDataGridProps> = memo(({
                             <Button
                               size="sm"
                               variant="outline"
-                              className="text-green-600 hover:text-green-700"
+                              className="text-green-600 hover:text-green-700 border-green-200 hover:bg-green-50"
                               onClick={() => handleApprove(school.school_id)}
+                              disabled={processingSchool === school.school_id}
                             >
-                              <Check className="h-4 w-4" />
+                              {processingSchool === school.school_id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Check className="h-4 w-4" />
+                              )}
                             </Button>
                             <Button
                               size="sm"
                               variant="outline"
-                              className="text-red-600 hover:text-red-700"
+                              className="text-red-600 hover:text-red-700 border-red-200 hover:bg-red-50"
                               onClick={() => handleReject(school.school_id, 'Məlumat düzgün deyil')}
+                              disabled={processingSchool === school.school_id}
                             >
-                              <X className="h-4 w-4" />
+                              {processingSchool === school.school_id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <X className="h-4 w-4" />
+                              )}
                             </Button>
                           </>
                         )}
@@ -327,15 +396,29 @@ export const SchoolDataGrid: React.FC<SchoolDataGridProps> = memo(({
         </Card>
       )}
 
-      {/* Help Text */}
-      {column.help_text && (
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            {column.help_text}
-          </AlertDescription>
-        </Alert>
-      )}
+      {/* Enhanced Help Text */}
+      <Alert>
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          <div className="space-y-2">
+            <p className="font-medium">Sütun-səviyyəli təsdiq sistemi:</p>
+            <ul className="text-sm space-y-1 ml-4">
+              <li>• Yalnız <strong>{column.name}</strong> sütunundakı məlumatlar təsdiqlənəcək</li>
+              <li>• Digər sütunlardakı məlumatlar təsirlənməyəcək</li>
+              <li>• Hər sütun üçün ayrı-ayrı təsdiq tələb olunur</li>
+            </ul>
+            {column.help_text && (
+              <p className="text-sm mt-2 p-2 bg-muted rounded">
+                <strong>Sütun haqqında:</strong> {column.help_text}
+              </p>
+            )}
+          </div>
+        </AlertDescription>
+      </Alert>
     </div>
   );
 });
+
+SchoolDataGrid.displayName = 'SchoolDataGrid';
+
+export default SchoolDataGrid;

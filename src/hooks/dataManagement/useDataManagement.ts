@@ -285,7 +285,7 @@ export const useDataManagement = () => {
     await loadSchoolData(column.category_id, column.id);
   };
 
-  // Data management handlers - Updated signatures to handle both school and sector data
+  // FIXED: Data management handlers - Column-level approval
   const handleDataSave = async (entityId: string, value: string): Promise<boolean> => {
     setLoading(prev => ({ ...prev, saving: true }));
     try {
@@ -296,7 +296,6 @@ export const useDataManagement = () => {
       // Handle sector data separately
       if (selectedCategory.assignment === 'sectors') {
         // For sector data, use sector_data_entries table
-        // Check if entry exists first
         const { data: existingSectorEntry } = await supabase
           .from('sector_data_entries')
           .select('id')
@@ -326,7 +325,7 @@ export const useDataManagement = () => {
               category_id: selectedCategory.id,
               column_id: selectedColumn.id,
               value,
-              status: 'approved', // Sector data is automatically approved
+              status: 'approved',
               created_by: user?.id,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
@@ -338,12 +337,11 @@ export const useDataManagement = () => {
         return true;
       }
       
-      // Handle school data (existing logic)
-      // Check if entry exists
+      // Handle school data
       const { data: existingEntry } = await supabase
         .from('data_entries')
         .select('id')
-        .eq('school_id', entityId) // entityId is schoolId for school data
+        .eq('school_id', entityId)
         .eq('category_id', selectedCategory.id)
         .eq('column_id', selectedColumn.id)
         .single();
@@ -390,12 +388,16 @@ export const useDataManagement = () => {
     }
   };
 
+  // FIXED: Column-level approval - only approve specific school+column combination
   const handleDataApprove = async (schoolId: string, comment?: string): Promise<boolean> => {
     try {
       if (!selectedColumn || !selectedCategory) {
         throw new Error('Kateqoriya və ya sütun seçilməyib');
       }
       
+      console.log(`[handleDataApprove] Approving: school=${schoolId}, column=${selectedColumn.id}, category=${selectedCategory.id}`);
+      
+      // FIXED: Only update the specific school+column combination
       const { error } = await supabase
         .from('data_entries')
         .update({
@@ -405,12 +407,16 @@ export const useDataManagement = () => {
           updated_at: new Date().toISOString()
         })
         .eq('school_id', schoolId)
-        .eq('category_id', selectedCategory.id)
-        .eq('column_id', selectedColumn.id);
+        .eq('column_id', selectedColumn.id); // FIXED: Filter by column_id only, not category_id
       
-      if (error) throw error;
+      if (error) {
+        console.error('Approval error:', error);
+        throw error;
+      }
       
-      // Refresh data
+      console.log(`[handleDataApprove] Successfully approved entry for school ${schoolId}, column ${selectedColumn.name}`);
+      
+      // Refresh data to show updated status
       await loadSchoolData(selectedCategory.id, selectedColumn.id);
       return true;
     } catch (error) {
@@ -419,12 +425,16 @@ export const useDataManagement = () => {
     }
   };
 
+  // FIXED: Column-level rejection - only reject specific school+column combination
   const handleDataReject = async (schoolId: string, reason: string, comment?: string): Promise<boolean> => {
     try {
       if (!selectedColumn || !selectedCategory) {
         throw new Error('Kateqoriya və ya sütun seçilməyib');
       }
       
+      console.log(`[handleDataReject] Rejecting: school=${schoolId}, column=${selectedColumn.id}, reason=${reason}`);
+      
+      // FIXED: Only update the specific school+column combination
       const { error } = await supabase
         .from('data_entries')
         .update({
@@ -434,12 +444,16 @@ export const useDataManagement = () => {
           updated_at: new Date().toISOString()
         })
         .eq('school_id', schoolId)
-        .eq('category_id', selectedCategory.id)
-        .eq('column_id', selectedColumn.id);
+        .eq('column_id', selectedColumn.id); // FIXED: Filter by column_id only, not category_id
       
-      if (error) throw error;
+      if (error) {
+        console.error('Rejection error:', error);
+        throw error;
+      }
       
-      // Refresh data
+      console.log(`[handleDataReject] Successfully rejected entry for school ${schoolId}, column ${selectedColumn.name}`);
+      
+      // Refresh data to show updated status
       await loadSchoolData(selectedCategory.id, selectedColumn.id);
       return true;
     } catch (error) {
@@ -448,9 +462,36 @@ export const useDataManagement = () => {
     }
   };
 
+  // FIXED: Bulk approve - only for current column
   const handleBulkApprove = async (schoolIds: string[]): Promise<boolean> => {
     try {
-      console.log('Bulk approving entries:', schoolIds);
+      if (!selectedColumn || !selectedCategory) {
+        throw new Error('Kateqoriya və ya sütun seçilməyib');
+      }
+      
+      console.log(`[handleBulkApprove] Bulk approving ${schoolIds.length} schools for column ${selectedColumn.name}`);
+      
+      // FIXED: Bulk approve only for specific column
+      const { error } = await supabase
+        .from('data_entries')
+        .update({
+          status: 'approved',
+          approved_by: user?.id,
+          approved_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('column_id', selectedColumn.id)
+        .in('school_id', schoolIds);
+      
+      if (error) {
+        console.error('Bulk approval error:', error);
+        throw error;
+      }
+      
+      console.log(`[handleBulkApprove] Successfully bulk approved ${schoolIds.length} entries for column ${selectedColumn.name}`);
+      
+      // Refresh data
+      await loadSchoolData(selectedCategory.id, selectedColumn.id);
       return true;
     } catch (error) {
       console.error('Error bulk approving:', error);
@@ -458,9 +499,36 @@ export const useDataManagement = () => {
     }
   };
 
+  // FIXED: Bulk reject - only for current column
   const handleBulkReject = async (schoolIds: string[], reason: string): Promise<boolean> => {
     try {
-      console.log('Bulk rejecting entries:', schoolIds, reason);
+      if (!selectedColumn || !selectedCategory) {
+        throw new Error('Kateqoriya və ya sütun seçilməyib');
+      }
+      
+      console.log(`[handleBulkReject] Bulk rejecting ${schoolIds.length} schools for column ${selectedColumn.name}`);
+      
+      // FIXED: Bulk reject only for specific column
+      const { error } = await supabase
+        .from('data_entries')
+        .update({
+          status: 'rejected',
+          rejected_by: user?.id,
+          rejection_reason: reason,
+          updated_at: new Date().toISOString()
+        })
+        .eq('column_id', selectedColumn.id)
+        .in('school_id', schoolIds);
+      
+      if (error) {
+        console.error('Bulk rejection error:', error);
+        throw error;
+      }
+      
+      console.log(`[handleBulkReject] Successfully bulk rejected ${schoolIds.length} entries for column ${selectedColumn.name}`);
+      
+      // Refresh data
+      await loadSchoolData(selectedCategory.id, selectedColumn.id);
       return true;
     } catch (error) {
       console.error('Error bulk rejecting:', error);

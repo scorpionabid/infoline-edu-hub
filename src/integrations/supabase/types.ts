@@ -96,6 +96,66 @@ export type Database = {
         }
         Relationships: []
       }
+      column_approval_status: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          approved_notes: string | null
+          column_id: string
+          created_at: string | null
+          entry_id: string
+          id: string
+          rejected_at: string | null
+          rejected_by: string | null
+          rejection_reason: string | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          approved_notes?: string | null
+          column_id: string
+          created_at?: string | null
+          entry_id: string
+          id?: string
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          approved_notes?: string | null
+          column_id?: string
+          created_at?: string | null
+          entry_id?: string
+          id?: string
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejection_reason?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_column"
+            columns: ["column_id"]
+            isOneToOne: false
+            referencedRelation: "columns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_data_entry"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "data_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       columns: {
         Row: {
           category_id: string | null
@@ -1376,6 +1436,26 @@ export type Database = {
         Args: { user_id_param: string }
         Returns: string[]
       }
+      get_all_users_with_roles: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          full_name: string
+          email: string
+          phone: string
+          position: string
+          language: string
+          avatar: string
+          status: string
+          last_login: string
+          created_at: string
+          updated_at: string
+          role: string
+          region_id: string
+          sector_id: string
+          school_id: string
+        }[]
+      }
       get_assignable_users_for_region: {
         Args: { p_region_id: string }
         Returns: {
@@ -1390,6 +1470,26 @@ export type Database = {
           school_id: string
           created_at: string
           updated_at: string
+        }[]
+      }
+      get_assignable_users_safe: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          full_name: string
+          email: string
+          phone: string
+          position: string
+          language: string
+          avatar: string
+          status: string
+          last_login: string
+          created_at: string
+          updated_at: string
+          role: string
+          region_id: string
+          sector_id: string
+          school_id: string
         }[]
       }
       get_auth_user_info_simple: {
@@ -1867,6 +1967,10 @@ export type Database = {
           p_sector_id?: string
         }
         Returns: undefined
+      }
+      user_has_role: {
+        Args: { role_name: string }
+        Returns: boolean
       }
       user_has_role_new: {
         Args: { check_role: string }
