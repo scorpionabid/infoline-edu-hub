@@ -125,12 +125,9 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
 
         {/* Right side - Actions and User Menu */}
         <div className="flex items-center gap-1 ml-auto">
-          {/* Notifications - icon only */}
+          {/* Notifications - real NotificationBell component */}
           {showNotifications && (
-            <Button variant="ghost" size="icon" className="h-9 w-9">
-              <Bell className="h-4 w-4" />
-              <span className="sr-only">{t("notifications") || "Bildirişlər"}</span>
-            </Button>
+            <NotificationBell />
           )}
 
           {/* Theme Toggle */}

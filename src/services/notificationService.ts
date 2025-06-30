@@ -1,11 +1,19 @@
 
 /**
- * İnfoLine Notification System - Legacy Service Compatibility Layer
- * DEPRECATED: Use notificationManager from @/notifications instead
- * Bu fayl backward compatibility üçün saxlanılır
+ * İnfoLine Notification System - DEPRECATED Legacy Service
+ * 
+ * ⚠️ DEPRECATED: This service is deprecated and will be removed in future versions.
+ * 
+ * Please migrate to the new unified notification system:
+ * - Import: import { NotificationService } from '@/services/api/notificationService'
+ * - New API methods available with better type safety and error handling
+ * 
+ * This file is kept for backward compatibility only.
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { NotificationService } from '@/services/api/notificationService';
+import type { CreateNotificationParams } from '@/types/notifications';
 
 // Simple notification type for backward compatibility
 export type NotificationType = 'info' | 'warning' | 'success' | 'error' | 'deadline' | 'approval';

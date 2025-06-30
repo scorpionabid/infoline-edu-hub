@@ -4,6 +4,7 @@ import { Toaster } from "sonner";
 import AppRoutes from "./routes/AppRoutes";
 import ErrorBoundary from "./components/ErrorBoundary";
 import TranslationWrapper from "./components/translation/TranslationWrapper";
+import { NotificationProvider } from "./components/notifications/NotificationProvider";
 import { useAuthStore } from "./hooks/auth/useAuthStore";
 import "./App.css";
 
@@ -20,7 +21,7 @@ const AppLoading = () => (
 function App() {
   useEffect(() => {
     // Enhanced startup logging
-    console.log('🚀 [App] İnfoLine application starting with enhanced auth system...');
+    console.log('🚀 [App] İnfoLine application starting with enhanced auth and notifications...');
     
     // Performance monitoring
     const startTime = performance.now();
@@ -55,15 +56,16 @@ function App() {
   return (
     <ErrorBoundary>
       <TranslationWrapper skipLoading={true}>
-        <Suspense fallback={<AppLoading />}>
-          <AppRoutes />
-          <Toaster 
-            position="top-right" 
-            richColors 
-            // closeButton
-            duration={4000}
-          />
-        </Suspense>
+        <NotificationProvider>
+          <Suspense fallback={<AppLoading />}>
+            <AppRoutes />
+            <Toaster 
+              position="top-right" 
+              richColors 
+              duration={4000}
+            />
+          </Suspense>
+        </NotificationProvider>
       </TranslationWrapper>
     </ErrorBoundary>
   );

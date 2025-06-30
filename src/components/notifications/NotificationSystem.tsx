@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Bell, X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -6,30 +5,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useNotifications } from '@/hooks/notifications/useNotifications';
+import { useNotificationContext } from '@/components/notifications/NotificationProvider';
 import { cn } from '@/lib/utils';
-
-interface Notification {
-  id: string;
-  title: string;
-  message?: string;
-  type: 'info' | 'success' | 'warning' | 'error';
-  isRead: boolean;
-  createdAt: string;
-  related_entity_type?: string;
-  related_entity_id?: string;
-  priority?: 'low' | 'normal' | 'high';
-}
-
-interface UseNotificationsResult {
-  notifications: Notification[];
-  unreadCount: number;
-  isLoading: boolean;
-  error: Error | null;
-  markAsRead: (id: string) => void;
-  markAllAsRead: () => void;
-  removeNotification: (id: string) => void;
-}
 
 export const NotificationSystem: React.FC = () => {
   const {
@@ -40,17 +17,20 @@ export const NotificationSystem: React.FC = () => {
     markAsRead,
     markAllAsRead,
     removeNotification
-  } = useNotifications() as UseNotificationsResult;
+  } = useNotificationContext();
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'success':
+      case 'approval':
         return <CheckCircle className="h-4 w-4 text-green-600" />;
       
       case 'warning':
+      case 'deadline':
         return <AlertTriangle className="h-4 w-4 text-yellow-600" />;
       
       case 'error':
+      case 'rejection':
         return <AlertCircle className="h-4 w-4 text-red-600" />;
       
       default:
@@ -58,9 +38,26 @@ export const NotificationSystem: React.FC = () => {
     }
   };
 
-  const handleNotificationClick = (notification: Notification) => {
-    if (!notification.isRead) {
-      markAsRead(notification.id);
+  const getNotificationColor = (type: string, isRead: boolean) => {
+    const baseOpacity = isRead ? 'opacity-60' : '';
+    switch (type) {
+      case 'success':
+      case 'approval':
+        return `border-l-green-500 ${baseOpacity}`;
+      case 'warning':
+      case 'deadline':
+        return `border-l-yellow-500 ${baseOpacity}`;
+      case 'error':
+      case 'rejection':
+        return `border-l-red-500 ${baseOpacity}`;
+      default:
+        return `border-l-blue-500 ${baseOpacity}`;
+    }
+  };
+
+  const handleNotificationClick = async (notification: any) => {
+    if (!notification.is_read) {
+      await markAsRead(notification.id);
     }
   };
 
@@ -71,10 +68,12 @@ export const NotificationSystem: React.FC = () => {
 
     if (diffInHours < 1) {
       const diffInMinutes = Math.floor(diffInHours * 60);
-      return `${diffInMinutes} dəqiqə əvvəl`;
+      return diffInMinutes <= 1 ? 'İndi' : `${diffInMinutes} dəqiqə əvvəl`;
     } else if (diffInHours < 24) {
       return `${Math.floor(diffInHours)} saat əvvəl`;
     } else {
+      const diffInDays = Math.floor(diffInHours / 24);
+      if (diffInDays === 1) return 'Dünən';
       return date.toLocaleDateString('az-AZ');
     }
   };
@@ -95,7 +94,7 @@ export const NotificationSystem: React.FC = () => {
           <Bell className="h-4 w-4" />
           {unreadCount > 0 && (
             <Badge 
-              className="absolute -top-1 -right-1 h-5 w-5 p-0 text-xs flex items-center justify-center"
+              className="absolute -top-1 -right-1 h-5 w-5 p-0 text-xs flex items-center justify-center animate-pulse"
               variant="destructive"
             >
               {unreadCount > 9 ? '9+' : unreadCount}
@@ -116,6 +115,7 @@ export const NotificationSystem: React.FC = () => {
               size="sm"
               onClick={markAllAsRead}
               className="text-xs"
+              disabled={isLoading}
             >
               Hamısını oxunmuş kimi işarələ
             </Button>
@@ -125,10 +125,12 @@ export const NotificationSystem: React.FC = () => {
         <ScrollArea className="h-96">
           {isLoading ? (
             <div className="p-4 text-center text-muted-foreground">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
               Yüklənir...
             </div>
           ) : notifications.length === 0 ? (
             <div className="p-4 text-center text-muted-foreground">
+              <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
               Bildiriş yoxdur
             </div>
           ) : (
@@ -138,11 +140,8 @@ export const NotificationSystem: React.FC = () => {
                   key={notification.id}
                   className={cn(
                     "border-0 border-l-4 rounded-none cursor-pointer hover:bg-muted/50 transition-colors",
-                    !notification.isRead && "bg-muted/30",
-                    notification.type === 'success' && "border-l-green-500",
-                    notification.type === 'warning' && "border-l-yellow-500",
-                    notification.type === 'error' && "border-l-red-500",
-                    notification.type === 'info' && "border-l-blue-500"
+                    getNotificationColor(notification.type, notification.is_read),
+                    !notification.is_read && "bg-muted/30"
                   )}
                   onClick={() => handleNotificationClick(notification)}
                 >
@@ -153,7 +152,7 @@ export const NotificationSystem: React.FC = () => {
                         <div className="flex-1 min-w-0">
                           <p className={cn(
                             "text-sm font-medium truncate",
-                            !notification.isRead && "font-semibold"
+                            !notification.is_read && "font-semibold"
                           )}>
                             {notification.title}
                           </p>
@@ -162,14 +161,26 @@ export const NotificationSystem: React.FC = () => {
                               {notification.message}
                             </p>
                           )}
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {formatDate(notification.createdAt)}
-                          </p>
+                          <div className="flex items-center justify-between mt-1">
+                            <p className="text-xs text-muted-foreground">
+                              {formatDate(notification.created_at)}
+                            </p>
+                            {notification.priority === 'high' && (
+                              <Badge variant="destructive" className="text-xs ml-2">
+                                Təcili
+                              </Badge>
+                            )}
+                            {notification.priority === 'critical' && (
+                              <Badge variant="destructive" className="text-xs ml-2 animate-pulse">
+                                Kritik
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                       </div>
                       
                       <div className="flex items-center gap-1">
-                        {!notification.isRead && (
+                        {!notification.is_read && (
                           <div className="w-2 h-2 bg-blue-600 rounded-full" />
                         )}
                         <Button

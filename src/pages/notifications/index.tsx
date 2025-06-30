@@ -5,8 +5,8 @@
 
 import React from 'react';
 import { useTranslation } from '@/contexts/TranslationContext';
-import { useNotifications } from '@/notifications';
-import { useAuth } from '@/lib/auth';
+import { useNotificationContext } from '@/components/notifications/NotificationProvider';
+import { useAuth } from '@/hooks/auth/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -49,9 +49,9 @@ const NotificationsPage = () => {
     isLoading,
     markAsRead,
     markAllAsRead,
-    deleteNotification,
-    clearAll
-  } = useNotifications(user?.id);
+    removeNotification,
+    clearAllNotifications
+  } = useNotificationContext();
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -234,7 +234,7 @@ const NotificationsPage = () => {
                 size="sm"
                 onClick={() => {
                   if (confirm('Bütün bildirişləri silmək istədiyinizə əminsiniz?')) {
-                    clearAll();
+                    clearAllNotifications();
                   }
                 }}
                 disabled={notifications.length === 0}
@@ -386,7 +386,7 @@ const NotificationsPage = () => {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => deleteNotification(notification.id)}
+                          onClick={() => removeNotification(notification.id)}
                           title="Sil"
                           className="text-red-600 hover:text-red-700"
                         >

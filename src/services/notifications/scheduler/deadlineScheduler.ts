@@ -1,6 +1,7 @@
-
 import { supabase } from '@/integrations/supabase/client';
+import { NotificationService } from '@/services/api/notificationService';
 import { toast } from 'sonner';
+import type { DeadlineNotificationData } from '@/types/notifications';
 
 interface UserData {
   id: string;
@@ -15,24 +16,7 @@ interface DeadlineCategory {
   assignment: string;
 }
 
-interface DeadlineNotificationData {
-  categoryId: string;
-  categoryName: string;
-  deadline: Date;
-  daysLeft: number;
-  assignment: string;
-}
-
 type NotificationPriority = 'normal' | 'high' | 'critical';
-
-// Simple notification manager mock
-const notificationManager = {
-  add: (notification: any) => {
-    console.log('Adding notification:', notification);
-    // In a real implementation, this would add to the notification system
-    return Promise.resolve();
-  }
-};
 
 export class DeadlineScheduler {
   private static instance: DeadlineScheduler;
@@ -101,16 +85,25 @@ export class DeadlineScheduler {
         return;
       }
 
-      // Create notifications for each user
-      for (const user of targetUsers) {
-        await this.createDeadlineNotification({
-          categoryId: category.id,
-          categoryName: category.name,
-          deadline,
-          daysLeft,
-          assignment: category.assignment
-        }, user);
+      // Create deadline notifications using real NotificationService
+      const deadlineData: DeadlineNotificationData = {
+        categoryName: category.name,
+        categoryId: category.id,
+        deadline: deadline.toISOString(),
+        daysRemaining: daysLeft,
+        schoolIds: [] // Will be populated based on assignment
+      };
+
+      // Get school IDs if assignment is school-specific
+      if (category.assignment === 'school_admin') {
+        const schoolIds = await this.getSchoolIdsForUsers(targetUsers.map(u => u.id));
+        deadlineData.schoolIds = schoolIds;
       }
+
+      // Use the unified NotificationService
+      await NotificationService.createDeadlineNotifications(deadlineData);
+
+      console.log(`Created ${targetUsers.length} deadline notifications for category: ${category.name}`);
 
     } catch (error) {
       console.error(`Error processing deadline for category ${category.name}:`, error);
@@ -129,8 +122,8 @@ export class DeadlineScheduler {
           // Get all active users
           query = query.eq('status', 'active');
           break; }
-        case 'school_admin': {
-          // Get school admins - use a proper subquery
+        case 'schools': {
+          // Get school admins
           const { data: schoolAdminIds } = await supabase
             .from('user_roles')
             .select('user_id')
@@ -145,7 +138,7 @@ export class DeadlineScheduler {
             return [];
           }
           break; }
-        case 'sector_admin': {
+        case 'sectors': {
           // Get sector admins
           const { data: sectorAdminIds } = await supabase
             .from('user_roles')
@@ -161,25 +154,9 @@ export class DeadlineScheduler {
             return [];
           }
           break; }
-        case 'region_admin': {
-          // Get region admins
-          const { data: regionAdminIds } = await supabase
-            .from('user_roles')
-            .select('user_id')
-            .eq('role', 'regionadmin');
-          
-          if (regionAdminIds && regionAdminIds.length > 0) {
-            const userIds = regionAdminIds.map(r => r.user_id);
-            query = query
-              .eq('status', 'active')
-              .in('id', userIds);
-          } else {
-            return [];
-          }
-          break; }
         default:
-          console.warn(`Unknown assignment type: ${assignment}`);
-          return [];
+          console.warn(`Unknown assignment type: ${assignment}, defaulting to all active users`);
+          query = query.eq('status', 'active');
       }
 
       const { data, error } = await query;
@@ -196,43 +173,25 @@ export class DeadlineScheduler {
     }
   }
 
-  private async createDeadlineNotification(
-    deadlineData: DeadlineNotificationData,
-    user: UserData
-  ): Promise<void> {
+  private async getSchoolIdsForUsers(userIds: string[]): Promise<string[]> {
     try {
-      const title = `Son tarix xəbərdarlığı: ${deadlineData.categoryName}`;
-      const message = `${deadlineData.categoryName} kateqoriyası üçün ${deadlineData.daysLeft} gün qalıb`;
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('school_id')
+        .eq('role', 'schooladmin')
+        .in('user_id', userIds)
+        .not('school_id', 'is', null);
 
-      // Add notification to the system
-      await notificationManager.add({
-        user_id: user.id,
-        title,
-        message,
-        type: 'deadline',
-        priority: this.calculatePriority(deadlineData.daysLeft),
-        is_read: false,
-        created_at: new Date().toISOString(),
-        related_entity_id: deadlineData.categoryId,
-        related_entity_type: 'category',
-        metadata: {
-          daysLeft: deadlineData.daysLeft,
-          deadline: deadlineData.deadline.toISOString(),
-          assignment: deadlineData.assignment
-        }
-      });
+      if (error) {
+        console.error('Error fetching school IDs:', error);
+        return [];
+      }
 
-      console.log(`Created deadline notification for user ${user.full_name} (${user.email})`);
-
+      return data?.map(item => item.school_id).filter(Boolean) || [];
     } catch (error) {
-      console.error('Error creating deadline notification:', error);
+      console.error('Error in getSchoolIdsForUsers:', error);
+      return [];
     }
-  }
-
-  private calculatePriority(daysLeft: number): NotificationPriority {
-    if (daysLeft <= 1) return 'critical';
-    if (daysLeft <= 3) return 'high';
-    return 'normal';
   }
 
   startScheduler(): void {
@@ -249,7 +208,7 @@ export class DeadlineScheduler {
 
     this.intervals.set('main', interval);
 
-    console.log('✅ Deadline scheduler started');
+    console.log('✅ Deadline scheduler started with real NotificationService');
   }
 
   stopScheduler(): void {
@@ -258,6 +217,12 @@ export class DeadlineScheduler {
     });
     this.intervals.clear();
     console.log('🛑 Deadline scheduler stopped');
+  }
+
+  // Manual trigger for testing
+  async triggerDeadlineCheck(): Promise<void> {
+    console.log('🔧 Manual deadline check triggered');
+    await this.scheduleDeadlineNotifications();
   }
 }
 
