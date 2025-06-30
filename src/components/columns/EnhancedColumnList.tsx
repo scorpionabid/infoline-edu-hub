@@ -1,17 +1,16 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button } from "@/components/ui/button";
 import { Column } from '@/types/column';
 import { Category } from '@/types/category';
 import { useAuthStore, selectUserRole } from '@/hooks/auth/useAuthStore';
 import { 
-  Edit, 
-  Trash2, 
   RotateCcw, 
-  Copy, 
-  MoreHorizontal,
+  MoreHorizontal, 
+  Trash2,
+  Edit,
+  Copy,
   Eye,
-  EyeOff,
-  // AlertTriangle
+  EyeOff
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -33,10 +32,10 @@ interface EnhancedColumnListProps {
   onEditColumn?: (column: Column) => void;
   onDeleteColumn?: (id: string, name: string) => void;
   onRestoreColumn?: (id: string) => void;
-  onPermanentDeleteColumn?: (id: string) => void; // NEW
+  onPermanentDeleteColumn?: (id: string) => void; 
   onDuplicateColumn?: (column: Column) => void;
-  onToggleColumnStatus?: (id: string, status: 'active' | 'inactive') => void;
-  onUpdateStatus?: (id: string, status: string) => void;
+  onToggleColumnStatus?: (id: string, status: 'active' | 'inactive' | 'deleted') => void;
+  onUpdateStatus?: (id: string, status: 'active' | 'inactive' | 'deleted') => void;
   onColumnSelection?: (columnId: string) => void;
   onReorderColumns?: (reorderedColumns: Column[]) => void;
   canManageColumns?: boolean;
@@ -44,7 +43,6 @@ interface EnhancedColumnListProps {
   showBulkActions?: boolean;
 }
 
-// Column Item Component without drag & drop
 interface ColumnItemProps {
   column: Column;
   categories?: Category[];
@@ -52,9 +50,9 @@ interface ColumnItemProps {
   onEdit?: (column: Column) => void;
   onDelete?: (id: string, name: string) => void;
   onRestore?: (id: string) => void;
-  onPermanentDelete?: (id: string) => void; // NEW
+  onPermanentDelete?: (id: string) => void; 
   onDuplicate?: (column: Column) => void;
-  onToggleStatus?: (id: string, status: 'active' | 'inactive') => void;
+  onToggleStatus?: (id: string, status: 'active' | 'inactive' | 'deleted') => void;
   onSelection?: (columnId: string) => void;
   canManage?: boolean;
   showSelection?: boolean;
@@ -80,7 +78,8 @@ const ColumnItem: React.FC<ColumnItemProps> = React.memo(({
   }, [categories]);
 
   const getStatusColor = useCallback((status: string) => {
-    switch (status) {
+    const statusValue = status as 'active' | 'inactive' | 'deleted';
+    switch (statusValue) {
       case 'active': { 
         return 'bg-green-100 text-green-800';
       }
@@ -95,13 +94,14 @@ const ColumnItem: React.FC<ColumnItemProps> = React.memo(({
     }
   }, []);
 
+  const status = column.status as 'active' | 'inactive' | 'deleted';
   return (
     <div
       className={cn(
         "flex items-center justify-between p-4 border rounded-lg transition-all",
         isSelected && "ring-2 ring-primary bg-primary/5",
-        (column.status === 'deleted' || column.status === 'inactive') && "bg-amber-50 border-amber-200",
-        column.status === 'inactive' && "bg-gray-50 border-gray-200"
+        status === 'deleted' ? "bg-amber-50 border-amber-200" : 
+        status === 'inactive' ? "bg-gray-50 border-gray-200" : ""
       )}
     >
       <div className="flex items-center space-x-3 flex-1">
@@ -115,25 +115,11 @@ const ColumnItem: React.FC<ColumnItemProps> = React.memo(({
         )}
 
         <div className="flex-1">
-          <div className="flex items-center space-x-2 mb-1">
-            <span className={cn(
-              "font-medium",
-              (column.status === 'deleted' || column.status === 'inactive') && "line-through text-muted-foreground"
-            )}>
-              {column.name}
-            </span>
-            <Badge variant="outline" className="text-xs">
-              {column.type}
-            </Badge>
-            {column.is_required && (
-              <Badge variant="secondary" className="text-xs">
-                Məcburi
-              </Badge>
-            )}
+          <div className="flex items-center space-x-2">
             <Badge className={cn("text-xs", getStatusColor(column.status))}>
               {column.status === 'active' ? 'Aktiv' : 
-               column.status === 'inactive' ? 'Deaktiv' : 
-               column.status === 'deleted' ? 'Silinmiş' : 'Naməlum'}
+               (column.status as string) === 'inactive' ? 'Deaktiv' : 
+               (column.status as string) === 'deleted' ? 'Silinmiş' : 'Naməlum'}
             </Badge>
           </div>
           
@@ -153,30 +139,26 @@ const ColumnItem: React.FC<ColumnItemProps> = React.memo(({
       </div>
       
       <div className="flex items-center space-x-1">
-        {column.status === 'deleted' || column.status === 'inactive' ? (
+        {((column.status as string) === 'deleted' || column.status === 'inactive') ? (
           // Actions for deleted/inactive columns (archived)
           <div className="flex items-center space-x-2">
             {onRestore && canManage && (
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <button 
                 onClick={() => onRestore(column.id)}
-                className="text-green-600 hover:text-green-700"
+                className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-9 px-3 py-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground text-green-600 hover:text-green-700 border-green-200 hover:bg-green-50"
               >
                 <RotateCcw className="h-4 w-4 mr-1" />
                 Bərpa et
-              </Button>
+              </button>
             )}
-            {onPermanentDelete && canManage && (column.status === 'deleted' || column.status === 'inactive') && (
-              <Button 
-                variant="outline" 
-                size="sm" 
+            {onPermanentDelete && canManage && ((column.status as string) === 'deleted' || column.status === 'inactive') && (
+              <button 
                 onClick={() => onPermanentDelete(column.id)}
-                className="text-red-600 hover:text-red-700 border-red-200 hover:bg-red-50"
+                className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-9 px-3 py-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground text-red-600 hover:text-red-700 border-red-200 hover:bg-red-50"
               >
-                <AlertTriangle className="h-4 w-4 mr-1" />
+                <Trash2 className="h-4 w-4 mr-1" />
                 Təmamən sil
-              </Button>
+              </button>
             )}
           </div>
         ) : (
@@ -185,9 +167,11 @@ const ColumnItem: React.FC<ColumnItemProps> = React.memo(({
             {canManage && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm">
+                  <button 
+                    className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8 p-0"
+                  >
                     <MoreHorizontal className="h-4 w-4" />
-                  </Button>
+                  </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   {onEdit && (

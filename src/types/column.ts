@@ -71,7 +71,7 @@ export interface ColumnFormValues {
 export interface ColumnFormData extends ColumnFormValues {
   category_id: string;
   order_index?: number;
-  status?: 'active' | 'inactive';
+  status?: 'active' | 'inactive' | 'deleted';
 }
 
 // Missing exports that were causing build errors
@@ -81,7 +81,7 @@ export interface Category {
   description?: string;
   assignment: 'all' | 'sectors' | 'schools';
   deadline?: string;
-  status: 'active' | 'inactive' | 'draft';
+  status: 'active' | 'inactive' | 'draft' | 'deleted';
   priority: number;
   created_at: string;
   updated_at?: string;
