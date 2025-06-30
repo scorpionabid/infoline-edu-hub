@@ -1,609 +1,439 @@
-
-import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/auth/useAuth';
-
-export interface Category {
-  id: string;
-  name: string;
-  description?: string;
-  assignment: 'all' | 'sectors';
-  completion_rate?: number;
-  status: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Column {
-  id: string;
-  category_id: string;
-  name: string;
-  type: string;
-  is_required: boolean;
-  order_index: number;
-  options?: any;
-  validation?: any;
-  help_text?: string;
-  placeholder?: string;
-  default_value?: string;
-  status: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface SchoolDataEntry {
-  id: string;
-  school_id: string;
-  school_name: string;
-  category_id: string;
-  column_id: string;
-  value: string;
-  status: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface DataStats {
-  totalEntries: number;
-  completedEntries: number;
-  pendingEntries: number;
-  completionRate: number;
-  totalSchools: number;
-  pendingCount: number;
-  approvedCount: number;
-  rejectedCount: number;
-  emptyCount: number;
-}
+import { useState, useEffect, useCallback } from 'react';
+import { useUser } from '@/hooks/auth/useUser';
+import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/lib/supabase';
+import type { Category, Column } from '@/types/column';
 
 export interface DataManagementPermissions {
-  canApprove: boolean;
   canEdit: boolean;
-  canViewAll: boolean;
-  role: string;
-  sectorId?: string;
-  regionId?: string;
+  canApprove: boolean;
 }
 
-export type DataManagementStep = 'category' | 'column' | 'data';
-
 export const useDataManagement = () => {
-  const { user, userRole } = useAuth();
-  
-  // React Query for categories
-  const {
-    data: categories = [],
-    isLoading: categoriesLoading,
-    error: categoriesError
-  } = useQuery({
-    queryKey: ['categories'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .eq('status', 'active')
-        .order('created_at', { ascending: false });
-      
-      if (error) {
-        console.error('Categories query error:', error);
-        throw error;
-      }
-      return data as Category[];
-    },
-    retry: 1,
-    refetchOnWindowFocus: false
-  });
-  
-  const [columns, setColumns] = useState<Column[]>([]);
-  const [schoolData, setSchoolData] = useState<SchoolDataEntry[]>([]);
-  const [stats, setStats] = useState<DataStats>({
-    totalEntries: 0,
-    completedEntries: 0,
-    pendingEntries: 0,
-    completionRate: 0,
-    totalSchools: 0,
-    pendingCount: 0,
-    approvedCount: 0,
-    rejectedCount: 0,
-    emptyCount: 0
-  });
-
-  // Workflow state
-  const [currentStep, setCurrentStep] = useState<DataManagementStep>('category');
+  const { user, session } = useUser();
+  const userId = user?.id;
+  const userRole = user?.user_metadata?.role as string;
+  const [currentStep, setCurrentStep] = useState<'category' | 'column' | 'data'>('category');
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [selectedColumn, setSelectedColumn] = useState<Column | null>(null);
-  const [error, setError] = useState<string | null>(categoriesError?.message || null);
+  const [schoolData, setSchoolData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
-  // Loading states
-  const [loading, setLoading] = useState({
-    categories: categoriesLoading,
-    columns: false,
-    schoolData: false,
-    saving: false
-  });
-
-  // Real permissions from auth context
+  // Determine user permissions
   const permissions: DataManagementPermissions = {
-    canApprove: userRole?.role === 'superadmin' || userRole?.role === 'regionadmin' || userRole?.role === 'sectoradmin',
-    canEdit: true,
-    canViewAll: userRole?.role === 'superadmin' || userRole?.role === 'regionadmin',
-    role: userRole?.role || 'schooladmin',
-    sectorId: userRole?.sector_id,
-    regionId: userRole?.region_id
+    canEdit: userRole !== 'sectoradmin',
+    canApprove: ['regionadmin', 'superadmin'].includes(userRole),
   };
 
-
-
-  const loadColumns = async (categoryId: string) => {
+  // Load school data for specific category and column
+  const loadSchoolData = async (categoryId: string, columnId: string) => {
     try {
-      setLoading(prev => ({ ...prev, columns: true }));
-      
+      setLoading(true);
+      setError(null);
+
+      console.log('Loading school data for:', { categoryId, columnId });
+
       const { data, error } = await supabase
-        .from('columns')
-        .select('*')
+        .from('school_data_entries')
+        .select(`
+          *,
+          schools!school_data_entries_school_id_fkey (
+            id,
+            name
+          )
+        `)
         .eq('category_id', categoryId)
-        .eq('status', 'active')
-        .order('order_index', { ascending: true });
-      
+        .eq('column_id', columnId);
+
       if (error) {
+        console.error('Error loading school data:', error);
         throw error;
       }
-      
-      setColumns(data || []);
-    } catch (error) {
-      console.error('Error loading columns:', error);
-      setError('Sütunları yükləyərkən xəta baş verdi');
-    } finally {
-      setLoading(prev => ({ ...prev, columns: false }));
-    }
-  };
 
-  const loadSchoolData = async (categoryId: string, columnId?: string) => {
-    try {
-      setLoading(prev => ({ ...prev, schoolData: true }));
-      
-      // Get schools based on user role
-      let schoolsQuery = supabase
-        .from('schools')
-        .select(`
-          id,
-          name,
-          region_id,
-          sector_id
-        `);
-      
-      // Apply role-based filtering
-      if (permissions.role === 'sectoradmin' && permissions.sectorId) {
-        schoolsQuery = schoolsQuery.eq('sector_id', permissions.sectorId);
-      } else if (permissions.role === 'regionadmin' && permissions.regionId) {
-        schoolsQuery = schoolsQuery.eq('region_id', permissions.regionId);
-      } else if (permissions.role === 'schooladmin' && user?.id) {
-        // Get school_id from user_roles
-        const { data: userRole } = await supabase
-          .from('user_roles')
-          .select('school_id')
-          .eq('user_id', user.id)
-          .eq('role', 'schooladmin')
-          .single();
-        
-        if (userRole?.school_id) {
-          schoolsQuery = schoolsQuery.eq('id', userRole.school_id);
-        }
+      if (!data) {
+        setSchoolData([]);
+        return;
       }
-      
-      const { data: schools, error: schoolsError } = await schoolsQuery;
-      
-      if (schoolsError) {
-        throw schoolsError;
-      }
-      
-      // Get data entries if column is selected
-      let dataEntries: any[] = [];
-      if (columnId && schools) {
-        const { data, error } = await supabase
-          .from('data_entries')
-          .select('*')
-          .eq('category_id', categoryId)
-          .eq('column_id', columnId)
-          .in('school_id', schools.map(s => s.id));
-        
-        if (error) {
-          console.error('Error loading data entries:', error);
-        } else {
-          dataEntries = data || [];
-        }
-      }
-      
-      // Combine schools with their data
-      const schoolDataEntries: SchoolDataEntry[] = (schools || []).map(school => {
-        const entry = dataEntries.find(e => e.school_id === school.id);
-        return {
-          id: entry?.id || `temp-${school.id}`,
-          school_id: school.id,
-          school_name: school.name,
-          category_id: categoryId,
-          column_id: columnId || '',
-          value: entry?.value || '',
-          status: entry?.status || 'empty',
-          created_at: entry?.created_at || new Date().toISOString(),
-          updated_at: entry?.updated_at || new Date().toISOString()
-        };
-      });
-      
-      setSchoolData(schoolDataEntries);
-      
-      // Calculate stats
-      const totalSchools = schoolDataEntries.length;
-      const pendingCount = schoolDataEntries.filter(s => s.status === 'pending').length;
-      const approvedCount = schoolDataEntries.filter(s => s.status === 'approved').length;
-      const rejectedCount = schoolDataEntries.filter(s => s.status === 'rejected').length;
-      const emptyCount = schoolDataEntries.filter(s => s.status === 'empty').length;
-      const completionRate = totalSchools > 0 ? Math.round(((approvedCount + pendingCount) / totalSchools) * 100) : 0;
-      
-      setStats(prev => ({
-        ...prev,
-        totalSchools,
-        pendingCount,
-        approvedCount,
-        rejectedCount,
-        emptyCount,
-        completionRate
+
+      // Transform data for UI
+      const transformedData: SchoolDataEntry[] = data.map(entry => ({
+        id: entry.id,
+        school_id: entry.school_id,
+        school_name: entry.schools?.name || 'Naməlum məktəb',
+        category_id: entry.category_id,
+        column_id: entry.column_id,
+        value: entry.column_data?.[columnId] || '',
+        status: entry.status || 'empty',
+        created_at: entry.created_at,
+        updated_at: entry.updated_at
       }));
-      
+
+      console.log('Transformed school data:', transformedData);
+      setSchoolData(transformedData);
+
     } catch (error) {
-      console.error('Error loading school data:', error);
-      setError('Məktəb məlumatlarını yükləyərkən xəta baş verdi');
+      console.error('Failed to load school data:', error);
+      setError('Məktəb məlumatları yüklənərkən xəta baş verdi');
     } finally {
-      setLoading(prev => ({ ...prev, schoolData: false }));
+      setLoading(false);
     }
   };
 
-  // Navigation functions
-  const goToStep = (step: DataManagementStep) => {
-    setCurrentStep(step);
-  };
+  // Save data - SECTOR ADMIN RESTRICTIONS ADDED
+  const handleDataSave = async (schoolId: string, value: string): Promise<boolean> => {
+    // Check if user can edit data
+    if (!permissions.canEdit) {
+      toast.error('Məlumat redaktə etmək üçün icazəniz yoxdur');
+      return false;
+    }
 
-  const resetWorkflow = () => {
-    setCurrentStep('category');
-    setSelectedCategory(null);
-    setSelectedColumn(null);
-    setColumns([]);
-    setSchoolData([]);
-    setError(null);
-  };
+    // SECTOR ADMIN RESTRICTION: Cannot save data on behalf of schools
+    if (userRole === 'sectoradmin') {
+      toast.error('Sektoradmin məktəblər adından məlumat daxil edə bilməz');
+      return false;
+    }
 
-  // Selection handlers
-  const handleCategorySelect = async (category: Category) => {
-    setSelectedCategory(category);
-    setCurrentStep('column');
-    await loadColumns(category.id);
-  };
-
-  const handleColumnSelect = async (column: Column) => {
-    setSelectedColumn(column);
-    setCurrentStep('data');
-    await loadSchoolData(column.category_id, column.id);
-  };
-
-  // FIXED: Data management handlers - Column-level approval
-  const handleDataSave = async (entityId: string, value: string): Promise<boolean> => {
-    setLoading(prev => ({ ...prev, saving: true }));
     try {
-      if (!selectedColumn || !selectedCategory) {
-        throw new Error('Kateqoriya və ya sütun seçilməyib');
+      setSaving(true);
+
+      if (!selectedCategory?.id || !selectedColumn?.id) {
+        toast.error('Kateqoriya və ya sütun seçilməyib');
+        return false;
       }
-      
-      // Handle sector data separately
-      if (selectedCategory.assignment === 'sectors') {
-        // For sector data, use sector_data_entries table
-        const { data: existingSectorEntry } = await supabase
-          .from('sector_data_entries')
-          .select('id')
-          .eq('sector_id', permissions.sectorId || entityId)
-          .eq('category_id', selectedCategory.id)
-          .eq('column_id', selectedColumn.id)
-          .single();
-          
-        if (existingSectorEntry) {
-          // Update existing entry
-          const { error } = await supabase
-            .from('sector_data_entries')
-            .update({
-              value,
-              status: 'approved',
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', existingSectorEntry.id);
-            
-          if (error) throw error;
-        } else {
-          // Create new entry
-          const { error } = await supabase
-            .from('sector_data_entries')
-            .insert({
-              sector_id: permissions.sectorId || entityId,
-              category_id: selectedCategory.id,
-              column_id: selectedColumn.id,
-              value,
-              status: 'approved',
-              created_by: user?.id,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            });
-            
-          if (error) throw error;
-        }
-        
-        return true;
-      }
-      
-      // Handle school data
+
+      console.log('Saving data:', { schoolId, columnId: selectedColumn.id, value });
+
+      // Check if entry exists
       const { data: existingEntry } = await supabase
-        .from('data_entries')
-        .select('id')
-        .eq('school_id', entityId)
+        .from('school_data_entries')
+        .select('*')
+        .eq('school_id', schoolId)
         .eq('category_id', selectedCategory.id)
         .eq('column_id', selectedColumn.id)
         .single();
-      
+
+      const columnData = { [selectedColumn.id]: value };
+
+      let result;
       if (existingEntry) {
         // Update existing entry
-        const { error } = await supabase
-          .from('data_entries')
+        result = await supabase
+          .from('school_data_entries')
           .update({
-            value,
+            column_data: columnData,
             status: 'pending',
             updated_at: new Date().toISOString()
           })
           .eq('id', existingEntry.id);
-        
-        if (error) throw error;
       } else {
         // Create new entry
-        const { error } = await supabase
-          .from('data_entries')
+        result = await supabase
+          .from('school_data_entries')
           .insert({
-            school_id: entityId,
+            school_id: schoolId,
             category_id: selectedCategory.id,
             column_id: selectedColumn.id,
-            value,
-            status: 'pending',
-            created_by: user?.id,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
+            column_data: columnData,
+            status: 'pending'
           });
-        
-        if (error) throw error;
       }
-      
-      // Refresh data only for school data
+
+      if (result.error) {
+        console.error('Save error:', result.error);
+        throw result.error;
+      }
+
+      // Reload data to reflect changes
       await loadSchoolData(selectedCategory.id, selectedColumn.id);
-      return true;
       
+      console.log('Data saved successfully');
+      return true;
     } catch (error) {
-      console.error('Error saving data:', error);
+      console.error('Failed to save data:', error);
       return false;
     } finally {
-      setLoading(prev => ({ ...prev, saving: false }));
+      setSaving(false);
     }
   };
 
-  // FIXED: Column-level approval - only approve specific school+column combination
+  // Approve data - COLUMN-LEVEL APPROVAL ONLY
   const handleDataApprove = async (schoolId: string, comment?: string): Promise<boolean> => {
+    if (!permissions.canApprove) {
+      toast.error('Təsdiq etmək üçün icazəniz yoxdur');
+      return false;
+    }
+
+    if (!selectedColumn?.id) {
+      toast.error('Sütun seçilməyib');
+      return false;
+    }
+
     try {
-      if (!selectedColumn || !selectedCategory) {
-        throw new Error('Kateqoriya və ya sütun seçilməyib');
-      }
-      
-      console.log(`[handleDataApprove] Approving: school=${schoolId}, column=${selectedColumn.id}, category=${selectedCategory.id}`);
-      
-      // FIXED: Only update the specific school+column combination
+      setSaving(true);
+      console.log('Approving data for school:', schoolId, 'column:', selectedColumn.id);
+
+      // FIXED: Only approve the specific column data
       const { error } = await supabase
-        .from('data_entries')
+        .from('school_data_entries')
         .update({
           status: 'approved',
-          approved_by: user?.id,
           approved_at: new Date().toISOString(),
+          approved_by: userId,
+          approval_comment: comment,
           updated_at: new Date().toISOString()
         })
         .eq('school_id', schoolId)
-        .eq('column_id', selectedColumn.id); // FIXED: Filter by column_id only, not category_id
-      
+        .eq('column_id', selectedColumn.id); // COLUMN-SPECIFIC FILTER
+
       if (error) {
-        console.error('Approval error:', error);
+        console.error('Approve error:', error);
         throw error;
       }
-      
-      console.log(`[handleDataApprove] Successfully approved entry for school ${schoolId}, column ${selectedColumn.name}`);
-      
-      // Refresh data to show updated status
-      await loadSchoolData(selectedCategory.id, selectedColumn.id);
-      return true;
-    } catch (error) {
-      console.error('Error approving data:', error);
-      return false;
-    }
-  };
 
-  // FIXED: Column-level rejection - only reject specific school+column combination
-  const handleDataReject = async (schoolId: string, reason: string, comment?: string): Promise<boolean> => {
-    try {
-      if (!selectedColumn || !selectedCategory) {
-        throw new Error('Kateqoriya və ya sütun seçilməyib');
-      }
-      
-      console.log(`[handleDataReject] Rejecting: school=${schoolId}, column=${selectedColumn.id}, reason=${reason}`);
-      
-      // FIXED: Only update the specific school+column combination
-      const { error } = await supabase
-        .from('data_entries')
-        .update({
-          status: 'rejected',
-          rejected_by: user?.id,
-          rejection_reason: reason,
-          updated_at: new Date().toISOString()
-        })
-        .eq('school_id', schoolId)
-        .eq('column_id', selectedColumn.id); // FIXED: Filter by column_id only, not category_id
-      
-      if (error) {
-        console.error('Rejection error:', error);
-        throw error;
-      }
-      
-      console.log(`[handleDataReject] Successfully rejected entry for school ${schoolId}, column ${selectedColumn.name}`);
-      
-      // Refresh data to show updated status
-      await loadSchoolData(selectedCategory.id, selectedColumn.id);
-      return true;
-    } catch (error) {
-      console.error('Error rejecting data:', error);
-      return false;
-    }
-  };
-
-  // FIXED: Bulk approve - only for current column
-  const handleBulkApprove = async (schoolIds: string[]): Promise<boolean> => {
-    try {
-      if (!selectedColumn || !selectedCategory) {
-        throw new Error('Kateqoriya və ya sütun seçilməyib');
-      }
-      
-      console.log(`[handleBulkApprove] Bulk approving ${schoolIds.length} schools for column ${selectedColumn.name}`);
-      
-      // FIXED: Bulk approve only for specific column
-      const { error } = await supabase
-        .from('data_entries')
-        .update({
-          status: 'approved',
-          approved_by: user?.id,
-          approved_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .eq('column_id', selectedColumn.id)
-        .in('school_id', schoolIds);
-      
-      if (error) {
-        console.error('Bulk approval error:', error);
-        throw error;
-      }
-      
-      console.log(`[handleBulkApprove] Successfully bulk approved ${schoolIds.length} entries for column ${selectedColumn.name}`);
-      
-      // Refresh data
-      await loadSchoolData(selectedCategory.id, selectedColumn.id);
-      return true;
-    } catch (error) {
-      console.error('Error bulk approving:', error);
-      return false;
-    }
-  };
-
-  // FIXED: Bulk reject - only for current column
-  const handleBulkReject = async (schoolIds: string[], reason: string): Promise<boolean> => {
-    try {
-      if (!selectedColumn || !selectedCategory) {
-        throw new Error('Kateqoriya və ya sütun seçilməyib');
-      }
-      
-      console.log(`[handleBulkReject] Bulk rejecting ${schoolIds.length} schools for column ${selectedColumn.name}`);
-      
-      // FIXED: Bulk reject only for specific column
-      const { error } = await supabase
-        .from('data_entries')
-        .update({
-          status: 'rejected',
-          rejected_by: user?.id,
-          rejection_reason: reason,
-          updated_at: new Date().toISOString()
-        })
-        .eq('column_id', selectedColumn.id)
-        .in('school_id', schoolIds);
-      
-      if (error) {
-        console.error('Bulk rejection error:', error);
-        throw error;
-      }
-      
-      console.log(`[handleBulkReject] Successfully bulk rejected ${schoolIds.length} entries for column ${selectedColumn.name}`);
-      
-      // Refresh data
-      await loadSchoolData(selectedCategory.id, selectedColumn.id);
-      return true;
-    } catch (error) {
-      console.error('Error bulk rejecting:', error);
-      return false;
-    }
-  };
-
-  // Utility functions
-  const refreshData = async () => {
-    if (selectedCategory) {
-      await loadColumns(selectedCategory.id);
-      if (selectedColumn) {
+      // Reload data to reflect changes
+      if (selectedCategory?.id) {
         await loadSchoolData(selectedCategory.id, selectedColumn.id);
       }
+      
+      console.log('Data approved successfully for column:', selectedColumn.name);
+      return true;
+    } catch (error) {
+      console.error('Failed to approve data:', error);
+      return false;
+    } finally {
+      setSaving(false);
     }
-    // Categories are handled by React Query automatically
   };
 
-  const clearError = () => {
-    setError(null);
+  // Reject data - COLUMN-LEVEL REJECTION ONLY
+  const handleDataReject = async (schoolId: string, reason: string, comment?: string): Promise<boolean> => {
+    if (!permissions.canApprove) {
+      toast.error('Rədd etmək üçün icazəniz yoxdur');
+      return false;
+    }
+
+    if (!selectedColumn?.id) {
+      toast.error('Sütun seçilməyib');
+      return false;
+    }
+
+    try {
+      setSaving(true);
+      console.log('Rejecting data for school:', schoolId, 'column:', selectedColumn.id);
+
+      // FIXED: Only reject the specific column data
+      const { error } = await supabase
+        .from('school_data_entries')
+        .update({
+          status: 'rejected',
+          rejected_at: new Date().toISOString(),
+          rejected_by: userId,
+          rejection_reason: reason,
+          rejection_comment: comment,
+          updated_at: new Date().toISOString()
+        })
+        .eq('school_id', schoolId)
+        .eq('column_id', selectedColumn.id); // COLUMN-SPECIFIC FILTER
+
+      if (error) {
+        console.error('Reject error:', error);
+        throw error;
+      }
+
+      // Reload data to reflect changes
+      if (selectedCategory?.id) {
+        await loadSchoolData(selectedCategory.id, selectedColumn.id);
+      }
+      
+      console.log('Data rejected successfully for column:', selectedColumn.name);
+      return true;
+    } catch (error) {
+      console.error('Failed to reject data:', error);
+      return false;
+    } finally {
+      setSaving(false);
+    }
   };
 
-  // Categories are loaded via React Query automatically
-  
-  // Update loading state when categories loading changes
-  useEffect(() => {
-    setLoading(prev => ({ ...prev, categories: categoriesLoading }));
-  }, [categoriesLoading]);
-  
-  // Update error when categories error changes
-  useEffect(() => {
-    if (categoriesError) {
-      console.error('Categories error details:', categoriesError);
-      const errorMessage = categoriesError.message || 'Kateqoriyaları yükləyərkən xəta baş verdi';
-      setError(errorMessage);
-    } else {
-      setError(null);
+  // Bulk approve - COLUMN-LEVEL BULK OPERATIONS
+  const handleBulkApprove = async (schoolIds: string[]): Promise<boolean> => {
+    if (!permissions.canApprove) {
+      toast.error('Toplu təsdiq üçün icazəniz yoxdur');
+      return false;
     }
-  }, [categoriesError]);
+
+    if (!selectedColumn?.id) {
+      toast.error('Sütun seçilməyib');
+      return false;
+    }
+
+    try {
+      setSaving(true);
+      console.log('Bulk approving data for schools:', schoolIds, 'column:', selectedColumn.id);
+
+      // FIXED: Only approve the specific column data for selected schools
+      const { error } = await supabase
+        .from('school_data_entries')
+        .update({
+          status: 'approved',
+          approved_at: new Date().toISOString(),
+          approved_by: userId,
+          updated_at: new Date().toISOString()
+        })
+        .eq('column_id', selectedColumn.id) // COLUMN-SPECIFIC FILTER
+        .in('school_id', schoolIds);
+
+      if (error) {
+        console.error('Bulk approve error:', error);
+        throw error;
+      }
+
+      // Reload data to reflect changes
+      if (selectedCategory?.id) {
+        await loadSchoolData(selectedCategory.id, selectedColumn.id);
+      }
+      
+      console.log('Bulk approval successful for column:', selectedColumn.name);
+      return true;
+    } catch (error) {
+      console.error('Failed to bulk approve data:', error);
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Bulk reject - COLUMN-LEVEL BULK OPERATIONS
+  const handleBulkReject = async (schoolIds: string[], reason: string): Promise<boolean> => {
+    if (!permissions.canApprove) {
+      toast.error('Toplu rədd üçün icazəniz yoxdur');
+      return false;
+    }
+
+    if (!selectedColumn?.id) {
+      toast.error('Sütun seçilməyib');
+      return false;
+    }
+
+    try {
+      setSaving(true);
+      console.log('Bulk rejecting data for schools:', schoolIds, 'column:', selectedColumn.id);
+
+      // FIXED: Only reject the specific column data for selected schools
+      const { error } = await supabase
+        .from('school_data_entries')
+        .update({
+          status: 'rejected',
+          rejected_at: new Date().toISOString(),
+          rejected_by: userId,
+          rejection_reason: reason,
+          updated_at: new Date().toISOString()
+        })
+        .eq('column_id', selectedColumn.id) // COLUMN-SPECIFIC FILTER
+        .in('school_id', schoolIds);
+
+      if (error) {
+        console.error('Bulk reject error:', error);
+        throw error;
+      }
+
+      // Reload data to reflect changes
+      if (selectedCategory?.id) {
+        await loadSchoolData(selectedCategory.id, selectedColumn.id);
+      }
+      
+      console.log('Bulk rejection successful for column:', selectedColumn.name);
+      return true;
+    } catch (error) {
+      console.error('Failed to bulk reject data:', error);
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const goToNextStep = () => {
+    switch (currentStep) {
+      case 'category':
+        if (selectedCategory) {
+          setCurrentStep('column');
+        }
+        break;
+      case 'column':
+        if (selectedColumn) {
+          setCurrentStep('data');
+        }
+        break;
+      default:
+        break;
+    }
+  };
+
+  const goToPrevStep = () => {
+    switch (currentStep) {
+      case 'column':
+        setCurrentStep('category');
+        break;
+      case 'data':
+        setCurrentStep('column');
+        break;
+      default:
+        break;
+    }
+  };
+
+  const resetSteps = () => {
+    setCurrentStep('category');
+    setSelectedCategory(null);
+    setSelectedColumn(null);
+    setSchoolData([]);
+  };
 
   return {
-    // State
-    categories,
-    columns,
-    schoolData,
-    stats,
-    loading,
-    error,
-    permissions,
     currentStep,
     selectedCategory,
     selectedColumn,
-
-    // Navigation
-    goToStep,
-    resetWorkflow,
-
-    // Category selection
-    handleCategorySelect,
-
-    // Column selection  
-    handleColumnSelect,
-
-    // Data management - Updated handler signatures
+    schoolData,
+    loading,
+    saving,
+    error,
+    permissions,
+    setCurrentStep,
+    setSelectedCategory,
+    setSelectedColumn,
+    loadSchoolData,
     handleDataSave,
     handleDataApprove,
     handleDataReject,
     handleBulkApprove,
     handleBulkReject,
-
-    // Utilities
-    refreshData,
-    clearError,
-    loadColumns,
-    loadSchoolData,
-    saveData: handleDataSave
+    goToNextStep,
+    goToPrevStep,
+    resetSteps
   };
+};
+
+// Define missing types locally since they're not available from useDataManagement
+export type DataManagementStep = 'category' | 'column' | 'data';
+
+export type SchoolDataEntry = {
+  id: string;
+  school_id: string;
+  school_name: string;
+  category_id: string;
+	column_id: string;
+  value: string;
+  status: 'empty' | 'pending' | 'approved' | 'rejected';
+  created_at: string;
+  updated_at: string;
+};
+
+export type DataStats = {
+  totalSchools: number;
+  pendingCount: number;
+  approvedCount: number;
+  completionRate: number;
 };

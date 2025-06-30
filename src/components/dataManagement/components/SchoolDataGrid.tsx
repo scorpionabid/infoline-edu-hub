@@ -68,13 +68,28 @@ export const SchoolDataGrid: React.FC<SchoolDataGridProps> = memo(({
   const [selectedSchools, setSelectedSchools] = useState<string[]>([]);
   const [processingSchool, setProcessingSchool] = useState<string | null>(null);
 
+  // Check if user is sector admin
+  const isSectorAdmin = !permissions.canEdit; // Sector admins can't edit but can approve
+
   const handleStartEdit = (schoolId: string, currentValue: string) => {
+    // SECTOR ADMIN RESTRICTION: Cannot edit data
+    if (isSectorAdmin) {
+      toast.error('Sektoradmin məktəblər adından məlumat daxil edə bilməz');
+      return;
+    }
+    
     setEditingSchool(schoolId);
     setEditValue(currentValue || '');
   };
 
   const handleSaveEdit = async () => {
     if (!editingSchool) return;
+    
+    // SECTOR ADMIN RESTRICTION: Cannot save data
+    if (isSectorAdmin) {
+      toast.error('Sektoradmin məktəblər adından məlumat daxil edə bilməz');
+      return;
+    }
     
     try {
       const success = await onDataSave(editingSchool, editValue);
@@ -244,6 +259,16 @@ export const SchoolDataGrid: React.FC<SchoolDataGridProps> = memo(({
         </CardContent>
       </Card>
 
+      {/* SECTOR ADMIN WARNING */}
+      {isSectorAdmin && (
+        <Alert className="border-orange-200 bg-orange-50">
+          <AlertCircle className="h-4 w-4 text-orange-600" />
+          <AlertDescription className="text-orange-800">
+            <strong>Sektoradmin məhdudiyyəti:</strong> Siz yalnız məktəblər tərəfindən daxil edilmiş məlumatları təsdiq və ya rədd edə bilərsiniz. Məktəblər adından məlumat daxil edə bilməzsiniz.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Stats Summary */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
@@ -340,12 +365,15 @@ export const SchoolDataGrid: React.FC<SchoolDataGridProps> = memo(({
                         </div>
                       ) : (
                         <div 
-                          className="cursor-pointer hover:bg-muted p-2 rounded"
+                          className={`cursor-pointer hover:bg-muted p-2 rounded ${
+                            isSectorAdmin ? 'cursor-not-allowed opacity-60' : ''
+                          }`}
                           onClick={() => handleStartEdit(school.school_id, school.value || '')}
+                          title={isSectorAdmin ? 'Sektoradmin məlumat daxil edə bilməz' : 'Məlumat daxil etmək üçün klikləyin'}
                         >
                           {school.value || (
                             <span className="text-muted-foreground italic">
-                              Məlumat daxil edin
+                              {isSectorAdmin ? 'Məktəb tərəfindən doldurulmalıdır' : 'Məlumat daxil edin'}
                             </span>
                           )}
                         </div>
@@ -406,6 +434,9 @@ export const SchoolDataGrid: React.FC<SchoolDataGridProps> = memo(({
               <li>• Yalnız <strong>{column.name}</strong> sütunundakı məlumatlar təsdiqlənəcək</li>
               <li>• Digər sütunlardakı məlumatlar təsirlənməyəcək</li>
               <li>• Hər sütun üçün ayrı-ayrı təsdiq tələb olunur</li>
+              {isSectorAdmin && (
+                <li className="text-orange-600">• <strong>Sektoradmin məhdudiyyəti:</strong> Məktəblər adından məlumat daxil edilə bilməz</li>
+              )}
             </ul>
             {column.help_text && (
               <p className="text-sm mt-2 p-2 bg-muted rounded">

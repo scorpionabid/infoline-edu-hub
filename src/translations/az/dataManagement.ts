@@ -1,4 +1,3 @@
-
 // Data Management translation module
 export const dataManagement = {
   // Page titles
@@ -134,7 +133,25 @@ export const dataManagement = {
   column_category: 'Kateqoriya:',
   column_required: 'Məcburi',
   column_optional: 'İxtiyari',
-  column_level_approval: 'Sütun-səviyyəli təsdiq'
+  column_level_approval: 'Sütun-səviyyəli təsdiq',
+  
+  // Enhanced messages for sector admin restrictions
+  sector_admin_restriction: 'Sektoradmin məhdudiyyəti',
+  sector_admin_cannot_edit: 'Sektoradmin məktəblər adından məlumat daxil edə bilməz',
+  sector_admin_can_only_approve: 'Siz yalnız məktəblər tərəfindən daxil edilmiş məlumatları təsdiq və ya rədd edə bilərsiniz',
+  school_must_fill: 'Məktəb tərəfindən doldurulmalıdır',
+  click_to_enter_data: 'Məlumat daxil etmək üçün klikləyin',
+  sector_admin_cannot_enter_tooltip: 'Sektoradmin məlumat daxil edə bilməz',
+  
+  // Column-level approval enhanced messages
+  column_level_approval_active: 'Sütun-səviyyəli təsdiq aktiv',
+  only_selected_column_approved: 'Yalnız seçilmiş sütun təsdiqlənəcək',
+  other_columns_not_affected: 'Digər sütunlar təsirlənməyəcək',
+  each_column_requires_separate_approval: 'Hər sütun üçün ayrı-ayrı təsdiq tələb olunur',
+  
+  // Error messages
+  category_column_not_selected: 'Kateqoriya və ya sütun seçilməyib',
+  column_not_selected: 'Sütun seçilməyib',
 } as const;
 
 export type DataManagement = typeof dataManagement;
