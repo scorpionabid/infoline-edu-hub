@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ColumnStatus } from '@/types/dashboard';
+import { useAuthStore, selectUserRole } from '@/hooks/auth/useAuthStore';
 
 interface ColumnStatusGridProps {
   columns: ColumnStatus[];
@@ -45,8 +46,39 @@ const ColumnStatusGrid: React.FC<ColumnStatusGridProps> = ({
     );
   }
 
+  // İstifadəçi rolunu əldə et
+  const userRole = useAuthStore(selectUserRole);
+  
+  // Sektora aid kateqoriyaları təyin edən funksiya
+  // Qeyd: Burada sektora aid kateqoriyaların adları verilməlidir
+  const isSectorCategory = (categoryName: string): boolean => {
+    // Sektora aid kateqoriyaların adlarını (məs. "Sektor məlumatları", "Sektor statistikası" və s.) yoxla
+    const sectorCategories = [
+      'Sektor məlumatları',
+      'Sektor statistikası',
+      'Sektor hesabatları',
+      'Sektor göstəriciləri'
+      // Lazım olarsa digər sektor kateqoriyalarını əlavə edin
+    ];
+    
+    return sectorCategories.some(name => 
+      categoryName.toLowerCase().includes('sektor') || // "sektor" sözünü axtarır
+      sectorCategories.includes(categoryName)
+    );
+  };
+  
+  // Məktəb admin rolu varsa, sektorlara aid kateqoriyaları filterlə
+  const filteredColumns = useMemo(() => {
+    if (userRole === 'schooladmin') {
+      // Sektor kateqoriyalarını çıxar
+      return columns.filter(column => !isSectorCategory(column.categoryName));
+    }
+    // Digər rollar üçün bütün sütunları göstər
+    return columns;
+  }, [columns, userRole]);
+  
   // Group columns by category
-  const groupedColumns = columns.reduce((acc, column) => {
+  const groupedColumns = filteredColumns.reduce((acc, column) => {
     const key = column.categoryName;
     if (!acc[key]) acc[key] = [];
     acc[key].push(column);
