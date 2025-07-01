@@ -27,7 +27,7 @@ export const CategoryConfirmationDialog: React.FC<CategoryConfirmationDialogProp
   title,
   description,
   confirmText,
-  // cancelText
+  cancelText
 }) => {
   return (
     <Dialog open={open} onOpenChange={onClose}>

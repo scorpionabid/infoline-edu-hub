@@ -1,149 +1,67 @@
 
-import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  useAuthStore,
-  selectUser,
-  selectUserRole,
-} from "@/hooks/auth/useAuthStore";
-import { useSmartTranslation } from "@/hooks/translation/useSmartTranslation";
-import { useRealDashboardData } from "@/hooks/dashboard/useRealDashboardData";
-import LoadingScreen from "@/components/auth/LoadingScreen";
-import SuperAdminDashboard from "./SuperAdminDashboard";
-import RegionAdminDashboard from "./region-admin/RegionAdminDashboard";
-import SectorAdminDashboard from "./sector-admin/SectorAdminDashboard";
-import SchoolAdminDashboard from "./school-admin/SchoolAdminDashboard";
-import TranslationWrapper from "@/components/translation/TranslationWrapper";
-import { toast } from "sonner";
-import { logger } from "@/utils/logger";
+import React, { useEffect, useState } from 'react';
+import { useUser } from '@/hooks/auth/useUser';
+import { useTranslation } from '@/contexts/TranslationContext';
+import { Loader2 } from 'lucide-react';
+
+// Role-specific dashboard components
+import SuperAdminDashboard from './SuperAdminDashboard';
+import { RegionAdminDashboard } from './region-admin/RegionAdminDashboard';
+import { SectorAdminDashboard } from './sector-admin/SectorAdminDashboard';
+import { SchoolAdminDashboard } from './school-admin/SchoolAdminDashboard';
 
 const DashboardContent: React.FC = () => {
-  const user = useAuthStore(selectUser);
-  const userRole = useAuthStore(selectUserRole);
-  const { t, tSafe, isLoading: translationLoading, isReady } = useSmartTranslation();
+  const { user, loading } = useUser();
+  const { t } = useTranslation();
+  const [isReady, setIsReady] = useState(false);
 
-  const { loading, error, dashboardData } = useRealDashboardData();
+  const userRole = user?.user_metadata?.role as string;
 
-  // ROL DIAQNOSTIKASI - BU KOD MÜVƏQQƏTI ƏLAVƏ EDİLMİŞDİR
-  console.warn(
-    '=========== İSTİFADƏÇİ ROL DİAQNOSTİKASI ===========\n',
-    'USER ROLE:', userRole, '\n',
-    'USER ID:', user?.id, '\n',
-    'USER:', user, '\n',
-    'DASHBOARD DATA:', dashboardData, '\n',
-    '================================================'
-  );
-
-  // Əgər userRole 'superadmin' olduqda, +1 sətirdə dəyişiklik olarsa ediləcək
-  // Bu kod hissəsi xəta aşkarlanması üçün əlavə edilmişdir
-  
-  logger.dashboard("Dashboard state loaded", {
-    hasData: !!dashboardData,
-    loading,
-    hasError: !!error,
-    userRole,
-    dataKeys: dashboardData ? Object.keys(dashboardData) : []
-  });
-
-  // Clear any stale cached values on mount
-  React.useEffect(() => {
-    if (dashboardData && typeof window !== 'undefined') {
-      // Remove any cached dashboard data that might conflict
-      try {
-        ['dashboard-cache', 'user-stats', 'school-stats'].forEach(key => {
-          localStorage.removeItem(key);
-          sessionStorage.removeItem(key);
-        });
-      } catch (error) {
-        console.warn('Could not clear dashboard cache:', error);
-      }
+  useEffect(() => {
+    // Simple ready state management
+    if (!loading && user) {
+      setIsReady(true);
     }
-  }, [dashboardData]);
+  }, [loading, user]);
 
-  // Show loading only if dashboard data is loading and no fallback ready
-  if (loading && !dashboardData) {
-    return <LoadingScreen message="İdarə paneli yüklənir..." />;
-  }
-
-  if (error) {
-    logger.error("Dashboard data fetch failed", error.message);
-    toast.error("Dashboard məlumatları yüklənərkən xəta baş verdi");
+  if (loading || !isReady) {
     return (
-      <div className="text-center py-8">
-        <p className="text-red-600">Xəta baş verdi</p>
-        <p className="text-sm text-muted-foreground mt-2">{error.message}</p>
+      <div className="flex items-center justify-center h-64">
+        <div className="flex items-center space-x-2">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <span>{t('dashboard.loading')}</span>
+        </div>
       </div>
     );
   }
 
-  if (!user || !user.id) {
-    return <p>İstifadəçi məlumatları yüklənir...</p>;
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">{t('dashboard.user_not_found')}</p>
+      </div>
+    );
   }
 
-  const renderRoleSpecificContent = () => {
-    console.log('Rendering dashboard for role:', userRole);
-    
-    // Sidebar-da superadmin göstərildiyi üçün məcburi superadmin panel göstərmək
-    if (user && user.id && (userRole === 'superadmin' || 
-        (user.email && user.email.includes('superadmin')) || 
-        (document.querySelector('.sidebar')?.textContent?.includes('superadmin')))) {
-      console.log('FORCED SUPERADMIN DASHBOARD RENDERING');
-      return <SuperAdminDashboard dashboardData={dashboardData} />;
-    }
-    
-    switch (userRole) {
-      case "superadmin": {
-        console.log('Rendering superadmin dashboard');
-        return <SuperAdminDashboard dashboardData={dashboardData} />;
-      }
-      
-      case "regionadmin": {
-        console.log('Rendering regionadmin dashboard');
-        return <RegionAdminDashboard dashboardData={dashboardData} />;
-      }
-      
-      case "sectoradmin": {
-        console.log('Rendering sectoradmin dashboard');
-        return <SectorAdminDashboard dashboardData={dashboardData} />;
-      }
-      
-      case "schooladmin":
-      case "user": { // user rolunu da schooladmin kimi emal edirik
-        console.log(`Rendering schooladmin dashboard for role: ${userRole}`);
-        return <SchoolAdminDashboard dashboardData={dashboardData} />;
-      }
-      
-      default:
-        console.warn('Unknown role detected:', userRole);
-        return (
-          <div className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>{tSafe("dashboard.title", "İdarə Paneli")}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p>{tSafe("dashboard.subtitle", "Dashboard məzmunu")}</p>
-                <div className="p-4 mt-4 bg-yellow-100 border border-yellow-400 rounded">
-                  <h3 className="font-bold">Rol Problemi</h3>
-                  <p>İstifadəçi rolu tanınmadı: {userRole || 'Rol təyin edilməyib'}</p>
-                  <p className="mt-2">Zəhmət olmasa sistemdən çıxın və yenidən daxil olun və ya admininizə müraciət edin.</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        );
-    }
-  };
-
-  return (
-    <TranslationWrapper skipLoading={true}>
-      <div className="p-4 space-y-6 animate-fade-in-up">
-        <div className="grid grid-cols-1 gap-6">
-          {renderRoleSpecificContent()}
+  // Render role-specific dashboard
+  switch (userRole) {
+    case 'superadmin':
+      return <SuperAdminDashboard />;
+    case 'regionadmin':
+      return <RegionAdminDashboard />;  
+    case 'sectoradmin':
+      return <SectorAdminDashboard />;
+    case 'schooladmin':
+      return <SchoolAdminDashboard />;
+    default:
+      return (
+        <div className="flex items-center justify-center h-64">
+          <p className="text-muted-foreground">
+            {t('dashboard.unknown_role')}: {userRole}
+          </p>
         </div>
-      </div>
-    </TranslationWrapper>
-  );
+      );
+  }
 };
 
 export default DashboardContent;

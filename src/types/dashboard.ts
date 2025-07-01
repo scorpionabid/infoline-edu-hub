@@ -9,6 +9,83 @@ export interface DashboardStats {
   rejectedEntries: number;
   completed: number;
   pending: number;
+  pendingFormCount: number; // Added missing property
+}
+
+// Missing interfaces that were causing build errors
+export interface CategoryItem {
+  id: string;
+  name: string;
+  description?: string;
+  progress: number;
+  status: 'completed' | 'partial' | 'empty' | 'pending';
+  completionRate: number;
+  deadline?: string;
+  columnCount?: number;
+  filledColumnCount?: number;
+  lastUpdated?: string;
+}
+
+export interface PendingApproval {
+  id: string;
+  categoryId: string;
+  categoryName: string;
+  schoolId: string;
+  schoolName: string;
+  columnId: string;
+  columnName: string;
+  value: string;
+  submittedAt: string;
+  submittedBy: string;
+  priority: 'low' | 'medium' | 'high';
+}
+
+export interface FormItem {
+  id: string;
+  name: string;
+  status: 'completed' | 'pending' | 'draft';
+  progress: number;
+  deadline?: string;
+  lastUpdated?: string;
+  categoryId: string;
+}
+
+export interface DeadlineItem {
+  id: string;
+  categoryId: string;
+  categoryName: string;
+  deadline: string;
+  daysRemaining: number;
+  isOverdue: boolean;
+  progress: number;
+  priority: 'low' | 'medium' | 'high';
+}
+
+export interface SectorStat {
+  id: string;
+  name: string;
+  schoolCount: number;
+  completionRate: number;
+  pendingApprovals: number;
+  totalForms: number;
+  completedForms: number;
+  lastActivity?: string;
+}
+
+export interface FormTabsProps {
+  categories: CategoryItem[];
+  deadlines: DeadlineItem[];
+  forms: FormItem[];
+  onCategorySelect?: (categoryId: string) => void;
+  onFormSelect?: (formId: string) => void;
+}
+
+export interface DashboardChartProps {
+  data: any[];
+  type: 'bar' | 'line' | 'pie' | 'doughnut';
+  title?: string;
+  height?: number;
+  showLegend?: boolean;
 }
 
 // Sector Admin specific dashboard data
@@ -221,6 +298,13 @@ export interface SchoolStat {
   pendingForms: number;
   totalForms: number;
   lastUpdated?: string;
+  // Added missing properties
+  totalEntries?: number;
+  total_entries?: number;
+  pendingEntries?: number;
+  pending_entries?: number;
+  pendingCount?: number;
+  completedForms?: number;
 }
 
 // StatsGridItem - SuperAdminDashboard üçün

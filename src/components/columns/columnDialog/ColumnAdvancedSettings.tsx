@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Control } from "react-hook-form";
 import {
@@ -48,7 +49,7 @@ const ColumnAdvancedSettings: React.FC<ColumnAdvancedSettingsProps> = ({
           <FormItem>
             <FormLabel>{t("defaultValue")}</FormLabel>
             <FormControl>
-              <Input placeholder={t("enterDefaultValue")} {...field} />
+              <Input placeholder={t("enterDefaultValue")} {...field} value={field.value || ''} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -65,7 +66,7 @@ const ColumnAdvancedSettings: React.FC<ColumnAdvancedSettingsProps> = ({
               <Input
                 type="number"
                 placeholder="0"
-                {...field}
+                value={field.value?.toString() || '0'}
                 onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
               />
             </FormControl>

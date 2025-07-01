@@ -8,14 +8,21 @@ export type ColumnType =
   | 'tel' 
   | 'url' 
   | 'date' 
+  | 'datetime-local'
+  | 'time'
+  | 'password'
   | 'select' 
   | 'multiselect' 
   | 'radio' 
   | 'checkbox' 
   | 'textarea' 
-  | 'file';
+  | 'file'
+  | 'boolean'
+  | 'json'
+  | 'switch';
 
 export interface ColumnOption {
+  id: string;
   label: string;
   value: string;
 }
@@ -47,14 +54,16 @@ export interface Column {
   is_required: boolean;
   placeholder?: string;
   help_text?: string;
+  description?: string;
   order_index: number;
-  status: 'active' | 'inactive';
+  status: 'active' | 'inactive' | 'deleted';
   options: ColumnOption[];
   validation: ValidationRules;
   default_value?: string;
   created_at: string;
   updated_at?: string;
-  parent_column_id?: string; // Add missing property
+  parent_column_id?: string;
+  required?: boolean; // Compatibility alias for is_required
 }
 
 export interface ColumnFormValues {
@@ -66,6 +75,7 @@ export interface ColumnFormValues {
   options: ColumnOption[];
   validation: ValidationRules;
   default_value?: string;
+  order_index?: number;
 }
 
 export interface ColumnFormData extends ColumnFormValues {

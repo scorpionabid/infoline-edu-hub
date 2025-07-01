@@ -1,58 +1,44 @@
-import { useState, useCallback } from 'react';
-import { DialogType, EntityType } from './types';
 
-interface UseUniversalDialogProps {
-  type: DialogType;
-  entity: EntityType;
-  onConfirm: (data?: any) => Promise<void>;
-}
+import { useState } from 'react';
 
-interface UseUniversalDialogReturn {
+export interface UseUniversalDialogReturn {
   isOpen: boolean;
   data: any;
   isSubmitting: boolean;
   openDialog: (entityData?: any) => void;
   closeDialog: () => void;
-  handleConfirm: () => Promise<void>;
+  handleConfirm: (onConfirm?: () => void | Promise<void>) => Promise<void>;
 }
 
-/**
- * Universal hook for managing dialog state and operations
- */
-export function useUniversalDialog({
-  type,
-  entity,
-  // onConfirm
-}: UseUniversalDialogProps): UseUniversalDialogReturn {
+export const useUniversalDialog = (): UseUniversalDialogReturn => {
   const [isOpen, setIsOpen] = useState(false);
   const [data, setData] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const openDialog = useCallback((entityData?: any) => {
+  const openDialog = (entityData?: any) => {
     setData(entityData);
     setIsOpen(true);
-  }, []);
+  };
 
-  const closeDialog = useCallback(() => {
+  const closeDialog = () => {
     setIsOpen(false);
     setData(null);
     setIsSubmitting(false);
-  }, []);
+  };
 
-  const handleConfirm = useCallback(async () => {
-    if (isSubmitting) return;
+  const handleConfirm = async (onConfirm?: () => void | Promise<void>) => {
+    if (!onConfirm) return;
     
-    setIsSubmitting(true);
     try {
-      await onConfirm(data);
+      setIsSubmitting(true);
+      await onConfirm();
       closeDialog();
     } catch (error) {
-      console.error(`Error in ${type} ${entity}:`, error);
-      // Don't close dialog on error, let user retry
+      console.error('Error in dialog confirmation:', error);
     } finally {
       setIsSubmitting(false);
     }
-  }, [data, isSubmitting, onConfirm, type, entity, closeDialog]);
+  };
 
   return {
     isOpen,
@@ -60,6 +46,6 @@ export function useUniversalDialog({
     isSubmitting,
     openDialog,
     closeDialog,
-    // handleConfirm
+    handleConfirm
   };
-}
+};
