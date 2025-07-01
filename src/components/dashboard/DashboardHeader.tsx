@@ -42,7 +42,7 @@ const DashboardHeader: React.FC = () => {
       
       if (user.role === 'regionadmin' && user.region_id) {
         // Count schools in this region
-        const { data: schools, error: schoolsError } = await supabase
+        const { data: schools, error: _schoolsError } = await supabase
           .from('schools')
           .select('id')
           .eq('region_id', user.region_id);
@@ -50,7 +50,7 @@ const DashboardHeader: React.FC = () => {
         schoolCount = schools?.length || 0;
         
         // Count active users in this region
-        const { data: users, error: usersError } = await supabase
+        const { data: users, error: _usersError } = await supabase
           .from('user_roles')
           .select('id')
           .eq('region_id', user.region_id);
@@ -59,7 +59,7 @@ const DashboardHeader: React.FC = () => {
       } 
       else if (user.role === 'sectoradmin' && user.sector_id) {
         // Count schools in this sector
-        const { data: schools, error: schoolsError } = await supabase
+        const { data: schools, error: _sectorSchoolsError } = await supabase
           .from('schools')
           .select('id')
           .eq('sector_id', user.sector_id);
@@ -67,7 +67,7 @@ const DashboardHeader: React.FC = () => {
         schoolCount = schools?.length || 0;
         
         // Calculate completion percentage (this is an example - adjust to your actual data model)
-        const { data: entries, error: entriesError } = await supabase
+        const { data: entries, error: _entriesError } = await supabase
           .from('data_entries')
           .select('status')
           .eq('sector_id', user.sector_id);
@@ -79,7 +79,7 @@ const DashboardHeader: React.FC = () => {
       }
       else if (user.role === 'schooladmin' && user.school_id) {
         // Count pending forms
-        const { data: pendingForms, error: formsError } = await supabase
+        const { data: pendingForms, error: _formsError } = await supabase
           .from('data_entries')
           .select('id')
           .eq('school_id', user.school_id)
@@ -88,7 +88,7 @@ const DashboardHeader: React.FC = () => {
         pendingFormCount = pendingForms?.length || 0;
         
         // Calculate completion percentage
-        const { data: entries, error: entriesError } = await supabase
+        const { data: entries, error: _schoolEntriesError } = await supabase
           .from('data_entries')
           .select('status')
           .eq('school_id', user.school_id);
@@ -103,7 +103,7 @@ const DashboardHeader: React.FC = () => {
         schoolCount,
         activeUserCount,
         completionPercentage,
-        // pendingFormCount
+        pendingFormCount
       });
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
@@ -120,13 +120,13 @@ const DashboardHeader: React.FC = () => {
     fetchDashboardStats().then(() => {
       setIsRefreshing(false);
       toast.success("Məlumatlar yeniləndi");
-    }).catch(err => {
+    }).catch(_err => {
       setIsRefreshing(false);
       toast.error("Məlumatları yeniləmək mümkün olmadı");
     });
   };
   
-  const handlePeriodChange = (period: string) => {
+  const handlePeriodChange = (_period: string) => {
     toast.info("Dövr dəyişdirildi");
     // Add period filtering logic here if needed
   };

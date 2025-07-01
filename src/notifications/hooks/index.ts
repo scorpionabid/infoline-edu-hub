@@ -26,9 +26,13 @@ import {
 } from '@/types/notifications';
 
 // Geriyə uyğunluq üçün köhnə tip adlarını əhatə et
-type UnifiedNotification = Notification;
-type NotificationChannel = 'inApp' | 'email';
-type NotificationEvent = {
+// Bu tiplər istifadə edilmir, lakin geriyə uyğunluq üçün saxlanılır
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type _UnifiedNotification = Notification;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type _NotificationChannel = 'inApp' | 'email';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type _NotificationEvent = {
   id: string;
   user_id: string;
 };
@@ -47,9 +51,8 @@ type BulkNotificationRequest = {
 
 export function useNotifications(userId?: string) {
   // We can't use useNotificationContext here as this is the old hook implementation
-  // It's mentioned in the deprecation notice that users should migrate
-  
-  const queryClient = useQueryClient();
+  // It's mentioned in the deprecation  // Initialize query client but don't use it directly in this deprecated hook
+  const _queryClient = useQueryClient();
   const [realTimeEnabled, setRealTimeEnabled] = useState(true);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
@@ -91,8 +94,8 @@ export function useNotifications(userId?: string) {
     mutationFn: (notificationId: string) => 
       currentUserId ? NotificationService.markAsRead(notificationId, currentUserId) : Promise.resolve(false),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications', currentUserId] });
-      queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', currentUserId] });
+      _queryClient.invalidateQueries({ queryKey: ['notifications', currentUserId] });
+      _queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', currentUserId] });
     }
   });
 
@@ -101,8 +104,8 @@ export function useNotifications(userId?: string) {
     mutationFn: () => 
       currentUserId ? NotificationService.markAllAsRead(currentUserId) : Promise.resolve(false),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications', currentUserId] });
-      queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', currentUserId] });
+      _queryClient.invalidateQueries({ queryKey: ['notifications', currentUserId] });
+      _queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', currentUserId] });
     }
   });
 
@@ -111,8 +114,8 @@ export function useNotifications(userId?: string) {
     mutationFn: (notificationId: string) => 
       currentUserId ? NotificationService.deleteNotification(notificationId, currentUserId) : Promise.resolve(false),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications', currentUserId] });
-      queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', currentUserId] });
+      _queryClient.invalidateQueries({ queryKey: ['notifications', currentUserId] });
+      _queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', currentUserId] });
     }
   });
 
@@ -121,8 +124,8 @@ export function useNotifications(userId?: string) {
     mutationFn: () => 
       currentUserId ? NotificationService.clearAllNotifications(currentUserId) : Promise.resolve(false),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications', currentUserId] });
-      queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', currentUserId] });
+      _queryClient.invalidateQueries({ queryKey: ['notifications', currentUserId] });
+      _queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', currentUserId] });
     }
   });
 
@@ -148,8 +151,8 @@ export function useNotifications(userId?: string) {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      queryClient.invalidateQueries({ queryKey: ['notifications-unread-count'] });
+      _queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      _queryClient.invalidateQueries({ queryKey: ['notifications-unread-count'] });
     }
   });
 
@@ -170,8 +173,8 @@ export function useNotifications(userId?: string) {
             filter: `user_id=eq.${currentUserId}`
           },
           () => {
-            queryClient.invalidateQueries({ queryKey: ['notifications', currentUserId] });
-            queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', currentUserId] });
+            _queryClient.invalidateQueries({ queryKey: ['notifications', currentUserId] });
+            _queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', currentUserId] });
           }
         )
         .subscribe();
@@ -191,7 +194,7 @@ export function useNotifications(userId?: string) {
         console.log(`[Notifications] Unsubscribed from real-time updates for user ${currentUserId}`);
       }
     };
-  }, [currentUserId, queryClient, realTimeEnabled]);
+  }, [currentUserId, realTimeEnabled]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -261,8 +264,8 @@ export function useNotifications(userId?: string) {
                 filter: `user_id=eq.${currentUserId}`
               },
               () => {
-                queryClient.invalidateQueries({ queryKey: ['notifications', currentUserId] });
-                queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', currentUserId] });
+                _queryClient.invalidateQueries({ queryKey: ['notifications', currentUserId] });
+                _queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', currentUserId] });
               }
             )
             .subscribe();
@@ -277,7 +280,7 @@ export function useNotifications(userId?: string) {
         }
       }
     },
-    [currentUserId, queryClient]
+    [currentUserId]
   );
 
   return {
@@ -314,7 +317,7 @@ export function useNotifications(userId?: string) {
  * @deprecated Use the new NotificationProvider and useNotificationContext hook instead
  */
 export function useBulkNotifications() {
-  const queryClient = useQueryClient();
+  const _queryClient = useQueryClient();
 
   // Log deprecation warning on first render
   useEffect(() => {
@@ -335,8 +338,8 @@ export function useBulkNotifications() {
       }),
     onSuccess: () => {
       // Invalidate all notification queries
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      queryClient.invalidateQueries({ queryKey: ['notifications-unread-count'] });
+      _queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      _queryClient.invalidateQueries({ queryKey: ['notifications-unread-count'] });
     }
   });
 
@@ -357,18 +360,19 @@ export function useBulkNotifications() {
  * @deprecated This hook is no longer supported in the new notification system
  */
 export function useNotificationAnalytics() {
-  // Create placeholder data structures to maintain compatibility
+  // Initialize metrics state
   const [metrics, setMetrics] = useState({
     totalProcessed: 0,
     avgProcessingTime: 0,
     successRate: 100,
-    lastUpdated: new Date().toISOString()
+    lastUpdated: new Date()
   });
   
-  const [health, setHealth] = useState({
-    status: 'healthy',
+  // Health state is kept for future use
+  const [health, _setHealth] = useState({
+    status: 'healthy' as const,
     availableChannels: ['inApp'],
-    issuesDetected: []
+    issuesDetected: [] as string[]
   });
 
   // Log deprecation warning on first render
@@ -376,11 +380,23 @@ export function useNotificationAnalytics() {
     console.warn('[DEPRECATED] useNotificationAnalytics hook is deprecated and no longer provides real metrics.');
   }, []);
 
+  // Update metrics periodically
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setMetrics(prev => ({
+        ...prev,
+        lastUpdated: new Date()
+      }));
+    }, 60000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
   const refreshMetrics = useCallback(() => {
     // Update timestamp to simulate refresh
     setMetrics(prev => ({
       ...prev,
-      lastUpdated: new Date().toISOString()
+      lastUpdated: new Date()
     }));
   }, []);
 
