@@ -19,6 +19,36 @@ const ColumnStatusGrid: React.FC<ColumnStatusGridProps> = ({
   showFilter = false,
   loading = false
 }) => {
+  // Move all hooks to the top
+  const userRole = useAuthStore(selectUserRole);
+  
+  // Sektora aid kateqoriyaları təyin edən funksiya
+  const isSectorCategory = useMemo(() => (categoryName: string): boolean => {
+    // Sektora aid kateqoriyaların adlarını yoxla
+    const sectorCategories = [
+      'Sektor məlumatları',
+      'Sektor statistikası',
+      'Sektor hesabatları',
+      'Sektor göstəriciləri'
+    ];
+    
+    return sectorCategories.some(name => 
+      categoryName.toLowerCase().includes('sektor') ||
+      sectorCategories.includes(categoryName)
+    );
+  }, []);
+  
+  // Məktəb admin rolu varsa, sektorlara aid kateqoriyaları filterlə
+  const filteredColumns = useMemo(() => {
+    if (userRole === 'schooladmin') {
+      // Sektor kateqoriyalarını çıxar
+      return columns.filter(column => !isSectorCategory(column.categoryName));
+    }
+    // Digər rollar üçün bütün sütunları göstər
+    return columns;
+  }, [columns, userRole, isSectorCategory]);
+
+  // Loading state
   if (loading) {
     return (
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -36,6 +66,7 @@ const ColumnStatusGrid: React.FC<ColumnStatusGridProps> = ({
     );
   }
 
+  // Empty state
   if (columns.length === 0) {
     return (
       <Card>
@@ -45,37 +76,6 @@ const ColumnStatusGrid: React.FC<ColumnStatusGridProps> = ({
       </Card>
     );
   }
-
-  // İstifadəçi rolunu əldə et
-  const userRole = useAuthStore(selectUserRole);
-  
-  // Sektora aid kateqoriyaları təyin edən funksiya
-  // Qeyd: Burada sektora aid kateqoriyaların adları verilməlidir
-  const isSectorCategory = (categoryName: string): boolean => {
-    // Sektora aid kateqoriyaların adlarını (məs. "Sektor məlumatları", "Sektor statistikası" və s.) yoxla
-    const sectorCategories = [
-      'Sektor məlumatları',
-      'Sektor statistikası',
-      'Sektor hesabatları',
-      'Sektor göstəriciləri'
-      // Lazım olarsa digər sektor kateqoriyalarını əlavə edin
-    ];
-    
-    return sectorCategories.some(name => 
-      categoryName.toLowerCase().includes('sektor') || // "sektor" sözünü axtarır
-      sectorCategories.includes(categoryName)
-    );
-  };
-  
-  // Məktəb admin rolu varsa, sektorlara aid kateqoriyaları filterlə
-  const filteredColumns = useMemo(() => {
-    if (userRole === 'schooladmin') {
-      // Sektor kateqoriyalarını çıxar
-      return columns.filter(column => !isSectorCategory(column.categoryName));
-    }
-    // Digər rollar üçün bütün sütunları göstər
-    return columns;
-  }, [columns, userRole]);
   
   // Group columns by category
   const groupedColumns = filteredColumns.reduce((acc, column) => {
