@@ -7,6 +7,8 @@ import { EnhancedSector } from '@/types/sector';
 import { useToast } from '@/components/ui/use-toast';
 import { useTranslation } from '@/contexts/TranslationContext';
 import useCreateSector from '@/hooks/sectors/useCreateSector';
+import useUpdateSector from '@/hooks/sectors/useUpdateSector';
+import useDeleteSector from '@/hooks/sectors/useDeleteSector';
 import AddSectorDialog from './AddSectorDialog';
 import EditSectorDialog from './EditSectorDialog';
 import DeleteSectorDialog from './DeleteSectorDialog';
@@ -37,6 +39,8 @@ const SectorsContainer: React.FC<SectorsContainerProps> = React.memo(function Se
   const { t } = useTranslation();
   const { toast } = useToast();
   const { createSector, loading: createLoading } = useCreateSector();
+  const { updateSector, loading: updateLoading } = useUpdateSector();
+  const { deleteSector, hardDeleteSector, checkDependencies, loading: deleteLoading, checkingDependencies } = useDeleteSector();
   
   const [sectors, setSectors] = useState<EnhancedSector[]>(initialSectors);
   const [regions, setRegions] = useState<Region[]>([]);
@@ -138,19 +142,39 @@ const SectorsContainer: React.FC<SectorsContainerProps> = React.memo(function Se
   };
 
   const handleUpdateSector = async (sectorData: Partial<EnhancedSector>) => {
-    try {
-      // Faylın mövcud olmadığından bu funksiyaları istifadə edə bilmirik
-      // Sadəcə log yazırıq və müvəffəqiyyət bildirişi göstəririk
-      console.log('Sektor yeniləmə əməliyyatı əvəzləndi', sectorData);
-      
+    if (!sectorData.id) {
       toast({
-        title: t('success'),
-        description: t('sectors.updateSuccess'),
+        title: t('error'),
+        description: 'Sektor ID-si tələb olunur',
+        variant: 'destructive',
+      });
+      return false;
+    }
+
+    try {
+      setIsSubmitting(true);
+      console.log('Sektor yeniləmə əməliyyatı başladı', sectorData);
+      
+      const result = await updateSector({
+        id: sectorData.id,
+        name: sectorData.name,
+        description: sectorData.description,
+        status: sectorData.status,
+        region_id: sectorData.region_id
       });
       
-      // Sektor yeniləndikdən sonra məlumatları yenilə
-      await handleRefresh();
-      return true;
+      if (result) {
+        toast({
+          title: t('success'),
+          description: t('sectors.updateSuccess'),
+        });
+        
+        // Sektor yeniləndikdən sonra məlumatları yenilə
+        await handleRefresh();
+        return true;
+      } else {
+        return false;
+      }
     } catch (error) {
       console.error('Error updating sector:', error);
       toast({
@@ -159,23 +183,47 @@ const SectorsContainer: React.FC<SectorsContainerProps> = React.memo(function Se
         variant: 'destructive',
       });
       return false;
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const handleDeleteSector = async () => {
-    try {
-      // Faylın mövcud olmadığından bu funksiyaları istifadə edə bilmirik
-      // Sadəcə log yazırıq və müvəffəqiyyət bildirişi göstəririk
-      console.log('Sektor silmə əməliyyatı əvəzləndi', deletingSector?.id);
-      
+  const handleDeleteSector = async (hardDelete = false) => {
+    if (!deletingSector) {
       toast({
-        title: t('success'),
-        description: t('sectors.deleteSuccess'),
+        title: t('error'),
+        description: 'Silinəcək sektor seçilməyib',
+        variant: 'destructive',
       });
+      return false;
+    }
+
+    try {
+      setIsSubmitting(true);
+      console.log('Sektor silmə əməliyyatı başladı:', deletingSector.id, 'Hard delete:', hardDelete);
       
-      // Məlumatları yenilə
-      await handleRefresh();
-      return true;
+      let result;
+      if (hardDelete) {
+        result = await hardDeleteSector(deletingSector.id);
+      } else {
+        result = await deleteSector(deletingSector.id, false); // soft delete
+      }
+      
+      if (result) {
+        toast({
+          title: t('success'),
+          description: hardDelete 
+            ? 'Sektor və bütün əlaqəli məlumatlar tamamilə silindi'
+            : t('sectors.deleteSuccess'),
+        });
+        
+        // Sektor silindikdən sonra məlumatları yenilə
+        await handleRefresh();
+        setDeletingSector(null); // Dialog-u bağla
+        return true;
+      } else {
+        return false;
+      }
     } catch (error) {
       console.error('Error deleting sector:', error);
       toast({
@@ -184,6 +232,8 @@ const SectorsContainer: React.FC<SectorsContainerProps> = React.memo(function Se
         variant: 'destructive',
       });
       return false;
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -214,7 +264,7 @@ const SectorsContainer: React.FC<SectorsContainerProps> = React.memo(function Se
           sector={editingSector}
           regions={regions}
           onSubmit={handleUpdateSector}
-          isSubmitting={isSubmitting}
+          isSubmitting={isSubmitting || updateLoading}
         />
       )}
 
@@ -225,7 +275,7 @@ const SectorsContainer: React.FC<SectorsContainerProps> = React.memo(function Se
           onClose={() => setDeletingSector(null)}
           sector={deletingSector}
           onConfirm={handleDeleteSector}
-          isSubmitting={isSubmitting}
+          isSubmitting={isSubmitting || deleteLoading}
         />
       )}
 
