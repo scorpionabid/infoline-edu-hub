@@ -9,7 +9,7 @@ import { SchoolFilters } from './SchoolFilters';
 import SchoolPagination from './SchoolPagination';
 import AddSchoolDialog from './AddSchoolDialog';
 import { EditSchoolDialog } from './EditSchoolDialog';
-import { DeleteSchoolDialog } from './DeleteSchoolDialog';
+import { DeleteSchoolDialog, DeleteType } from './DeleteSchoolDialog';
 import { SchoolFilesDialog } from './SchoolFilesDialog';
 import { SchoolLinksDialog } from './SchoolLinksDialog';
 import { ExistingUserSchoolAdminDialog } from './SchoolAdminDialogs';
@@ -22,7 +22,7 @@ interface SchoolsContainerProps {
   onRefresh: () => void;
   onCreate: (school: Omit<School, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
   onEdit: (school: School) => Promise<void>;
-  onDelete: (school: School) => Promise<void>;
+  onDelete: (school: School, deleteType: DeleteType) => Promise<void>;
   onAssignAdmin: (schoolId: string, adminData: any) => Promise<void>;
   regionNames: Record<string, string>;
   sectorNames: Record<string, string>;
@@ -131,11 +131,11 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
     }
   };
 
-  const handleDeleteConfirm = async () => {
+  const handleDeleteConfirm = async (deleteType: DeleteType) => {
     if (!selectedSchool) return;
     setIsSubmitting(true);
     try {
-      await onDelete(selectedSchool);
+      await onDelete(selectedSchool, deleteType);
       setDeleteDialogOpen(false);
       setSelectedSchool(null);
     } finally {
@@ -231,7 +231,8 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
               setDeleteDialogOpen(false);
               setSelectedSchool(null);
             }}
-            onConfirm={() => selectedSchool && handleDelete(selectedSchool)}
+            onConfirm={handleDeleteConfirm}
+            isSubmitting={isSubmitting}
             school={selectedSchool!}
           />
 

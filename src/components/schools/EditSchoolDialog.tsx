@@ -56,7 +56,6 @@ export const EditSchoolDialog: React.FC<EditSchoolDialogProps> = ({
     address: school.address || '',
     phone: school.phone || '',
     email: school.email || '',
-    website: (school as any).website || '',
     principal_name: (school as any).principal_name || '',
     student_count: (school as any).student_count || 0,
     teacher_count: (school as any).teacher_count || 0,

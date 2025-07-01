@@ -167,23 +167,81 @@ const Schools = () => {
     }
   }, [fetchSchools, t]);
 
-  const deleteSchool = useCallback(async (school: School) => {
+  const deleteSchool = useCallback(async (school: School, deleteType: 'soft' | 'hard' = 'soft') => {
     try {
-      const { error } = await supabase
-        .from('schools')
-        .delete()
-        .eq('id', school.id);
+      if (deleteType === 'soft') {
+        // Soft delete - məktəbi deaktiv et
+        const { error } = await supabase
+          .from('schools')
+          .update({ status: 'inactive' })
+          .eq('id', school.id);
 
-      if (error) throw error;
+        if (error) throw error;
+        toast.success('Məktəb uğurla deaktiv edildi');
+      } else {
+        // Hard delete - məktəbi tamamilə sil
+        // Əvvəlcə əlaqəli məlumatları sil
+        
+        // 1. Məktəb adminlərinin rollarını sil
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .delete()
+          .eq('school_id', school.id);
+
+        if (roleError) {
+          console.error('Error deleting school admin roles:', roleError);
+        }
+
+        // 2. Məktəb data entries-ləri sil
+        const { error: dataError } = await supabase
+          .from('data_entries')
+          .delete()
+          .eq('school_id', school.id);
+
+        if (dataError) {
+          console.error('Error deleting school data entries:', dataError);
+        }
+
+        // 3. Məktəb fayllarını sil
+        const { error: filesError } = await supabase
+          .from('school_files')
+          .delete()
+          .eq('school_id', school.id);
+
+        if (filesError) {
+          console.error('Error deleting school files:', filesError);
+        }
+
+        // 4. Məktəb linklərini sil
+        const { error: linksError } = await supabase
+          .from('school_links')
+          .delete()
+          .eq('school_id', school.id);
+
+        if (linksError) {
+          console.error('Error deleting school links:', linksError);
+        }
+
+        // 5. Məktəbi özünü sil
+        const { error: schoolError } = await supabase
+          .from('schools')
+          .delete()
+          .eq('id', school.id);
+
+        if (schoolError) throw schoolError;
+        toast.success('Məktəb və bütün əlaqəli məlumatlar uğurla silindi');
+      }
 
       await fetchSchools();
-      toast.success(t('schoolDeleted'));
     } catch (err) {
       console.error('Error deleting school:', err);
-      toast.error(t('schoolDeletionFailed'));
+      const errorMessage = deleteType === 'soft' 
+        ? 'Məktəb deaktiv edilərkən xəta baş verdi'
+        : 'Məktəb silinərkən xəta baş verdi';
+      toast.error(errorMessage);
       throw err;
     }
-  }, [fetchSchools, t]);
+  }, [fetchSchools]);
 
   const fetchRegions = useCallback(async () => {
     try {

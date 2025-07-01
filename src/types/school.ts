@@ -7,6 +7,11 @@ export interface School {
   address?: string;
   phone?: string;
   email?: string;
+  principal_name?: string;
+  student_count?: number;
+  teacher_count?: number;
+  type?: string;
+  language?: string;
   region_id: string;
   sector_id: string;
   status: 'active' | 'inactive';
@@ -25,6 +30,11 @@ export interface SchoolFormData {
   address?: string;
   phone?: string;
   email?: string;
+  principal_name?: string;
+  student_count?: number;
+  teacher_count?: number;
+  type?: string;
+  language?: string;
   region_id: string;
   sector_id: string;
   status?: 'active' | 'inactive';
@@ -44,6 +54,11 @@ export interface SchoolCreateParams {
   address?: string;
   phone?: string;
   email?: string;
+  principal_name?: string;
+  student_count?: number;
+  teacher_count?: number;
+  type?: string;
+  language?: string;
   region_id: string;
   sector_id: string;
   status?: 'active' | 'inactive';
@@ -54,6 +69,11 @@ export interface SchoolUpdateParams {
   address?: string;
   phone?: string;
   email?: string;
+  principal_name?: string;
+  student_count?: number;
+  teacher_count?: number;
+  type?: string;
+  language?: string;
   region_id?: string;
   sector_id?: string;
   status?: 'active' | 'inactive';
