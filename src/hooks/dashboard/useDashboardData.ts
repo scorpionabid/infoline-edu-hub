@@ -36,37 +36,81 @@ export const useDashboardData = (options: UseDashboardDataOptions = {}) => {
       
       if (userRole === 'regionadmin' || userRole === 'superadmin') {
         // Region admin və ya superadmin üçün data
-        const { data: regionStats, error: regionError } = await supabase
-          .from('region_stats')
-          .select('*')
-          .eq('region_id', user?.region_id || '')
-          .maybeSingle();
-          
-        if (regionError) throw regionError;
+        console.log('📊 [useDashboardData] RegionAdmin/SuperAdmin üçün məlumatlar yüklənir...');
         
-        const { data: sectorStats, error: sectorError } = await supabase
-          .from('sectors')
-          .select('id, name, status, school_count, completion_rate');
+        try {
+          // 1. Regionları və sektorları əldə edirik
+          const { data: regions, error: regionsError } = await supabase
+            .from('regions')
+            .select('id, name, status');
+            
+          if (regionsError) throw regionsError;
           
-        if (sectorError) throw sectorError;
-        
-        dashboardData = {
-          totalSectors: sectorStats?.length || 0,
-          totalSchools: regionStats?.total_schools || 0,
-          pendingApprovals: regionStats?.pending_approvals || 0,
-          completionRate: regionStats?.completion_rate || 0,
-          stats: {
-            sectors: sectorStats || []
-          },
-          formStats: {
-            total: regionStats?.total_forms || 0,
-            completed: regionStats?.completed_forms || 0,
-            pending: regionStats?.pending_forms || 0,
-            rejected: regionStats?.rejected_forms || 0,
-            approved: regionStats?.approved_forms || 0,
-            completionRate: regionStats?.completion_rate || 0
-          }
-        };
+          const { data: sectors, error: sectorsError } = await supabase
+            .from('sectors')
+            .select('id, name, status, region_id');
+            
+          if (sectorsError) throw sectorsError;
+          
+          // 2. Məktəbləri əldə edirik
+          const { data: schools, error: schoolsError } = await supabase
+            .from('schools')
+            .select('id, name, status, region_id, sector_id, completion_rate');
+            
+          if (schoolsError) throw schoolsError;
+          
+          // 3. Məlumat girişlərini əldə edirik
+          const { data: dataEntries, error: entriesError } = await supabase
+            .from('data_entries')
+            .select('school_id, status');
+            
+          if (entriesError) throw entriesError;
+          
+          console.log('📊 [useDashboardData] Məlumatlar:', {
+            regions: regions?.length,
+            sectors: sectors?.length, 
+            schools: schools?.length,
+            dataEntries: dataEntries?.length
+          });
+          
+          // Statistikaları hesablayırıq
+          const counts = {
+            total: dataEntries?.length || 0,
+            pending: dataEntries?.filter(e => e.status === 'pending').length || 0,
+            approved: dataEntries?.filter(e => e.status === 'approved').length || 0,
+            rejected: dataEntries?.filter(e => e.status === 'rejected').length || 0,
+            completed: dataEntries?.filter(e => e.status === 'approved').length || 0
+          };
+          
+          const completionRate = counts.total > 0 ? Math.round((counts.approved / counts.total) * 100) : 0;
+          
+          dashboardData = {
+            totalRegions: regions?.length || 0,
+            totalSectors: sectors?.length || 0,
+            totalSchools: schools?.length || 0,
+            pendingApprovals: counts.pending,
+            completionRate: completionRate,
+            stats: {
+              sectors: sectors?.map(sector => ({
+                ...sector,
+                schoolCount: schools?.filter(s => s.sector_id === sector.id).length || 0
+              })) || [],
+              regions: regions || []
+            },
+            formStats: {
+              total: counts.total,
+              completed: counts.approved,
+              pending: counts.pending,
+              rejected: counts.rejected,
+              approved: counts.approved,
+              completionRate: completionRate
+            }
+          };
+          
+        } catch (error) {
+          console.error('📊 [useDashboardData] RegionAdmin/SuperAdmin məlumatları yüklənərkən xəta:', error);
+          throw error;
+        }
       } else if (userRole === 'sectoradmin') {
         console.log('📊 [useDashboardData] Sektoradmin üçün məlumatlar yüklənir...');
         
@@ -159,7 +203,45 @@ export const useDashboardData = (options: UseDashboardDataOptions = {}) => {
           
         } catch (error) {
           console.error('📊 [useDashboardData] Sektoradmin məlumatları yüklənərkən xəta:', error);
-          throw error;
+          
+          // Basic fallback data
+          dashboardData = {
+            totalSchools: 0,
+            pendingApprovals: 0,
+            completionRate: 0,
+            stats: {
+              schools: [],
+              summary: {
+                total: 0,
+                completed: 0,
+                pending: 0,
+                rejected: 0,
+                approved: 0,
+                completionRate: 0,
+                approvalRate: 0,
+                draft: 0,
+                dueSoon: 0,
+                overdue: 0
+              }
+            },
+            formStats: {
+              total: 0,
+              completed: 0,
+              pending: 0,
+              rejected: 0,
+              approved: 0,
+              completionRate: 0
+            },
+            summary: {
+              total: 0,
+              completed: 0,
+              pending: 0,
+              rejected: 0,
+              approved: 0,
+              completionRate: 0
+            },
+            sectorInfo: null
+          };
         }
       } else if (userRole === 'schooladmin') {
         // Məktəb admin üçün data - school_stats olmadığı üçün alternativ sorğu

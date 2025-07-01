@@ -33,6 +33,9 @@ const QuickActions: React.FC = () => {
     onSwipeUp: () => setIsOpen(true),
     onSwipeDown: () => setIsOpen(false)
   });
+  
+  // Extract only the needed touch handlers, not isGesturing
+  const { onTouchStart, onTouchMove, onTouchEnd } = touchGestures;
 
   // Quick actions based on user role
   const quickActions: QuickAction[] = [
@@ -136,7 +139,9 @@ const QuickActions: React.FC = () => {
 
       {/* Main FAB Button */}
       <Button
-        {...touchGestures}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
         className={cn(
           "h-14 w-14 rounded-full shadow-lg",
           "bg-gradient-to-r from-primary to-primary/90",

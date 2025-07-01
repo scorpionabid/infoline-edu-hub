@@ -5,6 +5,8 @@ export default {
   subtitle: 'Sistem məlumatlarına ümumi baxış',
   welcome: 'Xoş gəlmisiniz',
   loading: 'Yüklənir...',
+  user_not_found: 'İstifadəçi tapılmadı',
+  unknown_role: 'Bilinməyən rol',
   
   // Navigation
   navigation: {
@@ -249,5 +251,9 @@ export default {
     timeout: 'Vaxt bitdi',
     retry: 'Yenidən cəhd et',
     reload: 'Yenidən yüklə'
-  }
+  },
+  
+  // User states
+  user_not_found: 'İstifadəçi tapılmadı',
+  unknown_role: 'Bilinməyən rol'
 }

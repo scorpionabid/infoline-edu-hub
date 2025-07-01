@@ -56,7 +56,25 @@ const SchoolAdminDashboard: React.FC<SchoolAdminDashboardProps> = ({
       <StatsGrid stats={statsGridData} />
       
       <div className="grid gap-4 md:grid-cols-2">
-        <DashboardChart stats={dashboardData.stats} />
+        <DashboardChart stats={dashboardData.formStats || {
+          total: 0,
+          completed: 0,
+          pending: 0,
+          rejected: 0,
+          approved: 0,
+          completionRate: 0,
+          totalForms: 0,
+          completedForms: 0,
+          pendingForms: 0,
+          rejectedForms: 0,
+          pendingApprovals: 0,
+          approvalRate: 0,
+          draft: 0,
+          dueSoon: 0,
+          overdue: 0,
+          percentage: 0,
+          completion_rate: 0
+        }} />
       </div>
     </div>
   );
