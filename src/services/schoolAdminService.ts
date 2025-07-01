@@ -1,8 +1,18 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { School, SchoolAdmin } from '@/types/school';
-import { FormNotification } from '@/types/adapters';
+import { DashboardNotification } from '@/types/dashboard';
+
+// Type for admin profile data returned by getSchoolAdmin
+type SchoolAdminProfile = {
+  id: string;
+  email: string;
+  name: string;
+  status: string;
+  phone: string;
+  lastLogin: string | null;
+  avatar: string | null;
+};
 
 // Existing user-i school admin təyin etmə funksiyası (Sector model əsasında)
 export const assignExistingUserAsSchoolAdmin = async (userId: string, schoolId: string) => {
@@ -124,7 +134,7 @@ export const assignExistingUserAsSchoolAdmin = async (userId: string, schoolId: 
 };
 
 // Get school admin
-export const getSchoolAdmin = async (schoolId: string): Promise<SchoolAdmin | null> => {
+export const getSchoolAdmin = async (schoolId: string): Promise<SchoolAdminProfile | null> => {
   try {
     // First, try to get admin from school record
     const { data: schoolData, error: schoolError } = await supabase
@@ -323,8 +333,8 @@ export const assignSchoolAdmin = async (
 
 // Reset school admin password
 export const resetSchoolAdminPassword = async (
-  adminId: string,
-  newPassword: string
+  _adminId: string,
+  _newPassword: string
 ): Promise<{ success: boolean; error?: string }> => {
   try {
     // This is just a mock function since we can't directly reset passwords in the client
@@ -343,27 +353,27 @@ export const resetSchoolAdminPassword = async (
 
 // Get notifications for school admin
 export const getSchoolAdminNotifications = async (
-  schoolId: string
-): Promise<FormNotification[]> => {
+  _schoolId: string
+): Promise<DashboardNotification[]> => {
   try {
     // In a real app, this would fetch actual notifications from the database
     // For now, we'll return mock data
     return [
       {
         id: '1',
-        title: 'Son tarix xəbərdarlığı',
-        message: 'Əsas məlumatlar kateqoriyası üçün son tarix 3 gün içərisindədir',
-        timestamp: new Date().toISOString(),
-        type: 'warning',
-        read: false
+        title: 'Yeni məlumat daxil edildi',
+        message: 'Məktəb haqqında yeni məlumat daxil edildi',
+        type: 'info',
+        read: false,
+        created_at: '2023-05-15T10:30:00Z'
       },
       {
         id: '2',
-        title: 'Məlumatlar təsdiqləndi',
-        message: 'Təhsil məlumatları kateqoriyası sektor admini tərəfindən təsdiqləndi',
-        timestamp: new Date(Date.now() - 86400000).toISOString(),
-        type: 'success',
-        read: true
+        title: 'Təsdiq tələb olunur',
+        message: '3 yeni məlumat təsdiq üçün gözləyir',
+        type: 'warning',
+        read: false,
+        created_at: '2023-05-14T15:45:00Z'
       }
     ];
   } catch (error) {

@@ -1,4 +1,3 @@
-
 import * as React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,10 @@ import {
   Link,
   UserPlus,
   MoreHorizontal,
-  Loader2
+  Loader2,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -18,7 +20,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { School } from '@/types/school';
+import { SortOptions } from '@/hooks/common/useEnhancedPagination';
 import { useSchoolAdmins } from '@/hooks/schools/useSchoolAdmins';
+
+type SortField = 'name' | 'region' | 'sector' | 'admin' | 'email' | 'principal_name' | 'address' | 'student_count' | 'teacher_count' | 'completion_rate' | 'created_at';
 
 interface SchoolTableProps {
   schools: School[];
@@ -30,6 +35,8 @@ interface SchoolTableProps {
   onAssignAdmin: (school: School) => void;
   regionNames: Record<string, string>;
   sectorNames: Record<string, string>;
+  sortOptions: SortOptions;
+  onSortChange: (sort: SortOptions) => void;
 }
 
 export const SchoolTable: React.FC<SchoolTableProps> = ({
@@ -41,11 +48,47 @@ export const SchoolTable: React.FC<SchoolTableProps> = ({
   onViewLinks,
   onAssignAdmin,
   regionNames,
-  sectorNames
+  sectorNames,
+  sortOptions,
+  onSortChange
 }) => {
-  // Admin məlumatlarını yükləyirik - loop-u önləmək üçün sadəcə school id-ləri ötürürük
+  // Admin məlumatlarını yükləyirik
   const schoolIds = React.useMemo(() => schools.map(school => school.id), [schools]);
   const { adminMap, isLoading: adminsLoading } = useSchoolAdmins(schoolIds);
+
+  // Handle column sorting
+  const handleSort = (field: SortField) => {
+    if (sortOptions.field === field) {
+      // Cycle through: asc -> desc -> null
+      const newDirection = 
+        sortOptions.direction === 'asc' ? 'desc' : 
+        sortOptions.direction === 'desc' ? null : 'asc';
+      
+      onSortChange({
+        field: newDirection ? field : null,
+        direction: newDirection
+      });
+    } else {
+      onSortChange({
+        field,
+        direction: 'asc'
+      });
+    }
+  };
+
+  // Get sort icon for header
+  const getSortIcon = (field: SortField) => {
+    if (sortOptions.field !== field) {
+      return <ArrowUpDown className="h-4 w-4 text-muted-foreground" />;
+    }
+    if (sortOptions.direction === 'asc') {
+      return <ArrowUp className="h-4 w-4 text-primary" />;
+    }
+    if (sortOptions.direction === 'desc') {
+      return <ArrowDown className="h-4 w-4 text-primary" />;
+    }
+    return <ArrowUpDown className="h-4 w-4 text-muted-foreground" />;
+  };
 
   if (isLoading) {
     return (
@@ -69,11 +112,51 @@ export const SchoolTable: React.FC<SchoolTableProps> = ({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Məktəb Adı</TableHead>
-            <TableHead>Region</TableHead>
-            <TableHead>Sektor</TableHead>
-            <TableHead>Admin</TableHead>
-            <TableHead>Email</TableHead>
+            <TableHead 
+              className="cursor-pointer hover:bg-muted/50 select-none"
+              onClick={() => handleSort('name')}
+            >
+              <div className="flex items-center justify-between">
+                <span>Məktəb Adı</span>
+                {getSortIcon('name')}
+              </div>
+            </TableHead>
+            <TableHead 
+              className="cursor-pointer hover:bg-muted/50 select-none"
+              onClick={() => handleSort('region')}
+            >
+              <div className="flex items-center justify-between">
+                <span>Region</span>
+                {getSortIcon('region')}
+              </div>
+            </TableHead>
+            <TableHead 
+              className="cursor-pointer hover:bg-muted/50 select-none"
+              onClick={() => handleSort('sector')}
+            >
+              <div className="flex items-center justify-between">
+                <span>Sektor</span>
+                {getSortIcon('sector')}
+              </div>
+            </TableHead>
+            <TableHead 
+              className="cursor-pointer hover:bg-muted/50 select-none"
+              onClick={() => handleSort('admin')}
+            >
+              <div className="flex items-center justify-between">
+                <span>Admin</span>
+                {getSortIcon('admin')}
+              </div>
+            </TableHead>
+            <TableHead 
+              className="cursor-pointer hover:bg-muted/50 select-none"
+              onClick={() => handleSort('email')}
+            >
+              <div className="flex items-center justify-between">
+                <span>Email</span>
+                {getSortIcon('email')}
+              </div>
+            </TableHead>
             <TableHead className="text-right">Əməliyyatlar</TableHead>
           </TableRow>
         </TableHeader>

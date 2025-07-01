@@ -23,7 +23,8 @@ export const statusOptions = [
 // Filter constants for preventing empty string values in Radix UI Select
 export const FILTER_VALUES = {
   ALL_REGIONS: 'ALL_REGIONS',
-  ALL_SECTORS: 'ALL_SECTORS'
+  ALL_SECTORS: 'ALL_SECTORS',
+  ALL_STATUSES: 'ALL_STATUSES'
 };
 
 // Common date formats

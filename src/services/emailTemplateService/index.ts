@@ -428,7 +428,7 @@ class EmailTemplateService {
     return {
       isValid: errors.length === 0,
       errors,
-      // variables
+      variables: variables // Include the extracted variables in the return statement
     };
   }
 

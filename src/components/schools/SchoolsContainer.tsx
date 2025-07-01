@@ -1,8 +1,8 @@
-
 import React, { useState } from 'react';
 import { School } from '@/types/school';
 import { Region } from '@/types/region';
 import { Sector } from '@/types/sector';
+import { FilterOptions, SortOptions } from '@/hooks/common/useEnhancedPagination';
 import { SchoolTable } from './SchoolTable';
 import { SchoolHeader } from './SchoolHeader';
 import { SchoolFilters } from './SchoolFilters';
@@ -23,23 +23,22 @@ interface SchoolsContainerProps {
   onCreate: (school: Omit<School, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
   onEdit: (school: School) => Promise<void>;
   onDelete: (school: School) => Promise<void>;
-  onAssignAdmin: (schoolId: string, adminData: any) => Promise<void>; // Düzəldilmiş interface
+  onAssignAdmin: (schoolId: string, adminData: any) => Promise<void>;
   regionNames: Record<string, string>;
   sectorNames: Record<string, string>;
   // Pagination props
   currentPage: number;
   pageSize: number;
   totalCount: number;
+  totalPages: number;
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: number) => void;
   // Filter props
-  filters: {
-    search: string;
-    regionId: string;
-    sectorId: string;
-    status: string;
-  };
-  onFilterChange: (filters: any) => void;
+  filters: FilterOptions;
+  onFilterChange: (filters: FilterOptions) => void;
+  // Sort props
+  sortOptions: SortOptions;
+  onSortChange: (sort: SortOptions) => void;
 }
 
 const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
@@ -57,10 +56,13 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
   currentPage,
   pageSize,
   totalCount,
+  totalPages,
   onPageChange,
   onPageSizeChange,
   filters,
   onFilterChange,
+  sortOptions,
+  onSortChange,
 }) => {
   // Dialog states
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -145,7 +147,7 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
     console.log('🔄 SchoolsContainer - Admin assignment successful, refreshing data...');
     setAdminDialogOpen(false);
     setSelectedSchool(null);
-    await onRefresh(); // Data-nı yenilə
+    await onRefresh();
   };
 
   return (
@@ -155,12 +157,8 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
 
       {/* Filters */}
       <SchoolFilters
-        searchQuery={filters.search}
-        setSearchQuery={(query) => onFilterChange({ ...filters, search: query })}
-        selectedRegion={filters.regionId}
-        setSelectedRegion={(regionId) => onFilterChange({ ...filters, regionId })}
-        selectedSector={filters.sectorId}
-        setSelectedSector={(sectorId) => onFilterChange({ ...filters, sectorId })}
+        filters={filters}
+        onFilterChange={onFilterChange}
         regions={regions}
         sectors={sectors}
         loadingRegions={false}
@@ -178,13 +176,18 @@ const SchoolsContainer: React.FC<SchoolsContainerProps> = ({
         onAssignAdmin={handleAssignAdmin}
         regionNames={regionNames}
         sectorNames={sectorNames}
+        sortOptions={sortOptions}
+        onSortChange={onSortChange}
       />
 
       {/* Pagination */}
       <SchoolPagination
         currentPage={currentPage}
-        totalPages={Math.ceil(totalCount / pageSize)}
+        totalPages={totalPages}
+        totalCount={totalCount}
+        pageSize={pageSize}
         onPageChange={onPageChange}
+        onPageSizeChange={onPageSizeChange}
       />
 
       {/* Dialogs */}

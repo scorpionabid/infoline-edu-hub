@@ -54,7 +54,7 @@ export const exportReportToExcel = async (report: Report): Promise<void> => {
   }
 };
 
-export const exportReportToPDF = async (report: Report): Promise<void> => {
+export const exportReportToPDF = async (_report: Report): Promise<void> => {
   // PDF ixracı üçün funksionallıq
   // Bu funksionallığı tamamlamaq üçün PDF kitabxanası əlavə etmək lazımdır
   console.log('PDF export functionality will be implemented later');

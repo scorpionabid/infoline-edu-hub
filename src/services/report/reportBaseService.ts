@@ -1,5 +1,4 @@
 
-import { supabase } from '@/integrations/supabase/client';
 import { TableNames } from '@/types/db';
 import { Report } from '@/types/core/report';
 

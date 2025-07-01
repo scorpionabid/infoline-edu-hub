@@ -83,21 +83,17 @@ class StatisticsService {
       usersResult,
       regionsResult,
       sectorsResult,
-      // dataEntriesResult
+      dataEntriesStats,
+      schoolPerformance,
+      sectorPerformance,
+      regionPerformance,
+      timeSeriesData
     ] = await Promise.all([
       this.getSchoolsCount(filters),
       this.getUsersCount(filters),
       this.getRegionsCount(filters),
       this.getSectorsCount(filters),
-      this.getDataEntriesStats(filters)
-    ]);
-
-    const [
-      schoolPerformance,
-      sectorPerformance,
-      regionPerformance,
-      // timeSeriesData
-    ] = await Promise.all([
+      this.getDataEntriesStats(filters),
       this.getSchoolPerformance(filters),
       this.getSectorPerformance(filters),
       this.getRegionPerformance(filters),
@@ -109,13 +105,22 @@ class StatisticsService {
       totalUsers: usersResult || 0,
       totalRegions: regionsResult || 0,
       totalSectors: sectorsResult || 0,
-      completionRate: dataEntriesResult.completionRate,
-      approvalRate: dataEntriesResult.approvalRate,
-      formsByStatus: dataEntriesResult.formsByStatus,
-      schoolPerformance,
-      sectorPerformance,
-      regionPerformance,
-      // timeSeriesData
+      completionRate: dataEntriesStats?.completionRate || 0,
+      approvalRate: dataEntriesStats?.approvalRate || 0,
+      formsByStatus: {
+        ...(dataEntriesStats?.formsByStatus || {
+          pending: 0,
+          approved: 0,
+          rejected: 0,
+          draft: 0,
+          total: 0
+        }),
+        total: dataEntriesStats?.formsByStatus?.total || 0
+      },
+      schoolPerformance: schoolPerformance || [],
+      sectorPerformance: sectorPerformance || [],
+      regionPerformance: regionPerformance || [],
+      timeSeriesData: timeSeriesData || []
     };
   }
 
@@ -125,7 +130,7 @@ class StatisticsService {
     const [
       schoolsResult,
       sectorsResult,
-      // dataEntriesResult
+      dataEntriesStats
     ] = await Promise.all([
       this.getSchoolsCount(regionFilter),
       this.getSectorsCount(regionFilter),
@@ -135,7 +140,7 @@ class StatisticsService {
     const [
       schoolPerformance,
       sectorPerformance,
-      // timeSeriesData
+      timeSeriesData
     ] = await Promise.all([
       this.getSchoolPerformance(regionFilter),
       this.getSectorPerformance(regionFilter),
@@ -147,13 +152,22 @@ class StatisticsService {
       totalUsers: 0,
       totalRegions: 1,
       totalSectors: sectorsResult || 0,
-      completionRate: dataEntriesResult.completionRate,
-      approvalRate: dataEntriesResult.approvalRate,
-      formsByStatus: dataEntriesResult.formsByStatus,
-      schoolPerformance,
-      sectorPerformance,
+      completionRate: dataEntriesStats?.completionRate || 0,
+      approvalRate: dataEntriesStats?.approvalRate || 0,
+      formsByStatus: {
+        ...(dataEntriesStats?.formsByStatus || {
+          pending: 0,
+          approved: 0,
+          rejected: 0,
+          draft: 0,
+          total: 0
+        }),
+        total: dataEntriesStats?.formsByStatus?.total || 0
+      },
+      schoolPerformance: schoolPerformance || [],
+      sectorPerformance: sectorPerformance || [],
       regionPerformance: [],
-      // timeSeriesData
+      timeSeriesData: timeSeriesData || []
     };
   }
 
@@ -162,16 +176,12 @@ class StatisticsService {
     
     const [
       schoolsResult,
-      // dataEntriesResult
+      dataEntriesStats,
+      schoolPerformance,
+      timeSeriesData
     ] = await Promise.all([
       this.getSchoolsCount(sectorFilter),
-      this.getDataEntriesStats(sectorFilter)
-    ]);
-
-    const [
-      schoolPerformance,
-      // timeSeriesData
-    ] = await Promise.all([
+      this.getDataEntriesStats(sectorFilter),
       this.getSchoolPerformance(sectorFilter),
       this.getTimeSeriesData(sectorFilter)
     ]);
@@ -181,13 +191,22 @@ class StatisticsService {
       totalUsers: 0,
       totalRegions: 0,
       totalSectors: 1,
-      completionRate: dataEntriesResult.completionRate,
-      approvalRate: dataEntriesResult.approvalRate,
-      formsByStatus: dataEntriesResult.formsByStatus,
-      schoolPerformance,
+      completionRate: dataEntriesStats?.completionRate || 0,
+      approvalRate: dataEntriesStats?.approvalRate || 0,
+      formsByStatus: {
+        ...(dataEntriesStats?.formsByStatus || {
+          pending: 0,
+          approved: 0,
+          rejected: 0,
+          draft: 0,
+          total: 0
+        }),
+        total: dataEntriesStats?.formsByStatus?.total || 0
+      },
+      schoolPerformance: schoolPerformance || [],
       sectorPerformance: [],
       regionPerformance: [],
-      // timeSeriesData
+      timeSeriesData: timeSeriesData || []
     };
   }
 
@@ -205,14 +224,14 @@ class StatisticsService {
     return count || 0;
   }
 
-  private async getUsersCount(filters?: StatisticsFilters): Promise<number> {
+  private async getUsersCount(_filters?: StatisticsFilters): Promise<number> {
     const { count } = await supabase
       .from('profiles')
       .select('id', { count: 'exact', head: true });
     return count || 0;
   }
 
-  private async getRegionsCount(filters?: StatisticsFilters): Promise<number> {
+  private async getRegionsCount(_filters?: StatisticsFilters): Promise<number> {
     const { count } = await supabase
       .from('regions')
       .select('id', { count: 'exact', head: true });

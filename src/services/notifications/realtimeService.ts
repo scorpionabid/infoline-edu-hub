@@ -16,7 +16,7 @@ export class RealtimeNotificationService {
 
   private static subscriptions = new Map();
 
-  static setupRealtimeNotifications(userId: string, onNotification: (notification: any) => void) {
+  static setupRealtimeNotifications(userId: string, _onNotification: (notification: any) => void) {
     try {
       const channel = supabase
         .channel(`notifications-${userId}`)
@@ -60,7 +60,7 @@ export class RealtimeNotificationService {
     this.connectionStatus.lastReconnectAttempt = Date.now();
     
     // Attempt to reconnect existing subscriptions
-    for (const [userId, channel] of this.subscriptions.entries()) {
+    for (const [_userId, channel] of this.subscriptions.entries()) {
       try {
         await channel.subscribe();
         this.connectionStatus.isConnected = true;

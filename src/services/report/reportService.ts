@@ -2,8 +2,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Report, ReportTypeValues } from '@/types/core/report';
 import { 
-  getReportTableName, 
-  getReportTemplateTableName, 
   mapReportTableToReport, 
   mapTemplateTableToReport, 
   handleReportError 

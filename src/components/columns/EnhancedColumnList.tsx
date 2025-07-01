@@ -1,5 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
-import { Button } from "@/components/ui/button";
+import React, { useCallback, useMemo } from 'react';
 import { Column } from '@/types/column';
 import { Category } from '@/types/category';
 import { useAuthStore, selectUserRole } from '@/hooks/auth/useAuthStore';
@@ -35,8 +34,11 @@ interface EnhancedColumnListProps {
   onPermanentDeleteColumn?: (id: string) => void; 
   onDuplicateColumn?: (column: Column) => void;
   onToggleColumnStatus?: (id: string, status: 'active' | 'inactive' | 'deleted') => void;
+  // onUpdateStatus is kept for backward compatibility but marked as deprecated
+  // Use onToggleColumnStatus instead
   onUpdateStatus?: (id: string, status: 'active' | 'inactive' | 'deleted') => void;
   onColumnSelection?: (columnId: string) => void;
+  // onReorderColumns is kept for future drag-and-drop implementation
   onReorderColumns?: (reorderedColumns: Column[]) => void;
   canManageColumns?: boolean;
   enableDragDrop?: boolean;
@@ -48,11 +50,14 @@ interface ColumnItemProps {
   categories?: Category[];
   isSelected?: boolean;
   onEdit?: (column: Column) => void;
+  // onDelete is kept for backward compatibility
   onDelete?: (id: string, name: string) => void;
   onRestore?: (id: string) => void;
   onPermanentDelete?: (id: string) => void; 
   onDuplicate?: (column: Column) => void;
+  // onToggleStatus is kept for backward compatibility
   onToggleStatus?: (id: string, status: 'active' | 'inactive' | 'deleted') => void;
+  // onSelection is kept for future row selection implementation
   onSelection?: (columnId: string) => void;
   canManage?: boolean;
   showSelection?: boolean;
@@ -64,7 +69,6 @@ const ColumnItem: React.FC<ColumnItemProps> = React.memo(({
   categories,
   isSelected,
   onEdit,
-  onDelete,
   onRestore,
   onPermanentDelete, // NEW
   onDuplicate,
@@ -218,28 +222,31 @@ const ColumnItem: React.FC<ColumnItemProps> = React.memo(({
 ColumnItem.displayName = 'ColumnItem';
 
 // FIXED: Changed from React.memo to regular component to avoid hook ordering issues
-const EnhancedColumnList: React.FC<EnhancedColumnListProps> = ({ 
-  columns, 
-  categories,
-  isLoading, 
-  isError, 
-  selectedColumns = [],
-  onEditColumn, 
-  onDeleteColumn,
-  onRestoreColumn, 
-  onPermanentDeleteColumn, // NEW
-  onDuplicateColumn,
-  onToggleColumnStatus,
-  onUpdateStatus,
-  onColumnSelection,
-  onReorderColumns,
-  canManageColumns = false,
-  enableDragDrop = false, // Temporarily disabled
-  showBulkActions = true
-}) => {
+const EnhancedColumnList: React.FC<EnhancedColumnListProps> = (props) => {
+  const { 
+    columns, 
+    categories,
+    isLoading, 
+    isError, 
+    selectedColumns = [],
+    onEditColumn, 
+    onDeleteColumn,
+    onRestoreColumn,
+    onPermanentDeleteColumn,
+    onDuplicateColumn,
+    onToggleColumnStatus,
+    onColumnSelection,
+    canManageColumns = false,
+    showBulkActions = true,
+    // These props are kept for backward compatibility but not used directly
+    onUpdateStatus: _onUpdateStatus,
+    onReorderColumns: _onReorderColumns,
+    enableDragDrop: _enableDragDrop = false
+  } = props;
+
   // Get user role to check if user is sectoradmin
   const role = selectUserRole(useAuthStore());
-  const isSectorAdmin = role?.toLowerCase() === 'sectoradmin';
+  const isSectorAdmin = role === 'sectoradmin';
   
   // Override canManageColumns if user is sectoradmin
   const effectiveCanManageColumns = isSectorAdmin ? false : canManageColumns;

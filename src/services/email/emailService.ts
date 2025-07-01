@@ -446,7 +446,7 @@ export class EmailService {
     recipients: string[],
     subject: string,
     status: 'sent' | 'failed',
-    messageId?: string
+    _messageId?: string
   ): Promise<void> {
     try {
       // This would typically be handled by a webhook from the email service

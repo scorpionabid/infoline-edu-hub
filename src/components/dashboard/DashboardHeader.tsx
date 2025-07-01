@@ -31,7 +31,8 @@ const DashboardHeader: React.FC = () => {
   });
   
   // Fetch dashboard statistics based on user role
-  const fetchDashboardStats = async () => {
+  // Memoize the fetch function to prevent infinite re-renders
+  const fetchDashboardStats = React.useCallback(async () => {
     if (!user) return;
     
     try {
@@ -42,35 +43,55 @@ const DashboardHeader: React.FC = () => {
       
       if (user.role === 'regionadmin' && user.region_id) {
         // Count schools in this region
-        const { data: schools, error: _schoolsError } = await supabase
+        const { data: schools, error: schoolsError } = await supabase
           .from('schools')
           .select('id')
           .eq('region_id', user.region_id);
+          
+        if (schoolsError) {
+          console.error('Error fetching schools:', schoolsError);
+          throw schoolsError;
+        }
         
         schoolCount = schools?.length || 0;
         
         // Count active users in this region
-        const { data: users, error: _usersError } = await supabase
+        const { data: users, error: usersError } = await supabase
           .from('user_roles')
           .select('id')
           .eq('region_id', user.region_id);
+          
+        if (usersError) {
+          console.error('Error fetching users:', usersError);
+          throw usersError;
+        }
         
         activeUserCount = users?.length || 0;
       } 
       else if (user.role === 'sectoradmin' && user.sector_id) {
         // Count schools in this sector
-        const { data: schools, error: _sectorSchoolsError } = await supabase
+        const { data: schools, error: sectorSchoolsError } = await supabase
           .from('schools')
           .select('id')
           .eq('sector_id', user.sector_id);
+          
+        if (sectorSchoolsError) {
+          console.error('Error fetching sector schools:', sectorSchoolsError);
+          throw sectorSchoolsError;
+        }
         
         schoolCount = schools?.length || 0;
         
         // Calculate completion percentage (this is an example - adjust to your actual data model)
-        const { data: entries, error: _entriesError } = await supabase
+        const { data: entries, error: entriesError } = await supabase
           .from('data_entries')
           .select('status')
           .eq('sector_id', user.sector_id);
+          
+        if (entriesError) {
+          console.error('Error fetching sector entries:', entriesError);
+          throw entriesError;
+        }
         
         if (entries && entries.length > 0) {
           const completedEntries = entries.filter(e => e.status === 'completed').length;
@@ -79,19 +100,29 @@ const DashboardHeader: React.FC = () => {
       }
       else if (user.role === 'schooladmin' && user.school_id) {
         // Count pending forms
-        const { data: pendingForms, error: _formsError } = await supabase
+        const { data: pendingForms, error: formsError } = await supabase
           .from('data_entries')
           .select('id')
           .eq('school_id', user.school_id)
           .eq('status', 'pending');
+          
+        if (formsError) {
+          console.error('Error fetching pending forms:', formsError);
+          throw formsError;
+        }
         
         pendingFormCount = pendingForms?.length || 0;
         
         // Calculate completion percentage
-        const { data: entries, error: _schoolEntriesError } = await supabase
+        const { data: entries, error: schoolEntriesError } = await supabase
           .from('data_entries')
           .select('status')
           .eq('school_id', user.school_id);
+          
+        if (schoolEntriesError) {
+          console.error('Error fetching school entries:', schoolEntriesError);
+          throw schoolEntriesError;
+        }
         
         if (entries && entries.length > 0) {
           const completedEntries = entries.filter(e => e.status === 'completed').length;
@@ -108,12 +139,12 @@ const DashboardHeader: React.FC = () => {
     } catch (error) {
       console.error('Error fetching dashboard stats:', error);
     }
-  };
+  }, [user]);
 
   // Fetch stats on component mount and when user changes
   useEffect(() => {
     fetchDashboardStats();
-  }, [user]);
+  }, [user, fetchDashboardStats]);
   
   const handleRefresh = () => {
     setIsRefreshing(true);

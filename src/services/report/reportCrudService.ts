@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { Report } from '@/types/core/report';
-import { getReportTableName, mapReportTableToReport, handleReportError } from './reportBaseService';
+import { mapReportTableToReport, handleReportError } from './reportBaseService';
 import { TableNames } from '@/types/db';
 
 export const createReport = async (report: Partial<Report>): Promise<Report> => {

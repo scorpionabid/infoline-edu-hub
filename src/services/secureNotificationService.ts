@@ -5,7 +5,6 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
-import { NotificationStats } from '@/types/notification';
 
 // Define NotificationData locally since it's not exported from types
 export interface NotificationData {
@@ -19,12 +18,6 @@ export interface NotificationData {
   created_at?: string;
 }
 
-// Define LogContext locally
-interface LogContext {
-  userId?: string;
-  action?: string;
-  [key: string]: any;
-}
 
 export class SecureNotificationService {
   

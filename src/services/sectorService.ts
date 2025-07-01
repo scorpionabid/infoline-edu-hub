@@ -1,5 +1,4 @@
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 
 export const assignExistingUserAsSectorAdmin = async (userId: string, sectorId: string) => {
   try {
