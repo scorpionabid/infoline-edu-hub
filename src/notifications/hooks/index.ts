@@ -20,18 +20,13 @@ import {
   Notification,
   NotificationType,
   NotificationPriority,
-  NotificationFilters,
-  UseNotificationsResult,
   RelatedEntityType
 } from '@/types/notifications';
 
 // Geriyə uyğunluq üçün köhnə tip adlarını əhatə et
 // Bu tiplər istifadə edilmir, lakin geriyə uyğunluq üçün saxlanılır
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 type _UnifiedNotification = Notification;
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 type _NotificationChannel = 'inApp' | 'email';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 type _NotificationEvent = {
   id: string;
   user_id: string;
@@ -51,8 +46,8 @@ type BulkNotificationRequest = {
 
 export function useNotifications(userId?: string) {
   // We can't use useNotificationContext here as this is the old hook implementation
-  // It's mentioned in the deprecation  // Initialize query client but don't use it directly in this deprecated hook
-  const _queryClient = useQueryClient();
+  // It's mentioned in the deprecation  // Initialize query client for cache management
+  const queryClient = useQueryClient();
   const [realTimeEnabled, setRealTimeEnabled] = useState(true);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
@@ -94,8 +89,8 @@ export function useNotifications(userId?: string) {
     mutationFn: (notificationId: string) => 
       currentUserId ? NotificationService.markAsRead(notificationId, currentUserId) : Promise.resolve(false),
     onSuccess: () => {
-      _queryClient.invalidateQueries({ queryKey: ['notifications', currentUserId] });
-      _queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', currentUserId] });
+      queryClient.invalidateQueries({ queryKey: ['notifications', currentUserId] });
+      queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', currentUserId] });
     }
   });
 
@@ -104,8 +99,8 @@ export function useNotifications(userId?: string) {
     mutationFn: () => 
       currentUserId ? NotificationService.markAllAsRead(currentUserId) : Promise.resolve(false),
     onSuccess: () => {
-      _queryClient.invalidateQueries({ queryKey: ['notifications', currentUserId] });
-      _queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', currentUserId] });
+      queryClient.invalidateQueries({ queryKey: ['notifications', currentUserId] });
+      queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', currentUserId] });
     }
   });
 
@@ -114,8 +109,8 @@ export function useNotifications(userId?: string) {
     mutationFn: (notificationId: string) => 
       currentUserId ? NotificationService.deleteNotification(notificationId, currentUserId) : Promise.resolve(false),
     onSuccess: () => {
-      _queryClient.invalidateQueries({ queryKey: ['notifications', currentUserId] });
-      _queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', currentUserId] });
+      queryClient.invalidateQueries({ queryKey: ['notifications', currentUserId] });
+      queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', currentUserId] });
     }
   });
 
@@ -124,8 +119,8 @@ export function useNotifications(userId?: string) {
     mutationFn: () => 
       currentUserId ? NotificationService.clearAllNotifications(currentUserId) : Promise.resolve(false),
     onSuccess: () => {
-      _queryClient.invalidateQueries({ queryKey: ['notifications', currentUserId] });
-      _queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', currentUserId] });
+      queryClient.invalidateQueries({ queryKey: ['notifications', currentUserId] });
+      queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', currentUserId] });
     }
   });
 
@@ -151,8 +146,8 @@ export function useNotifications(userId?: string) {
       });
     },
     onSuccess: () => {
-      _queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      _queryClient.invalidateQueries({ queryKey: ['notifications-unread-count'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications-unread-count'] });
     }
   });
 
@@ -173,8 +168,8 @@ export function useNotifications(userId?: string) {
             filter: `user_id=eq.${currentUserId}`
           },
           () => {
-            _queryClient.invalidateQueries({ queryKey: ['notifications', currentUserId] });
-            _queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', currentUserId] });
+            queryClient.invalidateQueries({ queryKey: ['notifications', currentUserId] });
+            queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', currentUserId] });
           }
         )
         .subscribe();
@@ -264,8 +259,8 @@ export function useNotifications(userId?: string) {
                 filter: `user_id=eq.${currentUserId}`
               },
               () => {
-                _queryClient.invalidateQueries({ queryKey: ['notifications', currentUserId] });
-                _queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', currentUserId] });
+                queryClient.invalidateQueries({ queryKey: ['notifications', currentUserId] });
+                queryClient.invalidateQueries({ queryKey: ['notifications-unread-count', currentUserId] });
               }
             )
             .subscribe();
@@ -317,7 +312,7 @@ export function useNotifications(userId?: string) {
  * @deprecated Use the new NotificationProvider and useNotificationContext hook instead
  */
 export function useBulkNotifications() {
-  const _queryClient = useQueryClient();
+  const queryClient = useQueryClient();
 
   // Log deprecation warning on first render
   useEffect(() => {
@@ -338,8 +333,8 @@ export function useBulkNotifications() {
       }),
     onSuccess: () => {
       // Invalidate all notification queries
-      _queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      _queryClient.invalidateQueries({ queryKey: ['notifications-unread-count'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications-unread-count'] });
     }
   });
 
