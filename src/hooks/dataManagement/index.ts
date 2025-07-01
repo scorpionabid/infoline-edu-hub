@@ -1,38 +1,25 @@
 
-import type { Category } from '@/types/category';
-import type { Column } from '@/types/column';
-
+// Export main hook
 export { useDataManagement } from './useDataManagement';
 
-// Define missing types locally since they're not available from useDataManagement
-export type DataManagementStep = 'category' | 'column' | 'data';
+// Export types
+export type { 
+  DataManagementStep, 
+  SchoolDataEntry, 
+  DataStats, 
+  LoadingStates 
+} from './types';
 
-export type SchoolDataEntry = {
-  id: string;
-  school_id: string;
-  category_id: string;
-  column_data: Record<string, any>;
-  status: 'draft' | 'submitted' | 'approved' | 'rejected';
-  created_at: string;
-  updated_at: string;
-};
+export type { DataManagementPermissions } from './core/useDataManagementPermissions';
 
-export type DataStats = {
-  totalEntries: number;
-  completedEntries: number;
-  pendingEntries: number;
-  rejectedEntries: number;
-};
+// Export individual hooks for advanced usage
+export { useDataManagementState } from './core/useDataManagementState';
+export { useDataManagementPermissions } from './core/useDataManagementPermissions';
+export { useDataManagementNavigation } from './core/useDataManagementNavigation';
+export { useSchoolDataLoader } from './loaders/useSchoolDataLoader';
+export { useSchoolDataOperations } from './operations/useSchoolDataOperations';
+export { useDataApproval } from './operations/useDataApproval';
+export { useBulkOperations } from './operations/useBulkOperations';
 
-// Re-export types from their proper sources
-export type { Category, Column };
-
-// DataManagementState type definition
-export type DataManagementState = {
-  currentStep: DataManagementStep;
-  selectedCategory: Category | null;
-  selectedColumn: Column | null;
-  schoolData: SchoolDataEntry[];
-  isLoading: boolean;
-  error: string | null;
-};
+// Re-export types from their proper sources for backward compatibility
+export type { Category, Column } from '@/types/column';
