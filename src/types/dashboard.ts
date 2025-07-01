@@ -20,10 +20,13 @@ export interface CategoryItem {
   progress: number;
   status: 'completed' | 'partial' | 'empty' | 'pending';
   completionRate: number;
+  completion?: number; // Added missing property
   deadline?: string;
   columnCount?: number;
   filledColumnCount?: number;
   lastUpdated?: string;
+  totalFields?: number; // Added missing property
+  completedFields?: number; // Added missing property
 }
 
 export interface PendingApproval {
@@ -36,6 +39,7 @@ export interface PendingApproval {
   columnName: string;
   value: string;
   submittedAt: string;
+  date?: string; // Added missing property
   submittedBy: string;
   priority: 'low' | 'medium' | 'high';
 }
@@ -43,29 +47,39 @@ export interface PendingApproval {
 export interface FormItem {
   id: string;
   name: string;
+  title?: string; // Added missing property
   status: 'completed' | 'pending' | 'draft';
   progress: number;
   deadline?: string;
   lastUpdated?: string;
+  lastModified?: string; // Added missing property
   categoryId: string;
+  category?: string; // Added missing property
 }
 
 export interface DeadlineItem {
   id: string;
   categoryId: string;
   categoryName: string;
+  name?: string; // Added missing property
+  title?: string; // Added missing property
   deadline: string;
   daysRemaining: number;
+  daysLeft?: number; // Added missing property
   isOverdue: boolean;
   progress: number;
   priority: 'low' | 'medium' | 'high';
+  status?: string; // Added missing property
 }
 
 export interface SectorStat {
   id: string;
   name: string;
   schoolCount: number;
+  totalSchools?: number; // Added missing property
   completionRate: number;
+  completion?: number; // Added missing property
+  completion_rate?: number; // Added missing property
   pendingApprovals: number;
   totalForms: number;
   completedForms: number;
@@ -76,13 +90,19 @@ export interface FormTabsProps {
   categories: CategoryItem[];
   deadlines: DeadlineItem[];
   forms: FormItem[];
+  upcoming?: DeadlineItem[]; // Added missing property
+  pendingForms?: FormItem[]; // Added missing property
   onCategorySelect?: (categoryId: string) => void;
   onFormSelect?: (formId: string) => void;
+  navigateToDataEntry?: (categoryId: string) => void; // Added missing property
+  handleFormClick?: (formId: string) => void; // Added missing property
+  onCategoryChange?: (categoryId: string) => void; // Added missing property
 }
 
 export interface DashboardChartProps {
-  data: any[];
-  type: 'bar' | 'line' | 'pie' | 'doughnut';
+  data?: any[];
+  stats?: any; // Added missing property
+  type?: 'bar' | 'line' | 'pie' | 'doughnut';
   title?: string;
   height?: number;
   showLegend?: boolean;

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useUser } from '@/hooks/auth/useUser';
 import { useTranslation } from '@/contexts/TranslationContext';
@@ -6,9 +5,9 @@ import { Loader2 } from 'lucide-react';
 
 // Role-specific dashboard components
 import SuperAdminDashboard from './SuperAdminDashboard';
-import { RegionAdminDashboard } from './region-admin/RegionAdminDashboard';
-import { SectorAdminDashboard } from './sector-admin/SectorAdminDashboard';
-import { SchoolAdminDashboard } from './school-admin/SchoolAdminDashboard';
+import RegionAdminDashboard from './region-admin/RegionAdminDashboard';
+import SectorAdminDashboard from './sector-admin/SectorAdminDashboard';
+import SchoolAdminDashboard from './school-admin/SchoolAdminDashboard';
 
 const DashboardContent: React.FC = () => {
   const { user, loading } = useUser();

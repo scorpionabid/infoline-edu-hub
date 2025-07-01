@@ -8,7 +8,9 @@ interface StatsCardProps {
   description?: string;
   icon?: React.ReactNode;
   variant?: 'default' | 'success' | 'warning' | 'danger';
+  color?: string; // Added missing property
   className?: string;
+  onClick?: () => void; // Added missing property
 }
 
 export const StatsCard: React.FC<StatsCardProps> = ({
@@ -17,7 +19,9 @@ export const StatsCard: React.FC<StatsCardProps> = ({
   description,
   icon,
   variant = 'default',
-  className = ''
+  color,
+  className = '',
+  onClick
 }) => {
   const getVariantStyles = () => {
     switch (variant) {
@@ -33,13 +37,16 @@ export const StatsCard: React.FC<StatsCardProps> = ({
   };
 
   return (
-    <Card className={`${getVariantStyles()} ${className}`}>
+    <Card 
+      className={`${getVariantStyles()} ${className} ${onClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`}
+      onClick={onClick}
+    >
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        {icon && <div className="h-4 w-4 text-muted-foreground">{icon}</div>}
+        {icon && <div className={`h-4 w-4 text-muted-foreground ${color || ''}`}>{icon}</div>}
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
+        <div className={`text-2xl font-bold ${color || ''}`}>{value}</div>
         {description && (
           <p className="text-xs text-muted-foreground">{description}</p>
         )}

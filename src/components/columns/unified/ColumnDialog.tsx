@@ -253,7 +253,12 @@ const ColumnDialog: React.FC<ColumnDialogProps> = ({
   // Add option for select/radio/checkbox types
   const handleAddOption = () => {
     if (newOption.value.trim() && newOption.label.trim()) {
-      const updatedOptions = [...(formData.options || []), newOption];
+      const optionWithId = {
+        id: crypto.randomUUID(),
+        value: newOption.value,
+        label: newOption.label
+      };
+      const updatedOptions = [...(formData.options || []), optionWithId];
       updateField("options", updatedOptions);
       setNewOption({ value: "", label: "" });
     }
