@@ -224,7 +224,7 @@ class EmailTemplateService {
       return {
         subject,
         html,
-        // text
+        text
       };
     } catch (error) {
       console.error('[EmailTemplateService] Error previewing template:', error);
