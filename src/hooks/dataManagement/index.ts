@@ -17,6 +17,7 @@ export { useDataManagementState } from './core/useDataManagementState';
 export { useDataManagementPermissions } from './core/useDataManagementPermissions';
 export { useDataManagementNavigation } from './core/useDataManagementNavigation';
 export { useSchoolDataLoader } from './loaders/useSchoolDataLoader';
+export { useDataTransformation } from './loaders/useDataTransformation';
 export { useSchoolDataOperations } from './operations/useSchoolDataOperations';
 export { useDataApproval } from './operations/useDataApproval';
 export { useBulkOperations } from './operations/useBulkOperations';

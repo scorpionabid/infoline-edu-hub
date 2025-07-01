@@ -9,6 +9,7 @@ import { useDataManagementState } from './core/useDataManagementState';
 import { useDataManagementPermissions } from './core/useDataManagementPermissions';
 import { useDataManagementNavigation } from './core/useDataManagementNavigation';
 import { useSchoolDataLoader } from './loaders/useSchoolDataLoader';
+import { useDataTransformation } from './loaders/useDataTransformation';
 import { useSchoolDataOperations } from './operations/useSchoolDataOperations';
 import { useDataApproval } from './operations/useDataApproval';
 import { useBulkOperations } from './operations/useBulkOperations';
@@ -43,8 +44,9 @@ export const useDataManagement = () => {
     selectedColumn
   );
 
-  // Data loading
+  // Data loading and transformation
   const { loadSchoolData, loading: dataLoading } = useSchoolDataLoader();
+  const { calculateStatsFromData } = useDataTransformation();
 
   // Operations
   const { handleDataSave, saving: savingData } = useSchoolDataOperations();
@@ -64,38 +66,12 @@ export const useDataManagement = () => {
     saving: false
   });
 
-  const updateLoading = (key: keyof LoadingStates, value: boolean) => {
-    setLoading(prev => ({ ...prev, [key]: value }));
-  };
-
   // Calculate stats from school data
-  const calculateStats = useCallback((data: typeof schoolData): DataStats => {
-    const totalSchools = data.length;
-    const pendingCount = data.filter(item => item.status === 'pending').length;
-    const approvedCount = data.filter(item => item.status === 'approved').length;
-    const rejectedCount = data.filter(item => item.status === 'rejected').length;
-    const emptyCount = data.filter(item => item.status === 'empty').length;
-    const completionRate = totalSchools > 0 ? Math.round((approvedCount / totalSchools) * 100) : 0;
-
-    return {
-      totalSchools,
-      pendingCount,
-      approvedCount,
-      rejectedCount,
-      emptyCount,
-      completionRate,
-      totalEntries: totalSchools,
-      completedEntries: approvedCount,
-      pendingEntries: pendingCount
-    };
-  }, []);
-
-  // Update stats when school data changes
   useEffect(() => {
     if (schoolData.length > 0) {
-      setStats(calculateStats(schoolData));
+      setStats(calculateStatsFromData(schoolData));
     }
-  }, [schoolData, calculateStats]);
+  }, [schoolData, calculateStatsFromData]);
 
   // Load school data when category and column are selected
   useEffect(() => {
@@ -113,85 +89,54 @@ export const useDataManagement = () => {
     loadData();
   }, [selectedCategory?.id, selectedColumn?.id, currentStep, loadSchoolData, setSchoolData, setError]);
 
-  // Wrapper functions for operations that reload data
+  // Create wrapper functions that reload data after operations
+  const createDataReloader = useCallback(() => {
+    return async () => {
+      if (selectedCategory?.id && selectedColumn?.id) {
+        try {
+          const data = await loadSchoolData(selectedCategory.id, selectedColumn.id);
+          setSchoolData(data);
+        } catch (error) {
+          console.error('Failed to reload data:', error);
+        }
+      }
+    };
+  }, [selectedCategory?.id, selectedColumn?.id, loadSchoolData, setSchoolData]);
+
+  const reloadData = createDataReloader();
+
+  // Wrapper functions for operations
   const wrappedDataSave = async (schoolId: string, value: string): Promise<boolean> => {
     const result = await handleDataSave(schoolId, value, selectedCategory, selectedColumn);
-    if (result && selectedCategory?.id && selectedColumn?.id) {
-      try {
-        const data = await loadSchoolData(selectedCategory.id, selectedColumn.id);
-        setSchoolData(data);
-      } catch (error) {
-        console.error('Failed to reload data after save:', error);
-      }
-    }
+    if (result) await reloadData();
     return result;
   };
 
   const wrappedDataApprove = async (schoolId: string, comment?: string): Promise<boolean> => {
     const result = await handleDataApprove(schoolId, selectedColumn, comment);
-    if (result && selectedCategory?.id && selectedColumn?.id) {
-      try {
-        const data = await loadSchoolData(selectedCategory.id, selectedColumn.id);
-        setSchoolData(data);
-      } catch (error) {
-        console.error('Failed to reload data after approve:', error);
-      }
-    }
+    if (result) await reloadData();
     return result;
   };
 
   const wrappedDataReject = async (schoolId: string, reason: string, comment?: string): Promise<boolean> => {
     const result = await handleDataReject(schoolId, selectedColumn, reason, comment);
-    if (result && selectedCategory?.id && selectedColumn?.id) {
-      try {
-        const data = await loadSchoolData(selectedCategory.id, selectedColumn.id);
-        setSchoolData(data);
-      } catch (error) {
-        console.error('Failed to reload data after reject:', error);
-      }
-    }
+    if (result) await reloadData();
     return result;
   };
 
   const wrappedBulkApprove = async (schoolIds: string[]): Promise<boolean> => {
     const result = await handleBulkApprove(schoolIds, selectedColumn);
-    if (result && selectedCategory?.id && selectedColumn?.id) {
-      try {
-        const data = await loadSchoolData(selectedCategory.id, selectedColumn.id);
-        setSchoolData(data);
-      } catch (error) {
-        console.error('Failed to reload data after bulk approve:', error);
-      }
-    }
+    if (result) await reloadData();
     return result;
   };
 
   const wrappedBulkReject = async (schoolIds: string[], reason: string): Promise<boolean> => {
     const result = await handleBulkReject(schoolIds, selectedColumn, reason);
-    if (result && selectedCategory?.id && selectedColumn?.id) {
-      try {
-        const data = await loadSchoolData(selectedCategory.id, selectedColumn.id);
-        setSchoolData(data);
-      } catch (error) {
-        console.error('Failed to reload data after bulk reject:', error);
-      }
-    }
+    if (result) await reloadData();
     return result;
   };
 
-  // Refresh data function
-  const refreshData = async () => {
-    if (selectedCategory?.id && selectedColumn?.id && currentStep === 'data') {
-      try {
-        const data = await loadSchoolData(selectedCategory.id, selectedColumn.id);
-        setSchoolData(data);
-      } catch (error) {
-        setError(error instanceof Error ? error.message : 'Refresh failed');
-      }
-    }
-  };
-
-  // Mock category and column handlers (these would typically load from API)
+  // Category/Column handlers
   const handleCategorySelect = (category: Category) => {
     setSelectedCategory(category);
     setSelectedColumn(null);
@@ -254,7 +199,7 @@ export const useDataManagement = () => {
     handleBulkReject: wrappedBulkReject,
     
     // Utilities
-    refreshData,
+    refreshData: reloadData,
     resetWorkflow,
     clearError
   };
