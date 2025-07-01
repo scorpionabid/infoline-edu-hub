@@ -5,8 +5,6 @@ export default {
   subtitle: 'Sistem məlumatlarına ümumi baxış',
   welcome: 'Xoş gəlmisiniz',
   loading: 'Yüklənir...',
-  user_not_found: 'İstifadəçi tapılmadı',
-  unknown_role: 'Bilinməyən rol',
   
   // Navigation
   navigation: {
