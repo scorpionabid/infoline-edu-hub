@@ -21,13 +21,47 @@ export const useSectorsQuery = (): UseSectorsQueryResult => {
   } = useQuery({
     queryKey: ['sectors'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Sektorları əldə et
+      const { data: sectors, error } = await supabase
         .from('sectors')
         .select('*')
         .order('name');
 
       if (error) throw error;
-      return data || [];
+      
+      // Sektor adminlərini əldə et
+      let sectorAdmins: any = {};
+      if (sectors) {
+        const { data: adminData } = await supabase
+          .from('user_roles')
+          .select(`
+            sector_id,
+            profiles:user_id(
+              id,
+              full_name,
+              email
+            )
+          `)
+          .eq('role', 'sectoradmin');
+        
+        if (adminData) {
+          sectorAdmins = adminData.reduce((acc: any, item: any) => {
+            if (item.sector_id && item.profiles) {
+              acc[item.sector_id] = item.profiles;
+            }
+            return acc;
+          }, {});
+        }
+      }
+      
+      // Admin məlumatları ilə birləşdir
+      const enhancedSectors = (sectors || []).map(sector => ({
+        ...sector,
+        admin_name: sectorAdmins[sector.id]?.full_name || '',
+        admin_email: sectorAdmins[sector.id]?.email || ''
+      }));
+      
+      return enhancedSectors;
     }
   });
 

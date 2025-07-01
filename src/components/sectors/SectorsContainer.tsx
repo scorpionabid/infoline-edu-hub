@@ -332,6 +332,12 @@ const SectorsContainer: React.FC<SectorsContainerProps> = React.memo(function Se
                     <span className="text-primary font-medium">{sector.region_name}</span>
                     </div>
                   )}
+                  {sector.admin_name && (
+                    <div className="flex items-center justify-between text-sm">
+                    <span>{t('sectors.admin')}:</span>
+                    <span className="text-primary font-medium">{sector.admin_name}</span>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between text-sm">
                     <span>{t('sectors.status')}:</span>
                     <span className={`px-2 py-1 rounded text-xs ${

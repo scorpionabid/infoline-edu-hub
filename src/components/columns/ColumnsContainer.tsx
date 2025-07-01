@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
 import { Column } from "@/types/column";
 import { Category } from "@/types/category";
 import { Button } from "@/components/ui/button";
@@ -25,20 +25,20 @@ import { toast } from "sonner";
 interface ColumnsContainerProps {
   columns?: Column[];
   categories?: Category[];
-  selectedCategoryId?: string;
+  selectedCategoryId?: string; // Kept for future use
   isLoading?: boolean;
   onRefresh?: () => void;
-  onCreate?: () => void;
+  _onCreate?: () => void; // Unused but kept for API compatibility
   onEdit?: (column: Column) => void;
-  onDelete?: (id: string, name: string) => void;
-  onRestore?: (id: string, name: string) => void;
-  onPermanentDelete?: (id: string) => void;
-  onCategoryChange?: (categoryId: string) => void;
-  onCreateColumn?: () => void;
+  _onDelete?: (id: string, name: string) => void; // Unused but kept for API compatibility
+  _onRestore?: (id: string, name: string) => void; // Unused but kept for API compatibility
+  _onPermanentDelete?: (id: string) => void; // Unused but kept for API compatibility
+  _onCategoryChange?: (categoryId: string) => void; // Unused but kept for API compatibility
+  _onCreateColumn?: () => void; // Unused but kept for API compatibility
   onEditColumn?: (column: Column) => void;
-  onArchiveColumn?: (column: Column) => void;
-  onRestoreColumn?: (column: Column) => void;
-  onDeleteColumn?: (column: Column, permanent?: boolean) => void;
+  _onArchiveColumn?: (column: Column) => void; // Unused but kept for API compatibility
+  _onRestoreColumn?: (column: Column) => void; // Unused but kept for API compatibility
+  _onDeleteColumn?: (column: Column, permanent?: boolean) => void; // Unused but kept for API compatibility
   isCreateDialogOpen?: boolean;
   isEditDialogOpen?: boolean;
   onCreateDialogClose?: () => void;
@@ -48,21 +48,22 @@ interface ColumnsContainerProps {
 }
 
 const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
-  columns = [],
+  columns: initialColumns = [],
   categories = [],
-  selectedCategoryId = "",
+  selectedCategoryId,
   isLoading = false,
   onRefresh,
-  onCreate,
-  onEdit,
-  onDelete,
-  onRestore,
-  onPermanentDelete,
-  onCategoryChange = () => {},
-  onCreateColumn = () => {},
-  onArchiveColumn = () => {},
-  onRestoreColumn = () => {},
-  onDeleteColumn = () => {},
+  _onCreate: onCreate = () => {},
+  onEdit = () => {},
+  _onDelete: onDelete = () => {},
+  _onRestore: onRestore = () => {},
+  _onPermanentDelete: onPermanentDelete = () => {},
+  _onCategoryChange: onCategoryChange = () => {},
+  _onCreateColumn: onCreateColumn = () => {},
+  onEditColumn = () => {},
+  _onArchiveColumn: onArchiveColumn = () => {},
+  _onRestoreColumn: onRestoreColumn = () => {},
+  _onDeleteColumn: onDeleteColumn = () => {},
   isCreateDialogOpen = false,
   isEditDialogOpen = false,
   onCreateDialogClose = () => {},
@@ -104,7 +105,7 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
   );
 
   const [searchQuery, setSearchQuery] = React.useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [_statusFilter, _setStatusFilter] = useState<string>('all'); // _setStatusFilter is unused but kept for potential future use
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
@@ -135,30 +136,39 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
     setSelectedColumns([]);
   }, []);
 
-  // Separate active and archived columns
-  const activeColumns = React.useMemo(() => {
-    return columns?.filter((column) => column.status === "active") || [];
-  }, [columns]);
+  const handleDeleteClick = useCallback((id: string, name: string) => {
+    onDelete(id, name);
+  }, [onDelete]);
 
-  const archivedColumns = React.useMemo(() => {
+  const handleSearch = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = (e.target.value || '').toString().trim();
+    setSearchQuery(value);
+  }, []);
+
+  // Separate active and archived columns
+  const activeColumns = useMemo(() => {
+    return initialColumns?.filter((column) => column.status === "active") || [];
+  }, [initialColumns]);
+
+  const archivedColumns = useMemo(() => {
     // Include both 'deleted' and 'inactive' columns in archived
     return (
-      columns?.filter(
+      initialColumns?.filter(
         (column) => column.status === "deleted" || column.status === "inactive",
       ) || []
     );
-  }, [columns]);
+  }, [initialColumns]);
 
   // Calculate stats
-  const stats = React.useMemo(
+  const stats = useMemo(
     () => ({
-      total: columns.length,
+      total: initialColumns.length,
       active: activeColumns.length,
       archived: archivedColumns.length,
       selected: selectedColumns.length,
     }),
     [
-      columns.length,
+      initialColumns.length,
       activeColumns.length,
       archivedColumns.length,
       selectedColumns.length,
@@ -180,7 +190,7 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
         column.help_text?.toLowerCase().includes(searchQuery.toLowerCase());
 
       const matchesStatus =
-        statusFilter === "all" || column.status === statusFilter;
+        _statusFilter === "all" || column.status === _statusFilter;
       const matchesType = typeFilter === "all" || column.type === typeFilter;
       const matchesCategory =
         categoryFilter === "all" || column.category_id === categoryFilter;
@@ -192,21 +202,24 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
   }, [
     currentColumns,
     searchQuery,
-    statusFilter,
+    _statusFilter,
     typeFilter,
     categoryFilter,
     activeTab,
   ]);
 
   // Get unique types for filter dropdown
-  const uniqueTypes = React.useMemo(() => {
-    const types = new Set(
-      columns
-        .map((col) => col.type)
-        .filter((type) => type && type.trim() !== ""),
-    );
+  const uniqueTypes = useMemo(() => {
+    const types = new Set<string>();
+    
+    initialColumns?.forEach((col) => {
+      if (col?.type?.trim()) {
+        types.add(col.type.trim());
+      }
+    });
+    
     return Array.from(types);
-  }, [columns]);
+  }, [initialColumns]);
 
   const handleSelectAll = () => {
     const allFilteredIds = filteredColumns.map((col) => col.id);
@@ -350,22 +363,23 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
   };
 
   // Dialog handlers
-  const handleCreateSave = async (formData: any) => {
+  const handleCreateSave = async (formData: any): Promise<boolean> => {
     setFormLoading(true);
     try {
-      const { data, error } = await supabase
+      const { data: _data, error } = await supabase
         .from('columns')
         .insert([formData])
         .select()
         .single();
 
       if (error) throw error;
-      
+
       toast.success('Sütun uğurla yaradıldı');
       onRefresh?.();
+      onCreateDialogClose?.();
       return true;
-    } catch (error) {
-      console.error("Create column error:", error);
+    } catch (err) {
+      console.error('Error creating column:', err);
       toast.error('Sütun yaradılarkən xəta baş verdi');
       return false;
     } finally {
@@ -514,7 +528,7 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
       {/* Bulk Operations Panel */}
       <BulkOperationsPanel
         selectedColumns={selectedColumns}
-        columns={columns}
+        columns={initialColumns}
         categories={categories}
         onBulkDelete={handleBulkDelete}
         onBulkToggleStatus={handleBulkToggle}

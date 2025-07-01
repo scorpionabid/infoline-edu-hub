@@ -97,9 +97,33 @@ export const useRegionsQuery = (options = {}, initialPageSize = 10): UseRegionsQ
         .select(`
           *,
           sectors:sectors(count),
-          schools:schools(count),
-          admin:profiles!regions_admin_id_fkey(id, full_name, email)
+          schools:schools(count)
         `);
+      
+      // Ayrıca region adminlərini əldə et
+      let regionAdmins: any = {};
+      if (regions && !error) {
+        const { data: adminData } = await supabase
+          .from('user_roles')
+          .select(`
+            region_id,
+            profiles:user_id(
+              id,
+              full_name,
+              email
+            )
+          `)
+          .eq('role', 'regionadmin');
+        
+        if (adminData) {
+          regionAdmins = adminData.reduce((acc: any, item: any) => {
+            if (item.region_id && item.profiles) {
+              acc[item.region_id] = item.profiles;
+            }
+            return acc;
+          }, {});
+        }
+      }
       
       if (error) {
         console.error('Error in direct table query:', error);
@@ -169,8 +193,7 @@ export const useRegionsQuery = (options = {}, initialPageSize = 10): UseRegionsQ
         const sectors_count = region.sectors?.[0]?.count || 0;
         const schools_count = region.schools?.[0]?.count || 0;
         
-        const adminData = region.admin;
-        const adminObj = Array.isArray(adminData) ? adminData[0] : adminData;
+        const adminObj = regionAdmins[region.id];
         
         return {
           ...region,
@@ -250,8 +273,7 @@ export const useRegionsQuery = (options = {}, initialPageSize = 10): UseRegionsQ
             .select(`
               *,
               sectors:sectors(count),
-              schools:schools(count),
-              admin:profiles!regions_admin_id_fkey(id, full_name, email)
+              schools:schools(count)
             `)
             .eq('id', id)
             .single();
