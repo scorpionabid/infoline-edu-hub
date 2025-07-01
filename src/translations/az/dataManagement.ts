@@ -145,7 +145,6 @@ export const dataManagement = {
   // Column-level approval enhanced messages  
   column_level_approval_active: 'Sütun-səviyyəli təsdiq aktiv',
   only_selected_column_approved: 'Yalnız seçilmiş sütun təsdiqlənəcək',
-  other_columns_not_affected: 'Digər sütunlar təsirlənməyəcək',
   each_column_requires_separate_approval: 'Hər sütun üçün ayrı-ayrı təsdiq tələb olunur',
   
   // Error messages
