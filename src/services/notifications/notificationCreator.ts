@@ -139,13 +139,142 @@ export class NotificationCreator {
   }
 
   /**
+   * Create user deletion notification
+   */
+  static async createUserDeletionNotification(
+    deletedUserId: string,
+    deletedUserName: string,
+    deletedByUserId: string,
+    deletionType: 'soft' | 'hard'
+  ) {
+    try {
+      const title = deletionType === 'hard' 
+        ? 'İstifadəçi tamamilə silindi'
+        : 'İstifadəçi deaktiv edildi';
+      
+      const message = deletionType === 'hard'
+        ? `${deletedUserName} istifadəçisi sistemdən tamamilə silindi`
+        : `${deletedUserName} istifadəçisi deaktiv edildi və artıq sistemi istifadə edə bilməz`;
+
+      // Get superadmins and regionadmins to notify
+      const adminUserIds = await this.getAdminUsers();
+      
+      const result = await NotificationService.createBulkNotifications({
+        userIds: adminUserIds,
+        title,
+        message,
+        type: 'user_deleted',
+        priority: deletionType === 'hard' ? 'high' : 'normal',
+        relatedEntityId: deletedUserId,
+        relatedEntityType: 'user'
+      });
+
+      console.log(`[NotificationCreator] Created user deletion notification: ${deletionType}`);
+      return result;
+    } catch (error) {
+      console.error('[NotificationCreator] Error creating user deletion notification:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create user restoration notification
+   */
+  static async createUserRestorationNotification(
+    restoredUserId: string,
+    restoredUserName: string,
+    restoredByUserId: string
+  ) {
+    try {
+      const title = 'İstifadəçi bərpa edildi';
+      const message = `${restoredUserName} istifadəçisi bərpa edildi və yenidən sistemi istifadə edə bilər`;
+
+      // Get superadmins and regionadmins to notify
+      const adminUserIds = await this.getAdminUsers();
+      
+      const result = await NotificationService.createBulkNotifications({
+        userIds: adminUserIds,
+        title,
+        message,
+        type: 'user_restored',
+        priority: 'normal',
+        relatedEntityId: restoredUserId,
+        relatedEntityType: 'user'
+      });
+
+      console.log(`[NotificationCreator] Created user restoration notification`);
+      return result;
+    } catch (error) {
+      console.error('[NotificationCreator] Error creating user restoration notification:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Helper to get admin user IDs (superadmin and regionadmin)
+   */
+  private static async getAdminUsers(): Promise<string[]> {
+    try {
+      // Import supabase here to avoid circular dependencies
+      const { supabase } = await import('@/integrations/supabase/client');
+      
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .in('role', ['superadmin', 'regionadmin']);
+      
+      if (error) {
+        console.error('[NotificationCreator] Error fetching admin users:', error);
+        return [];
+      }
+      
+      return data?.map(item => item.user_id) || [];
+    } catch (error) {
+      console.error('[NotificationCreator] Error in getAdminUsers:', error);
+      return [];
+    }
+  }
+
+  /**
    * Helper to get user IDs by roles
    */
   private static async getUsersByRoles(roles: string[]): Promise<string[]> {
-    // This would typically query the user_roles table
-    // For now, return empty array - implement based on requirements
-    console.log(`[NotificationCreator] Getting users for roles:`, roles);
-    return [];
+    try {
+      if (roles.includes('all')) {
+        // Import supabase here to avoid circular dependencies
+        const { supabase } = await import('@/integrations/supabase/client');
+        
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id')
+          .is('deleted_at', null);
+        
+        if (error) {
+          console.error('[NotificationCreator] Error fetching all users:', error);
+          return [];
+        }
+        
+        return data?.map(item => item.id) || [];
+      }
+      
+      // Import supabase here to avoid circular dependencies
+      const { supabase } = await import('@/integrations/supabase/client');
+      
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .in('role', roles);
+      
+      if (error) {
+        console.error('[NotificationCreator] Error fetching users by roles:', error);
+        return [];
+      }
+      
+      return data?.map(item => item.user_id) || [];
+    } catch (error) {
+      console.error('[NotificationCreator] Error in getUsersByRoles:', error);
+      return [];
+    }
   }
 }
 

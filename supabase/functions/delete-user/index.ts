@@ -20,7 +20,7 @@ serve(async (req) => {
     
     if (!supabaseUrl || !supabaseServiceKey) {
       return new Response(
-        JSON.stringify({ error: 'Server konfiqurasyonu səhvdir' }),
+        JSON.stringify({ error: 'Server konfiqurasiyası səhvdir' }),
         { 
           status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -62,37 +62,10 @@ serve(async (req) => {
       )
     }
 
-    // İstifadəçinin superadmin və ya regionadmin olub olmadığını yoxlayırıq
-    const { data: roleData, error: roleError } = await supabaseAdmin
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .single()
+    // İstək body-dən parametrləri alırıq
+    const { user_id, delete_type = 'soft' } = await req.json()
     
-    if (roleError || !roleData) {
-      return new Response(
-        JSON.stringify({ error: 'İstifadəçi rolu tapılmadı', details: roleError }),
-        { 
-          status: 403, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      )
-    }
-
-    if (roleData.role !== 'superadmin' && roleData.role !== 'regionadmin') {
-      return new Response(
-        JSON.stringify({ error: 'İstifadəçi silmək üçün icazəniz yoxdur' }),
-        { 
-          status: 403, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      )
-    }
-
-    // İstək body-dən istifadəçi ID-sini alırıq
-    const { user_id } = await req.json()
-    
-    console.log('İstifadəçi silmə tələbi:', { user_id })
+    console.log('İstifadəçi silmə tələbi:', { user_id, delete_type, by_user: user.id })
     
     if (!user_id) {
       return new Response(
@@ -104,12 +77,52 @@ serve(async (req) => {
       )
     }
 
-    // İstifadəçini Supabase Auth-dan silmək
-    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(user_id)
+    let result;
+    
+    if (delete_type === 'hard') {
+      // Hard delete using database function
+      const { data, error } = await supabaseAdmin.rpc('hard_delete_user', {
+        p_target_user_id: user_id,
+        p_deleted_by: user.id
+      });
+      
+      if (error) {
+        console.error('Hard delete error:', error);
+        return new Response(
+          JSON.stringify({ error: 'Hard delete xətası', details: error.message }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+      
+      result = data;
+    } else {
+      // Soft delete using database function
+      const { data, error } = await supabaseAdmin.rpc('soft_delete_user', {
+        p_target_user_id: user_id,
+        p_deleted_by: user.id
+      });
+      
+      if (error) {
+        console.error('Soft delete error:', error);
+        return new Response(
+          JSON.stringify({ error: 'Soft delete xətası', details: error.message }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
+      }
+      
+      result = data;
+    }
 
-    if (deleteError) {
+    // Check if operation was successful
+    if (result && !result.success) {
       return new Response(
-        JSON.stringify({ error: 'İstifadəçi silinərkən xəta baş verdi', details: deleteError }),
+        JSON.stringify({ error: result.error || 'Əməliyyat uğursuz oldu' }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -119,7 +132,11 @@ serve(async (req) => {
 
     // Uğurlu cavab
     return new Response(
-      JSON.stringify({ success: true, message: 'İstifadəçi uğurla silindi' }),
+      JSON.stringify({ 
+        success: true, 
+        message: result?.message || `İstifadəçi uğurla ${delete_type === 'hard' ? 'silindi' : 'deaktiv edildi'}`,
+        delete_type
+      }),
       { 
         status: 200, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

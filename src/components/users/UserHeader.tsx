@@ -8,7 +8,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, Filter } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, Search, Filter, UserCheck, UserX } from "lucide-react";
 import { UserRole } from "@/types/user";
 import { useTranslation } from "@/contexts/TranslationContext";
 
@@ -97,6 +98,36 @@ const UserHeader: React.FC<UserHeaderProps> = ({
           <Plus className="h-4 w-4 mr-2" />
           {t("userManagement.add_user") || "İstifadəçi əlavə et"}
         </Button>
+      </div>
+
+      {/* Status Tabs */}
+      <div className="flex items-center space-x-4">
+        <Tabs 
+          value={getFirstFromFilter(currentFilter.status) || "active"} 
+          onValueChange={(value) => {
+            const filterValue = value === "all" ? undefined : value;
+            handleFilterChange("status", filterValue);
+          }}
+          className="w-auto"
+        >
+          <TabsList>
+            <TabsTrigger value="active" className="flex items-center gap-2">
+              <UserCheck className="h-4 w-4" />
+              {t("users.activeUsers") || "Aktiv İstifadəçilər"}
+            </TabsTrigger>
+            <TabsTrigger value="inactive" className="flex items-center gap-2">
+              <UserX className="h-4 w-4" />
+              {t("users.inactiveUsers") || "Deaktiv İstifadəçilər"}
+            </TabsTrigger>
+            <TabsTrigger value="all">
+              {t("users.allUsers") || "Bütün İstifadəçilər"}
+            </TabsTrigger>
+            <TabsTrigger value="deleted" className="flex items-center gap-2">
+              <UserX className="h-4 w-4" />
+              {t("users.deletedUsers") || "Silinmiš İstifadəçilər"}
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
 
       <div className="flex items-center space-x-2">

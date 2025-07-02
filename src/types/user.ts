@@ -49,6 +49,38 @@ export interface UserFormData {
   status?: UserStatus;
 }
 
+export interface UserDeletionResult {
+  success: boolean;
+  message?: string;
+  error?: string;
+  delete_type?: 'soft' | 'hard';
+}
+
+export interface SoftDeletedUser {
+  id: string;
+  email: string;
+  full_name: string;
+  deleted_at: string;
+  deleted_by: string;
+  created_at: string;
+  role?: UserRole;
+  region_name?: string;
+  sector_name?: string;
+  school_name?: string;
+}
+
+export interface UserAuditLog {
+  id: string;
+  user_id: string;
+  action: 'soft_delete' | 'hard_delete' | 'restore';
+  entity_type: 'user';
+  entity_id: string;
+  old_value?: any;
+  new_value?: any;
+  created_at: string;
+  deleter_name?: string;
+}
+
 export interface UserFilter {
   search?: string;
   role?: string | string[];

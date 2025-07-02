@@ -11,6 +11,7 @@ interface UseUsersOptions {
   pageSize?: number;
   sortField?: string;
   sortDirection?: 'asc' | 'desc';
+  includeDeleted?: boolean;
 }
 
 export const useUsers = (options: UseUsersOptions = {}) => {
@@ -18,7 +19,8 @@ export const useUsers = (options: UseUsersOptions = {}) => {
     queryKey: ['users', options],
     queryFn: async () => {
       // Fetch all users first
-      const allUsers = await userFetchService.fetchAllUsers();
+      const { includeDeleted = false } = options;
+      const allUsers = await userFetchService.fetchAllUsers(includeDeleted);
       
       // Apply filters
       let filtered = [...allUsers];

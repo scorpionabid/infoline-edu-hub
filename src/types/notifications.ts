@@ -33,7 +33,9 @@ export type NotificationType =
   | 'data_entry'
   | 'school_update'
   | 'region_update'
-  | 'sector_update';
+  | 'sector_update'
+  | 'user_deleted'
+  | 'user_restored';
 
 // Notification priority levels
 export type NotificationPriority = 
@@ -165,6 +167,21 @@ export interface DataEntryNotificationData {
   action: 'submitted' | 'updated' | 'completed';
 }
 
+export interface UserDeletionNotificationData {
+  deletedUserId: string;
+  deletedUserName: string;
+  deletedByUserId: string;
+  deletionType: 'soft' | 'hard';
+  deletedAt: string;
+}
+
+export interface UserRestorationNotificationData {
+  restoredUserId: string;
+  restoredUserName: string;
+  restoredByUserId: string;
+  restoredAt: string;
+}
+
 // Constants for type checking and validation
 export const NOTIFICATION_TYPES: Record<string, NotificationType> = {
   INFO: 'info',
@@ -180,7 +197,9 @@ export const NOTIFICATION_TYPES: Record<string, NotificationType> = {
   DATA_ENTRY: 'data_entry',
   SCHOOL_UPDATE: 'school_update',
   REGION_UPDATE: 'region_update',
-  SECTOR_UPDATE: 'sector_update'
+  SECTOR_UPDATE: 'sector_update',
+  USER_DELETED: 'user_deleted',
+  USER_RESTORED: 'user_restored'
 } as const;
 
 export const NOTIFICATION_PRIORITIES: Record<string, NotificationPriority> = {

@@ -22,6 +22,7 @@ import {
 } from "@/types/user";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { userDeleteService } from "@/services/users/userDeleteService";
 
 const Users = () => {
   const { t } = useTranslation();
@@ -182,66 +183,43 @@ const Users = () => {
     if (!selectedUser) return;
 
     try {
-      if (deleteType === 'hard') {
-        // Hard delete - delete from user_roles first, then profiles
-        console.log('🗑️ Hard deleting user:', selectedUser.id);
-        
-        // Step 1: Delete from user_roles
-        const { error: roleError } = await supabase
-          .from('user_roles')
-          .delete()
-          .eq('user_id', selectedUser.id);
-
-        if (roleError) {
-          console.error('Error deleting user roles:', roleError);
-          throw roleError;
-        }
-
-        // Step 2: Delete from profiles
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .delete()
-          .eq('id', selectedUser.id);
-
-        if (profileError) {
-          console.error('Error deleting user profile:', profileError);
-          throw profileError;
-        }
-        
-        toast.success("İstifadəçi tamamilə silindi");
-      } else {
-        // Soft delete - just mark as inactive
-        console.log('📝 Soft deleting user:', selectedUser.id);
-        const { error } = await supabase
-          .from('profiles')
-          .update({ status: 'inactive' })
-          .eq('id', selectedUser.id);
-
-        if (error) {
-          console.error('Error soft deleting user:', error);
-          throw error;
-        }
-        toast.success("İstifadəçi deaktiv edildi");
-      }
-
-      handleUserAddedOrEdited();
-      setIsDeleteUserDialogOpen(false);
-      setSelectedUser(null);
-    } catch (error) {
-      console.error("Error deleting user:", error);
+      let success = false;
       
-      // More specific error messages
-      if (error.message?.includes('permission')) {
-        toast.error("İcazə xətası: Bu istifadəçini silmək üçün səlahiyyətiniz yoxdur");
-      } else if (error.message?.includes('foreign key')) {
-        toast.error("Bu istifadəçi silinə bilməz - əlaqəli məlumatlar mövcuddur");
+      if (deleteType === 'hard') {
+        console.log('🗑️ Hard deleting user:', selectedUser.id);
+        success = await userDeleteService.hardDeleteUser(selectedUser.id);
       } else {
-        toast.error(`İstifadəçi silinərkən xəta baş verdi: ${error.message || 'Naməlum xəta'}`);
+        console.log('📝 Soft deleting user:', selectedUser.id);
+        success = await userDeleteService.softDeleteUser(selectedUser.id);
       }
+
+      if (success) {
+        handleUserAddedOrEdited();
+        setIsDeleteUserDialogOpen(false);
+        setSelectedUser(null);
+      }
+      // Error handling is done inside the service
+    } catch (error) {
+      console.error("Unexpected error in handleConfirmDelete:", error);
+      toast.error("Gözlənilməz xəta baş verdi");
     }
   }, [selectedUser, handleUserAddedOrEdited]);
 
-
+  const handleRestoreUser = useCallback(async (user: FullUserData) => {
+    try {
+      console.log('🔄 Restoring user:', user.id);
+      const success = await userDeleteService.restoreUser(user.id);
+      
+      if (success) {
+        handleUserAddedOrEdited();
+        toast.success('İstifadəçi bərpa edildi');
+      }
+      // Error handling is done inside the service
+    } catch (error) {
+      console.error("Unexpected error in handleRestoreUser:", error);
+      toast.error("İstifadəçi bərpa edilərkən xəta baş verdi");
+    }
+  }, [handleUserAddedOrEdited]);
 
   // Early return after all hooks
   React.useEffect(() => {
@@ -289,10 +267,12 @@ const Users = () => {
               currentUserRole={user?.role || 'schooladmin'}
               onEdit={handleEditUser}
               onDelete={handleDeleteUser}
+              onRestore={handleRestoreUser}
               onViewDetails={handleViewUserDetails}
               onSort={handleSort}
               sortField={sortField}
               sortDirection={sortDirection}
+              showDeleted={filters.status === 'deleted'}
             />
             {totalPages > 1 && (
               <div className="mt-4 p-4 border-t">

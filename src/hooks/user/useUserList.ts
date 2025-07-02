@@ -5,7 +5,12 @@ import { UserFilter } from '@/types/user';
 
 // Transform UserFilter to the format expected by useUsers
 const transformFilters = (filters: UserFilter) => {
-  const transformed: { role?: string; status?: string; searchTerm?: string } = {};
+  const transformed: { 
+    role?: string; 
+    status?: string; 
+    searchTerm?: string;
+    includeDeleted?: boolean;
+  } = {};
   
   if (filters.role && !Array.isArray(filters.role)) {
     transformed.role = filters.role;
@@ -14,9 +19,19 @@ const transformFilters = (filters: UserFilter) => {
   }
   
   if (filters.status && !Array.isArray(filters.status)) {
-    transformed.status = filters.status;
+    // Handle "deleted" status separately
+    if (filters.status === 'deleted') {
+      transformed.includeDeleted = true;
+    } else {
+      transformed.status = filters.status;
+    }
   } else if (Array.isArray(filters.status) && filters.status.length > 0) {
-    transformed.status = filters.status[0];
+    const status = filters.status[0];
+    if (status === 'deleted') {
+      transformed.includeDeleted = true;
+    } else {
+      transformed.status = status;
+    }
   }
   
   if (filters.search) {

@@ -52,12 +52,18 @@ export const user = {
   selectStatus: 'Status seçin',
   allRoles: 'Bütün rollar',
   allStatuses: 'Bütün statuslar',
+  activeUsers: 'Aktiv İstifadəçilər',
+  inactiveUsers: 'Deaktiv İstifadəçilər',
+  allUsers: 'Bütün İstifadəçilər',
+  deletedUsers: 'Silinmiş İstifadəçilər',
   school: 'Məktəb',
   schoolId: 'Məktəb ID',
   
   // Actions
   edit: 'Redaktə et',
   delete: 'Sil',
+  restore: 'Bərpa et',
+  deleted: 'Silinib',
   view: 'Bax',
   viewDetails: 'Detalları gör',
   resetPassword: 'Şifrəni sıfırla',
@@ -69,7 +75,7 @@ export const user = {
   // Delete options
   deleteType: 'Silmə növü',
   softDelete: 'Yumşaq silmə',
-  hardDelete: 'Sərt silmə',
+  hardDelete: 'Tamamilə sil',
   softDeleteDesc: 'İstifadəçi deaktiv ediləcək, məlumatlar saxlanacaq',
   hardDeleteDesc: 'İstifadəçi və bütün məlumatları tamamilə silinəcək',
   

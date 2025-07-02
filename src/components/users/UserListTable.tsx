@@ -9,7 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Edit, Eye, Lock, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Trash2, Edit, Eye, Lock, ArrowUpDown, ArrowUp, ArrowDown, RotateCcw } from "lucide-react";
 import { FullUserData } from "@/types/user";
 import { UserRole } from "@/types/supabase";
 import { useTranslation } from "@/contexts/TranslationContext";
@@ -25,11 +25,13 @@ interface UserListTableProps {
   onEdit: (user: FullUserData) => void;
   onDelete: (user: FullUserData) => void;
   onViewDetails: (user: FullUserData) => void;
+  onRestore?: (user: FullUserData) => void;
   currentUserRole: UserRole;
   renderRow?: (user: FullUserData) => React.ReactNode;
   onSort?: (field: string) => void;
   sortField?: string;
   sortDirection?: "asc" | "desc";
+  showDeleted?: boolean;
 }
 
 const UserListTable: React.FC<UserListTableProps> = ({
@@ -37,11 +39,13 @@ const UserListTable: React.FC<UserListTableProps> = ({
   onEdit,
   onDelete,
   onViewDetails,
+  onRestore,
   currentUserRole,
   renderRow,
   onSort,
   sortField,
   sortDirection,
+  showDeleted = false,
 }) => {
   const { t } = useTranslation();
 
@@ -147,10 +151,19 @@ const UserListTable: React.FC<UserListTableProps> = ({
                     <TableCell>
                       <Badge
                         variant={
-                          user.status === "active" ? "success" : "destructive"
+                          user.deleted_at 
+                            ? "destructive" 
+                            : user.status === "active" 
+                            ? "success" 
+                            : "destructive"
                         }
                       >
-                        {user.status === "active" ? t("active") : t("inactive")}
+                        {user.deleted_at 
+                          ? t("deleted") || "Silinib"
+                          : user.status === "active" 
+                          ? t("active") 
+                          : t("inactive")
+                        }
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
@@ -170,24 +183,47 @@ const UserListTable: React.FC<UserListTableProps> = ({
                           </TooltipContent>
                         </Tooltip>
 
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => onEdit(user)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>{t("edit")}</p>
-                          </TooltipContent>
-                        </Tooltip>
+                        {/* Show edit button only for non-deleted users */}
+                        {!user.deleted_at && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => onEdit(user)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{t("edit")}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
 
                         {(currentUserRole === "superadmin" || currentUserRole === "regionadmin") && (
                           <>
-                            {currentUserRole === "superadmin" && (
+                            {/* Show restore button for deleted users */}
+                            {user.deleted_at && onRestore && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => onRestore(user)}
+                                    className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                  >
+                                    <RotateCcw className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>{t("restore") || "Bərpa et"}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
+
+                            {/* Reset password only for superadmin on non-deleted users */}
+                            {currentUserRole === "superadmin" && !user.deleted_at && (
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <Button
@@ -206,6 +242,7 @@ const UserListTable: React.FC<UserListTableProps> = ({
                               </Tooltip>
                             )}
 
+                            {/* Delete button - show for all authorized users */}
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button
@@ -223,7 +260,7 @@ const UserListTable: React.FC<UserListTableProps> = ({
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>{t("delete")}</p>
+                                <p>{user.deleted_at ? (t("hardDelete") || "Tamamilə sil") : t("delete")}</p>
                               </TooltipContent>
                             </Tooltip>
                           </>

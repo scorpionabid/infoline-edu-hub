@@ -26,12 +26,16 @@ interface Profile {
 }
 
 export const userFetchService = {
-  async fetchAllUsers(): Promise<FullUserData[]> {
+  async fetchAllUsers(includeDeleted: boolean = false): Promise<FullUserData[]> {
     try {
       console.log('🔄 Fetching all users with enhanced strategy');
       
       // Step 1: Fetch all profiles (RLS will filter automatically)
-      const { data: profiles, error: profilesError } = await supabase
+      // Filter based on deletion status
+      // includeDeleted=true: only soft-deleted users
+      // includeDeleted=false: only active users (default behavior)
+      
+      let query = supabase
         .from('profiles')
         .select(`
           id,
@@ -44,8 +48,17 @@ export const userFetchService = {
           status,
           last_login,
           created_at,
-          updated_at
-        `)
+          updated_at,
+          deleted_at
+        `);
+      
+      if (includeDeleted) {
+        query = query.not('deleted_at', 'is', null); // Only soft-deleted users
+      } else {
+        query = query.is('deleted_at', null); // Only non-deleted users  
+      }
+      
+      const { data: profiles, error: profilesError } = await query
         .order('created_at', { ascending: false });
 
       if (profilesError) {
