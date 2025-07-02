@@ -1,7 +1,9 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 interface SchoolPaginationProps {
   currentPage: number;
@@ -20,6 +22,8 @@ const SchoolPagination: React.FC<SchoolPaginationProps> = ({
   onPageChange,
   onPageSizeChange
 }) => {
+  const { t } = useTranslation();
+  
   // Calculate displayed range
   const startItem = totalCount === 0 ? 0 : (currentPage - 1) * pageSize + 1;
   const endItem = Math.min(currentPage * pageSize, totalCount);
@@ -51,11 +55,11 @@ const SchoolPagination: React.FC<SchoolPaginationProps> = ({
       {/* Info and Page Size Selector */}
       <div className="flex items-center gap-4 text-sm text-muted-foreground">
         <span>
-          {startItem}-{endItem} / {totalCount} məktəb
+          {startItem}-{endItem} / {totalCount} {t('schools.schools')}
         </span>
         
         <div className="flex items-center gap-2">
-          <span>Səhifədə:</span>
+          <span>{t('dashboard.itemsPerPage')}:</span>
           <Select
             value={pageSize.toString()}
             onValueChange={(value) => onPageSizeChange(Number(value))}
@@ -82,7 +86,7 @@ const SchoolPagination: React.FC<SchoolPaginationProps> = ({
           size="sm"
           onClick={() => onPageChange(1)}
           disabled={currentPage === 1}
-          title="İlk səhifə"
+          title={t('dashboard.first')}
         >
           <ChevronsLeft className="h-4 w-4" />
         </Button>
@@ -93,7 +97,7 @@ const SchoolPagination: React.FC<SchoolPaginationProps> = ({
           size="sm"
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          title="Əvvəlki səhifə"
+          title={t('dashboard.previous')}
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
@@ -119,7 +123,7 @@ const SchoolPagination: React.FC<SchoolPaginationProps> = ({
           size="sm"
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          title="Növbəti səhifə"
+          title={t('dashboard.next')}
         >
           <ChevronRight className="h-4 w-4" />
         </Button>
@@ -130,7 +134,7 @@ const SchoolPagination: React.FC<SchoolPaginationProps> = ({
           size="sm"
           onClick={() => onPageChange(totalPages)}
           disabled={currentPage === totalPages}
-          title="Son səhifə"
+          title={t('dashboard.last')}
         >
           <ChevronsRight className="h-4 w-4" />
         </Button>

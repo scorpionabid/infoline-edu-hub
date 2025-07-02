@@ -1,257 +1,222 @@
 
-// Dashboard translation module
-export default {
+// Dashboard translation module - Extended with missing keys
+export const dashboard = {
+  // Page titles
   title: 'İdarə Paneli',
-  subtitle: 'Sistem məlumatlarına ümumi baxış',
-  welcome: 'Xoş gəlmisiniz',
-  loading: 'Yüklənir...',
-  
-  // Navigation
-  navigation: {
-    overview: 'Ümumi baxış',
-    analytics: 'Analitika',
-    reports: 'Hesabatlar',
-    quick_actions: 'Tez əməliyyatlar',
-    recent_activity: 'Son fəaliyyət',
-    notifications: 'Bildirişlər',
-    settings: 'Parametrlər'
-  },
-
-  // Main statistics
-  stats: {
-    // General numbers
-    total_schools: 'Ümumi Məktəblər',
-    total_students: 'Ümumi Şagirdlər',
-    total_teachers: 'Ümumi Müəllimlər',
-    total_users: 'Ümumi İstifadəçilər',
-    active_users: 'Aktiv İstifadəçilər',
-    online_users: 'Onlayn İstifadəçilər',
-    total_regions: 'Ümumi Regionlar',
-    
-    // Region statistics
-    region_schools: 'Region Məktəbləri',
-    region_users: 'Region İstifadəçiləri',
-    region_completion: 'Region Tamamlanma Faizi',
-    
-    // Sector statistics
-    sector_schools: 'Sektor Məktəbləri',
-    sector_completion: 'Sektor Tamamlanma Faizi',
-    pending_approvals: 'Gözləyən Təsdiqlər',
-    
-    // School statistics
-    pending_forms: 'Gözləyən Formlar',
-    completed_forms: 'Tamamlanmış Formlar',
-    form_completion: 'Form Tamamlanma Faizi',
-    overdue_forms: 'Vaxtı keçən Formlar',
-    total_forms: 'Ümumi Formlar',
-    total_forms_description: 'Ümumi form sayı',
-    due_soon: 'Tezliklə bitəcək',
-    
-    // Performance indicators
-    completion_rate: 'Tamamlanma Faizi',
-    approval_rate: 'Təsdiq Faizi',
-    response_time: 'Cavab Vaxtı',
-    user_engagement: 'İstifadəçi Fəallığı',
-    data_quality: 'Məlumat Keyfiyyəti',
-    system_uptime: 'Sistem İşləmə Vaxtı'
-  },
-
-  // SuperAdmin specific translations
-  superadmin: {
-    total_users: 'İstifadəçilər',
-    total_schools: 'Məktəblər',
-    total_regions: 'Regionlar',
-    completion: 'Tamamlanma',
-    system_users: 'Sistem istifadəçiləri',
-    registered_schools: 'Qeydiyyatlı məktəblər',
-    management_regions: 'İdarə regionları',
-    average_completion: 'Ortalama tamamlanma',
-    no_activity_yet: 'Hələ heç bir fəaliyyət yoxdur'
-  },
-
-  // SectorAdmin specific translations
-  sectoradmin: {
-    dashboard_title: 'Sektor Admin Dashboard',
-    bulk_data_entry: 'Topluca Data Daxil Et',
-    bulk_data_entry_description: 'Seçilmiş məktəblər üçün eyni məlumatı toplu şəkildə daxil edin',
-    select_schools: 'Məktəbləri seçin',
-    select_category: 'Kateqoriya seçin',
-    select_column: 'Sütun seçin',
-    enter_data: 'Məlumat daxil edin',
-    bulk_operations: 'Toplu əməliyyatlar'
-  },
-
-  // Cards and widgets
-  cards: {
-    overview: 'Ümumi Baxış',
-    quick_stats: 'Tez Statistika',
-    completion_progress: 'Tamamlanma Proqresi',
-    pending_tasks: 'Gözləyən Tapşırıqlar',
-    recent_activity: 'Son Fəaliyyət',
-    notifications: 'Bildirişlər',
-    deadlines: 'Son Tarixlər',
-    performance: 'Performans',
-    alerts: 'Xəbərdarlıqlar',
-    system_status: 'Sistem Statusu'
-  },
-
-  // Progress indicators
-  progress: {
-    data_entry: 'Məlumat Daxil Etmə',
-    form_completion: 'Form Tamamlanması',
-    approval_process: 'Təsdiq Prosesi',
-    quality_check: 'Keyfiyyət Yoxlaması',
-    deadline_tracking: 'Son Tarix İzləmə',
-    overall_progress: 'Ümumi Proqres',
-    
-    // Progress statuses
-    not_started: 'Başlanmayıb',
-    in_progress: 'Davam edir',
-    nearly_complete: 'Demək olar ki, tamam',
-    completed: 'Tamamlandı',
-    overdue: 'Vaxtı keçib',
-    needs_attention: 'Diqqət tələb edir'
-  },
-
-  // Recent activity
-  activity: {
-    recent_logins: 'Son Girişlər',
-    recent_submissions: 'Son Təqdimatlar',
-    recent_approvals: 'Son Təsdiqlər',
-    recent_changes: 'Son Dəyişikliklər',
-    recent_uploads: 'Son Yükləmələr',
-    system_events: 'Sistem Hadisələri',
-    user_actions: 'İstifadəçi Hərəkətləri',
-    no_activity: 'Fəaliyyət yoxdur',
-    loading_activity: 'Fəaliyyət yüklənir...',
-    
-    // Activity types
-    login: 'Giriş',
-    logout: 'Çıxış',
-    created: 'Yaradıldı',
-    updated: 'Yeniləndi',
-    deleted: 'Silindi',
-    approved: 'Təsdiqləndi',
-    rejected: 'Rədd edildi',
-    submitted: 'Təqdim edildi',
-    uploaded: 'Yükləndi',
-    downloaded: 'Endirildi'
-  },
-
-  // Notifications
-  notifications: {
-    title: 'Bildirişlər',
-    new_notifications: 'Yeni Bildirişlər',
-    no_notifications: 'Bildiriş yoxdur',
-    mark_all_read: 'Hamısını oxunmuş kimi işarələ',
-    clear_all: 'Hamısını təmizlə',
-    view_all: 'Hamısına bax'
-  },
-
-  // Filters and search
-  filters: {
-    filter_by_date: 'Tarixə görə filtr',
-    filter_by_status: 'Statusa görə filtr',
-    filter_by_region: 'Regiona görə filtr',
-    filter_by_sector: 'Sektora görə filtr',
-    filter_by_school: 'Məktəbə görə filtr',
-    filter_by_user: 'İstifadəçiyə görə filtr',
-    search_dashboard: 'Dashboard-da axtar',
-    clear_filters: 'Filtrləri təmizlə',
-    apply_filters: 'Filtrləri tətbiq et'
-  },
-
-  // Refresh and sync
-  refresh: {
-    refresh_data: 'Məlumatları Yenilə',
-    auto_refresh: 'Avtomatik Yenilənmə',
-    last_updated: 'Son yenilənmə',
-    refreshing: 'Yenilənir...',
-    sync_status: 'Sinxronizasiya statusu',
-    sync_in_progress: 'Sinxronizasiya davam edir',
-    sync_completed: 'Sinxronizasiya tamamlandı',
-    sync_failed: 'Sinxronizasiya uğursuz'
-  },
-
-  // Time selection
-  time_period: {
-    today: 'Bu gün',
-    yesterday: 'Dünən',
-    this_week: 'Bu həftə',
-    last_week: 'Keçən həftə',
-    this_month: 'Bu ay',
-    last_month: 'Keçən ay',
-    this_quarter: 'Bu rüb',
-    last_quarter: 'Keçən rüb',
-    this_year: 'Bu il',
-    last_year: 'Keçən il',
-    custom_range: 'Xüsusi aralıq',
-    select_period: 'Dövr seçin'
-  },
-
-  // Dashboard card labels
-  totalSchools: 'Ümumi Məktəblər',
-  schoolsInSector: 'Sektordakı məktəblər',
-  totalRequiredFields: 'Ümumi tələb olunan sahələr',
-  requiredFields: 'Tələb olunan sahələr',
-  totalPossibleEntries: 'Ümumi mümkün girişlər',
-  allPossibleEntries: 'Bütün mümkün girişlər',
-  pendingApprovals: 'Gözləyən təsdiqlər',
-  awaitingApproval: 'Təsdiq gözləyir',
-  
-  // Form statistics
-  formStatistics: 'Form Statistikaları',
+  welcome: 'İdarə Panelinə xoş gəlmisiniz',
+  overview: 'Ümumi baxış',
+  quickActions: 'Sürətli Əməliyyatlar',
   recentActivity: 'Son Fəaliyyət',
-  
-  // Region filters
-  filterByStatus: "Status üzrə filtrlə",
-  allStatuses: "Bütün statuslar",
-  active: "Aktiv",
-  inactive: "Deaktiv",
-  blocked: "Bloklanıb",
-  resetFilters: "Filtrləri sıfırla",
+  notifications: 'Bildirişlər',
+  viewAll: 'Hamısını gör',
+  noNotifications: 'Yeni bildiriş yoxdur',
+  noRecentActivity: 'Son fəaliyyət yoxdur',
+  loading: 'Yüklənir...',
 
-  // States
-  reviewNeeded: "Yoxlanış lazımdır",
-  inReview: "Nəzərdən keçirilir",
+  // Navigation
+  home: 'Ana səhifə',
+  profile: 'Profil',
+  settings: 'Parametrlər',
+  logout: 'Çıxış',
+
+  // Stats Cards
+  totalUsers: 'Ümumi İstifadəçilər',
+  activeSessions: 'Aktiv Sessiyalar',
+  totalRevenue: 'Ümumi Gəlir',
+  newUsers: 'Yeni İstifadəçilər',
+  totalSchools: 'Ümumi Məktəblər',
+  activeUsers: 'Aktiv İstifadəçilər',
+  totalForms: 'Ümumi Formlar',
+  completedForms: 'Tamamlanmış Formlar',
+  pendingApprovals: 'Gözləyən Təsdiqlər',
+  totalRegions: 'Ümumi Regionlar',
+  totalSectors: 'Ümumi Sektorlar',
+
+  // Buttons
+  addNew: 'Yeni əlavə et',
+  save: 'Yadda saxla',
+  cancel: 'İmtina',
+  edit: 'Redaktə et',
+  delete: 'Sil',
+  search: 'Axtar...',
+  filter: 'Filtr',
+  refresh: 'Yenilə',
+  export: 'İxrac et',
+  import: 'İdxal et',
+
+  // Tables
+  name: 'Ad',
+  email: 'E-poçt',
+  role: 'Rol',
+  status: 'Status',
+  actions: 'Əməliyyatlar',
+  noData: 'Mövcud məlumat yoxdur',
+  noResults: 'Nəticə tapılmadı',
+
+  // Status
+  completed: 'Tamamlandı',
+  rejected: 'Rədd edildi',
+  pending: 'Gözləyir',
+  approved: 'Təsdiqləndi',
+  draft: 'Hazırlanır',
+  active: 'Aktiv',
+  inactive: 'Qeyri-aktiv',
 
   // Status types for charts
   statusTypes: {
-    approved: "Təsdiqlənib",
-    pending: "Gözləyir",
-    rejected: "Rədd edilib",
-    draft: "Qaralama",
+    approved: 'Təsdiqlənmiş',
+    pending: 'Gözləyən',
+    rejected: 'Rədd edilmiş',
+    draft: 'Hazırlanır',
   },
+  failed: 'Uğursuz',
+
+  // Date/Time
+  today: 'Bu gün',
+  yesterday: 'Dünən',
+  last7Days: 'Son 7 gün',
+  last30Days: 'Son 30 gün',
+  thisMonth: 'Bu ay',
+  lastMonth: 'Keçən ay',
+  thisWeek: 'Bu həftə',
+  lastWeek: 'Keçən həftə',
+
+  // User related
+  userManagement: 'İstifadəçi İdarəetməsi',
+  userList: 'İstifadəçi Siyahısı',
+  addUser: 'İstifadəçi əlavə et',
+  editUser: 'İstifadəçini redaktə et',
+  userProfile: 'İstifadəçi Profili',
+
+  // Help
+  help: 'Kömək',
+  support: 'Dəstək',
+  documentation: 'Sənədlər',
+  feedback: 'Rəy',
+
+  // Error Messages
+  errorOccurred: 'Xəta baş verdi',
+  tryAgain: 'Zəhmət olmasa yenidən cəhd edin',
+  pageNotFound: 'Səhifə tapılmadı',
+  unauthorized: 'İcazəsiz',
+  permissionDenied: 'Bu səhifəyə giriş icazəniz yoxdur',
+
+  // Success Messages
+  changesSaved: 'Dəyişikliklər uğurla yadda saxlandı',
+  operationSuccessful: 'Əməliyyat uğurla tamamlandı',
+
+  // Form Labels
+  username: 'İstifadəçi adı',
+  password: 'Şifrə',
+  confirmPassword: 'Şifrəni təsdiqlə',
+  rememberMe: 'Məni xatırla',
+  forgotPassword: 'Şifrəni unutdunuz?',
+
+  // Validation Messages
+  requiredField: 'Bu sahə mütləqdir',
+  invalidEmail: 'Zəhmət olmasa düzgün e-poçt ünvanı daxil edin',
+  passwordMismatch: 'Şifrələr uyğun deyil',
+
+  // Empty States
+  noResults: 'Nəticə tapılmadı',
+  tryDifferentKeywords: 'Fərqli açar sözlər cəhd edin',
+
+  // Tooltips
+  clickToRefresh: 'Yeniləmək üçün basın',
+  clickToEdit: 'Redaktə etmək üçün basın',
+
+  // Filter
+  filter: 'Filtr',
+  clearAll: 'Hamısını təmizlə',
+  apply: 'Tətbiq et',
+  filters: 'Filtrlər',
+  clearFilters: 'Filtrləri təmizlə',
+  resetFilters: 'Filtrləri sıfırla',
+
+  // Pagination
+  itemsPerPage: 'səhifə başına element',
+  of: 'dən',
+  previous: 'Əvvəlki',
+  next: 'Növbəti',
+  first: 'İlk',
+  last: 'Son',
+  page: 'Səhifə',
+  showing: 'Göstərilir',
+  showingEntries: '{{start}} - {{end}} / {{total}} gösterilir',
+
+  // System
+  systemSettings: 'Sistem Parametrləri',
+  appearance: 'Görünüş',
+  language: 'Dil',
+  theme: 'Tema',
+  light: 'İşıqlı',
+  dark: 'Qaranlıq',
+  system: 'Sistem',
+  
+  // Statistics
+  formStatistics: 'Form Statistikaları',
+  statistics: 'Statistika',
+  analytics: 'Analitika',
+  reports: 'Hesabatlar',
+  
+  // Region filters
+  filterByStatus: 'Status üzrə filtr',
+  allStatuses: 'Bütün statuslar',
+  blocked: 'Bloklanmış',
 
   // Stats Grid
-  totalApproved: "Təsdiqlənmiş",
-  totalPending: "Gözləyən",
-  totalRejected: "Rədd edilmiş",
-  completion: "Tamamlanma dərəcəsi",
-  
-  // Table headers
-  sectorLabel: "Sektor",
-  tableProgress: "İrəliləyiş",
-  actionsLabel: "Əməliyyatlar",
-  
-  // School stats
-  totalFields: "Ümumi sahələr",
-  filled: "Doldurulmuş",
-  showingResults: "Nəticələr",
-  itemsPerPage: "Səhifə başına",
+  totalApproved: 'Ümumi Təsdiqlənmiş',
+  totalPending: 'Ümumi Gözləyən',
+  totalRejected: 'Ümumi Rədd edilmiş',
+  completion: 'Tamamlanma Dərəcəsi',
+  completionRate: 'Tamamlanma Nisbəti',
 
-  // States
-  states: {
-    loading: 'Yüklənir...',
-    error: 'Xəta baş verdi',
-    no_data: 'Məlumat yoxdur',
-    connection_error: 'Bağlantı xətası',
-    timeout: 'Vaxt bitdi',
-    retry: 'Yenidən cəhd et',
-    reload: 'Yenidən yüklə'
-  },
+  // Table headers
+  sectorLabel: 'Sektor',
+  progress: 'İrəliləyiş',
+  tableProgress: 'İrəliləyiş',
+  actionsLabel: 'Əməliyyatlar',
+
+  // Dashboard specific
+  quickStats: 'Sürətli Statistika',
+  recentUpdates: 'Son Yeniliklər',
+  systemStatus: 'Sistem Statusu',
+  performanceMetrics: 'Performans Metriklər',
   
-  // User states
-  user_not_found: 'İstifadəçi tapılmadı',
-  unknown_role: 'Bilinməyən rol'
-}
+  // Charts and graphs
+  chartTitle: 'Qrafik',
+  noDataForChart: 'Qrafik üçün məlumat yoxdur',
+  dataVisualization: 'Məlumat Təqdimatı',
+  
+  // Actions
+  view: 'Bax',
+  manage: 'İdarə et',
+  configure: 'Konfiqurasiya et',
+  assign: 'Təyin et',
+  
+  // Common phrases
+  lastUpdated: 'Son yenilənmə',
+  createdAt: 'Yaradılıb',
+  updatedAt: 'Yenilənib',
+  by: 'tərəfindən',
+  
+  // Categories and forms
+  categories: 'Kateqoriyalar',
+  forms: 'Formlar',
+  submissions: 'Təqdimatlar',
+  
+  // School and education specific
+  schoolCount: 'Məktəb sayı',
+  studentCount: 'Şagird sayı',
+  teacherCount: 'Müəllim sayı',
+  
+  // Performance indicators
+  excellent: 'Əla',
+  good: 'Yaxşı',
+  average: 'Orta',
+  poor: 'Zəif',
+  needsImprovement: 'Təkmilləşdirmə tələb edir'
+} as const;
+
+export type Dashboard = typeof dashboard;
+export default dashboard;

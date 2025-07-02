@@ -540,6 +540,8 @@ export type Database = {
         Row: {
           avatar: string | null
           created_at: string
+          deleted_at: string | null
+          deleted_by: string | null
           email: string | null
           full_name: string
           id: string
@@ -553,6 +555,8 @@ export type Database = {
         Insert: {
           avatar?: string | null
           created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           email?: string | null
           full_name: string
           id: string
@@ -566,6 +570,8 @@ export type Database = {
         Update: {
           avatar?: string | null
           created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           email?: string | null
           full_name?: string
           id?: string
@@ -576,7 +582,15 @@ export type Database = {
           status?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_deleted_by_fkey"
+            columns: ["deleted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       regions: {
         Row: {
@@ -1398,6 +1412,19 @@ export type Database = {
         }
         Returns: Json
       }
+      create_audit_log_safe: {
+        Args: {
+          p_user_id: string
+          p_action: string
+          p_entity_type: string
+          p_entity_id?: string
+          p_old_value?: Json
+          p_new_value?: Json
+          p_ip_address?: string
+          p_user_agent?: string
+        }
+        Returns: undefined
+      }
       create_notification_from_template: {
         Args: {
           p_template_name: string
@@ -1724,6 +1751,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      hard_delete_user_safe: {
+        Args: { p_target_user_id: string; p_deleted_by?: string }
+        Returns: Json
+      }
       has_access_to_region: {
         Args:
           | { _user_id: string; _region_id: string }
@@ -1907,6 +1938,10 @@ export type Database = {
           p_priority?: string
         }
         Returns: boolean
+      }
+      soft_delete_user_safe: {
+        Args: { p_target_user_id: string; p_deleted_by?: string }
+        Returns: Json
       }
       status_transition_validator: {
         Args: { current_status: string; new_status: string }
