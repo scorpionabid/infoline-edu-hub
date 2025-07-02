@@ -183,30 +183,61 @@ const Users = () => {
 
     try {
       if (deleteType === 'hard') {
-        // Hard delete - actually delete the record
-        const { error } = await supabase
+        // Hard delete - delete from user_roles first, then profiles
+        console.log('🗑️ Hard deleting user:', selectedUser.id);
+        
+        // Step 1: Delete from user_roles
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .delete()
+          .eq('user_id', selectedUser.id);
+
+        if (roleError) {
+          console.error('Error deleting user roles:', roleError);
+          throw roleError;
+        }
+
+        // Step 2: Delete from profiles
+        const { error: profileError } = await supabase
           .from('profiles')
           .delete()
           .eq('id', selectedUser.id);
 
-        if (error) throw error;
+        if (profileError) {
+          console.error('Error deleting user profile:', profileError);
+          throw profileError;
+        }
+        
         toast.success("İstifadəçi tamamilə silindi");
       } else {
         // Soft delete - just mark as inactive
+        console.log('📝 Soft deleting user:', selectedUser.id);
         const { error } = await supabase
           .from('profiles')
           .update({ status: 'inactive' })
           .eq('id', selectedUser.id);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error soft deleting user:', error);
+          throw error;
+        }
         toast.success("İstifadəçi deaktiv edildi");
       }
 
       handleUserAddedOrEdited();
       setIsDeleteUserDialogOpen(false);
+      setSelectedUser(null);
     } catch (error) {
       console.error("Error deleting user:", error);
-      toast.error("İstifadəçi silinərkən xəta baş verdi");
+      
+      // More specific error messages
+      if (error.message?.includes('permission')) {
+        toast.error("İcazə xətası: Bu istifadəçini silmək üçün səlahiyyətiniz yoxdur");
+      } else if (error.message?.includes('foreign key')) {
+        toast.error("Bu istifadəçi silinə bilməz - əlaqəli məlumatlar mövcuddur");
+      } else {
+        toast.error(`İstifadəçi silinərkən xəta baş verdi: ${error.message || 'Naməlum xəta'}`);
+      }
     }
   }, [selectedUser, handleUserAddedOrEdited]);
 
