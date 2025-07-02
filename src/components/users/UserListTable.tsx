@@ -9,7 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Edit, Eye, Lock } from "lucide-react";
+import { Trash2, Edit, Eye, Lock, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { FullUserData } from "@/types/user";
 import { UserRole } from "@/types/supabase";
 import { useTranslation } from "@/contexts/TranslationContext";
@@ -27,6 +27,9 @@ interface UserListTableProps {
   onViewDetails: (user: FullUserData) => void;
   currentUserRole: UserRole;
   renderRow?: (user: FullUserData) => React.ReactNode;
+  onSort?: (field: string) => void;
+  sortField?: string;
+  sortDirection?: "asc" | "desc";
 }
 
 const UserListTable: React.FC<UserListTableProps> = ({
@@ -36,6 +39,9 @@ const UserListTable: React.FC<UserListTableProps> = ({
   onViewDetails,
   currentUserRole,
   renderRow,
+  onSort,
+  sortField,
+  sortDirection,
 }) => {
   const { t } = useTranslation();
 
@@ -69,17 +75,43 @@ const UserListTable: React.FC<UserListTableProps> = ({
     }
   };
 
+  const getSortIcon = (field: string) => {
+    if (sortField !== field) {
+      return <ArrowUpDown className="h-4 w-4" />;
+    }
+    return sortDirection === "asc" ? (
+      <ArrowUp className="h-4 w-4" />
+    ) : (
+      <ArrowDown className="h-4 w-4" />
+    );
+  };
+
+  const SortableHeader: React.FC<{ field: string; children: React.ReactNode }> = ({ field, children }) => (
+    <TableHead>
+      <Button
+        variant="ghost"
+        onClick={() => onSort?.(field)}
+        className="h-auto p-0 font-semibold hover:bg-transparent"
+      >
+        <div className="flex items-center space-x-1">
+          <span>{children}</span>
+          {getSortIcon(field)}
+        </div>
+      </Button>
+    </TableHead>
+  );
+
   return (
     <TooltipProvider>
       <div className="rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>{t("fullName")}</TableHead>
-              <TableHead>{t("email")}</TableHead>
-              <TableHead>{t("role")}</TableHead>
-              <TableHead>{t("lastLogin")}</TableHead>
-              <TableHead>{t("status")}</TableHead>
+              <SortableHeader field="full_name">{t("fullName")}</SortableHeader>
+              <SortableHeader field="email">{t("email")}</SortableHeader>
+              <SortableHeader field="role">{t("role")}</SortableHeader>
+              <SortableHeader field="last_login">{t("lastLogin")}</SortableHeader>
+              <SortableHeader field="status">{t("status")}</SortableHeader>
               <TableHead className="text-right">{t("actions")}</TableHead>
             </TableRow>
           </TableHeader>
@@ -153,31 +185,38 @@ const UserListTable: React.FC<UserListTableProps> = ({
                           </TooltipContent>
                         </Tooltip>
 
-                        {currentUserRole === "superadmin" && (
+                        {(currentUserRole === "superadmin" || currentUserRole === "regionadmin") && (
                           <>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => {
-                                    /* Implement reset password */
-                                  }}
-                                >
-                                  <Lock className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>{t("resetPassword")}</p>
-                              </TooltipContent>
-                            </Tooltip>
+                            {currentUserRole === "superadmin" && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => {
+                                      /* Implement reset password */
+                                    }}
+                                  >
+                                    <Lock className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>{t("resetPassword")}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
 
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button
+                                  type="button"
                                   variant="ghost"
                                   size="icon"
-                                  onClick={() => onDelete(user)}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    onDelete(user);
+                                  }}
                                   className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
                                 >
                                   <Trash2 className="h-4 w-4" />

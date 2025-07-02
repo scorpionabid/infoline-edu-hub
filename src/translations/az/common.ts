@@ -78,6 +78,16 @@ export const common = {
   selectAll: 'Hamısını seç',
   clearSelection: 'Seçimi təmizlə',
   
+  // ===== Pagination =====
+  pagination: {
+    previous: 'Əvvəlki',
+    next: 'Sonrakı',
+    showingResults: '{start}-{end} / {total}',
+    page: 'Səhifə',
+    of: '/',
+    goTo: 'Keç',
+  },
+  
   // ===== Common Navigation and Page Labels =====
   categoriesList: 'Kateqoriyalar Siyahısı',
   allAssignments: 'Bütün təyinatlar',

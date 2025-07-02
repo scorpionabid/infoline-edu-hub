@@ -4,6 +4,7 @@ export const user = {
   // Basic terms
   user: 'İstifadəçi',
   users: 'İstifadəçilər',
+  usersDescription: 'Sistemdəki bütün istifadəçiləri idarə edin',
   
   // User management
   create_user: 'İstifadəçi yarat',
@@ -15,18 +16,27 @@ export const user = {
   
   // User properties
   name: 'Ad',
+  fullName: 'Ad Soyad',
   email: 'E-poçt',
   phone: 'Telefon',
   role: 'Rol',
   status: 'Status',
+  position: 'Vəzifə',
+  language: 'Dil',
   created_at: 'Yaradılma tarixi',
+  updated_at: 'Yenilənmə tarixi',
   last_login: 'Son giriş',
+  lastLogin: 'Son giriş',
+  never: 'Heç vaxt',
   
   // Roles
   superadmin: 'Super Admin',
   regionadmin: 'Region Admin',
+  regionAdmin: 'Region Admin',
   sectoradmin: 'Sektor Admin',
+  sectorAdmin: 'Sektor Admin', 
   schooladmin: 'Məktəb Admin',
+  schoolAdmin: 'Məktəb Admin',
   teacher: 'Müəllim',
   
   // Status
@@ -34,11 +44,48 @@ export const user = {
   inactive: 'Qeyri-aktiv',
   suspended: 'Dayandırılıb',
   
+  // Filters and search
+  searchUsers: 'İstifadəçiləri axtarın',
+  filters: 'Filtrlər',
+  clearFilters: 'Filtrləri təmizlə',
+  selectRole: 'Rol seçin',
+  selectStatus: 'Status seçin',
+  allRoles: 'Bütün rollar',
+  allStatuses: 'Bütün statuslar',
+  school: 'Məktəb',
+  schoolId: 'Məktəb ID',
+  
+  // Actions
+  edit: 'Redaktə et',
+  delete: 'Sil',
+  view: 'Bax',
+  viewDetails: 'Detalları gör',
+  resetPassword: 'Şifrəni sıfırla',
+  actions: 'Əməliyyatlar',
+  save: 'Yadda saxla',
+  saving: 'Yadda saxlanır...',
+  cancel: 'İmtina',
+  
+  // Delete options
+  deleteType: 'Silmə növü',
+  softDelete: 'Yumşaq silmə',
+  hardDelete: 'Sərt silmə',
+  softDeleteDesc: 'İstifadəçi deaktiv ediləcək, məlumatlar saxlanacaq',
+  hardDeleteDesc: 'İstifadəçi və bütün məlumatları tamamilə silinəcək',
+  
+  // User details
+  userDetails: 'İstifadəçi məlumatları',
+  editUser: 'İstifadəçini redaktə et',
+  deleteUser: 'İstifadəçini sil',
+  createdAt: 'Yaradılma tarixi',
+  updatedAt: 'Yenilənmə tarixi',
+  
   // Messages
   user_created: 'İstifadəçi yaradıldı',
   user_updated: 'İstifadəçi yeniləndi',
   user_deleted: 'İstifadəçi silindi',
-  admin_not_assigned: 'Admin təyin edilməyib'
+  admin_not_assigned: 'Admin təyin edilməyib',
+  noUsers: 'İstifadəçi tapılmadı'
 } as const;
 
 export type User = typeof user;

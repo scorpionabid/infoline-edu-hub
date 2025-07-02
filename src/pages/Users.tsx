@@ -1,8 +1,11 @@
-
 import React, { useState, useCallback, useEffect } from "react";
 import UserListTable from "@/components/users/UserListTable";
 import UserHeader from "@/components/users/UserHeader";
 import AddUserDialog from "@/components/users/AddUserDialog";
+import EditUserDialog from "@/components/users/EditUserDialog";
+import DeleteUserDialog from "@/components/users/DeleteUserDialog";
+import UserDetailsDialog from "@/components/users/UserDetailsDialog";
+import Pagination from "@/components/common/Pagination";
 import { Loader2 } from "lucide-react";
 import { useAuthStore, selectUser } from "@/hooks/auth/useAuthStore";
 import { useNavigate } from "react-router-dom";
@@ -18,6 +21,7 @@ import {
   FullUserData // Use consistent user types
 } from "@/types/user";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const Users = () => {
   const { t } = useTranslation();
@@ -31,6 +35,12 @@ const Users = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
+  const [isEditUserDialogOpen, setIsEditUserDialogOpen] = useState(false);
+  const [isDeleteUserDialogOpen, setIsDeleteUserDialogOpen] = useState(false);
+  const [isUserDetailsDialogOpen, setIsUserDetailsDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<FullUserData | null>(null);
+  const [sortField, setSortField] = useState<string>("");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const pageSize = 10;
 
   const [filters, setFilters] = useState({
@@ -56,15 +66,36 @@ const Users = () => {
     loading,
     error,
     totalCount,
+    totalPages: hookTotalPages,
+    currentPage: hookCurrentPage,
+    pageSize: hookPageSize,
     refreshUsers,
-  } = useUserList(listFilters);
+    onPageChange,
+    onSort
+  } = useUserList(listFilters, {
+    page: currentPage,
+    pageSize: pageSize,
+    sortField,
+    sortDirection
+  });
 
   const handleUserAddedOrEdited = useCallback(() => {
     refreshUsers();
     setRefreshTrigger((prev) => prev + 1);
   }, [refreshUsers]);
 
-  const totalPages = Math.ceil((totalCount || 0) / pageSize);
+  const totalPages = hookTotalPages || Math.ceil((totalCount || 0) / pageSize);
+
+  // Debug log
+  console.log('📊 Pagination Debug:', {
+    totalCount,
+    pageSize,
+    totalPages,
+    hookTotalPages,
+    currentPage,
+    hookCurrentPage,
+    usersLength: users.length
+  });
 
   useEffect(() => {
     if (error) {
@@ -89,10 +120,97 @@ const Users = () => {
     [],
   );
 
-  const handlePageChange = (page: number) => {
+  const handlePageChange = useCallback((page: number) => {
     setCurrentPage(page);
+    onPageChange?.(page);
     window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+  }, [onPageChange]);
+
+  const handleSort = useCallback((field: string) => {
+    if (onSort) {
+      onSort(field);
+    } else {
+      // Fallback logic
+      if (sortField === field) {
+        setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+      } else {
+        setSortField(field);
+        setSortDirection("asc");
+      }
+    }
+  }, [onSort, sortField, sortDirection]);
+
+  const handleEditUser = useCallback((user: FullUserData) => {
+    console.log("Edit user:", user);
+    setSelectedUser(user);
+    setIsEditUserDialogOpen(true);
+  }, []);
+
+  const handleDeleteUser = useCallback((user: FullUserData) => {
+    console.log("Delete user:", user);
+    setSelectedUser(user);
+    setIsDeleteUserDialogOpen(true);
+  }, []);
+
+  const handleViewUserDetails = useCallback((user: FullUserData) => {
+    console.log("View user details:", user);
+    setSelectedUser(user);
+    setIsUserDetailsDialogOpen(true);
+  }, []);
+
+  const handleSaveUser = useCallback(async (userData: Partial<FullUserData>) => {
+    if (!selectedUser) return;
+    
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update(userData)
+        .eq('id', selectedUser.id);
+
+      if (error) throw error;
+
+      toast.success("İstifadəçi məlumatları yeniləndi");
+      handleUserAddedOrEdited();
+    } catch (error) {
+      console.error("Error updating user:", error);
+      toast.error("İstifadəçi yenilənərkən xəta baş verdi");
+      throw error;
+    }
+  }, [selectedUser, handleUserAddedOrEdited]);
+
+  const handleConfirmDelete = useCallback(async (deleteType: 'soft' | 'hard') => {
+    if (!selectedUser) return;
+
+    try {
+      if (deleteType === 'hard') {
+        // Hard delete - actually delete the record
+        const { error } = await supabase
+          .from('profiles')
+          .delete()
+          .eq('id', selectedUser.id);
+
+        if (error) throw error;
+        toast.success("İstifadəçi tamamilə silindi");
+      } else {
+        // Soft delete - just mark as inactive
+        const { error } = await supabase
+          .from('profiles')
+          .update({ status: 'inactive' })
+          .eq('id', selectedUser.id);
+
+        if (error) throw error;
+        toast.success("İstifadəçi deaktiv edildi");
+      }
+
+      handleUserAddedOrEdited();
+      setIsDeleteUserDialogOpen(false);
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      toast.error("İstifadəçi silinərkən xəta baş verdi");
+    }
+  }, [selectedUser, handleUserAddedOrEdited]);
+
+
 
   // Early return after all hooks
   React.useEffect(() => {
@@ -138,33 +256,23 @@ const Users = () => {
             <UserListTable
               users={users}
               currentUserRole={user?.role || 'schooladmin'}
-              onEdit={(user: FullUserData) => {
-                console.log("Edit user:", user);
-              }}
-              onDelete={(user: FullUserData) => {
-                console.log("Delete user:", user);
-              }}
-              onViewDetails={(user: FullUserData) => {
-                console.log("View user details:", user);
-              }}
+              onEdit={handleEditUser}
+              onDelete={handleDeleteUser}
+              onViewDetails={handleViewUserDetails}
+              onSort={handleSort}
+              sortField={sortField}
+              sortDirection={sortDirection}
             />
             {totalPages > 1 && (
-              <div className="flex justify-center py-4">
-                {/* Burada səhifələmə komponentini əlavə edə bilərsiniz */}
-                <div className="flex space-x-2">
-                  {Array.from({ length: totalPages }).map((_, i) => (
-                    <button
-                      key={i}
-                      className={`px-3 py-1 rounded-md ${currentPage === i + 1
-                        ? "bg-primary text-white"
-                        : "bg-muted hover:bg-muted/80"
-                        }`}
-                      onClick={() => handlePageChange(i + 1)}
-                    >
-                      {i + 1}
-                    </button>
-                  ))}
-                </div>
+              <div className="mt-4 p-4 border-t">
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
+                  showInfo={true}
+                  totalItems={totalCount || 0}
+                  itemsPerPage={pageSize}
+                />
               </div>
             )}
           </div>
@@ -175,6 +283,29 @@ const Users = () => {
           isOpen={isAddUserDialogOpen}
           onClose={() => setIsAddUserDialogOpen(false)}
           onSuccess={handleUserAddedOrEdited}
+        />
+        
+        {/* Edit User Dialog */}
+        <EditUserDialog
+          user={selectedUser}
+          open={isEditUserDialogOpen}
+          onOpenChange={setIsEditUserDialogOpen}
+          onSave={handleSaveUser}
+        />
+        
+        {/* Delete User Dialog */}
+        <DeleteUserDialog
+          user={selectedUser}
+          isOpen={isDeleteUserDialogOpen}
+          onClose={() => setIsDeleteUserDialogOpen(false)}
+          onConfirm={handleConfirmDelete}
+        />
+        
+        {/* User Details Dialog */}
+        <UserDetailsDialog
+          user={selectedUser}
+          open={isUserDetailsDialogOpen}
+          onOpenChange={setIsUserDetailsDialogOpen}
         />
       </div>
     </>

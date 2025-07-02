@@ -27,7 +27,6 @@ import Profile from "@/pages/Profile";
 import Statistics from "@/pages/Statistics";
 import ProgressTracking from "@/pages/ProgressTracking";
 import Performance from "@/pages/Performance";
-import UserManagement from "@/pages/UserManagement";
 import DataManagement from "@/pages/DataManagement";
 
 import { UserRole } from "@/types/auth";
@@ -270,7 +269,7 @@ const AppRoutes = () => (
         path="/user-management" 
         element={
           <ProtectedRoute allowedRoles={['superadmin']}>
-            <UserManagement />
+            <Users />
           </ProtectedRoute>
         } 
       />
