@@ -9,7 +9,13 @@ export interface DashboardStats {
   rejectedEntries: number;
   completed: number;
   pending: number;
-  pendingFormCount: number; // Added missing property
+  pendingFormCount: number;
+  // Added missing properties from DashboardHeader usage
+  schoolCount: number;
+  activeUserCount: number;
+  completionPercentage: number;
+  totalForms?: number;
+  completedForms?: number;
 }
 
 // Missing interfaces that were causing build errors

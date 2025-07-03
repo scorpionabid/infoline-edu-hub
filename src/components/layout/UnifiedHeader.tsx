@@ -13,7 +13,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useTranslation } from '@/contexts/TranslationContext';
 import LanguageSwitcher from './LanguageSwitcher';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuthStore, selectUser } from '@/hooks/auth/useAuthStore';
 
 interface UnifiedHeaderProps {
   title?: string;
@@ -31,7 +31,8 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
   actions
 }) => {
   const { t } = useTranslation();
-  const { user, logout } = useAuth();
+  const user = useAuthStore(selectUser);
+  const logout = useAuthStore(state => state.logout);
 
   return (
     <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">

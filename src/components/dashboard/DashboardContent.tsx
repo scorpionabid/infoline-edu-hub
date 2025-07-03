@@ -18,7 +18,7 @@ const DashboardContent: React.FC = () => {
   
   // Use the proper role selector from auth store
   const storeUserRole = useAuthStore(selectUserRole);
-  const userRole = storeUserRole || user?.user_metadata?.role || user?.role;
+  const userRole = storeUserRole || user?.role;
   
   // Get dashboard data using the hook
   const { data: dashboardData, loading: dashboardLoading, error: dashboardError } = useDashboardData({
@@ -30,7 +30,6 @@ const DashboardContent: React.FC = () => {
   
   console.log('[DashboardContent] User role debug:', {
     storeUserRole,
-    userMetadataRole: user?.user_metadata?.role,
     directRole: user?.role,
     finalUserRole: userRole,
     dashboardData,

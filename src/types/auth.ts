@@ -65,6 +65,7 @@ export interface FullUserData {
   updated_at?: string;
   permissions?: string[];
   preferences?: any;
+  user_metadata?: any;
   entityName?: string | {
     region?: string;
     sector?: string;

@@ -18,50 +18,60 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ onStatsChange }) => {
     schoolCount: 0,
     activeUserCount: 0,
     completionPercentage: 0,
-    pendingFormCount: 0
+    pendingFormCount: 0,
+    totalEntries: 0,
+    completedEntries: 0,
+    pendingEntries: 0,
+    approvedEntries: 0,
+    rejectedEntries: 0,
+    completed: 0,
+    pending: 0
   });
 
   const { data, isError, refetch } = useQuery({
     queryKey: ['dashboardStats'],
     queryFn: async () => {
-      const { data: schools, error: schoolsError } = await supabase
+      const { count: schoolCount, error: schoolsError } = await supabase
         .from('schools')
-        .select('count(*) as schoolCount')
-        .single();
+        .select('*', { count: 'exact', head: true });
 
-      const { data: users, error: usersError } = await supabase
+      const { count: activeUserCount, error: usersError } = await supabase
         .from('profiles')
-        .select('count(*) as activeUserCount')
-        .eq('status', 'active')
-        .single();
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'active');
 
-      const { data: forms, error: formsError } = await supabase
+      const { count: totalForms, error: formsError } = await supabase
         .from('categories')
-        .select('count(*) as totalForms')
-        .single();
+        .select('*', { count: 'exact', head: true });
 
-      const { data: pending, error: pendingError } = await supabase
+      const { count: pendingFormCount, error: pendingError } = await supabase
         .from('categories')
-        .select('count(*) as pendingFormCount')
-        .eq('status', 'pending')
-        .single();
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending');
 
       if (schoolsError || usersError || formsError || pendingError) {
         console.error('Error fetching dashboard stats:', schoolsError, usersError, formsError, pendingError);
         throw new Error('Failed to fetch dashboard stats');
       }
 
-      const schoolCount = schools?.schoolCount || 0;
-      const activeUserCount = users?.activeUserCount || 0;
-      const totalForms = forms?.totalForms || 0;
-      const pendingFormCount = pending?.pendingFormCount || 0;
-      const completionPercentage = totalForms > 0 ? Math.round(((totalForms - pendingFormCount) / totalForms) * 100) : 0;
+      const schoolsTotal = schoolCount || 0;
+      const usersTotal = activeUserCount || 0;
+      const formsTotal = totalForms || 0;
+      const pendingTotal = pendingFormCount || 0;
+      const completionPercentage = formsTotal > 0 ? Math.round(((formsTotal - pendingTotal) / formsTotal) * 100) : 0;
 
       return {
-        schoolCount,
-        activeUserCount,
+        schoolCount: schoolsTotal,
+        activeUserCount: usersTotal,
         completionPercentage,
-        pendingFormCount
+        pendingFormCount: pendingTotal,
+        totalEntries: formsTotal,
+        completedEntries: formsTotal - pendingTotal,
+        pendingEntries: pendingTotal,
+        approvedEntries: formsTotal - pendingTotal,
+        rejectedEntries: 0,
+        completed: formsTotal - pendingTotal,
+        pending: pendingTotal
       };
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -69,11 +79,18 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ onStatsChange }) => {
 
   useEffect(() => {
     if (data) {
-      const newStats = {
+      const newStats: DashboardStats = {
         schoolCount: data.schoolCount || 0,
         activeUserCount: data.activeUserCount || 0,
         completionPercentage: data.completionPercentage || 0,
-        pendingFormCount: data.pendingFormCount || 0
+        pendingFormCount: data.pendingFormCount || 0,
+        totalEntries: data.totalEntries || 0,
+        completedEntries: data.completedEntries || 0,
+        pendingEntries: data.pendingEntries || 0,
+        approvedEntries: data.approvedEntries || 0,
+        rejectedEntries: data.rejectedEntries || 0,
+        completed: data.completed || 0,
+        pending: data.pending || 0
       };
       setStats(newStats);
       onStatsChange?.(newStats);

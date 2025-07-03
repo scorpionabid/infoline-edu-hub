@@ -210,7 +210,10 @@ const SchoolsTable: React.FC<SchoolsTableProps> = ({
             <SchoolPagination
               currentPage={currentPage}
               totalPages={totalPages}
+              totalCount={totalItems}
+              pageSize={10}
               onPageChange={goToPage}
+              onPageSizeChange={() => {}}
             />
             <div className="flex items-center justify-between mt-4">
               <div className="text-sm text-muted-foreground">
