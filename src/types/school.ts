@@ -1,6 +1,30 @@
 
 // School related types - enhanced with missing exports
 
+export interface Region {
+  id: string;
+  name: string;
+  status?: string;
+  description?: string;
+  admin_id?: string;
+  admin_email?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface Sector {
+  id: string;
+  name: string;
+  region_id: string;
+  status?: string;
+  description?: string;
+  admin_id?: string;
+  admin_email?: string;
+  completion_rate?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface School {
   id: string;
   name: string;

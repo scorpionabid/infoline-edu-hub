@@ -440,7 +440,7 @@ export const SchoolDataGrid: React.FC<SchoolDataGridProps> = ({
                     {permissions.canApprove && (
                       <Checkbox
                         checked={selectedSchools.includes(school.school_id)}
-                        onCheckedChange={(checked) => handleSchoolSelect(school.school_id, checked)}
+                        onCheckedChange={(checked) => handleSchoolSelect(school.school_id, Boolean(checked))}
                       />
                     )}
                     

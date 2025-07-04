@@ -1,9 +1,6 @@
 
-// Temporary placeholder for dataEntry core module
-// This will be properly implemented when the data entry system is refactored
-
-export const DataEntryCore = {
-  // Placeholder exports
-};
-
-export default DataEntryCore;
+export { default as FormFields } from './FormFields';
+export { DataEntryFormContent } from './DataEntryFormContent';
+export { ProgressTracker } from './ProgressTracker';
+export { ValidationSummary } from './ValidationSummary';
+export { AutoSaveIndicator } from './AutoSaveIndicator';
