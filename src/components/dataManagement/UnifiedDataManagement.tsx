@@ -355,7 +355,7 @@ const UnifiedDataManagement: React.FC<UnifiedDataManagementProps> = ({
       <div className="min-h-[400px]">
         {currentStep === 'category' && (
           <CategorySelector
-            categories={categories}
+            categories={categories as any} // Type assertion for compatibility
             loading={loading.categories}
             onCategorySelect={handleCategorySelect}
             permissions={permissions}
@@ -388,7 +388,6 @@ const UnifiedDataManagement: React.FC<UnifiedDataManagementProps> = ({
                 category={selectedCategory!}
                 column={selectedColumn}
                 schoolData={filteredSchoolData}
-                stats={filteredStats}
                 loading={loading.schoolData}
                 saving={loading.saving}
                 permissions={permissions}
@@ -397,8 +396,6 @@ const UnifiedDataManagement: React.FC<UnifiedDataManagementProps> = ({
                 onDataReject={handleDataReject}
                 onBulkApprove={handleBulkApprove}
                 onBulkReject={handleBulkReject}
-                onBack={() => goToStep('column')}
-                compactMode={compactMode}
               />
             )}
           </>

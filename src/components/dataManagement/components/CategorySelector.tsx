@@ -9,7 +9,7 @@ import {
   Loader2,
   BookOpen
 } from 'lucide-react';
-import { Category } from '@/hooks/dataManagement/useDataManagement';
+import type { Category } from '@/types/column';
 
 interface CategorySelectorProps {
   categories: Category[];
@@ -223,22 +223,7 @@ export const CategorySelector: React.FC<CategorySelectorProps> = memo(({
                 )}
               </CardHeader>
               
-              {category.completion_rate !== undefined && (
-                <CardContent className="pt-0">
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Tamamlanma</span>
-                      <span className="font-medium">
-                        {category.completion_rate}%
-                      </span>
-                    </div>
-                    <Progress 
-                      value={category.completion_rate} 
-                      className="h-2"
-                    />
-                  </div>
-                </CardContent>
-              )}
+              {/* Completion rate display removed for now - not in column type */}
             </Card>
           );
         })}

@@ -12,7 +12,7 @@ import {
   AlertCircle,
   FileText
 } from 'lucide-react';
-import { Category, Column } from '@/hooks/dataManagement/useDataManagement';
+import type { Category, Column } from '@/types/column';
 
 interface ColumnSelectorProps {
   category: Category;

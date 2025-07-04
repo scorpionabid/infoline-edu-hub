@@ -4,6 +4,10 @@ import { useToast } from '@/components/ui/use-toast';
 import type { Category, Column } from '@/types/column';
 import type { DataStats, LoadingStates } from './types';
 
+// Import categories and columns hooks
+import { useCategories } from '@/hooks/categories/useCategories';
+import { useColumns } from '@/hooks/columns/useColumns';
+
 // Import refactored hooks
 import { useDataManagementState } from './core/useDataManagementState';
 import { useDataManagementPermissions } from './core/useDataManagementPermissions';
@@ -53,18 +57,19 @@ export const useDataManagement = () => {
   const { handleDataApprove, handleDataReject, saving: savingApproval } = useDataApproval();
   const { handleBulkApprove, handleBulkReject, saving: savingBulk } = useBulkOperations();
 
-  // Local state for categories and columns
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [columns, setColumns] = useState<Column[]>([]);
+  // Load categories and columns
+  const { data: categories = [], isLoading: loadingCategories, error: categoriesError } = useCategories();
+  const { data: columns = [], isLoading: loadingColumns, error: columnsError } = useColumns(selectedCategory?.id);
   const [stats, setStats] = useState<DataStats | null>(null);
 
-  // Loading states
-  const [loading, setLoading] = useState<LoadingStates>({
-    categories: false,
-    columns: false,
-    schoolData: false,
-    saving: false
-  });
+  // Handle API errors
+  useEffect(() => {
+    if (categoriesError) {
+      setError(categoriesError.message || 'Failed to load categories');
+    } else if (columnsError) {
+      setError(columnsError.message || 'Failed to load columns');
+    }
+  }, [categoriesError, columnsError, setError]);
 
   // Calculate stats from school data
   useEffect(() => {
@@ -151,20 +156,13 @@ export const useDataManagement = () => {
   // Reset workflow
   const resetWorkflow = () => {
     resetState();
-    setCategories([]);
-    setColumns([]);
     setStats(null);
-    setLoading({
-      categories: false,
-      columns: false,
-      schoolData: false,
-      saving: false
-    });
   };
 
   // Combined loading state
   const combinedLoading = {
-    ...loading,
+    categories: loadingCategories,
+    columns: loadingColumns,
     schoolData: dataLoading,
     saving: savingData || savingApproval || savingBulk
   };

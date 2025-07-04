@@ -14,7 +14,7 @@ import {
   AlertCircle,
   CheckCircle
 } from 'lucide-react';
-import { Category, Column } from '@/hooks/dataManagement/useDataManagement';
+import type { Category, Column } from '@/types/column';
 import { toast } from 'sonner';
 
 interface SectorDataEntryProps {
