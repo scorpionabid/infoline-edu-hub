@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { useTranslation } from "@/contexts/TranslationContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { School } from "@/hooks/entities/useSchools";
+import { School } from "@/types/school";
 
 interface SchoolManagementProps {
   selectedSchoolId: string;

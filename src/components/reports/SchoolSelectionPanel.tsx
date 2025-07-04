@@ -16,7 +16,7 @@ const SchoolSelectionPanel: React.FC<SchoolSelectionPanelProps> = ({
   schools,
   selectedSchoolIds,
   onSchoolSelect,
-  // onSelectAll
+  onSelectAll
 }) => {
   if (schools.length === 0) return null;
 

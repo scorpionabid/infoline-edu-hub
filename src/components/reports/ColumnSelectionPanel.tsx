@@ -19,7 +19,7 @@ const ColumnSelectionPanel: React.FC<ColumnSelectionPanelProps> = ({
   selectedColumnIds,
   selectedCategory,
   onColumnSelect,
-  // onSelectAll
+  onSelectAll
 }) => {
   if (columns.length === 0) return null;
 

@@ -21,7 +21,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
   heading,
   subheading,
   backButtonUrl,
-  // children
+  children
 }) => {
   const navigate = useNavigate();
   
