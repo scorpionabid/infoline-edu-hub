@@ -15,7 +15,7 @@ import {
   Users,
   BookOpen,
   TrendingUp,
-  // AlertCircle
+  AlertCircle
 } from 'lucide-react';
 import {
   DropdownMenu,

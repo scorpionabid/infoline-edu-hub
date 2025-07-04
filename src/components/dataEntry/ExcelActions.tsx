@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2, FileDown, Upload } from 'lucide-react';
-import { useLanguageSafe } from '@/context/LanguageContext';
+import { useTranslation } from '@/contexts/TranslationContext';
 import { CategoryWithColumns } from '@/types/category';
 import { ImportResult } from '@/types/excel';
 import ExcelImportDialog from '@/components/excel/ExcelImportDialog';
@@ -27,9 +27,9 @@ const ExcelActions: React.FC<ExcelActionsProps> = ({
   onUpload,
   onImportComplete,
   onDownloadLegacy,
-  // onUploadLegacy
+  onUploadLegacy
 }) => {
-  const { t } = useLanguageSafe();
+  const { t } = useTranslation();
   const [isUploading, setIsUploading] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);

@@ -10,7 +10,7 @@ import {
   Phone,
   ChevronRight,
   X,
-  // CheckCircle
+  CheckCircle
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -26,7 +26,7 @@ export const DataEntryHelpPanel: React.FC<DataEntryHelpPanelProps> = ({
   categoryName = 'Bu kateqoriya',
   totalFields = 0,
   completedFields = 0,
-  // onClose
+  onClose
 }) => {
   const [isOpen, setIsOpen] = useState(true);
   const [expandedSections, setExpandedSections] = useState<string[]>(['tips']);

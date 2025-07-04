@@ -39,6 +39,7 @@ export interface ValidationRules {
   numeric?: boolean;
   integer?: boolean;
   date?: boolean;
+  step?: number | string;
   custom?: string;
 }
 

@@ -20,7 +20,7 @@ interface CategoryNavigationProps {
 export const CategoryNavigation: React.FC<CategoryNavigationProps> = ({
   categories,
   selectedCategoryId,
-  // onCategorySelect
+  onCategorySelect
 }) => {
   const getCompletionRate = (category: any) => {
     if (!category.required_fields || category.required_fields === 0) return 0;

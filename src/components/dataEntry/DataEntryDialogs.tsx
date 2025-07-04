@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from '@/components/ui/button';
-import { useLanguageSafe } from '@/context/LanguageContext';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 export interface DialogsState {
   isSubmitDialogOpen: boolean;
@@ -27,9 +27,9 @@ export interface DataEntryDialogsProps {
 export const DataEntryDialogs: React.FC<DataEntryDialogsProps> = ({
   state,
   onClose,
-  // onConfirm
+  onConfirm
 }) => {
-  const { t } = useLanguageSafe();
+  const { t } = useTranslation();
   
   const handleSubmitConfirm = () => {
     onConfirm('submit');
