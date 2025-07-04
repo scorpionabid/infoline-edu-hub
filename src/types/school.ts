@@ -26,6 +26,7 @@ export interface Sector {
 }
 
 export interface School {
+  completion_rate?: number;
   id: string;
   name: string;
   address?: string;
@@ -38,6 +39,8 @@ export interface School {
   language?: string;
   region_id: string;
   sector_id: string;
+  admin_id?: string;
+  admin_email?: string;
   status: 'active' | 'inactive';
   created_at: string;
   updated_at?: string;

@@ -172,8 +172,11 @@ export const CategorySelector: React.FC<CategorySelectorProps> = memo(({
                   ? 'opacity-50 cursor-not-allowed hover:shadow-none' 
                   : 'hover:shadow-lg hover:scale-[1.02]'
               }`}
-              onClick={() => {
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 if (!isDisabled) {
+                  console.log('Category selected:', category.name);
                   onCategorySelect(category);
                 }
               }}

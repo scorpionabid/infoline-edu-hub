@@ -170,7 +170,12 @@ export const ColumnSelector: React.FC<ColumnSelectorProps> = memo(({
             <Card 
               key={column.id}
               className="cursor-pointer hover:shadow-md transition-all duration-200 hover:scale-[1.01] group"
-              onClick={() => onColumnSelect(column)}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Column selected:', column.name);
+                onColumnSelect(column);
+              }}
             >
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">

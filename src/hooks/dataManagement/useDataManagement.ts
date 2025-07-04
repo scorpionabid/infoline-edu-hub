@@ -83,9 +83,12 @@ export const useDataManagement = () => {
     const loadData = async () => {
       if (selectedCategory?.id && selectedColumn?.id && currentStep === 'data') {
         try {
+          console.log('Loading school data for:', { categoryId: selectedCategory.id, columnId: selectedColumn.id });
           const data = await loadSchoolData(selectedCategory.id, selectedColumn.id);
           setSchoolData(data);
+          console.log('School data loaded successfully:', data.length, 'entries');
         } catch (error) {
+          console.error('Failed to load school data:', error);
           setError(error instanceof Error ? error.message : 'Data loading failed');
         }
       }
