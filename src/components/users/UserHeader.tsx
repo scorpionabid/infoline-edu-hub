@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -9,9 +10,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Search, Filter, UserCheck, UserX } from "lucide-react";
+import { Plus, Search, Filter, UserCheck, UserX, Users, Trash2, X } from "lucide-react";
 import { UserRole } from "@/types/user";
 import { useTranslation } from "@/contexts/TranslationContext";
+import { Card, CardContent } from "@/components/ui/card";
 
 type EntityType = "region" | "sector" | "school";
 
@@ -88,216 +90,238 @@ const UserHeader: React.FC<UserHeaderProps> = ({
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold">{t("navigation.users")}</h1>
-          <p className="text-muted-foreground">{t("users.usersDescription")}</p>
-        </div>
-        <Button onClick={handleAddUser}>
-          <Plus className="h-4 w-4 mr-2" />
-          {t("userManagement.add_user") || "İstifadəçi əlavə et"}
-        </Button>
-      </div>
-
-      {/* Status Tabs */}
-      <div className="flex items-center space-x-4">
-        <Tabs 
-          value={getFirstFromFilter(currentFilter.status) || "active"} 
-          onValueChange={(value) => {
-            const filterValue = value === "all" ? undefined : value;
-            handleFilterChange("status", filterValue);
-          }}
-          className="w-auto"
-        >
-          <TabsList>
-            <TabsTrigger value="active" className="flex items-center gap-2">
-              <UserCheck className="h-4 w-4" />
-              {t("users.activeUsers") || "Aktiv İstifadəçilər"}
-            </TabsTrigger>
-            <TabsTrigger value="inactive" className="flex items-center gap-2">
-              <UserX className="h-4 w-4" />
-              {t("users.inactiveUsers") || "Deaktiv İstifadəçilər"}
-            </TabsTrigger>
-            <TabsTrigger value="all">
-              {t("users.allUsers") || "Bütün İstifadəçilər"}
-            </TabsTrigger>
-            <TabsTrigger value="deleted" className="flex items-center gap-2">
-              <UserX className="h-4 w-4" />
-              {t("users.deletedUsers") || "Silinmiš İstifadəçilər"}
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </div>
-
-      <div className="flex items-center space-x-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            placeholder={t("users.searchUsers")}
-            value={currentFilter?.search || ""}
-            onChange={(e) => handleFilterChange("search", e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        <Button variant="outline" onClick={() => setShowFilters(!showFilters)}>
-          <Filter className="h-4 w-4 mr-2" />
-          {t("users.filters")}
-        </Button>
-        {((currentFilter.role && currentFilter.role.length > 0) ||
-          (currentFilter.status && currentFilter.status.length > 0) ||
-          currentFilter.schoolId) && (
-          <Button variant="ghost" onClick={clearFilters}>
-            {t("users.clearFilters")}
+    <div className="space-y-6">
+      {/* Header Section with improved design */}
+      <div className="bg-background rounded-lg p-6 shadow-sm border">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="space-y-1">
+            <h1 className="text-3xl font-bold tracking-tight">{t("navigation.users")}</h1>
+            <p className="text-muted-foreground text-lg">{t("users.usersDescription")}</p>
+          </div>
+          <Button onClick={handleAddUser} size="lg" className="w-fit shadow-md hover:shadow-lg transition-shadow">
+            <Plus className="h-5 w-5 mr-2" />
+            {t("userManagement.add_user") || "İstifadəçi əlavə et"}
           </Button>
-        )}
-      </div>
-
-      {showFilters && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-muted/50 rounded-lg">
-          <div>
-            <label className="text-sm font-medium mb-2 block">
-              {t("users.role")}
-            </label>
-            <Select
-              value={
-                Array.isArray(currentFilter?.role)
-                  ? currentFilter.role[0] || ""
-                  : currentFilter?.role || ""
-              }
-              onValueChange={(value) => {
-                // "all_roles" seçildikdə rol filteri təmizlə
-                const filterValue = value === 'all_roles' ? undefined : value;
-                handleFilterChange("role", filterValue);
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={t("users.selectRole")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all_roles">{t("users.allRoles")}</SelectItem>
-                {userRoles.map((role) => (
-                  <SelectItem key={role} value={role}>
-                    {t(`roles.${role}`)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <label className="text-sm font-medium mb-2 block">
-              {t("common.status")}
-            </label>
-            <Select
-              value={getFirstFromFilter(currentFilter.status)}
-              onValueChange={(value) => {
-                // "all_statuses" seçildikdə status filteri təmizlə
-                const filterValue = value === 'all_statuses' ? undefined : value;
-                handleFilterChange("status", filterValue);
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={t("users.selectStatus")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all_statuses">{t("users.allStatuses")}</SelectItem>
-                {userStatuses.map((status) => (
-                  <SelectItem key={status} value={status}>
-                    {t(`common.${status}`)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <label className="text-sm font-medium mb-2 block">
-              {t("users.school")}
-            </label>
-            {safeEntityTypes
-              .filter((t) => t === "school" || t === "sector")
-              .map((type) => (
-                <Input
-                  key={type}
-                  placeholder={t("users.schoolId")}
-                  value={currentFilter.schoolId || ""}
-                  onChange={(e) =>
-                    handleFilterChange("schoolId", e.target.value)
-                  }
-                />
-              ))}
-          </div>
         </div>
-      )}
-
-      <div className="flex flex-wrap gap-2">
-        {getArrayFromFilter(currentFilter?.role).map((role) => (
-          <div
-            key={role}
-            className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm flex items-center"
-          >
-            {t("users.role")}: {t(`roles.${role}`)}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="ml-2 h-4 w-4 p-0"
-              onClick={() => {
-                const currentRoles = getArrayFromFilter(currentFilter?.role);
-                const newRoles = currentRoles.filter((r: string) => r !== role);
-                handleFilterChange(
-                  "role",
-                  newRoles.length ? newRoles : undefined,
-                );
-              }}
-            >
-              ×
-            </Button>
-          </div>
-        ))}
-
-        {getArrayFromFilter(currentFilter?.status).map((status) => (
-          <div
-            key={status}
-            className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm flex items-center"
-          >
-            {t("common.status")}: {t(`common.${status.toLowerCase()}`)}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="ml-2 h-4 w-4 p-0"
-              onClick={() => {
-                const currentStatuses = getArrayFromFilter(
-                  currentFilter?.status,
-                );
-                const newStatuses = currentStatuses.filter(
-                  (s: string) => s !== status,
-                );
-                handleFilterChange(
-                  "status",
-                  newStatuses.length ? newStatuses : undefined,
-                );
-              }}
-            >
-              ×
-            </Button>
-          </div>
-        ))}
-
-        {currentFilter?.schoolId && (
-          <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm flex items-center">
-            {t("users.school")}: {currentFilter.schoolId}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="ml-2 h-4 w-4 p-0"
-              onClick={() => handleFilterChange("schoolId", undefined)}
-            >
-              ×
-            </Button>
-          </div>
-        )}
       </div>
+
+      {/* Status Tabs with enhanced design */}
+      <Card className="shadow-sm">
+        <CardContent className="p-6">
+          <Tabs 
+            value={getFirstFromFilter(currentFilter.status) || "active"} 
+            onValueChange={(value) => {
+              const filterValue = value === "all" ? undefined : value;
+              handleFilterChange("status", filterValue);
+            }}
+            className="w-full"
+          >
+            <TabsList className="grid w-full grid-cols-4 h-12 bg-muted/30 rounded-lg p-1">
+              <TabsTrigger 
+                value="active" 
+                className="flex items-center gap-2 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md rounded-md transition-all"
+              >
+                <UserCheck className="h-4 w-4" />
+                <span className="hidden sm:inline">{t("users.activeUsers") || "Aktiv İstifadəçilər"}</span>
+                <span className="sm:hidden">Aktiv</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="inactive" 
+                className="flex items-center gap-2 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md rounded-md transition-all"
+              >
+                <UserX className="h-4 w-4" />
+                <span className="hidden sm:inline">{t("users.inactiveUsers") || "Deaktiv İstifadəçilər"}</span>
+                <span className="sm:hidden">Deaktiv</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="all"
+                className="flex items-center gap-2 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md rounded-md transition-all"
+              >
+                <Users className="h-4 w-4" />
+                <span className="hidden sm:inline">{t("users.allUsers") || "Bütün İstifadəçilər"}</span>
+                <span className="sm:hidden">Bütün</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="deleted" 
+                className="flex items-center gap-2 text-sm font-medium data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground data-[state=active]:shadow-md rounded-md transition-all"
+              >
+                <Trash2 className="h-4 w-4" />
+                <span className="hidden sm:inline">{t("users.deletedUsers") || "Silinmiş İstifadəçilər"}</span>
+                <span className="sm:hidden">Silinmiş</span>
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </CardContent>
+      </Card>
+
+      {/* Search and Filters Section */}
+      <Card className="shadow-sm">
+        <CardContent className="p-6">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
+              <Input
+                placeholder={t("users.searchUsers") || "İstifadəçiləri axtarın..."}
+                value={currentFilter?.search || ""}
+                onChange={(e) => handleFilterChange("search", e.target.value)}
+                className="pl-12 h-11 text-base border-muted-foreground/20 focus:border-primary"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowFilters(!showFilters)}
+                className="h-11 px-6 border-muted-foreground/20 hover:bg-primary/5"
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                {t("users.filters") || "Filterlər"}
+              </Button>
+              {((currentFilter.role && currentFilter.role.length > 0) ||
+                (currentFilter.status && currentFilter.status.length > 0) ||
+                currentFilter.schoolId) && (
+                <Button 
+                  variant="ghost" 
+                  onClick={clearFilters}
+                  className="h-11 px-4 text-muted-foreground hover:text-foreground"
+                >
+                  {t("users.clearFilters") || "Filterləri təmizlə"}
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Advanced Filters */}
+          {showFilters && (
+            <div className="mt-6 p-4 bg-muted/30 rounded-lg border">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">
+                    {t("users.role") || "Rol"}
+                  </label>
+                  <Select
+                    value={
+                      Array.isArray(currentFilter?.role)
+                        ? currentFilter.role[0] || ""
+                        : currentFilter?.role || ""
+                    }
+                    onValueChange={(value) => {
+                      const filterValue = value === 'all_roles' ? undefined : value;
+                      handleFilterChange("role", filterValue);
+                    }}
+                  >
+                    <SelectTrigger className="h-10">
+                      <SelectValue placeholder={t("users.selectRole") || "Rol seçin"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all_roles">{t("users.allRoles") || "Bütün rollar"}</SelectItem>
+                      {userRoles.map((role) => (
+                        <SelectItem key={role} value={role}>
+                          {t(`roles.${role}`)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">
+                    {t("common.status") || "Status"}
+                  </label>
+                  <Select
+                    value={getFirstFromFilter(currentFilter.status)}
+                    onValueChange={(value) => {
+                      const filterValue = value === 'all_statuses' ? undefined : value;
+                      handleFilterChange("status", filterValue);
+                    }}
+                  >
+                    <SelectTrigger className="h-10">
+                      <SelectValue placeholder={t("users.selectStatus") || "Status seçin"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all_statuses">{t("users.allStatuses") || "Bütün statuslar"}</SelectItem>
+                      {userStatuses.map((status) => (
+                        <SelectItem key={status} value={status}>
+                          {t(`common.${status}`)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {safeEntityTypes.filter((t) => t === "school" || t === "sector").length > 0 && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">
+                      {t("users.school") || "Məktəb"}
+                    </label>
+                    <Input
+                      placeholder={t("users.schoolId") || "Məktəb ID"}
+                      value={currentFilter.schoolId || ""}
+                      onChange={(e) => handleFilterChange("schoolId", e.target.value)}
+                      className="h-10"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Active Filters */}
+          {(getArrayFromFilter(currentFilter?.role).length > 0 || 
+            getArrayFromFilter(currentFilter?.status).length > 0 || 
+            currentFilter?.schoolId) && (
+            <div className="flex flex-wrap gap-2 mt-4">
+              {getArrayFromFilter(currentFilter?.role).map((role) => (
+                <Badge
+                  key={role}
+                  variant="secondary"
+                  className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 text-primary hover:bg-primary/15"
+                >
+                  {t("users.role")}: {t(`roles.${role}`)}
+                  <X 
+                    className="h-3 w-3 cursor-pointer hover:text-primary/70" 
+                    onClick={() => {
+                      const currentRoles = getArrayFromFilter(currentFilter?.role);
+                      const newRoles = currentRoles.filter((r: string) => r !== role);
+                      handleFilterChange("role", newRoles.length ? newRoles : undefined);
+                    }}
+                  />
+                </Badge>
+              ))}
+
+              {getArrayFromFilter(currentFilter?.status).map((status) => (
+                <Badge
+                  key={status}
+                  variant="secondary"
+                  className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 text-primary hover:bg-primary/15"
+                >
+                  {t("common.status")}: {t(`common.${status.toLowerCase()}`)}
+                  <X 
+                    className="h-3 w-3 cursor-pointer hover:text-primary/70" 
+                    onClick={() => {
+                      const currentStatuses = getArrayFromFilter(currentFilter?.status);
+                      const newStatuses = currentStatuses.filter((s: string) => s !== status);
+                      handleFilterChange("status", newStatuses.length ? newStatuses : undefined);
+                    }}
+                  />
+                </Badge>
+              ))}
+
+              {currentFilter?.schoolId && (
+                <Badge
+                  variant="secondary"
+                  className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 text-primary hover:bg-primary/15"
+                >
+                  {t("users.school")}: {currentFilter.schoolId}
+                  <X 
+                    className="h-3 w-3 cursor-pointer hover:text-primary/70" 
+                    onClick={() => handleFilterChange("schoolId", undefined)}
+                  />
+                </Badge>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
