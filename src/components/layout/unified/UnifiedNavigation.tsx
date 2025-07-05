@@ -148,7 +148,7 @@ const UnifiedNavigation = memo(function UnifiedNavigation({
             {/* Group Header with Collapsible */}
             <div className="px-1 sm:px-2 mb-2">
               <Button
-                className="w-full justify-between h-6 sm:h-8 px-1 sm:px-2 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                className="w-full justify-between h-6 sm:h-8 px-1 sm:px-2 text-xs font-medium text-foreground/80 hover:bg-primary-50 hover:text-primary-700"
                 onClick={() => toggleSection(group.id)}
               >
                 <span className="uppercase tracking-wider truncate flex-1 text-left">
