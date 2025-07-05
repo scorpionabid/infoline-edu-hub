@@ -62,12 +62,12 @@ const UnifiedNavigation = memo(function UnifiedNavigation({
   // Stable style functions
   const getItemClasses = useCallback((active: boolean) => cn(
     "group relative flex items-center gap-2 sm:gap-3 rounded-xl px-2 sm:px-3 py-2 sm:py-3 text-sm transition-all duration-200",
-    "hover:bg-accent/50 hover:shadow-md hover:scale-[1.02] hover:-translate-y-0.5",
+    "hover:bg-primary-50 hover:shadow-md hover:scale-[1.02] hover:-translate-y-0.5",
     "min-h-[40px] sm:min-h-[48px] touch-manipulation w-full",
     // Active state with proper responsive gradient
     active
       ? "bg-gradient-to-r text-white shadow-lg transform scale-[1.02] from-primary to-primary/80"
-      : "text-muted-foreground hover:text-foreground"
+      : "text-muted-foreground hover:text-primary-600"
   ), []);
 
   const getIconContainerClasses = useCallback((active: boolean) => cn(
