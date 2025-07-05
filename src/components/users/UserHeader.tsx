@@ -105,54 +105,42 @@ const UserHeader: React.FC<UserHeaderProps> = ({
         </div>
       </div>
 
-      {/* Status Tabs with enhanced design */}
-      <Card className="shadow-sm">
-        <CardContent className="p-6">
-          <Tabs 
-            value={getFirstFromFilter(currentFilter.status) || "active"} 
-            onValueChange={(value) => {
-              const filterValue = value === "all" ? undefined : value;
-              handleFilterChange("status", filterValue);
-            }}
-            className="w-full"
+      {/* Status Tabs - Minimalist Design */}
+      <Tabs 
+        value={getFirstFromFilter(currentFilter.status) || "active"} 
+        onValueChange={(value) => {
+          const filterValue = value === "all" ? undefined : value;
+          handleFilterChange("status", filterValue);
+        }}
+        className="w-full"
+      >
+        <TabsList className="grid w-full grid-cols-4 bg-background border rounded-lg p-1">
+          <TabsTrigger 
+            value="active" 
+            className="text-sm font-medium"
           >
-            <TabsList className="grid w-full grid-cols-4 h-12 bg-muted/30 rounded-lg p-1">
-              <TabsTrigger 
-                value="active" 
-                className="flex items-center gap-2 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md rounded-md transition-all"
-              >
-                <UserCheck className="h-4 w-4" />
-                <span className="hidden sm:inline">{t("users.activeUsers") || "Aktiv İstifadəçilər"}</span>
-                <span className="sm:hidden">Aktiv</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="inactive" 
-                className="flex items-center gap-2 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md rounded-md transition-all"
-              >
-                <UserX className="h-4 w-4" />
-                <span className="hidden sm:inline">{t("users.inactiveUsers") || "Deaktiv İstifadəçilər"}</span>
-                <span className="sm:hidden">Deaktiv</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="all"
-                className="flex items-center gap-2 text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md rounded-md transition-all"
-              >
-                <Users className="h-4 w-4" />
-                <span className="hidden sm:inline">{t("users.allUsers") || "Bütün İstifadəçilər"}</span>
-                <span className="sm:hidden">Bütün</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="deleted" 
-                className="flex items-center gap-2 text-sm font-medium data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground data-[state=active]:shadow-md rounded-md transition-all"
-              >
-                <Trash2 className="h-4 w-4" />
-                <span className="hidden sm:inline">{t("users.deletedUsers") || "Silinmiş İstifadəçilər"}</span>
-                <span className="sm:hidden">Silinmiş</span>
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </CardContent>
-      </Card>
+            Aktiv İstifadəçilər
+          </TabsTrigger>
+          <TabsTrigger 
+            value="inactive" 
+            className="text-sm font-medium"
+          >
+            Deaktiv İstifadəçilər
+          </TabsTrigger>
+          <TabsTrigger 
+            value="all"
+            className="text-sm font-medium"
+          >
+            Bütün İstifadəçilər
+          </TabsTrigger>
+          <TabsTrigger 
+            value="deleted" 
+            className="text-sm font-medium"
+          >
+            Silinmiş İstifadəçilər
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       {/* Search and Filters Section */}
       <Card className="shadow-sm">
