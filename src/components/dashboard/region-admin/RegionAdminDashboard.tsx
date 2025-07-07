@@ -44,7 +44,7 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({
     completion_rate: dashboardData.formStats?.completionRate || dashboardData.completionRate || 0, // Eyni dəyəri snake_case formatında da saxlayırıq,
   };
 
-  // Display statistics for region admin dashboard
+  // Display statistics for region admin dashboard - NO DUPLICATES
   const statsGridData = [
     {
       title: t("dashboard.stats.total_schools") || "Ümumi məktəblər",
@@ -54,8 +54,7 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({
       description: t("schools.title") || "Məktəb",
     },
     {
-      // Əlavə etdim "sectors.title" açarını "sectors" faylından götürür
-      title: "Ümumi sektorlar", // t("dashboard.stats.total_sectors")-ü əvəz etdim, çünki bu açar yoxdur
+      title: t("dashboard.stats.total_sectors") || "Ümumi sektorlar",
       value: dashboardData.totalSectors || 0,
       icon: "layers", 
       color: "text-indigo-600",
@@ -66,14 +65,14 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({
       value: dashboardData.pendingApprovals || 0,
       icon: "clock",
       color: "text-yellow-600",
-      description: t("status.pending") || "Gözləyir", // status.pending düzgün açar yoludur
+      description: t("status.pending") || "Gözləyir",
     },
     {
-      title: t("dashboard.completion") || "Tamamlanma",
+      title: t("dashboard.stats.completion_rate") || "Tamamlanma nisbəti",
       value: `${Math.round(dashboardData.completionRate || 0)}%`,
       icon: "pie-chart",
       color: "text-green-600",
-      description: t("dashboard.stats.completion_rate") || "Tamamlanma dərəcəsi",
+      description: "Real tamamlanma nisbəti",
     },
   ];
 

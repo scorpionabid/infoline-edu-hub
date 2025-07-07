@@ -31,6 +31,14 @@ export const dashboard = {
   pendingApprovals: 'Gözləyən Təsdiqlər',
   totalRegions: 'Ümumi Regionlar',
   totalSectors: 'Ümumi Sektorlar',
+  
+  // Stats with sub-keys for proper organization
+  stats: {
+    total_schools: 'Ümumi Məktəblər',
+    total_sectors: 'Ümumi Sektorlar', 
+    pending_approvals: 'Təsdiq gözləyənlər',
+    completion_rate: 'Tamamlanma nisbəti',
+  },
 
   // Buttons
   addNew: 'Yeni əlavə et',
