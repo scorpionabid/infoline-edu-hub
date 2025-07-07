@@ -44,15 +44,8 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({
     completion_rate: dashboardData.formStats?.completionRate || dashboardData.completionRate || 0, // Eyni dəyəri snake_case formatında da saxlayırıq,
   };
 
-  // Display statistics for region admin dashboard - NO DUPLICATES
+  // Display statistics for region admin dashboard - 3 unique cards only
   const statsGridData = [
-    {
-      title: t("dashboard.stats.total_schools") || "Ümumi məktəblər",
-      value: dashboardData.totalSchools || 0,
-      icon: "school",
-      color: "text-blue-600",
-      description: t("schools.title") || "Məktəb",
-    },
     {
       title: t("dashboard.stats.total_sectors") || "Ümumi sektorlar",
       value: dashboardData.totalSectors || 0,
