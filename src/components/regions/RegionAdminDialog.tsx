@@ -176,7 +176,7 @@ const RegionAdminDialog: React.FC<RegionAdminDialogProps> = ({
                             onClick={() => setSelectedUser(user.id)}
                           >
                             <div className="font-medium">
-                              {user.fullName || user.email}
+                              {user.full_name || user.email}
                             </div>
                             <div className="text-sm text-muted-foreground">
                               {user.email}

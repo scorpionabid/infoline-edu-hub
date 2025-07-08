@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useLanguageSafe } from '@/context/LanguageContext';
+import { useTranslation } from '@/contexts/TranslationContext';
 import { DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
@@ -16,9 +16,9 @@ export const AdminDialogFooter: React.FC<AdminDialogFooterProps> = ({
   onClose,
   onSubmit,
   loading,
-  // selectedUserId
+  selectedUserId
 }) => {
-  const { t } = useLanguageSafe();
+  const { t } = useTranslation();
   
   return (
     <DialogFooter>

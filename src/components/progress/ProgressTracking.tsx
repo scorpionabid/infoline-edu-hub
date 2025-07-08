@@ -12,8 +12,8 @@ import {
   Clock,
   School,
   Award,
-  // AlertTriangle
-} from 'lucide-react';
+  AlertTriangle
+ } from 'lucide-react';
 
 interface ProgressData {
   schoolId: string;
@@ -34,7 +34,7 @@ interface ProgressTrackingProps {
 
 export const ProgressTracking: React.FC<ProgressTrackingProps> = ({
   data = [],
-  // onSchoolClick
+  onSchoolClick
 }) => {
   const [viewMode, setViewMode] = useState<'overview' | 'detailed' | 'trends'>('overview');
 

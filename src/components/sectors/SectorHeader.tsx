@@ -1,9 +1,9 @@
 
 import React from 'react';
-import { useLanguageSafe } from '@/context/LanguageContext';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 const SectorHeader = () => {
-  const { t } = useLanguageSafe();
+  const { t } = useTranslation();
 
   return (
     <div>

@@ -317,7 +317,7 @@ export const SessionDebugPanel: React.FC<{
                   • Authenticated: {debugInfo.authState.isAuthenticated ? '✅' : '❌'}<br/>
                   • Loading: {debugInfo.authState.isLoading ? '🔄' : '✅'}<br/>
                   • Initialized: {debugInfo.authState.initialized ? '✅' : '❌'}<br/>
-                  • Error: {debugInfo.authState.error || 'None'}
+                  • Error: {debugInfo.authState.error ? String(debugInfo.authState.error) : 'None'}
                 </div>
                 
                 <div><strong>Session:</strong></div>

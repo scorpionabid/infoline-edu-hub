@@ -1,14 +1,14 @@
 
 import React from 'react';
 import { DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { useLanguageSafe } from '@/context/LanguageContext';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 interface AdminDialogHeaderProps {
   schoolName: string;
 }
 
 export const AdminDialogHeader: React.FC<AdminDialogHeaderProps> = ({ schoolName }) => {
-  const { t } = useLanguageSafe();
+  const { t } = useTranslation();
   
   return (
     <DialogHeader>

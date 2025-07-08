@@ -1,10 +1,10 @@
 
 import React from 'react';
-import { useLanguageSafe } from '@/context/LanguageContext';
+import { useTranslation } from '@/contexts/TranslationContext';
 import { CheckCircle2 } from 'lucide-react';
 
 export const AdminDialogSuccess: React.FC = () => {
-  const { t } = useLanguageSafe();
+  const { t } = useTranslation();
   
   return (
     <div className="flex flex-col items-center justify-center py-6 space-y-4">

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useLanguageSafe } from '@/context/LanguageContext';
+import { useTranslation } from '@/contexts/TranslationContext';
 import { UserSelect } from '@/components/users/UserSelect';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -20,9 +20,9 @@ export const AdminDialogForm: React.FC<AdminDialogFormProps> = ({
   error,
   schoolId,
   schoolName,
-  // loading
+  loading
 }) => {
-  const { t } = useLanguageSafe();
+  const { t } = useTranslation();
 
   return (
     <div className="space-y-4 py-2">
