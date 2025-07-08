@@ -131,7 +131,7 @@ export const useRealDashboardData = () => {
         .from('data_entries')
         .select(`
           status,
-          schools!inner(region_id)
+          schools!inner(region_id, sector_id)
         `)
         .eq('schools.region_id', user.region_id);
 
@@ -144,6 +144,41 @@ export const useRealDashboardData = () => {
         ? Math.round((approvedEntries / totalEntries) * 100)
         : 0;
 
+      // Calculate sector statistics
+      const sectorsWithStats = await Promise.all(
+        (sectorsData || []).map(async (sector) => {
+          // Get schools in this sector
+          const schoolsInSector = sector.schools || [];
+          
+          // Get form entries for this sector
+          const sectorEntries = formStatsData?.filter(entry => 
+            entry.schools?.sector_id === sector.id
+          ) || [];
+          
+          const sectorApproved = sectorEntries.filter(e => e.status === 'approved').length;
+          const sectorPending = sectorEntries.filter(e => e.status === 'pending').length;
+          const sectorTotal = sectorEntries.length;
+          
+          const sectorCompletionRate = sectorTotal > 0 
+            ? Math.round((sectorApproved / sectorTotal) * 100)
+            : 0;
+
+          return {
+            id: sector.id,
+            name: sector.name,
+            schoolCount: schoolsInSector.length,
+            totalSchools: schoolsInSector.length,
+            completionRate: sectorCompletionRate,
+            completion: sectorCompletionRate,
+            completion_rate: sectorCompletionRate,
+            pendingApprovals: sectorPending,
+            totalForms: sectorTotal,
+            completedForms: sectorApproved,
+            lastActivity: new Date().toISOString()
+          };
+        })
+      );
+
       const stats: DashboardStats = {
         totalEntries,
         completedEntries: approvedEntries,
@@ -151,27 +186,11 @@ export const useRealDashboardData = () => {
         approvedEntries,
         rejectedEntries,
         completed: approvedEntries,
-        pending: pendingEntries
-      };
-
-      const forms: DashboardFormStats = {
-        totalForms: totalEntries,
-        pendingApprovals: pendingEntries,
-        rejectedForms: rejectedEntries,
-        total: totalEntries,
         pending: pendingEntries,
-        approved: approvedEntries,
-        rejected: rejectedEntries,
-        draft: 0,
-        dueSoon: 0,
-        overdue: 0,
-        percentage: completionRate,
-        completion_rate: completionRate,
-        completionRate: completionRate,
-        completedForms: approvedEntries,
-        pendingForms: pendingEntries,
-        approvalRate: completionRate,
-        completed: approvedEntries
+        pendingFormCount: pendingEntries,
+        schoolCount: sectorsData?.reduce((sum, sector) => sum + (sector.schools?.length || 0), 0) || 0,
+        activeUserCount: 0,
+        completionPercentage: completionRate
       };
 
       return {
@@ -180,7 +199,7 @@ export const useRealDashboardData = () => {
         pendingApprovals: pendingEntries,
         completionRate,
         stats,
-        // forms
+        sectors: sectorsWithStats
       };
     } catch (error) {
       console.error('Error fetching region admin data:', error);

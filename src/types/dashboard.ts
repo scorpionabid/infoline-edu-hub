@@ -160,6 +160,7 @@ export interface RegionAdminDashboardData {
   pendingApprovals: number;
   completionRate: number;
   stats: DashboardStats;
+  sectors: SectorStat[]; // YENİ - sektor statistikaları
 }
 
 // SchoolAdmin dashboard data
@@ -214,6 +215,7 @@ export interface EnhancedDashboardData {
   completionRate?: number;
   stats?: any;
   formStats?: DashboardFormStats;
+  sectors?: SectorStat[]; // YENİ - sektor statistikaları
   summary?: {
     total: number;
     completed: number;

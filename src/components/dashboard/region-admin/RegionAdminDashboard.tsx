@@ -69,8 +69,8 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({
     },
   ];
 
-  // Get sectors from the correct path in data structure
-  const sectors = dashboardData.stats?.sectors || [];
+  // Get sectors from the enhanced dashboard data structure
+  const sectors = dashboardData.sectors || [];
   console.log('🏫 [RegionAdminDashboard] Sectors data:', sectors);
 
   return (
