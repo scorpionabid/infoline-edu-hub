@@ -91,10 +91,28 @@ export const useDashboardData = (options: UseDashboardDataOptions = {}) => {
             pendingApprovals: counts.pending,
             completionRate: completionRate,
             stats: {
-              sectors: sectors?.map(sector => ({
-                ...sector,
-                schoolCount: schools?.filter(s => s.sector_id === sector.id).length || 0
-              })) || [],
+              sectors: sectors?.map(sector => {
+                const sectorSchools = schools?.filter(s => s.sector_id === sector.id) || [];
+                const sectorEntries = dataEntries?.filter(entry => 
+                  sectorSchools.some(school => school.id === entry.school_id)
+                ) || [];
+                
+                const sectorCounts = {
+                  total: sectorEntries.length,
+                  approved: sectorEntries.filter(e => e.status === 'approved').length
+                };
+                
+                const sectorCompletionRate = sectorCounts.total > 0 
+                  ? Math.round((sectorCounts.approved / sectorCounts.total) * 100)
+                  : 0;
+                
+                return {
+                  ...sector,
+                  schoolCount: sectorSchools.length,
+                  completionRate: sectorCompletionRate,
+                  totalSchools: sectorSchools.length
+                };
+              }) || [],
               regions: regions || []
             },
             formStats: {

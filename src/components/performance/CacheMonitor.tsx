@@ -11,13 +11,13 @@ import { useMemoryOptimization } from '@/hooks/performance/useMemoryOptimization
 export const CacheMonitor: React.FC = () => {
   const [stats, setStats] = useState<any>(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const { forceCleanup, getMemoryStats } = useMemoryOptimization();
+  const { forceCleanup, getMemoryUsage } = useMemoryOptimization();
 
   const refreshStats = () => {
     try {
       const cacheStats = enhancedCache.getStats();
       const translationStats = translationCache.getInfo();
-      const memoryStats = getMemoryStats();
+      const memoryStats = getMemoryUsage();
       
       setStats({
         cache: cacheStats,
@@ -45,7 +45,7 @@ export const CacheMonitor: React.FC = () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [getMemoryStats]);
+  }, [getMemoryUsage]);
 
   const handleClearCache = () => {
     try {

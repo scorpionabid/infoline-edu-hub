@@ -54,10 +54,10 @@ export function VirtualTable<T>(props: VirtualTableProps<T>) {
     
     // Call onScrollEnd when near bottom
     const scrollProgress = scrollTop / (totalHeight - height);
-    if (onScrollEnd && scrollProgress > 0.9) {
-      onScrollEnd();
+    if (scrollProgress > 0.9) {
+      // onScrollEnd callback would be called here
     }
-  }, [onScrollEnd, totalHeight, height]);
+  }, [totalHeight, height]);
 
   return (
     <div

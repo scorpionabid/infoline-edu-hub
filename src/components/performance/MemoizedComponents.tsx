@@ -271,7 +271,7 @@ export const OptimizedList = memo<OptimizedListProps<any>>(({
   if (items.length === 0) {
     return (
       <div className="flex items-center justify-center" style={{ height }}>
-        {emptyState || <p className="text-muted-foreground">Məlumat tapılmadı</p>}
+        <p className="text-muted-foreground">Məlumat tapılmadı</p>
       </div>
     );
   }

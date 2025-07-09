@@ -12,7 +12,7 @@ import {
   Tooltip, 
   ResponsiveContainer,
   BarChart,
-  // Bar
+  Bar
 } from 'recharts';
 import { Calendar, Download, RefreshCw } from 'lucide-react';
 
@@ -23,7 +23,7 @@ interface ProgressDashboardProps {
 
 export const ProgressDashboard: React.FC<ProgressDashboardProps> = ({
   onRefresh,
-  // onExport
+  onExport
 }) => {
   // Mock data for widgets
   const widgetData = [
