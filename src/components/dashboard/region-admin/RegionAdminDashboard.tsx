@@ -70,7 +70,7 @@ const RegionAdminDashboard: React.FC<RegionAdminDashboardProps> = ({
   ];
 
   // Get sectors from the enhanced dashboard data structure with real completion rates
-  const sectors = dashboardData.sectors || [];
+  const sectors = dashboardData.sectors || dashboardData.stats?.sectors || [];
   console.log('🏫 [RegionAdminDashboard] Sectors data:', sectors);
 
   return (
