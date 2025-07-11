@@ -779,12 +779,15 @@ export type Database = {
           category_id: string | null
           created_at: string | null
           description: string | null
+          download_count: number | null
           file_name: string
           file_path: string
           file_size: number | null
           file_type: string | null
+          file_url: string | null
           id: string
           is_active: boolean | null
+          mime_type: string | null
           school_id: string
           updated_at: string | null
           uploaded_by: string | null
@@ -793,12 +796,15 @@ export type Database = {
           category_id?: string | null
           created_at?: string | null
           description?: string | null
+          download_count?: number | null
           file_name: string
           file_path: string
           file_size?: number | null
           file_type?: string | null
+          file_url?: string | null
           id?: string
           is_active?: boolean | null
+          mime_type?: string | null
           school_id: string
           updated_at?: string | null
           uploaded_by?: string | null
@@ -807,12 +813,15 @@ export type Database = {
           category_id?: string | null
           created_at?: string | null
           description?: string | null
+          download_count?: number | null
           file_name?: string
           file_path?: string
           file_size?: number | null
           file_type?: string | null
+          file_url?: string | null
           id?: string
           is_active?: boolean | null
+          mime_type?: string | null
           school_id?: string
           updated_at?: string | null
           uploaded_by?: string | null
@@ -1689,6 +1698,10 @@ export type Database = {
       get_school_data_by_category: {
         Args: { p_school_id: string; p_category_id: string }
         Returns: Json
+      }
+      get_school_file_url: {
+        Args: { file_id: string }
+        Returns: string
       }
       get_school_performance_report: {
         Args: {

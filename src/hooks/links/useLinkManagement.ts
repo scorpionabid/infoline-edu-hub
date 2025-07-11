@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore, selectUser, selectUserRole } from '@/hooks/auth/useAuthStore';
+import { linkService } from '@/services/linkService';
+import { CreateSchoolLinkData, UpdateSchoolLinkData } from '@/types/link';
 
 interface Link {
   id: string;
@@ -35,43 +37,32 @@ export const useLinkManagement = () => {
   const canCreateLinks = userRole === 'regionadmin' || userRole === 'sectoradmin';
 
   const fetchLinks = async (schoolId?: string) => {
+    if (!schoolId) return;
+    
     setIsLoading(true);
     setError(null);
     
     try {
-      // TODO: Implement actual API call
-      // For now, return mock data
-      const mockLinks: Link[] = [
-        {
-          id: '1',
-          title: 'Təhsil Nazirliyi Portal',
-          url: 'https://edu.gov.az',
-          description: 'Təhsil Nazirliyinin rəsmi veb saytı',
-          category: 'education',
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          createdBy: user?.id || 'admin',
-          createdByName: user?.full_name || 'Administrator',
-          schoolId: schoolId || '',
-          accessCount: 15
-        },
-        {
-          id: '2',
-          title: 'Elektron Journal',
-          url: 'https://journal.example.az',
-          description: 'Elektron jurnal sistemi',
-          category: 'forms',
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          createdBy: user?.id || 'admin',
-          createdByName: user?.full_name || 'Administrator',
-          schoolId: schoolId || '',
-          accessCount: 8
-        }
-      ];
+      const schoolLinks = await linkService.getSchoolLinks(schoolId);
       
-      setLinks(mockLinks);
+      // Transform to local interface format
+      const transformedLinks: Link[] = schoolLinks.map(link => ({
+        id: link.id,
+        title: link.title,
+        url: link.url,
+        description: link.description || '',
+        category: link.category || 'general',
+        isActive: link.is_active,
+        createdAt: link.created_at || new Date().toISOString(),
+        createdBy: link.created_by || '',
+        createdByName: user?.full_name || 'Administrator',
+        schoolId: link.school_id,
+        accessCount: 0 // We don't track access count yet
+      }));
+      
+      setLinks(transformedLinks);
     } catch (err) {
+      console.error('Error fetching links:', err);
       setError(err instanceof Error ? err.message : 'Linklər yüklənərkən xəta baş verdi');
     } finally {
       setIsLoading(false);
@@ -86,20 +77,35 @@ export const useLinkManagement = () => {
     setIsLoading(true);
     
     try {
-      // TODO: Implement actual API call
+      const createData: CreateSchoolLinkData = {
+        school_id: linkData.schoolId,
+        title: linkData.title,
+        url: linkData.url,
+        description: linkData.description,
+        category: linkData.category
+      };
+      
+      const createdLink = await linkService.createLink(createData);
+      
+      // Transform and add to local state
       const newLink: Link = {
-        id: Date.now().toString(),
-        ...linkData,
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        createdBy: user?.id || 'admin',
+        id: createdLink.id,
+        title: createdLink.title,
+        url: createdLink.url,
+        description: createdLink.description || '',
+        category: createdLink.category || 'general',
+        isActive: createdLink.is_active,
+        createdAt: createdLink.created_at || new Date().toISOString(),
+        createdBy: createdLink.created_by || '',
         createdByName: user?.full_name || 'Administrator',
+        schoolId: createdLink.school_id,
         accessCount: 0
       };
 
       setLinks(prev => [newLink, ...prev]);
       return newLink;
     } catch (err) {
+      console.error('Error creating link:', err);
       setError(err instanceof Error ? err.message : 'Link yaradılarkən xəta baş verdi');
       throw err;
     } finally {
@@ -113,11 +119,29 @@ export const useLinkManagement = () => {
     }
 
     try {
-      // TODO: Implement actual API call
+      const updateData: UpdateSchoolLinkData = {};
+      
+      if (updates.title) updateData.title = updates.title;
+      if (updates.url) updateData.url = updates.url;
+      if (updates.description !== undefined) updateData.description = updates.description;
+      if (updates.category) updateData.category = updates.category;
+      if (updates.isActive !== undefined) updateData.is_active = updates.isActive;
+      
+      const updatedLink = await linkService.updateLink(linkId, updateData);
+      
+      // Update local state
       setLinks(prev => prev.map(link => 
-        link.id === linkId ? { ...link, ...updates } : link
+        link.id === linkId ? {
+          ...link,
+          title: updatedLink.title,
+          url: updatedLink.url,
+          description: updatedLink.description || '',
+          category: updatedLink.category || 'general',
+          isActive: updatedLink.is_active
+        } : link
       ));
     } catch (err) {
+      console.error('Error updating link:', err);
       setError(err instanceof Error ? err.message : 'Link yenilənərkən xəta baş verdi');
       throw err;
     }
@@ -129,9 +153,10 @@ export const useLinkManagement = () => {
     }
 
     try {
-      // TODO: Implement actual API call
+      await linkService.deleteLink(linkId);
       setLinks(prev => prev.filter(link => link.id !== linkId));
     } catch (err) {
+      console.error('Error deleting link:', err);
       setError(err instanceof Error ? err.message : 'Link silinərkən xəta baş verdi');
       throw err;
     }
