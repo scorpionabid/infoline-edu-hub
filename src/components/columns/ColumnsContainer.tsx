@@ -76,6 +76,39 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
 
   // Loading state for dialog
   const [formLoading, setFormLoading] = useState(false);
+  
+  // Dialog state management
+  const [internalCreateDialogOpen, setInternalCreateDialogOpen] = useState(false);
+  const [internalEditDialogOpen, setInternalEditDialogOpen] = useState(false);
+  
+  // Use internal state if parent doesn't provide dialog control
+  const actualCreateDialogOpen = isCreateDialogOpen !== undefined ? isCreateDialogOpen : internalCreateDialogOpen;
+  const actualEditDialogOpen = isEditDialogOpen !== undefined ? isEditDialogOpen : internalEditDialogOpen;
+  
+  const handleOpenCreateDialog = () => {
+    if (onCreateDialogClose !== undefined) {
+      // Parent controls dialog - this means parent should have an "open" function
+      console.warn('Parent controls dialog but no open function provided');
+    } else {
+      setInternalCreateDialogOpen(true);
+    }
+  };
+  
+  const handleCloseCreateDialog = () => {
+    if (onCreateDialogClose) {
+      onCreateDialogClose();
+    } else {
+      setInternalCreateDialogOpen(false);
+    }
+  };
+  
+  const handleCloseEditDialog = () => {
+    if (onEditDialogClose) {
+      onEditDialogClose();
+    } else {
+      setInternalEditDialogOpen(false);
+    }
+  };
 
   // Enhanced column mutations - with all required methods
   const {
@@ -442,7 +475,7 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
         </div>
 
         {canManageColumns && (
-          <Button onClick={onCreateColumn}>
+          <Button onClick={handleOpenCreateDialog}>
             <Plus className="h-4 w-4 mr-2" />
             {t("columns.createColumn")}
           </Button>
@@ -565,8 +598,8 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
       {/* Create Column Dialog */}
       <ColumnDialog
         mode="create"
-        open={isCreateDialogOpen}
-        onOpenChange={onCreateDialogClose}
+        open={actualCreateDialogOpen}
+        onOpenChange={handleCloseCreateDialog}
         onSave={handleCreateSave}
         categories={categories}
         isLoading={formLoading}
@@ -576,8 +609,8 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
       {editFormProps && (
         <ColumnDialog
           mode="edit"
-          open={isEditDialogOpen}
-          onOpenChange={onEditDialogClose}
+          open={actualEditDialogOpen}
+          onOpenChange={handleCloseEditDialog}
           onSave={handleEditSave}
           column={editFormProps.column}
           categories={categories}
