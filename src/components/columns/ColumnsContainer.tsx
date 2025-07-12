@@ -25,20 +25,16 @@ import { toast } from "sonner";
 interface ColumnsContainerProps {
   columns?: Column[];
   categories?: Category[];
-  selectedCategoryId?: string; // Kept for future use
+  selectedCategoryId?: string;
   isLoading?: boolean;
   onRefresh?: () => void;
-  _onCreate?: () => void; // Unused but kept for API compatibility
+  onCreateColumn?: () => void; // Fixed: Added proper prop
   onEdit?: (column: Column) => void;
-  _onDelete?: (id: string, name: string) => void; // Unused but kept for API compatibility
-  _onRestore?: (id: string, name: string) => void; // Unused but kept for API compatibility
-  _onPermanentDelete?: (id: string) => void; // Unused but kept for API compatibility
-  _onCategoryChange?: (categoryId: string) => void; // Unused but kept for API compatibility
-  _onCreateColumn?: () => void; // Unused but kept for API compatibility
   onEditColumn?: (column: Column) => void;
-  _onArchiveColumn?: (column: Column) => void; // Unused but kept for API compatibility
-  _onRestoreColumn?: (column: Column) => void; // Unused but kept for API compatibility
-  _onDeleteColumn?: (column: Column, permanent?: boolean) => void; // Unused but kept for API compatibility
+  onArchiveColumn?: (column: Column) => void;
+  onRestoreColumn?: (column: Column) => void;
+  onDeleteColumn?: (column: Column, permanent?: boolean) => void;
+  onCategoryChange?: (categoryId: string) => void;
   isCreateDialogOpen?: boolean;
   isEditDialogOpen?: boolean;
   onCreateDialogClose?: () => void;
@@ -53,21 +49,17 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
   selectedCategoryId,
   isLoading = false,
   onRefresh,
-  _onCreate: onCreate = () => {},
+  onCreateColumn,
   onEdit = () => {},
-  _onDelete: onDelete = () => {},
-  _onRestore: onRestore = () => {},
-  _onPermanentDelete: onPermanentDelete = () => {},
-  _onCategoryChange: onCategoryChange = () => {},
-  _onCreateColumn: onCreateColumn = () => {},
   onEditColumn = () => {},
-  _onArchiveColumn: onArchiveColumn = () => {},
-  _onRestoreColumn: onRestoreColumn = () => {},
-  _onDeleteColumn: onDeleteColumn = () => {},
-  isCreateDialogOpen = false,
-  isEditDialogOpen = false,
-  onCreateDialogClose = () => {},
-  onEditDialogClose = () => {},
+  onArchiveColumn = () => {},
+  onRestoreColumn = () => {},
+  onDeleteColumn = () => {},
+  onCategoryChange = () => {},
+  isCreateDialogOpen,
+  isEditDialogOpen,
+  onCreateDialogClose,
+  onEditDialogClose,
   createFormProps = {},
   editFormProps = {},
 }) => {
@@ -86,10 +78,11 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
   const actualEditDialogOpen = isEditDialogOpen !== undefined ? isEditDialogOpen : internalEditDialogOpen;
   
   const handleOpenCreateDialog = () => {
-    if (onCreateDialogClose !== undefined) {
-      // Parent controls dialog - this means parent should have an "open" function
-      console.warn('Parent controls dialog but no open function provided');
+    if (onCreateColumn) {
+      // Parent controls the dialog - call parent handler
+      onCreateColumn();
     } else {
+      // Internal state management
       setInternalCreateDialogOpen(true);
     }
   };
@@ -170,8 +163,9 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
   }, []);
 
   const handleDeleteClick = useCallback((id: string, name: string) => {
-    onDelete(id, name);
-  }, [onDelete]);
+    // Use internal delete handler
+    handlePermanentDelete(id);
+  }, []);
 
   const handleSearch = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const value = (e.target.value || '').toString().trim();
@@ -583,7 +577,7 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
         categories={categories}
         selectedColumns={selectedColumns}
         onEditColumn={onEdit}
-        onDeleteColumn={onDelete}
+        onDeleteColumn={(columnId: string, name?: string) => handleDeleteClick(columnId, name || '')}
         onRestoreColumn={handleRestore}
         onPermanentDeleteColumn={handlePermanentDelete}
         onDuplicateColumn={handleDuplicate}
