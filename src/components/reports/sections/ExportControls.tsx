@@ -41,7 +41,7 @@ const ExportControls: React.FC<ExportControlsProps> = ({
   schoolColumnData,
   isLoading,
   schoolsCount,
-  // selectedColumnsCount
+  selectedColumnsCount
 }) => {
   const handleExport = async (format: string) => {
     if (selectedColumnIds.length === 0) {

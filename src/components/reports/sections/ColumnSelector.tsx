@@ -22,7 +22,7 @@ interface ColumnSelectorProps {
 const ColumnSelector: React.FC<ColumnSelectorProps> = ({
   columns,
   selectedColumnIds,
-  // onColumnSelect
+  onColumnSelect
 }) => {
   if (columns.length === 0) {
     return (

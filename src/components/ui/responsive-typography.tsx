@@ -11,7 +11,7 @@ interface ResponsiveTypographyProps {
 export const ResponsiveTypography: React.FC<ResponsiveTypographyProps> = ({
   children,
   variant = 'p',
-  // className
+  className
 }) => {
   const baseClasses = {
     h1: 'text-2xl md:text-3xl lg:text-4xl font-bold',

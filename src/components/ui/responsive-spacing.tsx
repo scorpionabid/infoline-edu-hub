@@ -9,7 +9,7 @@ interface ResponsiveSpacerProps {
 
 export const ResponsiveSpacer: React.FC<ResponsiveSpacerProps> = ({
   size = 'md',
-  // className
+  className
 }) => {
   const sizeClasses = {
     xs: 'h-2 md:h-3',

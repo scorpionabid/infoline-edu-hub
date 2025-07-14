@@ -20,7 +20,7 @@ interface SectorsListProps {
 export const SectorsList: React.FC<SectorsListProps> = ({
   sectors,
   onEdit,
-  // onDelete
+  onDelete
 }) => {
   if (!sectors || sectors.length === 0) {
     return (
