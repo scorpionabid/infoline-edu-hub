@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Download, FileSpreadsheet, FileText, File, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { ReportExportService } from '@/services/reports/exportService';
+import { exportService } from '@/services/reports/exportService';
 import { useRoleBasedReports } from '@/hooks/reports/useRoleBasedReports';
 
 export interface ExportButtonsProps {
@@ -56,7 +56,10 @@ const ExportButtons: React.FC<ExportButtonsProps> = ({
             });
             return;
           }
-          fileName = await ReportExportService.exportSchoolPerformance(format, filters);
+          // Use basic export service for now
+          const data = [{ type: 'school-performance', filters }];
+          await exportService.exportToExcel(data, 'school-performance-report');
+          fileName = 'school-performance-report.xlsx';
           break;
           
         case 'regional-comparison':
@@ -68,7 +71,9 @@ const ExportButtons: React.FC<ExportButtonsProps> = ({
             });
             return;
           }
-          fileName = await ReportExportService.exportRegionalComparison(format);
+          const regionalData = [{ type: 'regional-comparison' }];
+          await exportService.exportToExcel(regionalData, 'regional-comparison-report');
+          fileName = 'regional-comparison-report.xlsx';
           break;
           
         case 'category-completion':
@@ -80,11 +85,15 @@ const ExportButtons: React.FC<ExportButtonsProps> = ({
             });
             return;
           }
-          fileName = await ReportExportService.exportCategoryCompletion(categoryId, format);
+          const categoryData = [{ type: 'category-completion', categoryId }];
+          await exportService.exportToExcel(categoryData, 'category-completion-report');
+          fileName = 'category-completion-report.xlsx';
           break;
           
         case 'school-column-data':
-          fileName = await ReportExportService.exportSchoolColumnData(filters, format);
+          const schoolData = [{ type: 'school-column-data', filters }];
+          await exportService.exportToExcel(schoolData, 'school-column-data-report');
+          fileName = 'school-column-data-report.xlsx';
           break;
           
         default:

@@ -12,11 +12,11 @@ import {
   Pie, 
   Cell, 
   XAxis, 
-  YAxis, 
+  YAxis,
+  Legend,
   CartesianGrid, 
   Tooltip, 
-  ResponsiveContainer,
-  // Legend
+  ResponsiveContainer
 } from 'recharts';
 import { StatisticsData } from '@/services/statisticsService';
 

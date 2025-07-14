@@ -47,8 +47,6 @@ export const StatisticsExport: React.FC<StatisticsExportProps> = ({
       XLSX.utils.book_append_sheet(wb, ws, 'Statistika');
       
       XLSX.writeFile(wb, `statistika_${new Date().toISOString().split('T')[0]}.xlsx`);
-      
-      onExport?.('excel');
     } catch (error) {
       console.error('Excel export error:', error);
     }
@@ -72,8 +70,6 @@ export const StatisticsExport: React.FC<StatisticsExportProps> = ({
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
-      onExport?.('csv');
     } catch (error) {
       console.error('CSV export error:', error);
     }
@@ -88,7 +84,7 @@ export const StatisticsExport: React.FC<StatisticsExportProps> = ({
         className="flex items-center gap-2"
       >
         <FileSpreadsheet className="h-4 w-4" />
-        // Excel
+        Excel
       </Button>
       
       <Button
@@ -98,7 +94,7 @@ export const StatisticsExport: React.FC<StatisticsExportProps> = ({
         className="flex items-center gap-2"
       >
         <FileText className="h-4 w-4" />
-        // CSV
+        CSV
       </Button>
     </div>
   );
