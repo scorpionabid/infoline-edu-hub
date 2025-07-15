@@ -1,281 +1,176 @@
-import React from "react";
-import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import React, { useMemo } from 'react';
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Edit, Eye, Lock, ArrowUpDown, ArrowUp, ArrowDown, RotateCcw } from "lucide-react";
-import { FullUserData } from "@/types/user";
-import { UserRole } from "@/types/supabase";
-import { useTranslation } from "@/contexts/TranslationContext";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { MoreHorizontal, Edit, Trash, UserCheck, UserX, Eye } from "lucide-react";
+import { FullUserData } from '@/types/supabase';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface UserListTableProps {
   users: FullUserData[];
-  onEdit: (user: FullUserData) => void;
-  onDelete: (user: FullUserData) => void;
-  onViewDetails: (user: FullUserData) => void;
-  onRestore?: (user: FullUserData) => void;
-  currentUserRole: UserRole;
-  renderRow?: (user: FullUserData) => React.ReactNode;
-  onSort?: (field: string) => void;
-  sortField?: string;
-  sortDirection?: "asc" | "desc";
-  showDeleted?: boolean;
+  loading?: boolean;
+  onEditUser?: (user: FullUserData) => void;
+  onDeleteUser?: (user: FullUserData) => void;
+  onViewUser?: (user: FullUserData) => void;
+  onActivateUser?: (user: FullUserData) => void;
+  onDeactivateUser?: (user: FullUserData) => void;
 }
 
-const UserListTable: React.FC<UserListTableProps> = ({
+export default function UserListTable({
   users,
-  onEdit,
-  onDelete,
-  onViewDetails,
-  onRestore,
-  currentUserRole,
-  renderRow,
-  onSort,
-  sortField,
-  sortDirection,
-  showDeleted = false,
-}) => {
-  const { t } = useTranslation();
+  loading = false,
+  onEditUser,
+  onDeleteUser,
+  onViewUser,
+  onActivateUser,
+  onDeactivateUser
+}: UserListTableProps) {
+  const { t } = useLanguage();
 
-  const getRoleBadgeVariant = (role: string) => {
-    switch (role) {
-      case "superadmin":
-        return "default";
-      case "regionadmin":
-        return "secondary";
-      case "sectoradmin":
-        return "warning";
-      case "schooladmin":
-        return "success";
-      default:
-        return "outline";
-    }
-  };
-
-  const getRoleText = (role: string) => {
-    switch (role) {
-      case "superadmin":
-        return t("superadmin");
-      case "regionadmin":
-        return t("regionAdmin");
-      case "sectoradmin":
-        return t("sectorAdmin");
-      case "schooladmin":
-        return t("schoolAdmin");
-      default:
-        return t("user");
-    }
-  };
-
-  const getSortIcon = (field: string) => {
-    if (sortField !== field) {
-      return <ArrowUpDown className="h-4 w-4" />;
-    }
-    return sortDirection === "asc" ? (
-      <ArrowUp className="h-4 w-4" />
-    ) : (
-      <ArrowDown className="h-4 w-4" />
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
     );
-  };
-
-  const SortableHeader: React.FC<{ field: string; children: React.ReactNode }> = ({ field, children }) => (
-    <TableHead>
-      <Button
-        variant="ghost"
-        onClick={() => onSort?.(field)}
-        className="h-auto p-0 font-semibold hover:bg-transparent"
-      >
-        <div className="flex items-center space-x-1">
-          <span>{children}</span>
-          {getSortIcon(field)}
-        </div>
-      </Button>
-    </TableHead>
-  );
+  }
 
   return (
-    <TooltipProvider>
-      <div className="rounded-md border overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <SortableHeader field="full_name">{t("fullName")}</SortableHeader>
-              <SortableHeader field="email">{t("email")}</SortableHeader>
-              <SortableHeader field="role">{t("role")}</SortableHeader>
-              <SortableHeader field="last_login">{t("lastLogin")}</SortableHeader>
-              <SortableHeader field="status">{t("status")}</SortableHeader>
-              <TableHead className="text-right">{t("actions")}</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {users.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">
-                  {t("noUsers")}
-                </TableCell>
-              </TableRow>
-            ) : (
-              users.map((user) =>
-                renderRow ? (
-                  <React.Fragment key={user.id}>
-                    {renderRow(user)}
-                  </React.Fragment>
-                ) : (
-                  <TableRow key={user.id}>
-                    <TableCell className="font-medium">
-                      {user.full_name}
-                    </TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>
-                      <Badge variant={getRoleBadgeVariant(user.role)}>
-                        {getRoleText(user.role)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {user.last_login
-                        ? new Date(user.last_login).toLocaleDateString()
-                        : t("never")}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          user.deleted_at 
-                            ? "destructive" 
-                            : user.status === "active" 
-                            ? "success" 
-                            : "destructive"
-                        }
+    <div className="overflow-x-auto">
+      <table className="w-full border-collapse border border-gray-200">
+        <thead>
+          <tr className="bg-gray-50">
+            <th className="border border-gray-200 px-4 py-2 text-left">{t('name') || 'Ad'}</th>
+            <th className="border border-gray-200 px-4 py-2 text-left">{t('role') || 'Rol'}</th>
+            <th className="border border-gray-200 px-4 py-2 text-left">{t('email') || 'E-poçt'}</th>
+            <th className="border border-gray-200 px-4 py-2 text-left">{t('status') || 'Status'}</th>
+            <th className="border border-gray-200 px-4 py-2 text-center">{t('actions') || 'Əməliyyatlar'}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {users.map((user) => (
+            <tr key={user.id} className="hover:bg-gray-50">
+              <td className="border border-gray-200 px-4 py-2">
+                <div>
+                  <div className="font-medium">{user.full_name || user.name}</div>
+                  {user.position && (
+                    <div className="text-sm text-gray-500">{user.position}</div>
+                  )}
+                </div>
+              </td>
+              <td className="border border-gray-200 px-4 py-2">
+                <Badge variant="outline">
+                  {user.role}
+                </Badge>
+              </td>
+              <td className="border border-gray-200 px-4 py-2">
+                {user.email}
+              </td>
+              <td className="border border-gray-200 px-4 py-2">
+                <Badge
+                  variant={
+                    user.deletedAt 
+                      ? "destructive" 
+                      : user.status === "active" 
+                      ? "success" 
+                      : "destructive"
+                  }
+                >
+                  {user.deletedAt 
+                    ? t("deleted") || "Silinib"
+                    : user.status === "active" 
+                    ? t("active") 
+                    : t("inactive")
+                  }
+                </Badge>
+              </td>
+              <td className="border border-gray-200 px-4 py-2 text-center">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      className="h-8 w-8 p-0"
+                      disabled={user.deletedAt !== null}
+                    >
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {onViewUser && (
+                      <DropdownMenuItem onClick={() => onViewUser(user)}>
+                        <Eye className="mr-2 h-4 w-4" />
+                        {t('view') || 'Bax'}
+                      </DropdownMenuItem>
+                    )}
+                    
+                    {onEditUser && (
+                      <DropdownMenuItem 
+                        onClick={() => onEditUser(user)}
+                        disabled={user.deletedAt !== null}
                       >
-                        {user.deleted_at 
-                          ? t("deleted") || "Silinib"
-                          : user.status === "active" 
-                          ? t("active") 
-                          : t("inactive")
+                        <Edit className="mr-2 h-4 w-4" />
+                        {t('edit') || 'Redaktə et'}
+                      </DropdownMenuItem>
+                    )}
+                    
+                    {user.status === "active" && onDeactivateUser && (
+                      <DropdownMenuItem 
+                        onClick={() => onDeactivateUser(user)}
+                        disabled={user.deletedAt !== null}
+                      >
+                        <UserX className="mr-2 h-4 w-4" />
+                        {t('deactivate') || 'Deaktiv et'}
+                      </DropdownMenuItem>
+                    )}
+                    
+                    {user.status !== "active" && onActivateUser && (
+                      <DropdownMenuItem 
+                        onClick={() => onActivateUser(user)}
+                        disabled={user.deletedAt !== null}
+                      >
+                        <UserCheck className="mr-2 h-4 w-4" />
+                        {t('activate') || 'Aktiv et'}
+                      </DropdownMenuItem>
+                    )}
+                    
+                    {onDeleteUser && (
+                      <DropdownMenuItem 
+                        onClick={() => {
+                          if (user.deletedAt) {
+                            // Hard delete - permanent removal
+                            onDeleteUser(user);
+                          } else {
+                            // Soft delete - mark as deleted
+                            onDeleteUser(user);
+                          }
+                        }}
+                        className="text-red-600"
+                      >
+                        <Trash className="mr-2 h-4 w-4" />
+                        {user.deletedAt 
+                          ? (t('deleteForever') || 'Həmişəlik sil')
+                          : (t('delete') || 'Sil')
                         }
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => onViewDetails(user)}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>{t("viewDetails")}</p>
-                          </TooltipContent>
-                        </Tooltip>
-
-                        {/* Show edit button only for non-deleted users */}
-                        {!user.deleted_at && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => onEdit(user)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>{t("edit")}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        )}
-
-                        {(currentUserRole === "superadmin" || currentUserRole === "regionadmin") && (
-                          <>
-                            {/* Show restore button for deleted users */}
-                            {user.deleted_at && onRestore && (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => onRestore(user)}
-                                    className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                                  >
-                                    <RotateCcw className="h-4 w-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>{t("restore") || "Bərpa et"}</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            )}
-
-                            {/* Reset password only for superadmin on non-deleted users */}
-                            {currentUserRole === "superadmin" && !user.deleted_at && (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => {
-                                      /* Implement reset password */
-                                    }}
-                                  >
-                                    <Lock className="h-4 w-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>{t("resetPassword")}</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            )}
-
-                            {/* Delete button - show for all authorized users */}
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    onDelete(user);
-                                  }}
-                                  className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>{user.deleted_at ? (t("hardDelete") || "Tamamilə sil") : t("delete")}</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ),
-              )
-            )}
-          </TableBody>
-        </Table>
-      </div>
-    </TooltipProvider>
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      
+      {users.length === 0 && (
+        <div className="text-center py-8 text-gray-500">
+          {t('noUsersFound') || 'İstifadəçi tapılmadı'}
+        </div>
+      )}
+    </div>
   );
-};
-
-export default UserListTable;
+}
