@@ -22,7 +22,7 @@ interface SectorAdminUserSelectorProps {
 }
 
 export const SectorAdminUserSelector: React.FC<
-  // SectorAdminUserSelectorProps
+  SectorAdminUserSelectorProps
 > = ({ users, loading, selectedUserId, onUserSelect, onRefresh }) => {
   const { t } = useTranslation();
 

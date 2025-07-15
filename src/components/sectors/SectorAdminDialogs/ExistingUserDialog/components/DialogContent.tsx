@@ -39,7 +39,7 @@ export const DialogContent: React.FC<DialogContentProps> = ({
   onRefresh,
   onCancel,
   onAssignAdmin,
-  // onCheckboxChange
+  onCheckboxChange
 }) => {
   return (
     <Form {...form}>

@@ -29,7 +29,7 @@ export function useUserSelectData(selectedId?: string): UserSelectDataResult {
     users: availableUsers, 
     loading, 
     error,
-    // fetchAvailableUsers
+    fetchAvailableUsers
   } = useAvailableUsers();
 
   // useAvailableUsers hook'undan gələn istifadəçiləri emal edirik
@@ -59,7 +59,9 @@ export function useUserSelectData(selectedId?: string): UserSelectDataResult {
 
   // İlk yüklənmədə istifadəçiləri yüklə
   useEffect(() => {
-    fetchAvailableUsers();
+    if (fetchAvailableUsers) {
+      fetchAvailableUsers();
+    }
   }, [fetchAvailableUsers]);
 
   // Təhlükəsiz istifadəçi massivi hazırla

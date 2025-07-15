@@ -11,6 +11,7 @@ export interface StatusHistoryEntry {
   changed_by: string;
   changed_by_name?: string;
   changed_by_email?: string;
+  metadata?: Record<string, any>;
 }
 
 export const useStatusHistory = () => {
@@ -37,10 +38,42 @@ export const useStatusHistory = () => {
     }
   };
 
+  const exportHistory = async () => {
+    try {
+      const csv = history.map(entry => ({
+        ID: entry.id,
+        EntryID: entry.data_entry_id,
+        OldStatus: entry.old_status,
+        NewStatus: entry.new_status,
+        Comment: entry.comment || '',
+        ChangedAt: entry.changed_at,
+        ChangedBy: entry.changed_by_name || entry.changed_by
+      }));
+      
+      // Simple CSV export simulation
+      console.log('Exporting history:', csv);
+    } catch (err) {
+      console.error('Export error:', err);
+    }
+  };
+
+  const testConnection = async () => {
+    try {
+      const { data, error } = await supabase.from('status_transition_log').select('count').limit(1);
+      return { success: !error, error };
+    } catch (err) {
+      return { success: false, error: err };
+    }
+  };
+
   return {
     history,
     loading,
     error,
-    fetchHistory
+    fetchHistory,
+    hasData: history.length > 0,
+    refresh: () => fetchHistory(),
+    exportHistory,
+    testConnection
   };
 };

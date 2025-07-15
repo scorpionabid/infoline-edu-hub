@@ -11,7 +11,7 @@ interface SectorAdminDialogFooterProps {
 }
 
 export const SectorAdminDialogFooter: React.FC<
-  // SectorAdminDialogFooterProps
+  SectorAdminDialogFooterProps
 > = ({ assigningUser, selectedUserId, onCancel, onAssignAdmin }) => {
   const { t } = useTranslation();
 

@@ -13,7 +13,7 @@ interface SectorAdminDialogHeaderProps {
 }
 
 export const SectorAdminDialogHeader: React.FC<
-  // SectorAdminDialogHeaderProps
+  SectorAdminDialogHeaderProps
 > = ({ sector, isEmbedded = false }) => {
   const { t } = useTranslation();
 

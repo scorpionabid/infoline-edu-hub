@@ -84,5 +84,13 @@ export interface NotificationSettings {
   deadline: boolean;
 }
 
+// Enhanced FullUserData with missing properties
+export interface EnhancedFullUserData extends FullUserData {
+  entity_name?: string;
+  entityName?: string;
+  deleted_at?: string;
+  deletedAt?: string;
+}
+
 // Re-export for backward compatibility
 export type { UserRole, FullUserData };
