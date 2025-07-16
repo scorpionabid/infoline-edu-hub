@@ -576,7 +576,7 @@ const ColumnsContainer: React.FC<ColumnsContainerProps> = ({
         columns={filteredColumns}
         categories={categories}
         selectedColumns={selectedColumns}
-        onEditColumn={onEdit}
+        onEditColumn={onEditColumn || onEdit}
         onDeleteColumn={(columnId: string, name?: string) => handleDeleteClick(columnId, name || '')}
         onRestoreColumn={handleRestore}
         onPermanentDeleteColumn={handlePermanentDelete}

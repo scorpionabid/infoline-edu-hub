@@ -190,7 +190,10 @@ const ColumnItem: React.FC<ColumnItemProps> = React.memo(({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   {onEdit && (
-                    <DropdownMenuItem onClick={() => onEdit(column)}>
+                    <DropdownMenuItem onClick={() => {
+                      console.log('Edit clicked for column:', column.name, column.id);
+                      onEdit(column);
+                    }}>
                       <Edit className="h-4 w-4 mr-2" />
                       Düzəliş et
                     </DropdownMenuItem>
