@@ -15,7 +15,7 @@ interface StatusHistoryDashboardProps {
 const StatusHistoryDashboard: React.FC<StatusHistoryDashboardProps> = ({
   title = 'Status History',
   description = 'Recent activities and status changes',
-  // data
+  data
 }) => {
   return (
     <Card>

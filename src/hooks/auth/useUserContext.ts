@@ -163,6 +163,6 @@ export function useUserContext(): UserContextData {
   return {
     ...contextData,
     ...displayInfo,
-    // isLoading
+    isLoading
   };
 }

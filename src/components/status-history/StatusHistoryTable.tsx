@@ -41,7 +41,7 @@ export const StatusHistoryTable: React.FC<StatusHistoryTableProps> = ({
     refresh, 
     exportHistory,
     testConnection
-  } = useStatusHistory({ entryId, limit, autoRefresh });
+  } = useStatusHistory({ entryId, limit, autoRefresh }) || {};
 
   /**
    * Status rəng kodunu qaytarır
@@ -71,7 +71,7 @@ export const StatusHistoryTable: React.FC<StatusHistoryTableProps> = ({
   const handleExport = async () => {
     try {
       const data = await exportHistory();
-      if (data) {
+      if (data && data.length > 0) {
         const csv = convertToCSV(data);
         downloadCSV(csv, 'status-history.csv');
       }
@@ -172,7 +172,7 @@ export const StatusHistoryTable: React.FC<StatusHistoryTableProps> = ({
             <AlertDescription className="flex justify-between items-center">
               <div>
                 <strong>Xəta baş verdi:</strong>
-                <p className="text-sm mt-1">{error}</p>
+                <p className="text-sm mt-1">{String(error)}</p>
               </div>
               <div className="flex space-x-2">
                 <Button 
