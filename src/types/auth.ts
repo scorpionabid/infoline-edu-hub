@@ -63,6 +63,8 @@ export interface FullUserData {
   updatedAt?: string;
   created_at?: string;
   updated_at?: string;
+  deletedAt?: string;
+  deleted_at?: string;
   permissions?: string[];
   preferences?: any;
   user_metadata?: any;

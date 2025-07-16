@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Edit, Trash, UserCheck, UserX, Eye } from "lucide-react";
 import { FullUserData } from '@/types/supabase';
-import { useLanguage } from '@/context/LanguageContext';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 interface UserListTableProps {
   users: FullUserData[];
@@ -30,7 +30,7 @@ export default function UserListTable({
   onActivateUser,
   onDeactivateUser
 }: UserListTableProps) {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
 
   if (loading) {
     return (
@@ -74,14 +74,14 @@ export default function UserListTable({
               <td className="border border-gray-200 px-4 py-2">
                 <Badge
                   variant={
-                    user.deletedAt 
+                    user.deleted_at 
                       ? "destructive" 
                       : user.status === "active" 
                       ? "success" 
                       : "destructive"
                   }
                 >
-                  {user.deletedAt 
+                  {user.deleted_at 
                     ? t("deleted") || "Silinib"
                     : user.status === "active" 
                     ? t("active") 
@@ -95,7 +95,7 @@ export default function UserListTable({
                     <Button 
                       variant="ghost" 
                       className="h-8 w-8 p-0"
-                      disabled={user.deletedAt !== null}
+                      disabled={user.deleted_at !== null}
                     >
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
@@ -111,7 +111,7 @@ export default function UserListTable({
                     {onEditUser && (
                       <DropdownMenuItem 
                         onClick={() => onEditUser(user)}
-                        disabled={user.deletedAt !== null}
+                        disabled={user.deleted_at !== null}
                       >
                         <Edit className="mr-2 h-4 w-4" />
                         {t('edit') || 'Redaktə et'}
@@ -121,7 +121,7 @@ export default function UserListTable({
                     {user.status === "active" && onDeactivateUser && (
                       <DropdownMenuItem 
                         onClick={() => onDeactivateUser(user)}
-                        disabled={user.deletedAt !== null}
+                        disabled={user.deleted_at !== null}
                       >
                         <UserX className="mr-2 h-4 w-4" />
                         {t('deactivate') || 'Deaktiv et'}
@@ -131,7 +131,7 @@ export default function UserListTable({
                     {user.status !== "active" && onActivateUser && (
                       <DropdownMenuItem 
                         onClick={() => onActivateUser(user)}
-                        disabled={user.deletedAt !== null}
+                        disabled={user.deleted_at !== null}
                       >
                         <UserCheck className="mr-2 h-4 w-4" />
                         {t('activate') || 'Aktiv et'}
@@ -141,7 +141,7 @@ export default function UserListTable({
                     {onDeleteUser && (
                       <DropdownMenuItem 
                         onClick={() => {
-                          if (user.deletedAt) {
+                          if (user.deleted_at) {
                             // Hard delete - permanent removal
                             onDeleteUser(user);
                           } else {
@@ -152,7 +152,7 @@ export default function UserListTable({
                         className="text-red-600"
                       >
                         <Trash className="mr-2 h-4 w-4" />
-                        {user.deletedAt 
+                        {user.deleted_at 
                           ? (t('deleteForever') || 'Həmişəlik sil')
                           : (t('delete') || 'Sil')
                         }
