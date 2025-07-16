@@ -119,16 +119,27 @@ const ColumnItem: React.FC<ColumnItemProps> = React.memo(({
         )}
 
         <div className="flex-1">
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 mb-1">
             <Badge className={cn("text-xs", getStatusColor(column.status))}>
               {column.status === 'active' ? 'Aktiv' : 
                (column.status as string) === 'inactive' ? 'Deaktiv' : 
                (column.status as string) === 'deleted' ? 'Silinmiş' : 'Naməlum'}
             </Badge>
+            {column.is_required && (
+              <Badge variant="secondary" className="text-xs">
+                Məcburi
+              </Badge>
+            )}
           </div>
+          
+          {/* Column Name - Main Title */}
+          <h4 className="text-base font-semibold text-foreground mb-1">
+            {column.name}
+          </h4>
           
           <div className="flex items-center space-x-4 text-sm text-muted-foreground">
             <span>Kateqoriya: {getCategoryName(column.category_id)}</span>
+            <span>Tip: {column.type}</span>
             {column.order_index !== undefined && (
               <span>Sıra: {column.order_index}</span>
             )}
