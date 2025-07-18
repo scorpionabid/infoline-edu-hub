@@ -22,9 +22,7 @@ const DashboardContent: React.FC = () => {
   const userRole = storeUserRole || user?.role;
   
   // Get dashboard data using the consolidated hook
-  const { data: dashboardData, isLoading: dashboardLoading, error: dashboardError } = useRealDashboardData({
-    enabled: !!user && !!userRole
-  });
+  const { dashboardData, loading: dashboardLoading, error: dashboardError } = useRealDashboardData();
   
   const loading = userLoading || dashboardLoading;
   

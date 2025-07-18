@@ -63,7 +63,11 @@ export const useRealDashboardData = () => {
         approvedEntries: formsByStatus.approved,
         rejectedEntries: formsByStatus.rejected,
         completed: formsByStatus.approved,
-        pending: formsByStatus.pending
+        pending: formsByStatus.pending,
+        pendingFormCount: formsByStatus.pending,
+        schoolCount: schoolsResult.count || 0,
+        activeUserCount: usersResult.count || 0,
+        completionPercentage: completionRate
       };
 
       const forms: DashboardFormStats = {
