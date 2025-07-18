@@ -2,39 +2,30 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
-import type { DashboardDataParams } from '../_shared/types.ts'
+
+interface DashboardDataParams {
+  role?: string;
+  entityId?: string;
+}
 
 serve(async (req) => {
-  // CORS idarəsi
+  // CORS handling
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    // Giriş parametrləri
+    // Get request parameters
     const { role, entityId } = await req.json() as DashboardDataParams
     
-    // Parametrləri yoxlayırıq
-    if (!role) {
-      return new Response(
-        JSON.stringify({
-          error: 'role tələb olunur'
-        }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      )
-    }
-
-    // Client yaradırıq
+    // Create Supabase client
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
       { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
     )
 
-    // İstifadəçi məlumatlarını əldə edirik
+    // Get user information
     const {
       data: { user },
     } = await supabaseClient.auth.getUser()
@@ -46,22 +37,7 @@ serve(async (req) => {
       )
     }
 
-    // İstifadəçinin rolunu yoxlayırıq
-    const { data: userRole } = await supabaseClient
-      .from('user_roles')
-      .select('*')
-      .eq('user_id', user.id)
-      .single()
-
-    // İstifadəçinin göstərilən rol ilə tələb olunan rol arasında uyğunluğu yoxlayırıq
-    if (!userRole || userRole.role !== role) {
-      return new Response(
-        JSON.stringify({ error: 'Role mismatch or insufficient permissions' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // Rol tipinə görə müvafiq dashboard məlumatlarını əldə edirik
+    // Simplified data fetching - delegating detailed logic to client-side hook
     let dashboardData
 
     switch (role) {
@@ -93,19 +69,13 @@ serve(async (req) => {
   }
 })
 
-// SuperAdmin dashboard məlumatları
-async function fetchSuperAdminDashboard(supabase) {
-  // Mock data - real data əvəzinə
-  const regionCountPromise = supabase.from('regions').select('id', { count: 'exact' })
-  const sectorCountPromise = supabase.from('sectors').select('id', { count: 'exact' })
-  const schoolCountPromise = supabase.from('schools').select('id', { count: 'exact' })
-  const userCountPromise = supabase.from('user_roles').select('user_id', { count: 'exact' })
-  
+// Simplified SuperAdmin dashboard data
+async function fetchSuperAdminDashboard(supabase: any) {
   const [regionCount, sectorCount, schoolCount, userCount] = await Promise.all([
-    regionCountPromise, 
-    sectorCountPromise, 
-    schoolCountPromise, 
-    userCountPromise
+    supabase.from('regions').select('id', { count: 'exact' }),
+    supabase.from('sectors').select('id', { count: 'exact' }),
+    supabase.from('schools').select('id', { count: 'exact' }),
+    supabase.from('user_roles').select('user_id', { count: 'exact' })
   ])
   
   return {
@@ -113,102 +83,61 @@ async function fetchSuperAdminDashboard(supabase) {
     sectorCount: sectorCount.count || 0,
     schoolCount: schoolCount.count || 0,
     userCount: userCount.count || 0,
-    completionRate: 0, // Hesablana bilər
-    approvalRate: 0, // Hesablana bilər
-    recentCategories: [],
-    recentSchools: [],
-    notifications: []
+    completionRate: 0,
+    approvalRate: 0
   }
 }
 
-// RegionAdmin dashboard məlumatları
-async function fetchRegionAdminDashboard(supabase, regionId) {
+// Simplified RegionAdmin dashboard data
+async function fetchRegionAdminDashboard(supabase: any, regionId?: string) {
   if (!regionId) {
     throw new Error('Region ID is required for RegionAdmin dashboard')
   }
   
-  const sectorCountPromise = supabase
-    .from('sectors')
-    .select('id', { count: 'exact' })
-    .eq('region_id', regionId)
-  
-  const schoolCountPromise = supabase
-    .from('schools')
-    .select('id', { count: 'exact' })
-    .eq('region_id', regionId)
-  
-  const userCountPromise = supabase
-    .from('user_roles')
-    .select('user_id', { count: 'exact' })
-    .eq('region_id', regionId)
-  
   const [sectorCount, schoolCount, userCount] = await Promise.all([
-    sectorCountPromise, 
-    schoolCountPromise, 
-    userCountPromise
+    supabase.from('sectors').select('id', { count: 'exact' }).eq('region_id', regionId),
+    supabase.from('schools').select('id', { count: 'exact' }).eq('region_id', regionId),
+    supabase.from('user_roles').select('user_id', { count: 'exact' }).eq('region_id', regionId)
   ])
   
   return {
     sectorCount: sectorCount.count || 0,
     schoolCount: schoolCount.count || 0,
     userCount: userCount.count || 0,
-    completionRate: 0, // Hesablana bilər
-    approvalRate: 0, // Hesablana bilər
-    recentCategories: [],
-    recentSchools: [],
-    notifications: []
+    completionRate: 0,
+    approvalRate: 0
   }
 }
 
-// SectorAdmin dashboard məlumatları
-async function fetchSectorAdminDashboard(supabase, sectorId) {
+// Simplified SectorAdmin dashboard data
+async function fetchSectorAdminDashboard(supabase: any, sectorId?: string) {
   if (!sectorId) {
     throw new Error('Sector ID is required for SectorAdmin dashboard')
   }
   
-  const schoolCountPromise = supabase
-    .from('schools')
-    .select('id', { count: 'exact' })
-    .eq('sector_id', sectorId)
-  
-  const userCountPromise = supabase
-    .from('user_roles')
-    .select('user_id', { count: 'exact' })
-    .eq('sector_id', sectorId)
-  
   const [schoolCount, userCount] = await Promise.all([
-    schoolCountPromise, 
-    userCountPromise
+    supabase.from('schools').select('id', { count: 'exact' }).eq('sector_id', sectorId),
+    supabase.from('user_roles').select('user_id', { count: 'exact' }).eq('sector_id', sectorId)
   ])
   
   return {
     schoolCount: schoolCount.count || 0,
     userCount: userCount.count || 0,
-    completionRate: 0, // Hesablana bilər
-    approvalRate: 0, // Hesablana bilər
-    recentCategories: [],
-    recentSchools: [],
-    pendingApprovals: [],
-    notifications: []
+    completionRate: 0,
+    approvalRate: 0
   }
 }
 
-// SchoolAdmin dashboard məlumatları
-async function fetchSchoolAdminDashboard(supabase, schoolId) {
+// Simplified SchoolAdmin dashboard data
+async function fetchSchoolAdminDashboard(supabase: any, schoolId?: string) {
   if (!schoolId) {
     throw new Error('School ID is required for SchoolAdmin dashboard')
   }
   
-  // Data entries statistikasını çəkirik
-  const { data: entriesStats, error: entriesError } = await supabase
+  const { data: entriesStats } = await supabase
     .from('data_entries')
-    .select('status, count')
+    .select('status')
     .eq('school_id', schoolId)
-    .group('status')
-  
-  // Tamamlanma dərəcəsini hesablayırıq
-  const { data: completionData } = await supabase
-    .rpc('calculate_completion_rate', { school_id_param: schoolId })
   
   const formStats = {
     approved: 0,
@@ -218,19 +147,19 @@ async function fetchSchoolAdminDashboard(supabase, schoolId) {
   }
   
   if (entriesStats) {
-    entriesStats.forEach(item => {
-      switch (item.status) {
+    entriesStats.forEach((entry: any) => {
+      switch (entry.status) {
         case 'approved':
-          formStats.approved = item.count
+          formStats.approved++
           break
         case 'pending':
-          formStats.pending = item.count
+          formStats.pending++
           break
         case 'rejected':
-          formStats.rejected = item.count
+          formStats.rejected++
           break
         case 'draft':
-          formStats.incomplete = item.count
+          formStats.incomplete++
           break
       }
     })
@@ -238,9 +167,6 @@ async function fetchSchoolAdminDashboard(supabase, schoolId) {
   
   return {
     formStats,
-    completionRate: completionData?.[0]?.completion_rate || 0,
-    recentCategories: [],
-    upcomingDeadlines: [],
-    notifications: []
+    completionRate: 0
   }
 }

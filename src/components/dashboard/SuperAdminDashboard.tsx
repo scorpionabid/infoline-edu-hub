@@ -23,19 +23,19 @@ const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
     );
   }
 
-  // Use real data from the backend with all required properties
+  // Use consolidated data from useRealDashboardData
   const formStats: DashboardFormStats = {
-    totalForms: dashboardData.formsByStatus?.total || 0,
-    completedForms: dashboardData.formsByStatus?.approved || 0,
-    pendingApprovals: dashboardData.formsByStatus?.pending || 0,
-    rejectedForms: dashboardData.formsByStatus?.rejected || 0,
-    pendingForms: dashboardData.formsByStatus?.pending || 0,
-    approvalRate: dashboardData.approvalRate || 0,
-    total: dashboardData.formsByStatus?.total || 0,
-    completed: dashboardData.formsByStatus?.approved || 0,
-    approved: dashboardData.formsByStatus?.approved || 0,
-    pending: dashboardData.formsByStatus?.pending || 0,
-    rejected: dashboardData.formsByStatus?.rejected || 0,
+    totalForms: dashboardData.stats?.totalEntries || 0,
+    completedForms: dashboardData.stats?.completedEntries || 0,
+    pendingApprovals: dashboardData.stats?.pendingEntries || 0,
+    rejectedForms: dashboardData.stats?.rejectedEntries || 0,
+    pendingForms: dashboardData.stats?.pendingEntries || 0,
+    approvalRate: dashboardData.completionRate || 0,
+    total: dashboardData.stats?.totalEntries || 0,
+    completed: dashboardData.stats?.completedEntries || 0,
+    approved: dashboardData.stats?.approvedEntries || 0,
+    pending: dashboardData.stats?.pendingEntries || 0,
+    rejected: dashboardData.stats?.rejectedEntries || 0,
     dueSoon: 0,
     overdue: 0,
     draft: 0,

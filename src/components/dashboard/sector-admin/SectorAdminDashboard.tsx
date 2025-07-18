@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useTranslation } from "@/contexts/TranslationContext";
 import { DashboardFormStats } from "@/types/dashboard";
@@ -10,10 +11,8 @@ import { School } from "@/types/school";
 import { useSchoolsQuery } from "@/hooks/schools";
 import { useAuthStore, selectUser } from "@/hooks/auth/useAuthStore";
 
-import { EnhancedDashboardData } from "@/types/dashboard";
-
 interface SectorAdminDashboardProps {
-  dashboardData?: EnhancedDashboardData;
+  dashboardData?: any;
 }
 
 const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({
@@ -21,9 +20,6 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({
 }) => {
   const { t } = useTranslation();
   const user = useAuthStore(selectUser);
-  
-  // Test kodu silinib - testSectorData faylı artıq mövcud deyil
-  // Sınaqlar üçün test data lazım olarsa, yenisi yaradıla bilər
   
   // Modal state
   const [selectedSchool, setSelectedSchool] = useState<School | null>(null);
@@ -53,46 +49,44 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({
 
   console.log("[SectorAdminDashboard] Dashboard data:", dashboardData);
 
-  // Diaqnostika loqu - məlumatların strukturunu araşdırmaq üçün
-  console.log("[SectorAdminDashboard] Dashboard data full details:", JSON.stringify(dashboardData, null, 2));
-  
-  // Use the enhanced summary data from the improved fetch function
-  const summary = dashboardData?.summary || {
-    total: 0,
-    completed: 0,
-    pending: 0,
-    rejected: 0,
-    approved: 0,
-    completionRate: 0
+  // Use the consolidated data structure
+  const summary = dashboardData?.stats || {
+    totalEntries: 0,
+    completedEntries: 0,
+    pendingEntries: 0,
+    rejectedEntries: 0,
+    approvedEntries: 0
   };
 
-  console.log("[SectorAdminDashboard] Enhanced summary data:", summary);
+  const completionRate = dashboardData?.completionRate || 0;
+
+  console.log("[SectorAdminDashboard] Summary data:", summary);
 
   const statsGridData = [
     {
       title: t("dashboard.totalApproved") || "Təsdiqlənmiş",
-      value: summary.approved,
+      value: summary.approvedEntries || 0,
       icon: "check-circle",
       color: "text-green-600",
       description: t("status.approved") || "Təsdiqləndi",
     },
     {
       title: t("dashboard.totalPending") || "Gözləyən",
-      value: summary.pending,
+      value: summary.pendingEntries || 0,
       icon: "clock",
       color: "text-yellow-600",
       description: t("status.pending") || "Gözləyir",
     },
     {
       title: t("dashboard.totalRejected") || "Rədd edilmiş",
-      value: summary.rejected,
+      value: summary.rejectedEntries || 0,
       icon: "x-circle",
       color: "text-red-600",
       description: t("status.rejected") || "Rədd edildi",
     },
     {
       title: t("dashboard.completion") || "Tamamlanma",
-      value: `${Math.round(summary.completionRate)}%`,
+      value: `${Math.round(completionRate)}%`,
       icon: "pie-chart",
       color: "text-blue-600",
       description: t("dashboard.stats.completion_rate") || "Tamamlanma dərəcəsi",
@@ -133,18 +127,23 @@ const SectorAdminDashboard: React.FC<SectorAdminDashboardProps> = ({
 
   // Create enhanced form stats for chart
   const enhancedFormStats: DashboardFormStats = {
-    ...summary,
-    totalForms: summary.total,
-    completedForms: summary.completed,
-    pendingForms: summary.pending,
-    rejectedForms: summary.rejected,
-    pendingApprovals: summary.pending,
-    approvalRate: summary.completionRate,
+    totalForms: summary.totalEntries || 0,
+    completedForms: summary.completedEntries || 0,
+    pendingForms: summary.pendingEntries || 0,
+    rejectedForms: summary.rejectedEntries || 0,
+    approved: summary.approvedEntries || 0,
+    pending: summary.pendingEntries || 0,
+    rejected: summary.rejectedEntries || 0,
+    completed: summary.completedEntries || 0,
+    total: summary.totalEntries || 0,
+    pendingApprovals: summary.pendingEntries || 0,
+    approvalRate: completionRate,
     draft: 0,
     dueSoon: 0,
     overdue: 0,
-    percentage: summary.completionRate,
-    completion_rate: summary.completionRate
+    percentage: completionRate,
+    completion_rate: completionRate,
+    completionRate: completionRate
   };
 
   console.log("[SectorAdminDashboard] Enhanced form stats for chart:", enhancedFormStats);

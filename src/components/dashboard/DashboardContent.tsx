@@ -1,8 +1,9 @@
+
 import React, { useEffect, useState } from 'react';
 import { useUser } from '@/hooks/auth/useUser';
 import { useTranslation } from '@/contexts/TranslationContext';
 import { useAuthStore, selectUserRole } from '@/hooks/auth/useAuthStore';
-import { useDashboardData } from '@/hooks/dashboard/useDashboardData';
+import { useRealDashboardData } from '@/hooks/dashboard/useRealDashboardData';
 import { Loader2 } from 'lucide-react';
 
 // Role-specific dashboard components
@@ -20,10 +21,9 @@ const DashboardContent: React.FC = () => {
   const storeUserRole = useAuthStore(selectUserRole);
   const userRole = storeUserRole || user?.role;
   
-  // Get dashboard data using the hook
-  const { data: dashboardData, loading: dashboardLoading, error: dashboardError } = useDashboardData({
-    enhanced: true,
-    autoRefresh: false
+  // Get dashboard data using the consolidated hook
+  const { data: dashboardData, isLoading: dashboardLoading, error: dashboardError } = useRealDashboardData({
+    enabled: !!user && !!userRole
   });
   
   const loading = userLoading || dashboardLoading;
